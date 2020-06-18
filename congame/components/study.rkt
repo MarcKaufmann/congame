@@ -5,7 +5,7 @@
          "auth.rkt")
 
 ;; TODO:
-;;  * A table that contains study medata: (name of the study, enslitment code, ...)
+;;  * A table that contains study metadata: (name of the study, enlistment code, ...)
 ;;  * A table that holds participation information for every user: (user_id, study_id, study_position, enlisted_at)
 ;;  * An analogue of study_wide for `get' and `put': (user_id, study_id, study_stack, key, value, first_put_at, last_put_at)
 ;;    -- study stack should be a pg array
