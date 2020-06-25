@@ -60,6 +60,9 @@
       #:roles (user)
       dashboard-page]
 
+     [("study")
+      study-page]
+
      [("login")
       (login-page auth)]
 

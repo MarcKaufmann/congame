@@ -1,8 +1,23 @@
 #lang racket/base
 
-(require racket/contract
+(require koyo/continuation
+         koyo/haml
+         racket/contract
+         racket/match
+         web-server/http
+         web-server/servlet
          xml
          "auth.rkt")
+
+(provide
+ next
+ done
+ put
+ get
+ button
+ make-step
+ make-study
+ run-study)
 
 ;; TODO:
 ;;  * A table that contains study metadata: (name of the study, enlistment code, ...)
@@ -11,11 +26,16 @@
 ;;    -- study stack should be a pg array
 ;;    -- key should just be text
 
-(define (next)
-  (void))
+(define-values (next next?)
+  (let ()
+    (struct next () #:transparent)
+    (values (next) next?)))
 
-(define (done)
-  (void))
+(define-values (done done?)
+  (let ()
+    (struct done () #:transparent)
+    (values (done) done?)))
+
 
 ;; To support cases where the step stores data as soon as it runs, we
 ;; may need some kind of (once ...) primitive or two variants of put:
@@ -31,8 +51,27 @@
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define current-embed/url
+  (make-parameter #f))
+
 (define (button action label)
-  (void))
+  (haml
+   (:a
+    ([:href ((current-embed/url)
+             (lambda (_req)
+               (action)
+               ;; The protected variants of embed/url, unlike their
+               ;; web-server counterparts, require the embedded
+               ;; function to be a handler (that is, it must produce a
+               ;; response value) so that middleware may be applied to
+               ;; it.  Because we don't care about the return value
+               ;; here, we simply return an artificial response.
+               ;; Middleware will be applied to it but it will have no
+               ;; effect.  It's conceivable that we might add a
+               ;; middleware that has side-effects, in which case this
+               ;; may break so that's something to watch out for.
+               (response/xexpr '(p "ignored"))))])
+    label)))
 
 
 ;; step ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,9 +86,9 @@
 
 (define step-id/c symbol?)
 (define handler/c (-> xexpr?))
-(define transition/c (-> step-id/c))
+(define transition/c (-> (or/c done? next? step-id/c)))
 
-(define/contract (make-step id handler [transition next])
+(define/contract (make-step id handler [transition (lambda () next)])
   (->* (step-id/c handler/c) (transition/c) step?)
   (step id handler transition))
 
@@ -71,38 +110,44 @@
        study?)
   (study requires provides steps))
 
+(define-logger study)
+
 (define/contract (run-study s)
   (-> study? any)
-  (void))
+  (let loop ([current-step (study-next-step s)])
+    (log-study-debug "current-step: ~s" current-step)
+    (send/suspend/dispatch/protect
+     (lambda (embed/url)
+       (parameterize ([current-embed/url embed/url])
+         (response/xexpr
+          ((step-handler current-step))))))
 
+    (define next-step
+      (match ((step-transition current-step))
+        [(? done?) #f]
+        [(? next?) (study-find-next-step s (step-id current-step))]
+        [next-step-id (study-find-step s next-step-id)]))
 
-;; example ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+    (cond
+      [next-step => loop]
+      [else
+       (for/hasheq ([id (in-list (study-provides s))])
+         (values id (get id)))])))
 
-(define (info)
-  '(h1 "Welcome to the study."))
+(define (study-next-step s)
+  (car (study-steps s)))
 
-(define (give-consent)
-  `(div
-    (h1 "Do you consent?")
-    ,(button
-      (lambda ()
-        (put 'consented? #t))
-      "Yes")
-    ,(button
-      (lambda ()
-        (put 'consented? #f))
-      "No")))
+(define (study-find-next-step s id)
+  (for/fold ([previous #f]
+             [next-step #f]
+             #:result next-step)
+            ([a-step (in-list (study-steps s))]
+             #:unless next-step)
+    (if (and previous (eq? (step-id previous) id))
+        (values previous a-step)
+        (values a-step #f))))
 
-(define consent-study
-  (make-study
-   #:provides '(consented?)
-   (list
-    (make-step 'info info)
-    (make-step 'give-consent-1
-               give-consent
-               (lambda ()
-                 (if (get 'consented?)
-                     (next)
-                     (done))))
-    (make-step 'give-consent-2
-               give-consent))))
+(define (study-find-step s id)
+  (for/first ([a-step (in-list (study-steps s))]
+              #:when (eq? (step-id a-step) id))
+    a-step))
