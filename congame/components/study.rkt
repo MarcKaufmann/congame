@@ -65,6 +65,7 @@
     ([:href ((current-embed/url)
              (lambda (_req)
                (action)
+               (redirect/get/forget/protect)
                ;; The protected variants of embed/url, unlike their
                ;; web-server counterparts, require the embedded
                ;; function to be a handler (that is, it must produce a
