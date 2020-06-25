@@ -37,16 +37,21 @@
     (values (done) done?)))
 
 
+(define *storage* (make-hash))
+
+(struct storage-key (stack k)
+  #:transparent)
+
 ;; To support cases where the step stores data as soon as it runs, we
 ;; may need some kind of (once ...) primitive or two variants of put:
 ;; one that only inserts data if a key isn't already set and one that
 ;; upserts.
 (define (put k v)
-  (void))
+  (hash-set! *storage* (storage-key (current-study-stack) k) v))
 
-(define (get k [v (lambda ()
-                    (error 'get "value not found for key ~.s" k))])
-  (void))
+(define (get k [default (lambda ()
+                          (error 'get "value not found for key ~.s" k))])
+  (hash-ref *storage* (storage-key (current-study-stack) k) default))
 
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -98,6 +103,8 @@
 (define current-study-stack
   (make-parameter null))
 
+(define-logger study)
+
 (struct study (requires provides steps)
   #:transparent)
 
@@ -110,29 +117,28 @@
        study?)
   (study requires provides steps))
 
-(define-logger study)
-
 (define/contract (run-study s)
   (-> study? any)
-  (let loop ([current-step (study-next-step s)])
-    (log-study-debug "current-step: ~s" current-step)
-    (send/suspend/dispatch/protect
-     (lambda (embed/url)
-       (parameterize ([current-embed/url embed/url])
-         (response/xexpr
-          ((step-handler current-step))))))
+  (parameterize ([current-study-stack (cons s (current-study-stack))])
+    (let loop ([current-step (study-next-step s)])
+      (log-study-debug "current-step: ~s" current-step)
+      (send/suspend/dispatch/protect
+       (lambda (embed/url)
+         (parameterize ([current-embed/url embed/url])
+           (response/xexpr
+            ((step-handler current-step))))))
 
-    (define next-step
-      (match ((step-transition current-step))
-        [(? done?) #f]
-        [(? next?) (study-find-next-step s (step-id current-step))]
-        [next-step-id (study-find-step s next-step-id)]))
+      (define next-step
+        (match ((step-transition current-step))
+          [(? done?) #f]
+          [(? next?) (study-find-next-step s (step-id current-step))]
+          [next-step-id (study-find-step s next-step-id)]))
 
-    (cond
-      [next-step => loop]
-      [else
-       (for/hasheq ([id (in-list (study-provides s))])
-         (values id (get id)))])))
+      (cond
+        [next-step => loop]
+        [else
+         (for/hasheq ([id (in-list (study-provides s))])
+           (values id (get id)))]))))
 
 (define (study-next-step s)
   (car (study-steps s)))
