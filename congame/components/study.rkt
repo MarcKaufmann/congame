@@ -65,6 +65,13 @@
     ([:href ((current-embed/url)
              (lambda (_req)
                (action)
+               ;; Because we run the action first, if it raises an
+               ;; exception then the user will be able to refresh the
+               ;; page and the action will run again.  This seems
+               ;; mostly desirable in the face of one-off
+               ;; errors/problems, but there may be cases when it's
+               ;; not.  In those cases, we might have a separate sort
+               ;; of button that reverses these two calls.
                (redirect/get/forget/protect)
                ;; The protected variants of embed/url, unlike their
                ;; web-server counterparts, require the embedded
@@ -87,6 +94,7 @@
 
 ;; NB: Don't forget about forms!
 
+;; Maybe embed preconditions into steps rather than attempting to wrap them.
 (struct step (id handler transition)
   #:transparent)
 
