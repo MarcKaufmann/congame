@@ -147,7 +147,8 @@
         [next-step => loop]
         [else
          (for/hasheq ([id (in-list (study-provides s))])
-           (values id (get id)))]))))
+           (values id (get id (lambda ()
+                                (error 'run-study "study did not 'put' provided variable: ~s" id)))))]))))
 
 (define (study-next-step s)
   (car (study-steps s)))
