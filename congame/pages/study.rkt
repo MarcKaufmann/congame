@@ -8,7 +8,7 @@
  study-page)
 
 (define (study-page req)
-  (define res (run-study consent-study))
+  (define res (run-study consent-study req))
   (printf "result: ~a~n" res)
   (flush-output)
   (page

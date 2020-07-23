@@ -1,13 +1,14 @@
 #lang racket/base
 
-(require koyo/continuation
+(require (for-syntax racket/base)
+         koyo/continuation
          koyo/haml
+         (except-in forms form)
          racket/contract
          racket/match
-         web-server/http
+         racket/stxparam
          web-server/servlet
-         xml
-         "auth.rkt")
+         xml)
 
 (provide
  next
@@ -15,6 +16,7 @@
  put
  get
  button
+ form
  make-step
  make-study
  run-study)
@@ -56,43 +58,64 @@
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define-syntax-parameter continue
+  (lambda (stx)
+    (raise-syntax-error 'continue "can only be used inside with-continue-parameterization" stx)))
+
+(define-syntax-rule (with-continue-parameterization e ...)
+  ;; Capture return here so that any embedded (via embed/url) lambda can close over it.
+  (let ([return (current-return)])
+    (syntax-parameterize ([continue (syntax-rules ()
+                                      [(_)     (return 'continue)]
+                                      [(_ res) (return res)])])
+      e ...)))
+
 (define current-embed/url
-  (make-parameter #f))
+  (make-parameter 'no-embed/url))
+
+(define current-request
+  (make-parameter 'no-request))
+
+(define current-return
+  (make-parameter 'no-return))
 
 (define (button action label)
-  (haml
-   (:a
-    ([:href ((current-embed/url)
-             (lambda (_req)
-               (action)
-               ;; Because we run the action first, if it raises an
-               ;; exception then the user will be able to refresh the
-               ;; page and the action will run again.  This seems
-               ;; mostly desirable in the face of one-off
-               ;; errors/problems, but there may be cases when it's
-               ;; not.  In those cases, we might have a separate sort
-               ;; of button that reverses these two calls.
-               (redirect/get/forget/protect)
-               ;; The protected variants of embed/url, unlike their
-               ;; web-server counterparts, require the embedded
-               ;; function to be a handler (that is, it must produce a
-               ;; response value) so that middleware may be applied to
-               ;; it.  Because we don't care about the return value
-               ;; here, we simply return an artificial response.
-               ;; Middleware will be applied to it but it will have no
-               ;; effect.  It's conceivable that we might add a
-               ;; middleware that has side-effects, in which case this
-               ;; may break so that's something to watch out for.
-               (response/xexpr '(p "ignored"))))])
-    label)))
+  (with-continue-parameterization
+    (haml
+     (:a
+      ([:href
+        ((current-embed/url)
+         (lambda (_req)
+           (action)
+           (continue)))])
+      label))))
+
+(define (form f action render)
+  (define the-study (current-study))
+  (define the-step (current-step))
+  (with-continue-parameterization
+    (match (form-run f (current-request))
+      [(list 'passed res _)
+       (action res)
+       (continue)]
+
+      [(list _ _ rw)
+       (haml
+        (:form
+         ([:action ((current-embed/url)
+                    (lambda (req)
+                      ;; TODO: Signal to the outer run-step that we are done.
+                      ;; BUG: We only want this to re-render the page,
+                      ;; but the study should control moving forward.
+                      ;; NB: If we use a loop, then we have to deal
+                      ;; with passing a rendered form into tell-name
+                      ;; somehow.
+                      (run-step req the-study the-step)))]
+          [:method "POST"])
+         (render rw)))])))
 
 
 ;; step ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; NB: Avoid having to make a distinction between "normal" steps and
-;; "action" steps if possible.
-
-;; NB: Don't forget about forms!
 
 ;; Maybe embed preconditions into steps rather than attempting to wrap them.
 (struct step (id handler transition)
@@ -109,10 +132,16 @@
 
 ;; study ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define-logger study)
+
 (define current-study-stack
   (make-parameter null))
 
-(define-logger study)
+(define current-study
+  (make-parameter 'no-study))
+
+(define current-step
+  (make-parameter 'no-step))
 
 (struct study (requires provides steps)
   #:transparent)
@@ -126,29 +155,58 @@
        study?)
   (study requires provides steps))
 
-(define/contract (run-study s)
-  (-> study? any)
+;; Re. preconditions: if we bake them into steps/studies, there doesn't need
+;; to be a separate stack of preconditions, because when we resume,
+;; we'll run the precondition for each step (or possibly study).
+(define/contract (run-study s [req (current-request)])
+  (->* (study?) (request?) any)
   (parameterize ([current-study-stack (cons s (current-study-stack))])
-    (let loop ([current-step (study-next-step s)])
-      (log-study-debug "current-step: ~s" current-step)
-      (send/suspend/dispatch/protect
-       (lambda (embed/url)
-         (parameterize ([current-embed/url embed/url])
-           (response/xexpr
-            ((step-handler current-step))))))
+    (define the-step (study-next-step s))
+    (run-step req s the-step)))
 
-      (define next-step
-        (match ((step-transition current-step))
-          [(? done?) #f]
-          [(? next?) (study-find-next-step s (step-id current-step))]
-          [next-step-id (study-find-step s next-step-id)]))
+(define (run-step req s the-step)
+  (log-study-debug "running step: ~.s" the-step)
+  (define res
+    (call-with-current-continuation
+     (lambda (return)
+       (send/suspend/dispatch/protect
+        (lambda (embed/url)
+          (parameterize ([current-embed/url embed/url]
+                         [current-request req]
+                         [current-return return]
+                         [current-study s]
+                         [current-step the-step])
+            (response/xexpr ((step-handler the-step)))))))
+     servlet-prompt))
 
-      (cond
-        [next-step => loop]
-        [else
-         (for/hasheq ([id (in-list (study-provides s))])
-           (values id (get id (lambda ()
-                                (error 'run-study "study did not 'put' provided variable: ~s" id)))))]))))
+  (log-study-debug "step ~.s returned ~.s" the-step res)
+  (cond
+    [(response? res)
+     (send/back res)]
+
+    #;
+    [(finish? res)
+     (finish-res res)]
+
+    [else
+     (define new-req (redirect/get/forget/protect))
+     (define next-step
+       (match ((step-transition the-step))
+         [(? done?) #f]
+         [(? next?) (study-find-next-step s (step-id the-step))]
+         [next-step-id (study-find-step s next-step-id)]))
+
+     (cond
+       [next-step => (lambda (the-next-step)
+                       (run-step new-req s the-next-step))]
+       [else
+        (define study-res
+          (for/hasheq ([id (in-list (study-provides s))])
+            (values id (get id (lambda ()
+                                 (error 'run-study "study did not 'put' provided variable: ~s" id))))))
+
+        (log-study-debug "study result: ~.s" study-res)
+        study-res])]))
 
 (define (study-next-step s)
   (car (study-steps s)))

@@ -72,6 +72,7 @@
                 (north-adapter        . ,config:log-level)
                 (server               . ,config:log-level)
                 (session              . ,config:log-level)
+                (study                . ,config:log-level)
                 (system               . ,config:log-level))))
 
   (current-system prod-system)
