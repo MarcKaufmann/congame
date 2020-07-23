@@ -91,8 +91,9 @@
       label))))
 
 (define (form f action render)
-  (define the-study (current-study))
+  (define embed/url (current-embed/url))
   (define the-step (current-step))
+  (define return (current-return))
   (with-continue-parameterization
     (match (form-run f (current-request))
       [(list 'passed res _)
@@ -102,15 +103,14 @@
       [(list _ _ rw)
        (haml
         (:form
-         ([:action ((current-embed/url)
+         ([:action (embed/url
                     (lambda (req)
-                      ;; TODO: Signal to the outer run-step that we are done.
-                      ;; BUG: We only want this to re-render the page,
-                      ;; but the study should control moving forward.
-                      ;; NB: If we use a loop, then we have to deal
-                      ;; with passing a rendered form into tell-name
-                      ;; somehow.
-                      (run-step req the-study the-step)))]
+                      (parameterize ([current-embed/url embed/url]
+                                     [current-request req]
+                                     [current-return return]
+                                     [current-step the-step])
+                        (response/xexpr
+                         ((step-handler the-step))))))]
           [:method "POST"])
          (render rw)))])))
 
@@ -137,9 +137,6 @@
 (define current-study-stack
   (make-parameter null))
 
-(define current-study
-  (make-parameter 'no-study))
-
 (define current-step
   (make-parameter 'no-step))
 
@@ -161,8 +158,8 @@
 (define/contract (run-study s [req (current-request)])
   (->* (study?) (request?) any)
   (parameterize ([current-study-stack (cons s (current-study-stack))])
-    (define the-step (study-next-step s))
-    (run-step req s the-step)))
+    (begin0 (run-step req s (study-next-step s))
+      (redirect/get/forget/protect))))
 
 (define (run-step req s the-step)
   (log-study-debug "running step: ~.s" the-step)
@@ -174,7 +171,6 @@
           (parameterize ([current-embed/url embed/url]
                          [current-request req]
                          [current-return return]
-                         [current-study s]
                          [current-step the-step])
             (response/xexpr ((step-handler the-step)))))))
      servlet-prompt))
@@ -183,10 +179,6 @@
   (cond
     [(response? res)
      (send/back res)]
-
-    #;
-    [(finish? res)
-     (finish-res res)]
 
     [else
      (define new-req (redirect/get/forget/protect))
@@ -200,13 +192,9 @@
        [next-step => (lambda (the-next-step)
                        (run-step new-req s the-next-step))]
        [else
-        (define study-res
-          (for/hasheq ([id (in-list (study-provides s))])
-            (values id (get id (lambda ()
-                                 (error 'run-study "study did not 'put' provided variable: ~s" id))))))
-
-        (log-study-debug "study result: ~.s" study-res)
-        study-res])]))
+        (for/hasheq ([id (in-list (study-provides s))])
+          (values id (get id (lambda ()
+                               (error 'run-study "study did not 'put' provided variable: ~s" id)))))])]))
 
 (define (study-next-step s)
   (car (study-steps s)))

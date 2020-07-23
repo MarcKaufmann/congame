@@ -59,7 +59,6 @@
                  (if (get 'consented?)
                      next
                      done)))
-    #;
     (make-step 'simple
                (lambda ()
                  (run-study simple-study)
