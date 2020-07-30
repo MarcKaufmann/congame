@@ -20,7 +20,10 @@
  get
  button
  form
+ skip
  make-step
+ make-step/study
+ wrap-sub-study
  make-study
  run-study)
 
@@ -103,7 +106,10 @@
                           [continue
                            (syntax-parser
                              [(_)
-                              #'(return 'continue)])]
+                              #'(return 'continue)]
+
+                             [(_ to:id)
+                              #'(return (cons 'to-step to))])]
 
                           [this-request
                            (lambda (stx)
@@ -146,11 +152,23 @@
         [:method "POST"])
        (render rw)))]))
 
+;; Eventually we may want to have this take an optional step id to jump to.
+(define/widget (skip [to-step-id #f])
+  (if to-step-id
+      (continue to-step-id)
+      (continue)))
+
 
 ;; step ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Maybe embed preconditions into steps rather than attempting to wrap them.
 (struct step (id handler transition)
+  #:transparent)
+
+(struct step/study step (study)
+  #:transparent)
+
+(struct study (requires provides steps)
   #:transparent)
 
 (define step-id/c symbol?)
@@ -160,6 +178,34 @@
 (define/contract (make-step id handler [transition (lambda () next)])
   (->* (step-id/c handler/c) (transition/c) step?)
   (step id handler transition))
+
+(define/contract (make-step/study id s [transition (lambda () next)])
+  (->* (step-id/c study?) (transition/c) step?)
+  (step/study
+   id
+   (lambda ()
+     (with-widget-parameterization
+       (run-study s)
+       (continue)))
+   transition
+   s))
+
+(define/contract (wrap-sub-study s wrapper)
+  (-> study? (-> handler/c handler/c) study?)
+  (struct-copy study s
+               [steps (for/list ([a-step (in-list (study-steps s))])
+                        (cond
+                          [(step/study? a-step)
+                           (make-step/study
+                            (step-id a-step)
+                            (wrap-sub-study (step/study-study a-step) wrapper)
+                            (step-transition a-step))]
+
+                          [else
+                           (make-step
+                            (step-id a-step)
+                            (wrapper (step-handler a-step))
+                            (step-transition a-step))]))]))
 
 
 ;; study ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -171,9 +217,6 @@
 
 (define current-step
   (make-parameter 'no-step))
-
-(struct study (requires provides steps)
-  #:transparent)
 
 (define/contract (make-study steps
                              #:requires [requires null]
@@ -208,9 +251,16 @@
      servlet-prompt))
 
   (log-study-debug "step ~.s returned ~.s" the-step res)
-  (cond
-    [(response? res)
+  (match res
+    [(? response?)
      (send/back res)]
+
+    [(cons 'to-step to-step-id)
+     (define new-req (redirect/get/forget/protect))
+     (define next-step (study-find-step s to-step-id))
+     (unless next-step
+       (error 'run-step "skipped to a nonexistent step: ~s~n  current step: ~.s~n  current study: ~.s" to-step-id the-step s))
+     (run-step new-req s next-step)]
 
     [else
      (define new-req (redirect/get/forget/protect))
