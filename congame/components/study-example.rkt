@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (except-in forms form)
+         koyo/haml
          "study.rkt")
 
 (provide
@@ -62,11 +63,21 @@
     (make-step 'simple
                (lambda ()
                  (run-study simple-study)
-                 (button void "Continue")))
+
+                 (haml
+                  (:div
+                   (:h1 "You are done with the simple study")
+                   (button void "Continue")))))
     (make-step 'give-consent-2
                give-consent))))
+
+(define (simple)
+  (haml
+   (:div
+    (:h1 "You are in the simple study")
+    (button void "Continue"))))
 
 (define simple-study
   (make-study
    (list
-    (make-step 'info info))))
+    (make-step 'simple simple))))

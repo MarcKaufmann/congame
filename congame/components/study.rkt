@@ -1,12 +1,15 @@
 #lang racket/base
 
-(require (for-syntax racket/base)
+(require (for-syntax racket/base
+                     syntax/parse
+                     syntax/parse/lib/function-header)
          koyo/continuation
          koyo/haml
          (except-in forms form)
          racket/contract
          racket/match
          racket/stxparam
+         syntax/parse/define
          web-server/servlet
          xml)
 
@@ -58,18 +61,6 @@
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-syntax-parameter continue
-  (lambda (stx)
-    (raise-syntax-error 'continue "can only be used inside with-continue-parameterization" stx)))
-
-(define-syntax-rule (with-continue-parameterization e ...)
-  ;; Capture return here so that any embedded (via embed/url) lambda can close over it.
-  (let ([return (current-return)])
-    (syntax-parameterize ([continue (syntax-rules ()
-                                      [(_)     (return 'continue)]
-                                      [(_ res) (return res)])])
-      e ...)))
-
 (define current-embed/url
   (make-parameter 'no-embed/url))
 
@@ -79,40 +70,81 @@
 (define current-return
   (make-parameter 'no-return))
 
-(define (button action label)
-  (with-continue-parameterization
-    (haml
-     (:a
-      ([:href
-        ((current-embed/url)
-         (lambda (_req)
-           (action)
-           (continue)))])
-      label))))
+(define-syntax-rule (define-widget-stxparams id ...)
+  (begin
+    (define-syntax-parameter id
+      (lambda (stx)
+        (raise-syntax-error #f "can only be used inside with-widget-parameterization" stx)))
+    ...))
 
-(define (form f action render)
-  (define embed/url (current-embed/url))
-  (define the-step (current-step))
-  (define return (current-return))
-  (with-continue-parameterization
-    (match (form-run f (current-request))
-      [(list 'passed res _)
-       (action res)
-       (continue)]
+(define-widget-stxparams
+  embed
+  this-request
+  this-step
+  continue)
 
-      [(list _ _ rw)
-       (haml
-        (:form
-         ([:action (embed/url
-                    (lambda (req)
-                      (parameterize ([current-embed/url embed/url]
-                                     [current-request req]
-                                     [current-return return]
-                                     [current-step the-step])
-                        (response/xexpr
-                         ((step-handler the-step))))))]
-          [:method "POST"])
-         (render rw)))])))
+(define-syntax-rule (with-widget-parameterization e ...)
+  ;; Capture return here so that any embedded (via embed/url) lambda can close over it.
+  (let ([embed/url (current-embed/url)]
+        [the-request (current-request)]
+        [the-step (current-step)]
+        [return (current-return)])
+    (syntax-parameterize ([embed
+                           (syntax-parser
+                             [(_ f:expr)
+                              #'(embed/url
+                                 (lambda (req)
+                                   (parameterize ([current-embed/url embed/url]
+                                                  [current-request req]
+                                                  [current-return return]
+                                                  [current-step the-step])
+                                     (f req))))])]
+
+                          [continue
+                           (syntax-parser
+                             [(_)
+                              #'(return 'continue)])]
+
+                          [this-request
+                           (lambda (stx)
+                             (syntax/loc stx the-request))]
+
+                          [this-step
+                           (lambda (stx)
+                             (syntax/loc stx the-step))])
+      e ...)))
+
+(define-syntax-parser define/widget
+  [(_ head:function-header body ...+)
+   #'(define head
+       (with-widget-parameterization
+         body ...))])
+
+(define/widget (button action label)
+  (haml
+   (:a
+    ([:href
+      (embed
+       (lambda (_req)
+         (action)
+         (continue)))])
+    label)))
+
+(define/widget (form f action render)
+  (match (form-run f this-request)
+    [(list 'passed res _)
+     (action res)
+     (continue)]
+
+    [(list _ _ rw)
+     (haml
+      (:form
+       ([:action (embed
+                  (lambda (_req)
+                    (response/xexpr
+                     ((step-handler this-step)))))]
+        [:method "POST"])
+       (render rw)))]))
 
 
 ;; step ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
