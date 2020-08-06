@@ -3,6 +3,8 @@
 (require (for-syntax racket/base
                      syntax/parse
                      syntax/parse/lib/function-header)
+         db
+         db/util/postgresql
          deta
          gregor
          koyo/continuation
@@ -10,7 +12,10 @@
          koyo/haml
          (except-in forms form)
          racket/contract
+         racket/fasl
          racket/match
+         racket/port
+         racket/serialize
          racket/string
          racket/stxparam
          syntax/parse/define
@@ -33,11 +38,11 @@
  run-study)
 
 ;; TODO:
-;;  * A table that contains study metadata: (name of the study, enlistment code, ...)
-;;  * A table that holds participation information for every user: (user_id, study_id, study_position, enlisted_at)
-;;  * An analogue of study_wide for `get' and `put': (user_id, study_id, study_stack, key, value, first_put_at, last_put_at)
-;;    -- study stack should be a pg array
-;;    -- key should just be text
+;; * add the git sha
+;; * implement resuming
+;; * admin: add studies, instances, visualize
+
+;; canaries ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-values (next next?)
   (let ()
@@ -50,18 +55,54 @@
     (values (done) done?)))
 
 
-(define *storage* (make-hash))
+;; storage ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(struct storage-key (stack k)
-  #:transparent)
+(define (deserialize* s)
+  (deserialize (fasl->s-exp (open-input-bytes s))))
+
+(define (serialize* v)
+  (call-with-output-bytes
+   (lambda (out)
+     (s-exp->fasl (serialize v) out))))
 
 (define (put k v)
-  (hash-set! *storage* (storage-key (current-study-stack) k) v))
+  (log-study-debug "PUT~n  stack: ~s~n  key: ~s~n  value: ~s" (current-step-array) k v)
+  (with-database-connection [conn (current-database)]
+    (query-exec conn #<<QUERY
+INSERT INTO study_data (
+  participant_id, study_stack, key, value, git_sha
+) VALUES (
+  $1, $2, $3, $4, 'FIXME'
+) ON CONFLICT (participant_id, study_stack, key) DO UPDATE SET
+  value = EXCLUDED.value,
+  git_sha = EXCLUDED.git_sha,
+  last_put_at = CURRENT_TIMESTAMP
+QUERY
+                (current-participant-id)
+                (current-step-array)
+                (symbol->string k)
+                (serialize* v))))
 
 (define (get k [default (lambda ()
                           (error 'get "value not found for key ~.s" k))])
-  (hash-ref *storage* (storage-key (current-study-stack) k) default))
+  (log-study-debug "GET~n  stack: ~s~n  key: ~s" (current-step-array) k)
+  (with-database-connection [conn (current-database)]
+    (define maybe-value
+      (query-maybe-value conn (~> (from "study_data" #:as d)
+                                  (select d.value)
+                                  (where (and
+                                          (= d.participant-id ,(current-participant-id))
+                                          (= d.study-stack ,(current-step-array))
+                                          (= d.key ,(symbol->string k)))))))
 
+    (cond
+      [maybe-value => deserialize*]
+      [(procedure? default) (default)]
+      [else default])))
+
+(define (current-step-array)
+  (list->pg-array
+   (reverse (map symbol->string (current-study-stack)))))
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -210,6 +251,7 @@
 
 (define-logger study)
 
+;; This is actually a stack of step ids where each step represents a [sub]study.
 (define current-study-stack
   (make-parameter null))
 
@@ -227,7 +269,9 @@
 
 (define/contract (run-study s [req (current-request)])
   (->* (study?) (request?) any)
-  (parameterize ([current-study-stack (cons s (current-study-stack))])
+  (parameterize ([current-study-stack (if (eq? (current-step) 'no-step)
+                                          (list '*root*)
+                                          (cons (step-id (current-step)) (current-study-stack)))])
     (begin0 (run-step req s (study-next-step s))
       (redirect/get/forget/protect))))
 
@@ -298,6 +342,8 @@
  (schema-out study-meta)
  (schema-out study-instance)
  (schema-out study-participant)
+ make-study-manager
+ current-study-manager
  list-study-instances
  enroll-participant!
  lookup-study)
@@ -327,6 +373,27 @@
    [(progress #()) (array/f string/f)]
    [(enrolled-at (now/moment)) datetime-tz/f]))
 
+(struct study-manager (participant db)
+  #:transparent)
+
+(define/contract (make-study-manager #:database db
+                                     #:participant participant)
+  (->* (#:database database?
+        #:participant study-participant?)
+       ()
+       study-manager?)
+  (study-manager participant db))
+
+(define/contract current-study-manager
+  (parameter/c (or/c #f study-manager?))
+  (make-parameter #f))
+
+(define current-database
+  (compose1 study-manager-db current-study-manager))
+
+(define current-participant-id
+  (compose1 study-participant-id study-manager-participant current-study-manager))
+
 (define/contract (list-study-instances db)
   (-> database? (listof study-instance?))
   (with-database-connection [conn db]
@@ -351,7 +418,7 @@
                       #:instance-id instance-id)))))
 
 (define/contract (lookup-study db slug user-id)
-  (-> database? string? id/c (or/c false/c study?))
+  (-> database? string? id/c (or/c false/c (list/c study? study-participant?)))
   (with-database-transaction [conn db]
     (cond
       [(lookup conn
@@ -363,14 +430,17 @@
                       (~> (from study-meta #:as m)
                           (where (= m.id ,(study-instance-study-id i))))))
 
-            (define enrolled?
+            (define participant
               (lookup conn
                       (~> (from study-participant #:as p)
                           (where (and (= p.user-id ,user-id)
                                       (= p.instance-id ,(study-instance-id i)))))))
 
-            (and enrolled? (dynamic-require
-                            (study-meta-racket-module meta)
-                            (study-meta-racket-id meta))))]
+            (and participant
+                 (list
+                  (dynamic-require
+                   (study-meta-racket-module meta)
+                   (study-meta-racket-id meta))
+                  participant)))]
 
       [else #f])))

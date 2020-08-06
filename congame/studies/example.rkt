@@ -2,6 +2,7 @@
 
 (require (except-in forms form)
          koyo/haml
+         racket/format
          "../components/study.rkt")
 
 (provide
@@ -23,16 +24,17 @@
 ;; powered by widgets, which themselves produce xexprs, but that have
 ;; arbitrary code which runs following user interaction.
 (define (give-consent)
-  `(div
-    (h1 "Do you consent?")
-    ,(button
-      (lambda ()
-        (put 'consented? #t))
-      "Yes")
-    ,(button
-      (lambda ()
-        (put 'consented? #f))
-      "No")))
+  (haml
+   (:div
+    (:h1 "Hi " (get 'name) "! Do you consent?")
+    (button
+     (lambda ()
+       (put 'consented? #t))
+     "Yes")
+    (button
+     (lambda ()
+       (put 'consented? #f))
+     "No"))))
 
 (define name-form
   (form* ([name (ensure binding/text (required))])
@@ -66,7 +68,10 @@
   (haml
    (:div
     (:h1 "You are in the deep study")
-    (button void "Continue"))))
+    (button
+     (lambda ()
+       (put 'clicked? #t))
+     "Continue"))))
 
 (define deep-study
   (make-study

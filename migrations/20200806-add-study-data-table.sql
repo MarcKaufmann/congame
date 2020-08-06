@@ -6,7 +6,7 @@
 -- @up {
 CREATE TABLE study_data(
   participant_id INTEGER NOT NULL REFERENCES study_participants(id) ON DELETE CASCADE,
-  progress TEXT[] NOT NULL,
+  study_stack TEXT[] NOT NULL,
   key TEXT NOT NULL,
   value BYTEA NOT NULL,
   git_sha TEXT NOT NULL,

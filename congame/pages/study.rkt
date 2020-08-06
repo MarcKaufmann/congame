@@ -3,6 +3,7 @@
 (require koyo/continuation
          koyo/haml
          koyo/url
+         racket/match
          web-server/dispatchers/dispatch
          web-server/http
          "../components/auth.rkt"
@@ -38,9 +39,14 @@
 (define ((study-page db) req slug)
   (cond
     [(lookup-study db slug (user-id (current-user)))
-     => (lambda (s)
-          (run-study s req)
-          (page '(p "Yer done")))]
+     => (match-lambda
+          ((list s participant)
+           (define manager
+             (make-study-manager #:database db
+                                 #:participant participant))
+           (parameterize ([current-study-manager manager])
+             (run-study s req)
+             (page '(p "Yer done")))))]
 
     [else
      (next-dispatcher)]))
