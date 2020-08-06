@@ -50,10 +50,6 @@
 (struct storage-key (stack k)
   #:transparent)
 
-;; To support cases where the step stores data as soon as it runs, we
-;; may need some kind of (once ...) primitive or two variants of put:
-;; one that only inserts data if a key isn't already set and one that
-;; upserts.
 (define (put k v)
   (hash-set! *storage* (storage-key (current-study-stack) k) v))
 
@@ -152,7 +148,6 @@
         [:method "POST"])
        (render rw)))]))
 
-;; Eventually we may want to have this take an optional step id to jump to.
 (define/widget (skip [to-step-id #f])
   (if to-step-id
       (continue to-step-id)
@@ -161,7 +156,6 @@
 
 ;; step ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; Maybe embed preconditions into steps rather than attempting to wrap them.
 (struct step (id handler transition)
   #:transparent)
 
@@ -192,20 +186,19 @@
 
 (define/contract (wrap-sub-study s wrapper)
   (-> study? (-> handler/c handler/c) study?)
-  (struct-copy study s
-               [steps (for/list ([a-step (in-list (study-steps s))])
-                        (cond
-                          [(step/study? a-step)
-                           (make-step/study
-                            (step-id a-step)
-                            (wrap-sub-study (step/study-study a-step) wrapper)
-                            (step-transition a-step))]
+  (struct-copy study s [steps (for/list ([a-step (in-list (study-steps s))])
+                                (cond
+                                  [(step/study? a-step)
+                                   (make-step/study
+                                    (step-id a-step)
+                                    (wrap-sub-study (step/study-study a-step) wrapper)
+                                    (step-transition a-step))]
 
-                          [else
-                           (make-step
-                            (step-id a-step)
-                            (wrapper (step-handler a-step))
-                            (step-transition a-step))]))]))
+                                  [else
+                                   (make-step
+                                    (step-id a-step)
+                                    (wrapper (step-handler a-step))
+                                    (step-transition a-step))]))]))
 
 
 ;; study ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -227,9 +220,6 @@
        study?)
   (study requires provides steps))
 
-;; Re. preconditions: if we bake them into steps/studies, there doesn't need
-;; to be a separate stack of preconditions, because when we resume,
-;; we'll run the precondition for each step (or possibly study).
 (define/contract (run-study s [req (current-request)])
   (->* (study?) (request?) any)
   (parameterize ([current-study-stack (cons s (current-study-stack))])
