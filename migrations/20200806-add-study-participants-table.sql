@@ -9,7 +9,9 @@ CREATE TABLE study_participants(
   user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   instance_id INTEGER NOT NULL REFERENCES study_instances(id) ON DELETE CASCADE,
   progress TEXT[] NOT NULL DEFAULT '{}',
-  enrolled_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  enrolled_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT study_participants_uniq UNIQUE (user_id, instance_id)
 );
 -- }
 

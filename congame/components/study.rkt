@@ -3,15 +3,20 @@
 (require (for-syntax racket/base
                      syntax/parse
                      syntax/parse/lib/function-header)
+         deta
+         gregor
          koyo/continuation
+         koyo/database
          koyo/haml
          (except-in forms form)
          racket/contract
          racket/match
+         racket/string
          racket/stxparam
          syntax/parse/define
+         threading
          web-server/servlet
-         xml)
+         (only-in xml xexpr?))
 
 (provide
  next
@@ -285,3 +290,87 @@
   (for/first ([a-step (in-list (study-steps s))]
               #:when (eq? (step-id a-step) id))
     a-step))
+
+
+;; db ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ (schema-out study-meta)
+ (schema-out study-instance)
+ (schema-out study-participant)
+ list-study-instances
+ enroll-participant!
+ lookup-study)
+
+(define-schema study-meta
+  #:table "studies"
+  ([id integer/f #:primary-key #:auto-increment]
+   [name string/f #:contract non-empty-string?]
+   [slug string/f #:contract non-empty-string?]
+   [racket-module symbol/f]
+   [racket-id symbol/f]
+   [(created-at (now/moment)) datetime-tz/f]))
+
+(define-schema study-instance
+  #:table "study_instances"
+  ([id integer/f #:primary-key #:auto-increment]
+   [study-id integer/f]
+   [name string/f #:contract non-empty-string?]
+   [slug string/f #:contract non-empty-string?]
+   [(created-at (now/moment)) datetime-tz/f]))
+
+(define-schema study-participant
+  #:table "study_participants"
+  ([id integer/f #:primary-key #:auto-increment]
+   [user-id integer/f]
+   [instance-id integer/f]
+   [(progress #()) (array/f string/f)]
+   [(enrolled-at (now/moment)) datetime-tz/f]))
+
+(define/contract (list-study-instances db)
+  (-> database? (listof study-instance?))
+  (with-database-connection [conn db]
+    (for/list ([i (in-entities conn (~> (from study-instance #:as i)
+                                        (order-by ([i.created-at #:desc]))))])
+      i)))
+
+(define/contract (enroll-participant! db user-id instance-id)
+  (-> database? id/c id/c study-participant?)
+  (with-database-transaction [conn db]
+    #:isolation 'serializable
+    (define maybe-participant
+      (lookup conn
+              (~> (from study-participant #:as p)
+                  (where (and (= p.user-id ,user-id)
+                              (= p.instance-id ,instance-id))))))
+
+    (or maybe-participant
+        (insert-one! conn
+                     (make-study-participant
+                      #:user-id user-id
+                      #:instance-id instance-id)))))
+
+(define/contract (lookup-study db slug user-id)
+  (-> database? string? id/c (or/c false/c study?))
+  (with-database-transaction [conn db]
+    (cond
+      [(lookup conn
+               (~> (from study-instance #:as i)
+                   (where (= i.slug ,slug))))
+       => (lambda (i)
+            (define meta
+              (lookup conn
+                      (~> (from study-meta #:as m)
+                          (where (= m.id ,(study-instance-study-id i))))))
+
+            (define enrolled?
+              (lookup conn
+                      (~> (from study-participant #:as p)
+                          (where (and (= p.user-id ,user-id)
+                                      (= p.instance-id ,(study-instance-id i)))))))
+
+            (and enrolled? (dynamic-require
+                            (study-meta-racket-module meta)
+                            (study-meta-racket-id meta))))]
+
+      [else #f])))

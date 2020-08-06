@@ -2,17 +2,8 @@
 
 (require (for-syntax racket/base)
          component
-         koyo/continuation
-         koyo/cors
+         koyo
          koyo/database/migrator
-         koyo/dispatch
-         koyo/flash
-         koyo/l10n
-         koyo/mime
-         koyo/preload
-         koyo/profiler
-         koyo/session
-         koyo/url
          net/url
          racket/contract
          racket/runtime-path
@@ -52,16 +43,17 @@
 (struct app (dispatcher)
   #:methods gen:component [])
 
-(define/contract (make-app auth flashes mailer _migrator sessions users)
-  (-> auth-manager? flash-manager? mailer? migrator? session-manager? user-manager? app?)
+(define/contract (make-app auth db flashes mailer _migrator sessions users)
+  (-> auth-manager? database? flash-manager? mailer? migrator? session-manager? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
       #:roles (user)
-      dashboard-page]
+      (study-instances-page db)]
 
-     [("study")
-      study-page]
+     [("study" (string-arg))
+      #:roles (user)
+      (study-page db)]
 
      [("login")
       (login-page auth)]

@@ -29,7 +29,7 @@
   (-> auth-manager? (-> request? response?))
 
   (define return-url
-    (bindings-ref (request-bindings/raw req) 'return (reverse-uri 'dashboard-page)))
+    (bindings-ref (request-bindings/raw req) 'return (reverse-uri 'study-instances-page)))
 
   (let loop ([req req])
     (send/suspend/dispatch/protect

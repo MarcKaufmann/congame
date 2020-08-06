@@ -2,7 +2,7 @@
 
 (require (except-in forms form)
          koyo/haml
-         "study.rkt")
+         "../components/study.rkt")
 
 (provide
  consent-study
