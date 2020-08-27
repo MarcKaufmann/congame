@@ -20,7 +20,8 @@
          syntax/parse/define
          threading
          web-server/servlet
-         (only-in xml xexpr?))
+         (only-in xml xexpr?)
+         "git.rkt")
 
 (provide
  next
@@ -37,9 +38,7 @@
  run-study)
 
 ;; TODO:
-;; * implement resuming
-;; * add the git sha
-;; * admin: add studies, instances, visualize
+;; * admin: add studies, instances, visualize, reset users' data
 
 ;; canaries ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -71,7 +70,7 @@
 INSERT INTO study_data (
   participant_id, study_stack, key, value, git_sha
 ) VALUES (
-  $1, $2, $3, $4, 'FIXME'
+  $1, $2, $3, $4, $5
 ) ON CONFLICT (participant_id, study_stack, key) DO UPDATE SET
   value = EXCLUDED.value,
   git_sha = EXCLUDED.git_sha,
@@ -80,7 +79,8 @@ QUERY
                 (current-participant-id)
                 (current-study-array)
                 (symbol->string k)
-                (serialize* v))))
+                (serialize* v)
+                current-git-sha)))
 
 (define (get k [default (lambda ()
                           (error 'get "value not found for key ~.s" k))])
