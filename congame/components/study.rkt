@@ -366,6 +366,7 @@ QUERY
  call-with-study-manager
  list-study-instances
  enroll-participant!
+ mark-participant-completed!
  lookup-study)
 
 (define-schema study-meta
@@ -391,6 +392,7 @@ QUERY
    [user-id integer/f]
    [instance-id integer/f]
    [(progress #()) (array/f string/f)]
+   [(completed? #f) boolean/f]
    [(enrolled-at (now/moment)) datetime-tz/f]))
 
 (struct study-manager (participant db)
@@ -466,15 +468,20 @@ QUERY
       [else #f])))
 
 (define (update-participant-progress! step-id)
-  (define sm (current-study-manager))
-  (define p (study-manager-participant sm))
-  (with-database-connection [conn (study-manager-db sm)]
+  (define m (current-study-manager))
+  (define p (study-manager-participant m))
+  (with-database-connection [conn (study-manager-db m)]
     (define progress
       (list->vector
        (append
         (map symbol->string (current-study-ids))
         (list (symbol->string step-id)))))
     (update! conn (set-study-participant-progress p progress))))
+
+(define (mark-participant-completed! m)
+  (define p (study-manager-participant m))
+  (with-database-connection [conn (study-manager-db m)]
+    (update! conn (set-study-participant-completed? p #t))))
 
 (define (current-participant-progress m)
   (define p (study-manager-participant m))

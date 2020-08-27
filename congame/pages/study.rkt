@@ -41,13 +41,16 @@
     [(lookup-study db slug (user-id (current-user)))
      => (match-lambda
           [(list s participant)
-           (define manager
-             (make-study-manager #:database db
-                                 #:participant participant))
-           (call-with-study-manager
-            manager
-            (lambda ()
-              (run-study s req)))
+           (unless (study-participant-completed? participant)
+             (define manager
+               (make-study-manager #:database db
+                                   #:participant participant))
+             (call-with-study-manager
+              manager
+              (lambda ()
+                (run-study s req)))
+             (mark-participant-completed! manager)
+             (redirect/get/forget/protect))
            (page '(p "Yer done"))])]
 
     [else
