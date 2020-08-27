@@ -40,13 +40,13 @@
   (cond
     [(lookup-study db slug (user-id (current-user)))
      => (match-lambda
-          ((list s participant)
+          [(list s participant)
            (define manager
              (make-study-manager #:database db
                                  #:participant participant))
            (parameterize ([current-study-manager manager])
              (run-study s req)
-             (page '(p "Yer done")))))]
+             (page '(p "Yer done")))])]
 
     [else
      (next-dispatcher)]))

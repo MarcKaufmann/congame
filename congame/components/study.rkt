@@ -65,7 +65,7 @@
      (s-exp->fasl (serialize v) out))))
 
 (define (put k v)
-  (log-study-debug "PUT~n  stack: ~s~n  key: ~s~n  value: ~s" (current-step-list) k v)
+  (log-study-debug "PUT~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
   (with-database-connection [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_data (
@@ -78,20 +78,20 @@ INSERT INTO study_data (
   last_put_at = CURRENT_TIMESTAMP
 QUERY
                 (current-participant-id)
-                (current-step-array)
+                (current-study-array)
                 (symbol->string k)
                 (serialize* v))))
 
 (define (get k [default (lambda ()
                           (error 'get "value not found for key ~.s" k))])
-  (log-study-debug "GET~n  stack: ~s~n  key: ~s" (current-step-list) k)
+  (log-study-debug "GET~n  stack: ~s~n  key: ~s" (current-study-ids) k)
   (with-database-connection [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_data" #:as d)
                                   (select d.value)
                                   (where (and
                                           (= d.participant-id ,(current-participant-id))
-                                          (= d.study-stack ,(current-step-array))
+                                          (= d.study-stack ,(current-study-array))
                                           (= d.key ,(symbol->string k)))))))
 
     (cond
@@ -99,11 +99,11 @@ QUERY
       [(procedure? default) (default)]
       [else default])))
 
-(define (current-step-list)
-  (reverse (map symbol->string (current-study-stack))))
+(define (current-study-ids)
+  (reverse (current-study-stack)))
 
-(define (current-step-array)
-  (list->pg-array (current-step-list)))
+(define (current-study-array)
+  (list->pg-array (map symbol->string (current-study-ids))))
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -278,6 +278,7 @@ QUERY
 
 (define (run-step req s the-step)
   (log-study-debug "running step: ~.s" the-step)
+  (update-progress! (step-id the-step))
   (define res
     (call-with-current-continuation
      (lambda (return)
@@ -371,7 +372,8 @@ QUERY
   ([id integer/f #:primary-key #:auto-increment]
    [user-id integer/f]
    [instance-id integer/f]
-   [(progress #()) (array/f string/f)]
+   [(current-study-stack #()) (array/f string/f)]
+   [(current-step-id (sql-null)) string/f #:nullable]
    [(enrolled-at (now/moment)) datetime-tz/f]))
 
 (struct study-manager (participant db)
@@ -445,3 +447,10 @@ QUERY
                   participant)))]
 
       [else #f])))
+
+(define (update-progress! step-id)
+  (define sm (current-study-manager))
+  (with-database-connection [conn (study-manager-db sm)]
+    (update! conn (~> (study-manager-participant sm)
+                      (set-study-participant-current-study-stack (pg-array-contents (current-study-array)))
+                      (set-study-participant-current-step-id (symbol->string step-id))))))
