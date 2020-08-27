@@ -249,7 +249,6 @@ QUERY
 
 
 ;; study ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (define-logger study)
 
 ;; This is actually a stack of step ids where each step represents a [sub]study.
@@ -258,6 +257,9 @@ QUERY
 
 (define current-step
   (make-parameter 'no-step))
+
+(define current-resume-stack
+  (make-parameter null))
 
 (define/contract (make-study steps
                              #:requires [requires null]
@@ -270,15 +272,31 @@ QUERY
 
 (define/contract (run-study s [req (current-request)])
   (->* (study?) (request?) any)
-  (parameterize ([current-study-stack (if (eq? (current-step) 'no-step)
-                                          (list '*root*)
-                                          (cons (step-id (current-step)) (current-study-stack)))])
-    (begin0 (run-step req s (study-next-step s))
-      (redirect/get/forget/protect))))
+  (define resume-stack (current-resume-stack))
+  (define new-study-stack
+    (if (eq? (current-step) 'no-step)
+        (list '*root*)
+        (cons (step-id (current-step)) (current-study-stack))))
+  (parameterize ([current-study-stack new-study-stack])
+    (cond
+      [(null? resume-stack)
+       (begin0 (run-step req s (study-next-step s))
+         (redirect/get/forget/protect))]
+
+      [else
+       (define the-step (study-find-step s (car resume-stack)))
+       (unless the-step (raise-resume-error))
+       (parameterize ([current-resume-stack (cdr resume-stack)])
+         (run-step req s the-step))])))
+
+(define (raise-resume-error)
+  (define-values (resume-stack resume-step)
+    (current-participant-progress (current-study-manager)))
+  (error 'run-study "failed to resume step in study~n  resume step: ~.s~n  resume stack: ~.s" resume-step resume-stack))
 
 (define (run-step req s the-step)
   (log-study-debug "running step: ~.s" the-step)
-  (update-progress! (step-id the-step))
+  (update-participant-progress! (step-id the-step))
   (define res
     (call-with-current-continuation
      (lambda (return)
@@ -345,7 +363,7 @@ QUERY
  (schema-out study-instance)
  (schema-out study-participant)
  make-study-manager
- current-study-manager
+ call-with-study-manager
  list-study-instances
  enroll-participant!
  lookup-study)
@@ -372,8 +390,7 @@ QUERY
   ([id integer/f #:primary-key #:auto-increment]
    [user-id integer/f]
    [instance-id integer/f]
-   [(current-study-stack #()) (array/f string/f)]
-   [(current-step-id (sql-null)) string/f #:nullable]
+   [(progress #()) (array/f string/f)]
    [(enrolled-at (now/moment)) datetime-tz/f]))
 
 (struct study-manager (participant db)
@@ -448,9 +465,26 @@ QUERY
 
       [else #f])))
 
-(define (update-progress! step-id)
+(define (update-participant-progress! step-id)
   (define sm (current-study-manager))
+  (define p (study-manager-participant sm))
   (with-database-connection [conn (study-manager-db sm)]
-    (update! conn (~> (study-manager-participant sm)
-                      (set-study-participant-current-study-stack (pg-array-contents (current-study-array)))
-                      (set-study-participant-current-step-id (symbol->string step-id))))))
+    (define progress
+      (list->vector
+       (append
+        (map symbol->string (current-study-ids))
+        (list (symbol->string step-id)))))
+    (update! conn (set-study-participant-progress p progress))))
+
+(define (current-participant-progress m)
+  (define p (study-manager-participant m))
+  (for*/list ([id:str (in-vector (study-participant-progress p))]
+              [id (in-value (string->symbol id:str))]
+              #:unless (eq? id '*root*))
+    id))
+
+(define/contract (call-with-study-manager mgr f)
+  (-> study-manager? (-> any) any)
+  (parameterize ([current-study-manager mgr]
+                 [current-resume-stack (current-participant-progress mgr)])
+    (f)))

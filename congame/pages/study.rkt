@@ -44,9 +44,11 @@
            (define manager
              (make-study-manager #:database db
                                  #:participant participant))
-           (parameterize ([current-study-manager manager])
-             (run-study s req)
-             (page '(p "Yer done")))])]
+           (call-with-study-manager
+            manager
+            (lambda ()
+              (run-study s req)))
+           (page '(p "Yer done"))])]
 
     [else
      (next-dispatcher)]))
