@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse
                      syntax/parse/lib/function-header)
          db
          db/util/postgresql
@@ -38,8 +37,8 @@
  run-study)
 
 ;; TODO:
-;; * add the git sha
 ;; * implement resuming
+;; * add the git sha
 ;; * admin: add studies, instances, visualize
 
 ;; canaries ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -66,7 +65,7 @@
      (s-exp->fasl (serialize v) out))))
 
 (define (put k v)
-  (log-study-debug "PUT~n  stack: ~s~n  key: ~s~n  value: ~s" (current-step-array) k v)
+  (log-study-debug "PUT~n  stack: ~s~n  key: ~s~n  value: ~s" (current-step-list) k v)
   (with-database-connection [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_data (
@@ -85,7 +84,7 @@ QUERY
 
 (define (get k [default (lambda ()
                           (error 'get "value not found for key ~.s" k))])
-  (log-study-debug "GET~n  stack: ~s~n  key: ~s" (current-step-array) k)
+  (log-study-debug "GET~n  stack: ~s~n  key: ~s" (current-step-list) k)
   (with-database-connection [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_data" #:as d)
@@ -100,9 +99,11 @@ QUERY
       [(procedure? default) (default)]
       [else default])))
 
+(define (current-step-list)
+  (reverse (map symbol->string (current-study-stack))))
+
 (define (current-step-array)
-  (list->pg-array
-   (reverse (map symbol->string (current-study-stack)))))
+  (list->pg-array (current-step-list)))
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -301,7 +302,7 @@ QUERY
        (error 'run-step "skipped to a nonexistent step: ~s~n  current step: ~.s~n  current study: ~.s" to-step-id the-step s))
      (run-step new-req s next-step)]
 
-    [else
+    [_
      (define new-req (redirect/get/forget/protect))
      (define next-step
        (match ((step-transition the-step))
