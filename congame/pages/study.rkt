@@ -22,7 +22,7 @@
      (page
       (haml
        (:ul
-        ,@(for/list ([i (in-list (list-all-study-instances db))])
+        ,@(for/list ([i (in-list (list-active-study-instances db))])
             (haml
              (:li
               (study-instance-name i)

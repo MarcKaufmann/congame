@@ -368,6 +368,7 @@ QUERY
  list-studies
  list-study-instances
  list-all-study-instances
+ list-active-study-instances
  enroll-participant!
  mark-participant-completed!
  lookup-study)
@@ -442,21 +443,38 @@ QUERY
      (in-entities conn (~> (from study-instance #:as i)
                            (order-by ([i.created-at #:desc])))))))
 
+(define/contract (list-active-study-instances db)
+  (-> database? (listof study-instance?))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn (~> (from study-instance #:as i)
+                           (where (= i.status "active"))
+                           (order-by ([i.created-at #:desc])))))))
+
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)
   (with-database-transaction [conn db]
     #:isolation 'serializable
-    (define maybe-participant
-      (lookup conn
-              (~> (from study-participant #:as p)
-                  (where (and (= p.user-id ,user-id)
-                              (= p.instance-id ,instance-id))))))
+    (cond
+      [(lookup conn
+               (~> (from study-instances #:as i)
+                   (where (and
+                           (= i.id ,instance-id)
+                           (= i.status "active")))))
+       => (lambda (_instance)
+            (define maybe-participant
+              (lookup conn
+                      (~> (from study-participant #:as p)
+                          (where (and (= p.user-id ,user-id)
+                                      (= p.instance-id ,instance-id))))))
 
-    (or maybe-participant
-        (insert-one! conn
-                     (make-study-participant
-                      #:user-id user-id
-                      #:instance-id instance-id)))))
+            (or maybe-participant
+                (insert-one! conn
+                             (make-study-participant
+                              #:user-id user-id
+                              #:instance-id instance-id))))]
+
+      [else #f])))
 
 (define/contract (lookup-study db slug user-id)
   (-> database? string? id/c (or/c false/c (list/c study? study-participant?)))
