@@ -14,6 +14,7 @@
          racket/fasl
          racket/match
          racket/port
+         racket/sequence
          racket/serialize
          racket/string
          racket/stxparam
@@ -364,6 +365,7 @@ QUERY
  (schema-out study-participant)
  make-study-manager
  call-with-study-manager
+ list-studies
  list-study-instances
  enroll-participant!
  mark-participant-completed!
@@ -415,6 +417,13 @@ QUERY
 
 (define current-participant-id
   (compose1 study-participant-id study-manager-participant current-study-manager))
+
+(define/contract (list-studies db)
+  (-> database? (listof study-meta?))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn (~> (from study-meta #:as s)
+                           (order-by ([s.created-at #:desc])))))))
 
 (define/contract (list-study-instances db)
   (-> database? (listof study-instance?))

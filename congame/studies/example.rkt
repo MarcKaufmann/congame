@@ -2,7 +2,6 @@
 
 (require (except-in forms form)
          koyo/haml
-         racket/format
          "../components/study.rkt")
 
 (provide

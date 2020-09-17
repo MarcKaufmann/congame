@@ -54,10 +54,15 @@
 
      [("admin")
       #:roles (admin)
-      (lambda (req)
-        (response/output
-         (lambda (out)
-           (displayln "hello" out))))]
+      (admin:studies-page db)]
+
+     [("admin" "studies" "new")
+      #:roles (admin)
+      (admin:create-study-page db)]
+
+     [("admin" "studies" (integer-arg))
+      #:roles (admin)
+      (admin:view-study-page db)]
 
      [("study" (string-arg))
       #:roles (user)
