@@ -13,6 +13,7 @@
          (prefix-in filter: web-server/dispatchers/dispatch-filter)
          (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
          web-server/dispatchers/filesystem-map
+         web-server/http
          web-server/managers/lru
          web-server/servlet-dispatch
          (prefix-in config: "../config.rkt")
@@ -50,6 +51,13 @@
      [("")
       #:roles (user)
       (study-instances-page db)]
+
+     [("admin")
+      #:roles (admin)
+      (lambda (req)
+        (response/output
+         (lambda (out)
+           (displayln "hello" out))))]
 
      [("study" (string-arg))
       #:roles (user)

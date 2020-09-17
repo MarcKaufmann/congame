@@ -66,19 +66,26 @@
 
   (with-timing 'auth "wrap-auth-required"
     (define roles (req-roles req))
-    (cond
-      [(null? roles)
-       (handler req)]
+    (define-values (u ok?)
+      (cond
+        [(null? roles)
+         (values #f #t)]
 
-      ;; NOTE: Roles are not actually checked beyond this point.  If you
-      ;; implement roles other than 'user then you're going to want to
-      ;; change this.
-      [(and~>> (session-ref session-key #f)
-               (string->number)
-               (user-manager-lookup/id (auth-manager-users am)))
-       => (lambda (user)
-            (parameterize ([current-user user])
-              (handler req)))]
+        [(and~>> (session-ref session-key #f)
+                 (string->number)
+                 (user-manager-lookup/id (auth-manager-users am)))
+         => (lambda (user)
+              (values user (if (memq 'admin roles)
+                               (user-admin? user)
+                               #t)))]
+
+        [else
+         (values #f #f)]))
+
+    (cond
+      [ok?
+       (parameterize ([current-user u])
+         (handler req))]
 
       [else
        (redirect-to (make-application-url "login" #:query `((return . ,(url->string (request-uri req))))))])))
