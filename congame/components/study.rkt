@@ -375,7 +375,8 @@ QUERY
  mark-participant-completed!
  lookup-study
  lookup-study-meta
- lookup-study-instance)
+ lookup-study-instance
+ lookup-study-participant/admin)
 
 (define-schema study-meta
   #:table "studies"
@@ -538,6 +539,15 @@ QUERY
   (with-database-connection [conn db]
     (lookup conn (~> (from study-instance #:as i)
                      (where (= i.id ,instance-id))))))
+
+(define/contract (lookup-study-participant/admin db participant-id)
+  (-> database? id/c (or/c #f study-participant/admin?))
+  (with-database-connection [conn db]
+    (lookup conn (~> (from study-participant #:as p)
+                     (join user #:as u #:on (= u.id p.user-id))
+                     (where (= p.id ,participant-id))
+                     (select p.id u.username p.progress p.completed? p.enrolled-at)
+                     (project-onto study-participant/admin-schema)))))
 
 (define (update-participant-progress! step-id)
   (define m (current-study-manager))

@@ -26,7 +26,8 @@
  view-study-page
  create-study-instance-page
  edit-study-instance-page
- view-study-instance-page)
+ view-study-instance-page
+ view-study-participant-page)
 
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
@@ -261,8 +262,28 @@
         ,@(for/list ([p (in-list participants)])
             (haml
              (:tr
-              (:td (~a (study-participant/admin-id p)))
+              (:td
+               (:a
+                ([:href (reverse-uri 'admin:view-study-participant-page study-id study-instance-id (study-participant/admin-id p))])
+                (~a (study-participant/admin-id p))))
               (:td (study-participant/admin-email p))
               (:td (if (study-participant/admin-completed? p) "yes" "no"))
               (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))
               (:td (~a (study-participant/admin-progress p)))))))))))))
+
+(define/contract ((view-study-participant-page db) _req study-id study-instance-id participant-id)
+  (-> database? (-> request? id/c id/c id/c response?))
+  (define the-study
+    (lookup-study-meta db study-id))
+  (define the-instance
+    (lookup-study-instance db study-instance-id))
+  (define the-participant
+    (lookup-study-participant/admin db participant-id))
+  (unless (and the-study the-instance the-participant)
+    (next-dispatcher))
+  (page
+   (container
+    (haml
+     (:section.study-participant
+      (:h1 (study-participant/admin-email the-participant))
+      (:h4 "Instance '" (study-instance-name the-instance) "' of study '" (study-meta-name the-study) "'"))))))

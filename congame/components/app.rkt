@@ -76,6 +76,10 @@
       #:roles (admin)
       (admin:view-study-instance-page db)]
 
+     [("admin" "studies" (integer-arg) "instances" (integer-arg) "participants" (integer-arg))
+      #:roles (admin)
+      (admin:view-study-participant-page db)]
+
      [("study" (string-arg))
       #:roles (user)
       (study-page db)]
