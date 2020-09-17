@@ -143,8 +143,11 @@
 
 (define create-study-instance-form
   (form* ([name (ensure binding/text (required))]
-          [slug (ensure binding/text)])
-    (list name (or slug (slugify name)))))
+          [slug (ensure binding/text)]
+          [status (ensure binding/text (required) (one-of '(("active" . active)
+                                                            ("inactive" . inactive)
+                                                            ("archived" . archived))))])
+    (list name (or slug (slugify name)) status)))
 
 (define (render-study-instance-form target rw)
   (haml
@@ -153,6 +156,9 @@
      [:method "POST"])
     (rw "name" (field-group "Name"))
     (rw "slug" (field-group "Slug"))
+    (rw "status" (field-group "Status" (widget-select '(("active"   . "Active")
+                                                        ("inactive" . "Inactive")
+                                                        ("archived" . "Archived")))))
     (:button
      ([:type "submit"])
      "Create"))))
@@ -163,13 +169,14 @@
     (send/suspend/dispatch/protect
      (lambda (embed/url)
        (match (form-run create-study-instance-form req)
-         [(list 'passed (list name slug) _)
+         [(list 'passed (list name slug status) _)
           (define the-study-instance
             (with-database-connection [conn db]
               (insert-one! conn (make-study-instance
                                  #:study-id study-id
                                  #:name name
-                                 #:slug slug))))
+                                 #:slug slug
+                                 #:status status))))
 
           (redirect-to (reverse-uri 'admin:view-study-page study-id))]
 

@@ -5,7 +5,7 @@
 -- @description: Adds the is_admin column to users.
 -- @up {
 ALTER TABLE users
-  ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+  ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT FALSE;
 -- }
 
 -- @down {

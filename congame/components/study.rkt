@@ -387,6 +387,7 @@ QUERY
    [study-id integer/f]
    [name string/f #:contract non-empty-string?]
    [slug string/f #:contract non-empty-string?]
+   [(status 'active) symbol/f #:contract (or/c 'active 'inactive 'archived)]
    [(created-at (now/moment)) datetime-tz/f]))
 
 (define-schema study-participant
