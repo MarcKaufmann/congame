@@ -154,3 +154,15 @@ body {
     }
   }
 }
+
+.table {
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+  }
+
+  th, td {
+    padding: 6px 12px;
+  }
+}

@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          deta
+         gregor
          koyo/continuation
          koyo/database
          koyo/haml
@@ -229,6 +230,8 @@
   (define the-instance (lookup-study-instance db study-instance-id))
   (unless the-instance
     (next-dispatcher))
+  (define participants
+    (list-study-instance-participants/admin db study-instance-id))
   (page
    (container
     (haml
@@ -238,10 +241,26 @@
        (:a
         ([:href (reverse-uri 'admin:edit-study-instance-page study-id study-instance-id)])
         "Edit"))
-      (:table
+      (:table.table
        (:tr
         (:th "Slug")
         (:td (study-instance-slug the-instance)))
        (:tr
         (:th "Status")
-        (:td (~a (study-instance-status the-instance))))))))))
+        (:td (~a (study-instance-status the-instance)))))
+      (:h2 "Participants")
+      (:table.table
+       (:thead
+        (:tr
+         (:th "Email")
+         (:th "Completed?")
+         (:th "Enrolled At")
+         (:th "Progress")))
+       (:tbody
+        ,@(for/list ([p (in-list participants)])
+            (haml
+             (:tr
+              (:td (study-participant/admin-email p))
+              (:td (if (study-participant/admin-completed? p) "yes" "no"))
+              (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))
+              (:td (~a (study-participant/admin-progress p)))))))))))))

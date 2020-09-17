@@ -363,12 +363,14 @@ QUERY
  (schema-out study-meta)
  (schema-out study-instance)
  (schema-out study-participant)
+ (schema-out study-participant/admin)
  make-study-manager
  call-with-study-manager
  list-studies
  list-study-instances
  list-all-study-instances
  list-active-study-instances
+ list-study-instance-participants/admin
  enroll-participant!
  mark-participant-completed!
  lookup-study
@@ -401,6 +403,13 @@ QUERY
    [(progress #()) (array/f string/f)]
    [(completed? #f) boolean/f]
    [(enrolled-at (now/moment)) datetime-tz/f]))
+
+(define-schema study-participant/admin
+  #:virtual
+  ([email string/f]
+   [progress (array/f string/f)]
+   [completed? boolean/f]
+   [enrolled-at datetime-tz/f]))
 
 (struct study-manager (participant db)
   #:transparent)
@@ -452,6 +461,17 @@ QUERY
      (in-entities conn (~> (from study-instance #:as i)
                            (where (= i.status "active"))
                            (order-by ([i.created-at #:desc])))))))
+
+(define/contract (list-study-instance-participants/admin db instance-id)
+  (-> database? id/c (listof study-participant/admin?))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn (~> (from study-participant #:as p)
+                           (join user #:as u #:on (= u.id p.user-id))
+                           (where (= p.instance-id ,instance-id))
+                           (order-by ([p.enrolled-at #:desc]))
+                           (select u.username p.progress p.completed? p.enrolled-at)
+                           (project-onto study-participant/admin-schema))))))
 
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)
