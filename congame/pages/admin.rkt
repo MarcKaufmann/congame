@@ -14,6 +14,7 @@
          racket/path
          racket/runtime-path
          threading
+         web-server/dispatchers/dispatch
          web-server/http
          "../components/study.rkt"
          "../components/template.rkt")
@@ -22,7 +23,9 @@
  studies-page
  create-study-page
  view-study-page
- create-study-instance-page)
+ create-study-instance-page
+ edit-study-instance-page
+ view-study-instance-page)
 
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
@@ -124,6 +127,8 @@
 
 (define/contract ((view-study-page db) _req study-id)
   (-> database? (-> request? id/c response?))
+  (unless (lookup-study-meta db study-id)
+    (next-dispatcher))
   (define instances
     (list-study-instances db study-id))
   (page
@@ -139,9 +144,11 @@
        ,@(for/list ([s (in-list instances)])
            (haml
             (:li
-             (study-instance-name s))))))))))
+             (:a
+              ([:href (reverse-uri 'admin:view-study-instance-page study-id (study-instance-id s))])
+              (study-instance-name s)))))))))))
 
-(define create-study-instance-form
+(define study-instance-form
   (form* ([name (ensure binding/text (required))]
           [slug (ensure binding/text)]
           [status (ensure binding/text (required) (one-of '(("active" . active)
@@ -149,7 +156,7 @@
                                                             ("archived" . archived))))])
     (list name (or slug (slugify name)) status)))
 
-(define (render-study-instance-form target rw)
+(define (render-study-instance-form target rw [submit-label "Create"])
   (haml
    (:form
     ([:action target]
@@ -161,14 +168,14 @@
                                                         ("archived" . "Archived")))))
     (:button
      ([:type "submit"])
-     "Create"))))
+     submit-label))))
 
 (define/contract ((create-study-instance-page db) req study-id)
   (-> database? (-> request? id/c response?))
   (let loop ([req req])
     (send/suspend/dispatch/protect
      (lambda (embed/url)
-       (match (form-run create-study-instance-form req)
+       (match (form-run study-instance-form req)
          [(list 'passed (list name slug status) _)
           (define the-study-instance
             (with-database-connection [conn db]
@@ -187,3 +194,54 @@
              (:section.create-study
               (:h1 "Create Study Instance")
               (render-study-instance-form (embed/url loop) rw)))))])))))
+
+(define/contract ((edit-study-instance-page db) req study-id study-instance-id)
+  (-> database? (-> request? id/c id/c response?))
+  (let loop ([req req])
+    (define the-instance (lookup-study-instance db study-instance-id))
+    (unless the-instance
+      (next-dispatcher))
+    (send/suspend/dispatch/protect
+     (lambda (embed/url)
+       (define defaults
+         (hash "name" (study-instance-name the-instance)
+               "slug" (study-instance-slug the-instance)
+               "status" (~a (study-instance-status the-instance))))
+       (match (form-run study-instance-form req #:defaults defaults)
+         [(list 'passed (list name slug status) _)
+          (with-database-connection [conn db]
+            (update-one! conn (~> the-instance
+                                  (set-study-instance-name name)
+                                  (set-study-instance-slug slug)
+                                  (set-study-instance-status status))))
+          (redirect-to (reverse-uri 'admin:view-study-instance-page study-id study-instance-id))]
+
+         [(list _ _ rw)
+          (page
+           (container
+            (haml
+             (:section.edit-study-instance
+              (:h1 "Edit Instance")
+              (render-study-instance-form (embed/url loop) rw "Update")))))])))))
+
+(define/contract ((view-study-instance-page db) _req study-id study-instance-id)
+  (-> database? (-> request? id/c id/c response?))
+  (define the-instance (lookup-study-instance db study-instance-id))
+  (unless the-instance
+    (next-dispatcher))
+  (page
+   (container
+    (haml
+     (:section.study-instance
+      (:h1 (study-instance-name the-instance))
+      (:h4
+       (:a
+        ([:href (reverse-uri 'admin:edit-study-instance-page study-id study-instance-id)])
+        "Edit"))
+      (:table
+       (:tr
+        (:th "Slug")
+        (:td (study-instance-slug the-instance)))
+       (:tr
+        (:th "Status")
+        (:td (~a (study-instance-status the-instance))))))))))
