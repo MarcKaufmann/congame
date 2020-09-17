@@ -481,7 +481,7 @@ QUERY
     #:isolation 'serializable
     (cond
       [(lookup conn
-               (~> (from study-instances #:as i)
+               (~> (from study-instance #:as i)
                    (where (and
                            (= i.id ,instance-id)
                            (= i.status "active")))))
