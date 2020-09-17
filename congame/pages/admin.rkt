@@ -252,6 +252,7 @@
       (:table.table
        (:thead
         (:tr
+         (:th "Participant ID")
          (:th "Email")
          (:th "Completed?")
          (:th "Enrolled At")
@@ -260,6 +261,7 @@
         ,@(for/list ([p (in-list participants)])
             (haml
              (:tr
+              (:td (~a (study-participant/admin-id p)))
               (:td (study-participant/admin-email p))
               (:td (if (study-participant/admin-completed? p) "yes" "no"))
               (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))

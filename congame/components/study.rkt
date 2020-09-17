@@ -406,7 +406,8 @@ QUERY
 
 (define-schema study-participant/admin
   #:virtual
-  ([email string/f]
+  ([id integer/f]
+   [email string/f]
    [progress (array/f string/f)]
    [completed? boolean/f]
    [enrolled-at datetime-tz/f]))
@@ -470,7 +471,7 @@ QUERY
                            (join user #:as u #:on (= u.id p.user-id))
                            (where (= p.instance-id ,instance-id))
                            (order-by ([p.enrolled-at #:desc]))
-                           (select u.username p.progress p.completed? p.enrolled-at)
+                           (select p.id u.username p.progress p.completed? p.enrolled-at)
                            (project-onto study-participant/admin-schema))))))
 
 (define/contract (enroll-participant! db user-id instance-id)
