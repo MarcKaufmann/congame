@@ -21,7 +21,8 @@
 (provide
  studies-page
  create-study-page
- view-study-page)
+ view-study-page
+ create-study-instance-page)
 
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
@@ -121,6 +122,61 @@
               (:h1 "Create Study")
               (render-study-form (embed/url loop) rw)))))])))))
 
-(define/contract ((view-study-page db) req study-id)
+(define/contract ((view-study-page db) _req study-id)
   (-> database? (-> request? id/c response?))
-  (page))
+  (define instances
+    (list-study-instances db study-id))
+  (page
+   (container
+    (haml
+     (:section.studies
+      (:h1 "Instances")
+      (:h4
+       (:a
+        ([:href (reverse-uri 'admin:create-study-instance-page study-id)])
+        "New Instance"))
+      (:ul.study-list
+       ,@(for/list ([s (in-list instances)])
+           (haml
+            (:li
+             (study-instance-name s))))))))))
+
+(define create-study-instance-form
+  (form* ([name (ensure binding/text (required))]
+          [slug (ensure binding/text)])
+    (list name (or slug (slugify name)))))
+
+(define (render-study-instance-form target rw)
+  (haml
+   (:form
+    ([:action target]
+     [:method "POST"])
+    (rw "name" (field-group "Name"))
+    (rw "slug" (field-group "Slug"))
+    (:button
+     ([:type "submit"])
+     "Create"))))
+
+(define/contract ((create-study-instance-page db) req study-id)
+  (-> database? (-> request? id/c response?))
+  (let loop ([req req])
+    (send/suspend/dispatch/protect
+     (lambda (embed/url)
+       (match (form-run create-study-instance-form req)
+         [(list 'passed (list name slug) _)
+          (define the-study-instance
+            (with-database-connection [conn db]
+              (insert-one! conn (make-study-instance
+                                 #:study-id study-id
+                                 #:name name
+                                 #:slug slug))))
+
+          (redirect-to (reverse-uri 'admin:view-study-page study-id))]
+
+         [(list _ _ rw)
+          (page
+           (container
+            (haml
+             (:section.create-study
+              (:h1 "Create Study Instance")
+              (render-study-instance-form (embed/url loop) rw)))))])))))

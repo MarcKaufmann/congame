@@ -64,6 +64,10 @@
       #:roles (admin)
       (admin:view-study-page db)]
 
+     [("admin" "studies" (integer-arg) "instances" "new")
+      #:roles (admin)
+      (admin:create-study-instance-page db)]
+
      [("study" (string-arg))
       #:roles (user)
       (study-page db)]

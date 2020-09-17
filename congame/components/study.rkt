@@ -367,6 +367,7 @@ QUERY
  call-with-study-manager
  list-studies
  list-study-instances
+ list-all-study-instances
  enroll-participant!
  mark-participant-completed!
  lookup-study)
@@ -425,12 +426,20 @@ QUERY
      (in-entities conn (~> (from study-meta #:as s)
                            (order-by ([s.created-at #:desc])))))))
 
-(define/contract (list-study-instances db)
+(define/contract (list-study-instances db study-id)
+  (-> database? id/c (listof study-instance?))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn (~> (from study-instance #:as i)
+                           (where (= i.study-id ,study-id))
+                           (order-by ([i.created-at #:desc])))))))
+
+(define/contract (list-all-study-instances db)
   (-> database? (listof study-instance?))
   (with-database-connection [conn db]
-    (for/list ([i (in-entities conn (~> (from study-instance #:as i)
-                                        (order-by ([i.created-at #:desc]))))])
-      i)))
+    (sequence->list
+     (in-entities conn (~> (from study-instance #:as i)
+                           (order-by ([i.created-at #:desc])))))))
 
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)
