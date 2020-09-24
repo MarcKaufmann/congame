@@ -284,29 +284,40 @@
     (lookup-study-participant/admin db participant-id))
   (unless (and the-study the-instance the-participant)
     (next-dispatcher))
-  (page
-   (container
-    (haml
-     (:section.study-participant
-      (:h1 (study-participant/admin-email the-participant))
-      (:h4 "Instance '" (study-instance-name the-instance) "' of study '" (study-meta-name the-study) "'")
-      (:table.table
-       (:thead
-        (:tr
-         (:th "Stack")
-         (:th "ID")
-         (:th "First Put At")
-         (:th "Last Put At")
-         (:th "Value")))
-       (:tbody
-        ,@(for/list ([v (in-list (lookup-study-vars db participant-id))])
-            (haml
-             (:tr
-              (:td (:pre (~a (study-var-stack v))))
-              (:td (~a (study-var-id v)))
-              (:td (~t (study-var-first-put-at v) "YYYY-MM-dd hh:mm:ss"))
-              (:td (~t (study-var-last-put-at v) "YYYY-MM-dd hh:mm:ss"))
-              (:td (:pre
-                    (with-output-to-string
-                      (lambda ()
-                        (pretty-print (study-var-value/deserialized v))))))))))))))))
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (page
+      (container
+       (haml
+        (:section.study-participant
+         (:h1 (study-participant/admin-email the-participant))
+         (:h4 "Instance '" (study-instance-name the-instance) "' of study '" (study-meta-name the-study) "'")
+         (:h4
+          (:a
+           ([:onclick "return confirm('Are you sure?')"]
+            [:href (embed/url
+                    (lambda (_req)
+                      (clear-participant-progress! db participant-id)
+                      (redirect/get/forget/protect)
+                      (redirect-to (reverse-uri 'admin:view-study-participant-page study-id study-instance-id participant-id))))])
+           "Clear Participant Progress"))
+         (:table.table
+          (:thead
+           (:tr
+            (:th "Stack")
+            (:th "ID")
+            (:th "First Put At")
+            (:th "Last Put At")
+            (:th "Value")))
+          (:tbody
+           ,@(for/list ([v (in-list (lookup-study-vars db participant-id))])
+               (haml
+                (:tr
+                 (:td (:pre (~a (study-var-stack v))))
+                 (:td (~a (study-var-id v)))
+                 (:td (~t (study-var-first-put-at v) "YYYY-MM-dd hh:mm:ss"))
+                 (:td (~t (study-var-last-put-at v) "YYYY-MM-dd hh:mm:ss"))
+                 (:td (:pre
+                       (with-output-to-string
+                         (lambda ()
+                           (pretty-print (study-var-value/deserialized v))))))))))))))))))

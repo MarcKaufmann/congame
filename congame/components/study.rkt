@@ -373,6 +373,7 @@ QUERY
  list-all-study-instances
  list-active-study-instances
  list-study-instance-participants/admin
+ clear-participant-progress!
  enroll-participant!
  mark-participant-completed!
  lookup-study
@@ -572,6 +573,18 @@ QUERY
                            (project-onto study-var-schema)
                            (where (= d.participant-id ,participant-id))
                            (order-by ([d.first-put-at #:asc])))))))
+
+(define/contract (clear-participant-progress! db participant-id)
+  (-> database? id/c void?)
+  (with-database-transaction [conn db]
+    (query-exec conn (~> (from "study_participants" #:as p)
+                         (where (= p.id ,participant-id))
+                         (update
+                          [is_completed #f]
+                          [progress ,(list->pg-array null)])))
+    (query-exec conn (~> (from "study_data" #:as d)
+                         (where (= d.participant-id ,participant-id))
+                         (delete)))))
 
 (define (update-participant-progress! step-id)
   (define m (current-study-manager))
