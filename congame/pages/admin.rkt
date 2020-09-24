@@ -93,11 +93,12 @@
      [:method "POST"])
     (rw "name" (field-group "Name"))
     (rw "slug" (field-group "Slug"))
-    (rw "racket-module" (field-group "Module" (widget-select (cons
-                                                              (cons "" "Please select a module")
-                                                              (for/list ([m (in-list known-study-modules)])
-                                                                (cons (~a m) (~a m)))))))
-    (rw "racket-id" (field-group "ID"))
+    (rw "racket-module" (field-group "Racket Module"
+                                     (widget-select (cons
+                                                     (cons "" "Please select a module")
+                                                     (for/list ([m (in-list known-study-modules)])
+                                                       (cons (~a m) (~a m)))))))
+    (rw "racket-id" (field-group "Racket ID"))
     (:button
      ([:type "submit"])
      "Create"))))
