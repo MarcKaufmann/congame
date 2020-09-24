@@ -364,6 +364,8 @@ QUERY
  (schema-out study-instance)
  (schema-out study-participant)
  (schema-out study-participant/admin)
+ (schema-out study-var)
+ study-var-value/deserialized
  make-study-manager
  call-with-study-manager
  list-studies
@@ -376,7 +378,8 @@ QUERY
  lookup-study
  lookup-study-meta
  lookup-study-instance
- lookup-study-participant/admin)
+ lookup-study-participant/admin
+ lookup-study-vars)
 
 (define-schema study-meta
   #:table "studies"
@@ -412,6 +415,17 @@ QUERY
    [progress (array/f string/f)]
    [completed? boolean/f]
    [enrolled-at datetime-tz/f]))
+
+(define-schema study-var
+  #:virtual
+  ([stack (array/f string/f)]
+   [id symbol/f]
+   [value binary/f]
+   [first-put-at datetime-tz/f]
+   [last-put-at datetime-tz/f]))
+
+(define study-var-value/deserialized
+  (compose1 deserialize* study-var-value))
 
 (struct study-manager (participant db)
   #:transparent)
@@ -548,6 +562,16 @@ QUERY
                      (where (= p.id ,participant-id))
                      (select p.id u.username p.progress p.completed? p.enrolled-at)
                      (project-onto study-participant/admin-schema)))))
+
+(define/contract (lookup-study-vars db participant-id)
+  (-> database? id/c (listof study-var?))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn (~> (from "study_data" #:as d)
+                           (select d.study-stack d.key d.value d.first-put-at d.last-put-at)
+                           (project-onto study-var-schema)
+                           (where (= d.participant-id ,participant-id))
+                           (order-by ([d.first-put-at #:asc])))))))
 
 (define (update-participant-progress! step-id)
   (define m (current-study-manager))

@@ -13,6 +13,8 @@
          racket/format
          racket/match
          racket/path
+         racket/port
+         racket/pretty
          racket/runtime-path
          threading
          web-server/dispatchers/dispatch
@@ -287,4 +289,24 @@
     (haml
      (:section.study-participant
       (:h1 (study-participant/admin-email the-participant))
-      (:h4 "Instance '" (study-instance-name the-instance) "' of study '" (study-meta-name the-study) "'"))))))
+      (:h4 "Instance '" (study-instance-name the-instance) "' of study '" (study-meta-name the-study) "'")
+      (:table.table
+       (:thead
+        (:tr
+         (:th "Stack")
+         (:th "ID")
+         (:th "First Put At")
+         (:th "Last Put At")
+         (:th "Value")))
+       (:tbody
+        ,@(for/list ([v (in-list (lookup-study-vars db participant-id))])
+            (haml
+             (:tr
+              (:td (:pre (~a (study-var-stack v))))
+              (:td (~a (study-var-id v)))
+              (:td (~t (study-var-first-put-at v) "YYYY-MM-dd hh:mm:ss"))
+              (:td (~t (study-var-last-put-at v) "YYYY-MM-dd hh:mm:ss"))
+              (:td (:pre
+                    (with-output-to-string
+                      (lambda ()
+                        (pretty-print (study-var-value/deserialized v))))))))))))))))
