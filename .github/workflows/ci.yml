@@ -22,6 +22,20 @@ jobs:
     - name: Checkout
       uses: actions/checkout@master
 
+    - name: Cache npm
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.npm
+        key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+    - name: Cache Racket
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.racket/download-cache
+        key: ${{ runner.os }}-${{ hashFiles('congame/info.rkt') }}
+
     - name: Install Racket
       uses: Bogdanp/setup-racket@v0.10
       with:
