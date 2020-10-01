@@ -41,6 +41,9 @@ jobs:
     - name: Install congame
       run: raco pkg install -D --batch --auto congame/ congame-tests/
 
+    - name: Run migrations
+      run: raco north migrate -fu "postgres://congame:congame@127.0.0.1:${{ job.services.postgres.ports[5432] }}/congame"
+
     - name: Run tests
       run: raco test congame-tests/
       env:
