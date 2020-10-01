@@ -58,7 +58,6 @@ jobs:
     - name: Run migrations
       run: raco north migrate -fu "postgres://congame:congame@127.0.0.1:${{ job.services.postgres.ports[5432] }}/congame"
 
-    # Comment to force CI to run
     - name: Run tests
       run: raco test congame-tests/
       env:
