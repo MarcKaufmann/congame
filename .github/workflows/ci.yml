@@ -27,6 +27,7 @@ jobs:
       with:
         path: |
           ~/.npm
+          node_modules
         key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
     - name: Cache Racket
