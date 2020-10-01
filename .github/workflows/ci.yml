@@ -50,6 +50,12 @@ jobs:
       with:
         node-version: '12.x'
 
+    - name: Install Node packages
+      run: npm install
+
+    - name: Build Node assets
+      run: npm run build
+
     - name: Setup Package Catalogs
       run: ci/setup-catalogs.sh
 
