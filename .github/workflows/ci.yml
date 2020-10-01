@@ -36,7 +36,7 @@ jobs:
         node-version: '12.x'
 
     - name: Setup Package Catalogs
-      run: bin/setup-catalogs.sh
+      run: ci/setup-catalogs.sh
 
     - name: Install congame
       run: raco pkg install -D --batch --auto congame/ congame-tests/
