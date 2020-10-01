@@ -1,0 +1,51 @@
+name: CI/CD
+on: [push, pull_request]
+jobs:
+  run:
+    name: "CI/CD"
+    runs-on: "ubuntu-latest"
+
+    services:
+      postgres:
+        image: postgres:12.3
+        env:
+          POSTGRES_USER: congame
+          POSTGRES_PASSWORD: congame
+          POSTGRES_DB: congame
+        ports:
+        # will assign a random free host port
+        - 5432/tcp
+        # needed because the postgres container does not provide a healthcheck
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Install Racket
+      uses: Bogdanp/setup-racket@v0.10
+      with:
+          architecture: 'x64'   # (x64 or x86), ignored on Linux
+          distribution: 'full'  # or 'minimal'
+          variant: 'CS'         # or 'CS' for Racket-on-Chez
+          version: '7.8'        # or 'current' for the latest snapshot
+
+    - name: Install Node
+      uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
+
+    - name: Setup Package Catalogs
+      run: bin/setup-catalogs.sh
+
+    - name: Install congame
+      run: raco pkg install -D --batch --auto congame/ congame-tests/
+
+    - name: Run tests
+      run: raco test congame-tests/
+      env:
+        CONGAME_TEST_DB_HOST: 127.0.0.1
+        CONGAME_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+        CONGAME_TEST_DB_NAME: congame
+        CONGAME_TEST_DB_USERNAME: congame
+        CONGAME_TEST_DB_PASSWORD: congame
