@@ -73,3 +73,6 @@ jobs:
         CONGAME_TEST_DB_NAME: congame
         CONGAME_TEST_DB_USERNAME: congame
         CONGAME_TEST_DB_PASSWORD: congame
+
+    - name: Build docker image
+      run: docker build -t congame .
