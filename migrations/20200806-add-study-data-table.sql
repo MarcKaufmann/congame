@@ -13,7 +13,7 @@ CREATE TABLE study_data(
   last_put_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   first_put_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  CONSTRAINT study_data_pkey PRIMARY KEY (participant_id, progress, key)
+  CONSTRAINT study_data_pkey PRIMARY KEY (participant_id, study_stack, key)
 );
 -- }
 
