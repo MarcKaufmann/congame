@@ -85,3 +85,11 @@ jobs:
       env:
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+
+    - name: Deploy production
+      run: ./ci/deploy.sh PRODUCTION
+      env:
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      if: >-
+        startsWith(github.ref, 'refs/tags/v')
