@@ -18,8 +18,12 @@
 (define (parse-HEAD)
   (call-with-input-file git-head
     (lambda (in)
-      (match (regexp-match #rx"^ref: refs/(.+)$" in)
-        [(list _ ref) (string-trim (bytes->string/utf-8 ref))]))))
+      ;; When a branch is checked out, .git/HEAD looks like a pointer
+      ;; (ref: refs/foo), otherwise it is just the sha of a commit so
+      ;; in the second case we read the whole file.
+      (match (regexp-try-match #rx"^ref: refs/(.+)$" in)
+        [(list _ ref) (string-trim (bytes->string/utf-8 ref))]
+        [#f (string-trim (port->string in))]))))
 
 (define current-git-sha
   (string-trim
