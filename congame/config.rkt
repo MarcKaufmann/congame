@@ -33,6 +33,8 @@
 (define-option log-level #:default "info"
   (string->symbol log-level))
 
+(define-option git-sha #:default "HEAD")
+
 (define-option http-host #:default "127.0.0.1")
 (define-option http-port #:default (or (getenv "PORT") "8000")
   (string->number http-port))

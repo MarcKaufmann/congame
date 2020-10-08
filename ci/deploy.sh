@@ -38,6 +38,9 @@ log "Loading the key..."
 echo "$DEPLOY_KEY" > /tmp/deploy-key
 chmod 0600 /tmp/deploy-key
 
+log "Adding GIT SHA to environment file..."
+echo "CONGAME_GIT_SHA=$GITHUB_SHA" >> "$ENVIRONMENT_PATH"
+
 if [ "$1" = "STAGING" ]; then
     # Assumes that staging is always deployed before production, which
     # is currently true due to the way ci.yml is set up and is

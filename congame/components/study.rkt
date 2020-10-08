@@ -22,7 +22,7 @@
          threading
          web-server/servlet
          (only-in xml xexpr?)
-         "git.rkt")
+         (prefix-in config: "../config.rkt"))
 
 (provide
  next
@@ -81,7 +81,7 @@ QUERY
                 (current-study-array)
                 (symbol->string k)
                 (serialize* v)
-                current-git-sha)))
+                config:git-sha)))
 
 (define (get k [default (lambda ()
                           (error 'get "value not found for key ~.s" k))])
