@@ -74,6 +74,9 @@ jobs:
     #     CONGAME_TEST_DB_USERNAME: congame
     #     CONGAME_TEST_DB_PASSWORD: congame
 
+    - uses: satackey/action-docker-layer-caching@v0.0.8
+      continue-on-error: true
+
     - name: Build docker image
       run: docker build -t "congame:$GITHUB_SHA" .
 
