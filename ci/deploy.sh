@@ -31,7 +31,7 @@ case "$1" in
 esac
 
 log() {
-    printf "[%s] %s" "$(date)" "$@"
+    printf "[%s] %s\n" "$(date)" "$@"
 }
 
 log "Loading the key..."
