@@ -32,7 +32,7 @@ esac
 
 # Load the key
 echo "$DEPLOY_KEY" > /tmp/deploy-key
-chmod 0644 /tmp/deploy-key
+chmod 0600 /tmp/deploy-key
 
 # Copy the image
 docker save "$IMAGE_NAME" | \
