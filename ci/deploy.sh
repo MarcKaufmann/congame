@@ -14,11 +14,13 @@ TARGET_HOST="deepploy@$DEPLOY_HOST"
 case "$1" in
     PRODUCTION)
         CONTAINER_NAME="congame-production"
+        CONTAINER_PORT="8000"
         ENVIRONMENT_PATH="$BASEPATH/production.env"
         RUN_PATH="/var/run/congame/production"
     ;;
     STAGING)
         CONTAINER_NAME="congame-staging"
+        CONTAINER_PORT="9000"
         ENVIRONMENT_PATH="$BASEPATH/staging.env"
         RUN_PATH="/var/run/congame/staging"
     ;;
@@ -36,11 +38,11 @@ EOF
 scp -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$ENVIRONMENT_PATH" "$TARGET_HOST:$RUN_PATH/env"
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   docker stop "$CONTAINER_NAME" || true
+  docker rm "$CONTAINER_NAME" || true
   docker run \
     --name "$CONTAINER_NAME" \
     --env-file "$RUN_PATH/env" \
     -v "$RUN_PATH":"$RUN_PATH" \
-    -p 9000:9000 \
-    -p 8000:8000 \
+    -p "$CONTAINER_PORT":"$CONTAINER_PORT" \
     "$IMAGE_NAME"
 EOF
