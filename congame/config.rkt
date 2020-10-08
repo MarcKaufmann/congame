@@ -72,6 +72,7 @@
 (define-option session-secret-key-path #:default "/tmp/congame-secret-key")
 (define-option session-secret-key
   (or session-secret-key (make-secret-salt/file session-secret-key-path)))
+(define-option session-path #:default "/tmp/congame-session.rktd")
 
 (define-option postmark-token)
 

@@ -78,7 +78,7 @@ jobs:
       run: docker build -t "congame:$GITHUB_SHA" .
 
     - name: Deploy staging
-      run: ci/deploy.sh STAGING
+      run: ./ci/deploy.sh STAGING
       env:
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
