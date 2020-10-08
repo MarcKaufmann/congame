@@ -53,6 +53,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   docker run \
     --name "$CONTAINER_NAME" \
     --env-file "$RUN_PATH/env" \
+    --network "host" \
     -v "$RUN_PATH":"$RUN_PATH" \
     -p "$CONTAINER_PORT":"$CONTAINER_PORT" \
     -d \
