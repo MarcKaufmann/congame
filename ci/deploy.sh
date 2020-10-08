@@ -38,9 +38,14 @@ log "Loading the key..."
 echo "$DEPLOY_KEY" > /tmp/deploy-key
 chmod 0600 /tmp/deploy-key
 
-log "Copying the image..."
-docker save "$IMAGE_NAME" | \
-    ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" -C docker load
+if [ "$1" = "STAGING" ]; then
+    # Assumes that staging is always deployed before production, which
+    # is currently true due to the way ci.yml is set up and is
+    # unlikely to change.
+    log "Copying the image..."
+    docker save "$IMAGE_NAME" | \
+        ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" -C docker load
+fi
 
 log "Restarting the container..."
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
