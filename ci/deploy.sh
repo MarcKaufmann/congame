@@ -55,5 +55,6 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     --env-file "$RUN_PATH/env" \
     -v "$RUN_PATH":"$RUN_PATH" \
     -p "$CONTAINER_PORT":"$CONTAINER_PORT" \
+    -d \
     "$IMAGE_NAME"
 EOF
