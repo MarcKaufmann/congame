@@ -30,6 +30,9 @@ case "$1" in
     ;;
 esac
 
+apt-get update && \
+    apt-get install -y ssh
+
 echo "$DEPLOY_KEY" > /tmp/deploy-key
 docker save "$IMAGE_NAME" | \ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" docker load
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
