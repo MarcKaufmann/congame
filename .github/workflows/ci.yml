@@ -45,16 +45,16 @@ jobs:
     #       variant: 'CS'         # or 'CS' for Racket-on-Chez
     #       version: '7.8'        # or 'current' for the latest snapshot
 
-    # - name: Install Node
-    #   uses: actions/setup-node@v1
-    #   with:
-    #     node-version: '12.x'
+    - name: Install Node
+      uses: actions/setup-node@v1
+      with:
+        node-version: '12.x'
 
-    # - name: Install Node packages
-    #   run: npm install
+    - name: Install Node packages
+      run: npm install
 
-    # - name: Build Node assets
-    #   run: npm run build
+    - name: Build Node assets
+      run: npm run build
 
     # - name: Setup Package Catalogs
     #   run: ci/setup-catalogs.sh
@@ -78,7 +78,7 @@ jobs:
       run: docker build -t "congame:$GITHUB_SHA" .
 
     - name: Deploy staging
-      run: ci/deploy.sh
+      run: ci/deploy.sh STAGING
       env:
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
