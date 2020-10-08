@@ -30,9 +30,15 @@ case "$1" in
     ;;
 esac
 
+# Load the key
 echo "$DEPLOY_KEY" > /tmp/deploy-key
+chmod 0644 /tmp/deploy-key
+
+# Copy the image
 docker save "$IMAGE_NAME" | \
     ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" docker load
+
+# Run the container
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   mkdir -p "$RUN_PATH"
 EOF
