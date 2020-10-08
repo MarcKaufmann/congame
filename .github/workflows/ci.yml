@@ -75,4 +75,14 @@ jobs:
         CONGAME_TEST_DB_PASSWORD: congame
 
     - name: Build docker image
-      run: docker build -t congame .
+      run: docker build -t "congame:$GITHUB_SHA" .
+
+    - name: Deploy staging
+      run: >-
+        echo "$DEPLOY_KEY" > /tmp/deploy-key
+        docker save "congame:$GITHUB_SHA" | ssh -i /tmp/deploy-key "deepploy@$DEPLOY_HOST" docker load
+        ssh -i /tmp/deploy-key "deepploy@$DEPLOY_HOST" docker stop congame-staging || true
+        ssh -i /tmp/deploy-key "deepploy@$DEPLOY_HOST" docker run --name congame-staging "congame:$GITHUB_SHA"
+      env:
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
