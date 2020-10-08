@@ -40,7 +40,7 @@ chmod 0600 /tmp/deploy-key
 
 log "Copying the image..."
 docker save "$IMAGE_NAME" | \
-    ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" docker load
+    ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" -C docker load
 
 log "Restarting the container..."
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
