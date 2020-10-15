@@ -12,6 +12,7 @@
          koyo/session
          racket/contract
          racket/runtime-path
+         sentry
          "components/app.rkt"
          "components/auth.rkt"
          "components/mail.rkt"
@@ -75,6 +76,13 @@
                 (session              . ,config:log-level)
                 (study                . ,config:log-level)
                 (system               . ,config:log-level))))
+
+  ; Marc: Putting this here because koyo-experiment did. Some bootstrapping this or that probably.
+
+  (when config:sentry-dsn
+    (current-sentry (make-sentry config:sentry-dsn
+                                 #:release config:version
+                                 #:environment config:environment)))
 
   (current-system prod-system)
   (system-start prod-system)
