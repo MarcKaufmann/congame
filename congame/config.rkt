@@ -78,11 +78,11 @@
 
 (define-option postmark-token)
 
-(define-option product-name #:default "congame")
-(define-option company-name #:default "congame")
+(define-option product-name #:default "Insightful Research")
+(define-option company-name #:default "Total Insight Management")
 (define-option company-address #:default "")
-(define-option support-name #:default "Bot Botterson")
-(define-option support-email #:default "support@congame.com")
+(define-option support-name #:default "Marc")
+(define-option support-email #:default "admin@totalinsightmanagement.com")
 
 (provide common-mail-variables)
 (define common-mail-variables
