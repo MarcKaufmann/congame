@@ -5,6 +5,7 @@ COPY ci ci
 RUN ci/setup-catalogs.sh
 RUN raco pkg install -D --auto --batch \
   --skip-installed \
+  --installation \
 	component-lib \
 	crypto-lib \
 	db-lib \
