@@ -87,6 +87,8 @@ jobs:
         PAT: ${{ secrets.PAT }}
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        # TODO(Marc): Uncomment this and below once token is in secrets.
+        # POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
 
     - name: Deploy production
       run: ./ci/deploy.sh PRODUCTION
@@ -94,5 +96,6 @@ jobs:
         PAT: ${{ secrets.PAT }}
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        # POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
       if: >-
         startsWith(github.ref, 'refs/tags/v')

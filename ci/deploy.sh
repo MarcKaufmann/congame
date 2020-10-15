@@ -41,6 +41,10 @@ chmod 0600 /tmp/deploy-key
 log "Adding GIT SHA to environment file..."
 echo "CONGAME_GIT_SHA=$GITHUB_SHA" >> "$ENVIRONMENT_PATH"
 
+# TODO(Marc): Get a token from postmark, add it to GH secrets and uncomment this.
+# log "Adding POSTMARK_TOKEN to environment file..."
+# echo "CONGAME_POSTMARK_TOKEN=$POSTMARK_TOKEN" >> "$ENVIRONMENT_PATH"
+
 log "Pulling image from GHCR..."
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   echo "$PAT" | docker login ghcr.io -u MarcKaufmann --password-stdin
