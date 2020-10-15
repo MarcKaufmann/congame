@@ -8,7 +8,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 BASEPATH="$(dirname "$0")"
-IMAGE_NAME="congame:$GITHUB_SHA"
+IMAGE_NAME="ghcr.io/marckaufmann/congame:$GITHUB_SHA"
 TARGET_HOST="deepploy@$DEPLOY_HOST"
 
 case "$1" in
@@ -41,19 +41,17 @@ chmod 0600 /tmp/deploy-key
 log "Adding GIT SHA to environment file..."
 echo "CONGAME_GIT_SHA=$GITHUB_SHA" >> "$ENVIRONMENT_PATH"
 
-if [ "$1" = "STAGING" ]; then
-    # Assumes that staging is always deployed before production, which
-    # is currently true due to the way ci.yml is set up and is
-    # unlikely to change.
-    log "Copying the image..."
-    docker save "$IMAGE_NAME" | \
-        ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" -C docker load
-fi
+log "Pulling image from GHCR..."
+ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
+  echo "$PAT" | docker login ghcr.io -u MarcKaufmann --password-stdin
+  docker pull "$IMAGE_NAME"
+EOF
 
 log "Restarting the container..."
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   mkdir -p "$RUN_PATH"
 EOF
+
 scp -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$ENVIRONMENT_PATH" "$TARGET_HOST:$RUN_PATH/env"
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   docker stop "$CONTAINER_NAME" || true

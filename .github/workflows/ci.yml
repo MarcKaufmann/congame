@@ -82,16 +82,17 @@ jobs:
 
     - name: Push docker image
       run: |
-        echo $PAT | docker login ghcr.io -u MarcKaufmann --password-stdin
+        echo "$PAT" | docker login ghcr.io -u MarcKaufmann --password-stdin
         docker push "ghcr.io/marckaufmann/congame:$GITHUB_SHA"
       env:
         PAT: ${{ secrets.PAT }}
 
-    # - name: Deploy staging
-    #   run: ./ci/deploy.sh STAGING
-    #   env:
-    #     DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-    #     DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+    - name: Deploy staging
+      run: ./ci/deploy.sh STAGING
+      env:
+        PAT: ${{ secrets.PAT }}
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
 
     # - name: Deploy production
     #   run: ./ci/deploy.sh PRODUCTION
