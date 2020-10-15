@@ -41,6 +41,15 @@ jobs:
     - name: Build Node assets
       run: npm run build
 
+    - name: Log into GHCR
+      run: |
+        echo "$PAT" | docker login ghcr.io -u MarcKaufmann --password-stdin
+
+    - name: Build base docker image
+      run: |
+        docker build -t "ghcr.io/marckaufmann/congame-base:latest" -f Dockerfile-base .
+        docker tag "ghcr.io/marckaufmann/congame-base:latest" "congame-base:latest"
+
     - name: Build docker image
       run: |
         docker build -t "ghcr.io/marckaufmann/congame:$GITHUB_SHA" .
@@ -67,9 +76,7 @@ jobs:
         CONGAME_TEST_DB_PASSWORD: congame
 
     - name: Push docker image
-      run: |
-        echo "$PAT" | docker login ghcr.io -u MarcKaufmann --password-stdin
-        docker push "ghcr.io/marckaufmann/congame:$GITHUB_SHA"
+      run: docker push "ghcr.io/marckaufmann/congame:$GITHUB_SHA"
       env:
         PAT: ${{ secrets.PAT }}
 

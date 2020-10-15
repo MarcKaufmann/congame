@@ -1,4 +1,4 @@
-FROM racket/racket:7.8-cs-full
+FROM ghcr.io/marckaufmann/congame-base:latest
 
 WORKDIR /opt/congame
 COPY .git /opt/congame/.git

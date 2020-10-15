@@ -1,0 +1,23 @@
+FROM racket/racket:7.8-cs-full
+
+WORKDIR /work
+COPY ci ci
+RUN ci/setup-catalogs.sh
+RUN raco pkg install -D --auto --batch \
+	component-lib \
+	crypto-lib \
+	db-lib \
+	deta-lib \
+	forms-lib \
+	gregor-lib \
+  koyo-lib \
+  koyo-north \
+  koyo-postmark \
+  libargon2 \
+  threading-lib \
+  web-server-lib
+
+WORKDIR /
+RUN rm -r /work
+
+CMD ["racket"]
