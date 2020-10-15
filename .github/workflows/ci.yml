@@ -78,12 +78,12 @@ jobs:
     #   continue-on-error: true
 
     - name: Build docker image
-      run: docker build -t "ghcr.io/MarcKaufmann/congame:$GITHUB_SHA" .
+      run: docker build -t "ghcr.io/marckaufmann/congame:$GITHUB_SHA" .
 
     - name: Push docker image
       run: >-
         echo $PAT | docker login ghcr.io -u MarcKaufmann --password-stdin
-        docker push "ghcr.io/MarcKaufmann/congame:$GITHUB_SHA"
+        docker push "ghcr.io/marckaufmann/congame:$GITHUB_SHA"
       env:
         PAT: ${{ secrets.PAT }}
 
