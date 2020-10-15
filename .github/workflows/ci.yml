@@ -81,7 +81,7 @@ jobs:
       run: docker build -t "ghcr.io/marckaufmann/congame:$GITHUB_SHA" .
 
     - name: Push docker image
-      run: >-
+      run: |
         echo $PAT | docker login ghcr.io -u MarcKaufmann --password-stdin
         docker push "ghcr.io/marckaufmann/congame:$GITHUB_SHA"
       env:
