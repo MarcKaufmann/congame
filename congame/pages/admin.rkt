@@ -34,7 +34,6 @@
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
   (define studies (list-studies db))
-  (error "Test Sentry")
   (page
    (container
     (haml
