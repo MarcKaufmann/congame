@@ -14,6 +14,7 @@
                "koyo-sentry"
                ("libargon2-x86_64-linux" #:platform #rx"x86_64-linux")
                ("libargon2-x86_64-macosx" #:platform #rx"x86_64-macosx")
+               "sentry-lib"
                "threading-lib"
                "web-server-lib"))
 (define build-deps '())
