@@ -30,21 +30,6 @@ jobs:
           node_modules
         key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
-    - name: Cache Racket
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.racket/download-cache
-        key: ${{ runner.os }}-${{ hashFiles('congame/info.rkt') }}
-
-    # - name: Install Racket
-    #   uses: Bogdanp/setup-racket@v0.10
-    #   with:
-    #       architecture: 'x64'   # (x64 or x86), ignored on Linux
-    #       distribution: 'full'  # or 'minimal'
-    #       variant: 'CS'         # or 'CS' for Racket-on-Chez
-    #       version: '7.8'        # or 'current' for the latest snapshot
-
     - name: Install Node
       uses: actions/setup-node@v1
       with:
@@ -56,29 +41,30 @@ jobs:
     - name: Build Node assets
       run: npm run build
 
-    # - name: Setup Package Catalogs
-    #   run: ci/setup-catalogs.sh
-
-    # - name: Install congame
-    #   run: raco pkg install -D --batch --auto congame/ congame-tests/
-
-    # - name: Run migrations
-    #   run: raco north migrate -fu "postgres://congame:congame@127.0.0.1:${{ job.services.postgres.ports[5432] }}/congame"
-
-    # - name: Run tests
-    #   run: raco test congame-tests/
-    #   env:
-    #     CONGAME_TEST_DB_HOST: 127.0.0.1
-    #     CONGAME_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
-    #     CONGAME_TEST_DB_NAME: congame
-    #     CONGAME_TEST_DB_USERNAME: congame
-    #     CONGAME_TEST_DB_PASSWORD: congame
-
-    # - uses: satackey/action-docker-layer-caching@v0.0.8
-    #   continue-on-error: true
-
     - name: Build docker image
-      run: docker build -t "ghcr.io/marckaufmann/congame:$GITHUB_SHA" .
+      run: |
+        docker build -t "ghcr.io/marckaufmann/congame:$GITHUB_SHA" .
+        docker tag "ghcr.io/marckaufmann/congame:$GITHUB_SHA" "congame:latest"
+
+    - name: Test the application
+      run: |
+        docker build -t congame-tests:latest -f Dockerfile-tests .
+        docker run --network=host --rm congame-tests raco north migrate -fu "postgres://congame:congame@127.0.0.1:${{ job.services.postgres.ports[5432] }}/congame"
+        docker run \
+          --network=host \
+          -e CONGAME_TEST_DB_HOST \
+          -e CONGAME_TEST_DB_PORT \
+          -e CONGAME_TEST_DB_NAME \
+          -e CONGAME_TEST_DB_USERNAME \
+          -e CONGAME_TEST_DB_PASSWORD \
+          --rm \
+          congame-tests
+      env:
+        CONGAME_TEST_DB_HOST: 127.0.0.1
+        CONGAME_TEST_DB_PORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
+        CONGAME_TEST_DB_NAME: congame
+        CONGAME_TEST_DB_USERNAME: congame
+        CONGAME_TEST_DB_PASSWORD: congame
 
     - name: Push docker image
       run: |

@@ -1,0 +1,8 @@
+FROM congame:latest
+
+WORKDIR /opt/congame
+COPY congame-tests /opt/congame/congame-tests
+
+RUN ci/setup-catalogs.sh
+RUN raco pkg install -D --auto --batch congame-tests/
+CMD ["raco", "test", "/opt/congame/congame-tests"]
