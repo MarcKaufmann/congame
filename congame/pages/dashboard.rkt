@@ -10,7 +10,6 @@
 
 (define/contract (dashboard-page _req)
   (-> request? response?)
-  (error "This is a Sentry test")
   (page
    (haml
     (.container
