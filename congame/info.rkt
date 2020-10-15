@@ -11,7 +11,7 @@
                "koyo-lib"
                "koyo-north"
                "koyo-postmark"
-               "koyw-sentry"
+               "koyo-sentry"
                ("libargon2-x86_64-linux" #:platform #rx"x86_64-linux")
                ("libargon2-x86_64-macosx" #:platform #rx"x86_64-macosx")
                "threading-lib"
