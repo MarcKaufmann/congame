@@ -49,6 +49,7 @@ jobs:
       run: |
         docker build -t "ghcr.io/marckaufmann/congame-base:latest" -f Dockerfile-base .
         docker tag "ghcr.io/marckaufmann/congame-base:latest" "congame-base:latest"
+        docker push "ghcr.io/marckaufmann/congame-base:latest"
 
     - name: Build docker image
       run: |
