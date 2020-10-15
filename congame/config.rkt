@@ -96,4 +96,4 @@
 
 ;; For Sentry error tracking
 (define-option environment #:default "dev")
-(define-option sentry-dsn #:default "dev")
+(define-option sentry-dsn)
