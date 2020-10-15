@@ -44,6 +44,8 @@ jobs:
     - name: Log into GHCR
       run: |
         echo "$PAT" | docker login ghcr.io -u MarcKaufmann --password-stdin
+      env:
+        PAT: ${{ secrets.PAT }}
 
     - name: Build base docker image
       run: |
@@ -78,8 +80,6 @@ jobs:
 
     - name: Push docker image
       run: docker push "ghcr.io/marckaufmann/congame:$GITHUB_SHA"
-      env:
-        PAT: ${{ secrets.PAT }}
 
     - name: Deploy staging
       run: ./ci/deploy.sh STAGING
