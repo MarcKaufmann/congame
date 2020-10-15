@@ -21,6 +21,7 @@
          "../pages/all.rkt"
          "auth.rkt"
          "mail.rkt"
+         "sentry.rkt"
          "user.rkt")
 
 (provide
@@ -111,6 +112,7 @@
         ((make-sentry-wrapper config:sentry-dsn
                               #:release config:version
                               #:environment config:environment))
+        (wrap-current-sentry-user)
         ((wrap-flash flashes))
         ((wrap-session sessions))
         (wrap-protect-continuations)
