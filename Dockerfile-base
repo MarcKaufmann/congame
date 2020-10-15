@@ -6,7 +6,6 @@ RUN ci/setup-catalogs.sh
 RUN raco pkg install -D --auto --batch \
 	component-lib \
 	crypto-lib \
-	db-lib \
 	deta-lib \
 	forms-lib \
 	gregor-lib \
