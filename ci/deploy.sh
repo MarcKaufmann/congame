@@ -16,13 +16,13 @@ case "$1" in
         CONTAINER_NAME="congame-production"
         CONTAINER_PORT="8000"
         ENVIRONMENT_PATH="$BASEPATH/production.env"
-        RUN_PATH="/var/run/congame/production"
+        RUN_PATH="/opt/congame/production"
     ;;
     STAGING)
         CONTAINER_NAME="congame-staging"
         CONTAINER_PORT="9000"
         ENVIRONMENT_PATH="$BASEPATH/staging.env"
-        RUN_PATH="/var/run/congame/staging"
+        RUN_PATH="/opt/congame/staging"
     ;;
     *)
         echo "error: expected $1 to be either PRODUCTION or STAGING"
