@@ -4,6 +4,7 @@
          component
          koyo
          koyo/database/migrator
+         koyo/sentry
          net/url
          racket/contract
          racket/runtime-path
@@ -107,6 +108,9 @@
     (~> handler
         ((wrap-auth-required auth req-roles))
         ((wrap-browser-locale sessions))
+        ((make-sentry-wrapper config:sentry-dsn
+                              #:release config:version
+                              #:environment config:environment))
         ((wrap-flash flashes))
         ((wrap-session sessions))
         (wrap-protect-continuations)

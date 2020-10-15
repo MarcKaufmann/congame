@@ -26,6 +26,7 @@
 (define-option debug
   (equal? debug "x"))
 
+
 (define-option profile
   (begin0 profile
     (profiler-enabled? (and profile #t))))
@@ -92,3 +93,7 @@
           'company_address company-address
           'sender_name     support-name
           'support_email   support-email))
+
+;; For Sentry error tracking
+(define-option environment #:default "dev")
+(define-option sentry-dsn #:default "dev")

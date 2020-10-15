@@ -38,8 +38,9 @@ log "Loading the key..."
 echo "$DEPLOY_KEY" > /tmp/deploy-key
 chmod 0600 /tmp/deploy-key
 
-log "Adding GIT SHA to environment file..."
+log "Adding GIT SHA and VERSION to environment file..."
 echo "CONGAME_GIT_SHA=$GITHUB_SHA" >> "$ENVIRONMENT_PATH"
+echo "VERSION=$GITHUB_SHA" >> "$ENVIRONMENT_PATH"
 
 log "Adding POSTMARK_TOKEN to environment file..."
 echo "CONGAME_POSTMARK_TOKEN=$POSTMARK_TOKEN" >> "$ENVIRONMENT_PATH"
