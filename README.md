@@ -1,5 +1,34 @@
 # congame
 
+congame is *the best experimental economics software written in Racket*. [zTree](https://www.ztree.com/) and [oTree](https://www.otree.org/) are two common experimental economics platforms. The reason for building congame is the usual: I used oTree for some of my experiments, but found that it lacked some specific features I needed in my experiments:
+
+1. It is tedious and errorprone to have multi-part studies across several days or weeks
+2. It is tedious and errorprone to reuse and compose substudies into larger studies
+3. Specification of the experimental study are interweaved with code that deals with web specific concerns 
+
+congame addresses the first concern fully, and eases the other two -- at least for the kinds of studies I run. Unsurprisingly, congame lacks many features of oTree (and other behavioral research software):
+
+- There is no easy way for studies requiring multiple participants to interact with each other or respond to each other
+- There are almost no templates for many existing tasks and designs
+
+Furthermore, congame has a few features that many will consider bugs:
+
+- It is written in [Racket](https://racket-lang.org/)
+- It is build on top of the [koyo web development kit](https://koyo.defn.io/) developed by the indefatiguable (except for lack of coffee) [Bogdan Popa](https://defn.io/)
+- There is precisely zero documentation (beyond the code itself)
+
+koyo is much less battle tested than [Django](https://www.djangoproject.com/), the Python framework on which oTree is built, and Racket is a very uncommon choice compared to Python. This means that at this stage, it is fairly unlikely that you will want to use congame.
+
+## Future Vision
+
+The vision is to develop congame further, in particular as follows:
+
+- Provide easy ways to implement strategic interaction between participants, such as prisoner's dilemma etc
+- Ensure easy ways to change and test treatments and randomization in the study in a way that is entirely independent from the web aspects of the studies
+- Allow for bots, in addition to users, to participate. This will benefit with simulations, debugging, etc - similar to [mTree](https://github.com/gmucsn/mtree)
+
+The features that will get implemented will however be determined by the priorities of the studies that I am actually running -- hence strategic interactions may never be implemented, since my studies don't require that.
+
 ## Setup
 
 ### Requirements
