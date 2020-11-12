@@ -13,7 +13,7 @@ RUN raco pkg install -D --auto --batch congame/
 RUN raco koyo dist ++lang north
 
 
-FROM debian:bullseye-slim
+FROM ghcr.io/marckaufmann/debian:bullseye-slim
 
 COPY --from=build /opt/congame/dist /opt/congame
 
