@@ -2,11 +2,8 @@
 
 (require (except-in forms form)
          koyo/haml
+         "../components/registry.rkt"
          "../components/study.rkt")
-
-(provide
- consent-study
- simple-study)
 
 ;; example ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -117,3 +114,6 @@
     (make-step/study 'simple (wrap-sub-study simple-study echo-wrapper))
     (make-step 'give-consent-2
                give-consent))))
+
+(register-study! 'consent-study consent-study)
+(register-study! 'simple-study simple-study)

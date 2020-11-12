@@ -9,18 +9,17 @@
          koyo/url
          (except-in forms form)
          racket/contract
-         racket/file
          racket/format
          racket/match
-         racket/path
          racket/port
          racket/pretty
-         racket/runtime-path
          threading
          web-server/dispatchers/dispatch
          web-server/http
+         "../components/registry.rkt"
          "../components/study.rkt"
-         "../components/template.rkt")
+         "../components/template.rkt"
+         "../studies/all.rkt")
 
 (provide
  studies-page
@@ -51,18 +50,6 @@
               ([:href (reverse-uri 'admin:view-study-page (study-meta-id s))])
               (study-meta-name s)))))))))))
 
-(define-runtime-path study-modules-path
-  (build-path 'up "studies"))
-
-(define known-study-modules
-  (let ([paths (find-files (lambda (p)
-                             (equal? (path-get-extension p) #".rkt"))
-                           (simplify-path study-modules-path))])
-    (for/list ([p (in-list paths)])
-      (define-values (_folder filename _dir?)
-        (split-path p))
-      (string->symbol (~a "congame/studies/" (path-replace-extension filename #""))))))
-
 (define (slugify s)
   (~> s
       (string-downcase)
@@ -72,15 +59,9 @@
 (define create-study-form
   (form* ([name (ensure binding/text (required))]
           [slug (ensure binding/text)]
-          [racket-module (ensure binding/text
-                                 (required)
-                                 (one-of (for/list ([m (in-list known-study-modules)])
-                                           (cons (~a m) m))))]
-          [racket-id (ensure binding/symbol (required))])
-    (list name
-          (or slug (slugify name))
-          racket-module
-          racket-id)))
+          [study-id (ensure binding/text (required) (one-of (for/list ([id (in-hash-keys (get-registered-studies))])
+                                                                (cons (~a id) id))))])
+    (list name (or slug (slugify name)) study-id)))
 
 (define ((field-group label [w (widget-text)]) name value errors)
   (haml
@@ -95,12 +76,11 @@
      [:method "POST"])
     (rw "name" (field-group "Name"))
     (rw "slug" (field-group "Slug"))
-    (rw "racket-module" (field-group "Racket Module"
-                                     (widget-select (cons
-                                                     (cons "" "Please select a module")
-                                                     (for/list ([m (in-list known-study-modules)])
-                                                       (cons (~a m) (~a m)))))))
-    (rw "racket-id" (field-group "Racket ID"))
+    (rw "study-id" (field-group "Study ID"
+                                (widget-select (cons
+                                                (cons "" "Please select a study")
+                                                (for/list ([id (in-hash-keys (get-registered-studies))])
+                                                  (cons (~a id) (~a id)))))))
     (:button
      ([:type "submit"])
      "Create"))))
@@ -111,13 +91,12 @@
     (send/suspend/dispatch/protect
      (lambda (embed/url)
        (match (form-run create-study-form req)
-         [(list 'passed (list name slug mod id) _)
+         [(list 'passed (list name slug id) _)
           (define the-study
             (with-database-connection [conn db]
               (insert-one! conn (make-study-meta
                                  #:name name
                                  #:slug slug
-                                 #:racket-module mod
                                  #:racket-id id))))
 
           (redirect-to (reverse-uri 'admin:studies-page))]

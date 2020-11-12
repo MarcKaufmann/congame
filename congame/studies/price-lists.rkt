@@ -7,10 +7,8 @@
          racket/list
          racket/random
          racket/serialize
+         "../components/registry.rkt"
          "../components/study.rkt")
-
-(provide
- pl-study)
 
 (define-generics describable
   (describe describable))
@@ -140,3 +138,5 @@
                  (if (null? (get 'treatments))
                      next
                      'price-list))))))
+
+(register-study! 'pl-study pl-study)

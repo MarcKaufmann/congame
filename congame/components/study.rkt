@@ -22,7 +22,8 @@
          threading
          web-server/servlet
          (only-in xml xexpr?)
-         (prefix-in config: "../config.rkt"))
+         (prefix-in config: "../config.rkt")
+         "registry.rkt")
 
 (provide
  next
@@ -387,7 +388,6 @@ QUERY
   ([id integer/f #:primary-key #:auto-increment]
    [name string/f #:contract non-empty-string?]
    [slug string/f #:contract non-empty-string?]
-   [racket-module symbol/f]
    [racket-id symbol/f]
    [(created-at (now/moment)) datetime-tz/f]))
 
@@ -536,9 +536,7 @@ QUERY
 
             (and participant
                  (list
-                  (dynamic-require
-                   (study-meta-racket-module meta)
-                   (study-meta-racket-id meta))
+                  (lookup-registered-study (study-meta-racket-id meta))
                   participant)))]
 
       [else #f])))
