@@ -98,7 +98,11 @@
                                         ([:name name]
                                          [:type "radio"]
                                          [:value (~a j)]))
-                                       (describe o)))))))))))
+                                       (describe o))))))))
+              ,@(let ([errors (rw field-name (forms:widget-errors))])
+                  (if (null? errors)
+                      null
+                      `((tr (td ([colspan "2"]) ,@errors))))))))
         (:tr
          (:td
           (:button
