@@ -18,8 +18,8 @@ FROM ghcr.io/marckaufmann/debian:bullseye-slim
 COPY --from=build /opt/congame/dist /opt/congame
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends libssl-dev \
+  && apt-get install -y --no-install-recommends dumb-init libargon2-1 libssl-dev \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-CMD ["/opt/congame/bin/congame"]
+CMD ["dumb-init", "/opt/congame/bin/congame"]
