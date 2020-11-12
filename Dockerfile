@@ -1,4 +1,4 @@
-FROM ghcr.io/marckaufmann/congame-base:latest
+FROM racket/racket:7.9-cs-full AS build
 
 WORKDIR /opt/congame
 COPY .git /opt/congame/.git
@@ -10,4 +10,11 @@ COPY static /opt/congame/static
 
 RUN ci/setup-catalogs.sh
 RUN raco pkg install -D --auto --batch congame/
-CMD ["racket", "/opt/congame/congame/dynamic.rkt"]
+RUN raco koyo dist ++lang north
+
+
+FROM debian:bullseye-slim
+
+COPY --from=build /opt/congame/dist /opt/congame
+
+CMD ["/opt/congame/bin/congame"]
