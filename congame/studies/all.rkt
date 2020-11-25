@@ -7,3 +7,4 @@
 
 (reprovide "example.rkt")
 (reprovide "price-lists.rkt")
+(reprovide "pjb-pilot.rkt")
