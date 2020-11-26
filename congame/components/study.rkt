@@ -325,15 +325,15 @@ QUERY
          (redirect/get/forget/protect))]
 
       [else
-       (define the-step (study-find-step s (car resume-stack)))
-       (unless the-step (raise-resume-error))
+       (define the-step
+         (study-find-step s (car resume-stack) raise-resume-error))
        (parameterize ([current-resume-stack (cdr resume-stack)])
          (run-step req s the-step))])))
 
 (define (raise-resume-error)
-  (define-values (resume-stack resume-step)
+  (define resume-stack
     (current-participant-progress (current-study-manager)))
-  (error 'run-study "failed to resume step in study~n  resume step: ~.s~n  resume stack: ~.s" resume-step resume-stack))
+  (error 'run-study "failed to resume step in study~n  resume stack: ~.s" resume-stack))
 
 (define (run-step req s the-step)
   (log-study-debug "running step: ~.s" the-step)
@@ -357,9 +357,9 @@ QUERY
 
     [(cons 'to-step to-step-id)
      (define new-req (redirect/get/forget/protect))
-     (define next-step (study-find-step s to-step-id))
-     (unless next-step
-       (error 'run-step "skipped to a nonexistent step: ~s~n  current step: ~.s~n  current study: ~.s" to-step-id the-step s))
+     (define next-step
+       (study-find-step s to-step-id (lambda ()
+                                       (error 'run-step "skipped to a nonexistent step: ~s~n  current step: ~.s~n  current study: ~.s" to-step-id the-step s))))
      (run-step new-req s next-step)]
 
     [_
@@ -368,11 +368,9 @@ QUERY
        (match ((step-transition the-step))
          [(? done?) #f]
          [(? next?) (study-find-next-step s (step-id the-step))]
-         [next-step-id (study-find-step s next-step-id)]))
+         [next-step-id (study-find-step s next-step-id (lambda ()
+                                                         (error 'run-step "transitioned to a nonexistent step: ~.s~n  current step: ~.s~n  current study: ~.s" next-step-id (step-id the-step) s)))]))
 
-     ;; FIXME: study-find-step returns #f both when we're done with
-     ;; the [sub]study and when the user makes a mistake by providing
-     ;; a non-existent step id.
      (cond
        [next-step => (lambda (the-next-step)
                        (run-step new-req s the-next-step))]
@@ -394,10 +392,12 @@ QUERY
         (values previous a-step)
         (values a-step #f))))
 
-(define (study-find-step s id)
-  (for/first ([a-step (in-list (study-steps s))]
-              #:when (eq? (step-id a-step) id))
-    a-step))
+(define (study-find-step s id [failure-thunk (lambda () #f)])
+  (define st
+    (for/first ([a-step (in-list (study-steps s))]
+                #:when (eq? (step-id a-step) id))
+      a-step))
+  (or st (failure-thunk)))
 
 
 ;; db ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
