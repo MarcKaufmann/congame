@@ -21,6 +21,10 @@
   (-> (hash/c symbol? any/c))
   (hash-copy *registry*))
 
-(define/contract (lookup-registered-study id)
-  (-> symbol? (or/c #f any/c))
-  (hash-ref *registry* id #f))
+(define/contract (lookup-registered-study id [failure-thunk (lambda (id) #f)])
+  (->* (symbol?)
+       ((-> symbol? any/c))
+       (or/c #f any/c))
+  (define st
+    (hash-ref *registry* id #f))
+  (or st (failure-thunk id)))
