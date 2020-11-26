@@ -217,18 +217,45 @@ QUERY
 (define step-id/c symbol?)
 (define handler/c (-> xexpr?))
 (define transition/c (-> (or/c done? next? step-id/c)))
+(define binding/c (list/c symbol? symbol?))
 
 (define/contract (make-step id handler [transition (lambda () next)])
   (->* (step-id/c handler/c) (transition/c) step?)
   (step id handler transition))
 
-(define/contract (make-step/study id s [transition (lambda () next)])
-  (->* (step-id/c study?) (transition/c) step?)
+(define/contract (make-step/study id s
+                                  [transition (lambda () next)]
+                                  #:require-bindings [require-bindings null]
+                                  #:provide-bindings [provide-bindings null])
+  (->* (step-id/c study?)
+       (transition/c
+        #:require-bindings (listof binding/c)
+        #:provide-bindings (listof binding/c))
+       step?)
   (step/study
    id
    (lambda ()
+     (define all-required-bindings
+       (for/fold ([seen (for/hasheq ([binding (in-list require-bindings)])
+                          (values (car binding) #t))]
+                  [bindings require-bindings]
+                  #:result bindings)
+                 ([required-id (in-list (study-requires s))]
+                  #:unless (hash-has-key? seen required-id))
+         (values (hash-set seen required-id #t)
+                 (cons (list required-id required-id) bindings))))
+     (define bindings
+       (for/hasheq ([binding (in-list all-required-bindings)])
+         (match-define (list dst-id src-id) binding)
+         (values dst-id (get src-id (lambda ()
+                                      (error 'get "value not found for key ~.s in sub-study~n  bound to: ~s~n  required by step: ~.s" src-id dst-id id))))))
      (with-widget-parameterization
-       (run-study s)
+       (define result-bindings
+         (run-study s #:bindings bindings))
+       (for ([binding (in-list provide-bindings)])
+         (match-define (list dst-id src-id) binding)
+         (put dst-id (hash-ref result-bindings src-id (lambda ()
+                                                        (error 'run-study/step "expected binding ~s to be provided by sub-study~n  bound to: ~s~n  at step: ~.s" src-id dst-id id)))))
        (continue)))
    transition
    s))
@@ -272,8 +299,13 @@ QUERY
        study?)
   (study requires provides steps))
 
-(define/contract (run-study s [req (current-request)])
-  (->* (study?) (request?) any)
+(define/contract (run-study s
+                            [req (current-request)]
+                            #:bindings [bindings (hasheq)])
+  (->* (study?)
+       (request?
+        #:bindings (hash/c symbol? any/c))
+       any)
   (define resume-stack (current-resume-stack))
   (define new-study-stack
     (if (eq? (current-step) 'no-step)
@@ -281,7 +313,14 @@ QUERY
         (cons (step-id (current-step)) (current-study-stack))))
   (parameterize ([current-study-stack new-study-stack])
     (cond
+      ;; An empty resume stack means that this is the first time we've
+      ;; entered this [sub]study.
       [(null? resume-stack)
+       ;; Only put bindings on the first step of the [sub]study, to
+       ;; avoid overwriting bindings that may have been set on
+       ;; subsequent steps on resume.
+       (for ([(id value) (in-hash bindings)])
+         (put id value))
        (begin0 (run-step req s (study-next-step s))
          (redirect/get/forget/protect))]
 
@@ -331,6 +370,9 @@ QUERY
          [(? next?) (study-find-next-step s (step-id the-step))]
          [next-step-id (study-find-step s next-step-id)]))
 
+     ;; FIXME: study-find-step returns #f both when we're done with
+     ;; the [sub]study and when the user makes a mistake by providing
+     ;; a non-existent step id.
      (cond
        [next-step => (lambda (the-next-step)
                        (run-step new-req s the-next-step))]

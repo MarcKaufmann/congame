@@ -42,7 +42,7 @@
   (λ ()
     (cond [(not (empty? ts))
            (begin0
-             (first ts)
+               (first ts)
              (set! ts (rest ts)))]
           [else
            (set! ts (shuffle original))
@@ -94,18 +94,16 @@
   (λ ()
     (hash-ref hot (get treatment))))
 
-(define (initialize-tasks n)
-  (λ ()
-    (haml
-     (:div
-      (:h1 "Start the tasks NOW!")
-      (button
-       (λ ()
-         (put 'n n) ;; FIXME: Once we use requires properly, this shouldn't be necessary anymore
-         (put 'remaining-tasks n)
-         (put 'correct-answers 0)
-         (put 'wrong-answers 0))
-       "Start Tasks")))))
+(define (initialize-tasks)
+  (haml
+   (:div
+    (:h1 "Start the tasks NOW!")
+    (button
+     (λ ()
+       (put 'remaining-tasks (get 'n))
+       (put 'correct-answers 0)
+       (put 'wrong-answers 0))
+     "Start Tasks"))))
 
 (define (task)
   (haml
@@ -144,12 +142,12 @@
           [(> (get 'wrong-answers) 1) 'failure]
           [else 'task])))
 
-(define (task-study n)
+(define task-study
   (make-study
    #:requires '(n) ;; TODO: This currently doesn't do anything I believe
    #:provides '(success? correct-answers wrong-answers)
    (list
-    (make-step 'start-tasks (initialize-tasks n)) ;; FIXME: Once n is dealt with, stop passing as parameter
+    (make-step 'start-tasks initialize-tasks) ;; FIXME: Once n is dealt with, stop passing as parameter
     (make-step 'task task task-completion)
     (make-step 'success success (λ () done))
     (make-step 'failure failure (λ () done)))))
@@ -163,12 +161,14 @@
     (make-step 'explain-study (linear-handler "Study Explanation"))
     (make-step 'tutorial tutorial)
     (make-step/study 'required-tasks
-               (task-study 5) ; FIXME: How to pass in the treatment value?
-               ; FIXME: Should fork depending on 'success? being #t or #f, no idea how to access right now
-               (match/treatment
-                'rest-treatment
-                (hash 'get-rest-then-elicit 'get-rest
-                      'elicit-then-get-rest 'elicit-WTW)))
+                     task-study
+                     ; FIXME: Should fork depending on 'success? being #t or #f, no idea how to access right now
+                     (match/treatment
+                      'rest-treatment
+                      (hash 'get-rest-then-elicit 'get-rest
+                            'elicit-then-get-rest 'elicit-WTW))
+                     #:require-bindings '([n task-treatment])
+                     #:provide-bindings '())
     (make-step 'get-rest
                get-rest
                (match/treatment
