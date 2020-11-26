@@ -10,7 +10,7 @@ COPY resources /opt/congame/resources
 COPY static /opt/congame/static
 
 RUN ci/setup-catalogs.sh
-RUN raco pkg install -D --auto --batch congame-core/ congame/
+RUN raco pkg install -D --auto --batch congame-core/ congame-example-study/ congame/
 RUN raco koyo dist ++lang north
 
 

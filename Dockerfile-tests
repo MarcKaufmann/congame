@@ -11,5 +11,5 @@ COPY resources /opt/congame/resources
 COPY static /opt/congame/static
 
 RUN ci/setup-catalogs.sh
-RUN raco pkg install -D --auto --batch congame-core/ congame/ congame-tests/
+RUN raco pkg install -D --auto --batch congame-core/ congame-example-study/ congame/ congame-tests/
 CMD ["raco", "test", "/opt/congame/congame-tests"]

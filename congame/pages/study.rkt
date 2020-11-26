@@ -9,8 +9,7 @@
          web-server/http
          "../components/auth.rkt"
          "../components/template.rkt"
-         "../components/user.rkt"
-         "../studies/example.rkt")
+         "../components/user.rkt")
 
 (provide
  study-instances-page
