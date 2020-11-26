@@ -1,13 +1,13 @@
 #lang racket/base
 
-(require koyo/continuation
+(require congame/components/study
+         koyo/continuation
          koyo/haml
          koyo/url
          racket/match
          web-server/dispatchers/dispatch
          web-server/http
          "../components/auth.rkt"
-         "../components/study.rkt"
          "../components/template.rkt"
          "../components/user.rkt"
          "../studies/example.rkt")

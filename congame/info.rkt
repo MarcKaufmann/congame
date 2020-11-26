@@ -3,6 +3,7 @@
 (define collection "congame")
 (define deps '("base"
                "component-lib"
+               "congame-core"
                "crypto-lib"
                "db-lib"
                "deta-lib"

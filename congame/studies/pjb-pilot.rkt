@@ -5,8 +5,8 @@
          racket/match
          (except-in forms form)
          koyo/haml
-         "../components/registry.rkt"
-         "../components/study.rkt")
+         congame/components/registry
+         congame/components/study)
 
 ;; PjB Pilot has the following structure:
 ;;

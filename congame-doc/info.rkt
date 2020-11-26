@@ -2,7 +2,7 @@
 
 (define collection "congame")
 (define deps '("base"))
-(define build-deps '("congame"
+(define build-deps '("congame-core"
                      "racket-doc"
                      "scribble-lib"
                      "web-server-lib"

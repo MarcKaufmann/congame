@@ -3,13 +3,14 @@ FROM ghcr.io/marckaufmann/racket:7.9-cs-full AS build
 WORKDIR /opt/congame
 COPY .git /opt/congame/.git
 COPY ci /opt/congame/ci
+COPY congame-core /opt/congame/congame-core
 COPY congame /opt/congame/congame
 COPY migrations /opt/congame/migrations
 COPY resources /opt/congame/resources
 COPY static /opt/congame/static
 
 RUN ci/setup-catalogs.sh
-RUN raco pkg install -D --auto --batch congame/
+RUN raco pkg install -D --auto --batch congame-core/ congame/
 RUN raco koyo dist ++lang north
 
 

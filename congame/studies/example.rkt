@@ -2,8 +2,8 @@
 
 (require (except-in forms form)
          koyo/haml
-         "../components/registry.rkt"
-         "../components/study.rkt")
+         congame/components/registry
+         congame/components/study)
 
 ;; example ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

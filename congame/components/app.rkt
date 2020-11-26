@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          component
+         congame/components/study
          koyo
          koyo/database/migrator
          koyo/sentry
@@ -21,7 +22,6 @@
          "auth.rkt"
          "mail.rkt"
          "sentry.rkt"
-         "study.rkt"
          "user.rkt")
 
 (provide

@@ -1,6 +1,8 @@
 #lang racket/base
 
 (require (for-syntax racket/base)
+         congame/components/registry
+         congame/components/study
          deta
          gregor
          koyo/continuation
@@ -16,8 +18,6 @@
          threading
          web-server/dispatchers/dispatch
          web-server/http
-         "../components/registry.rkt"
-         "../components/study.rkt"
          "../components/template.rkt"
          "../studies/all.rkt")
 

@@ -43,6 +43,7 @@ The features that will get implemented will however be determined by the priorit
 
     $ nvm use && npm install && npm run build
     $ raco pkg install chief
+    $ raco pkg install congame-core/   # install and build the core library and its deps
     $ raco pkg install congame/        # install and build the application and its deps
     $ raco pkg install congame-doc/    # install and build the docs and their deps
     $ raco pkg install congame-tests/  # install and build the tests and their deps
