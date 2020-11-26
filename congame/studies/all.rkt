@@ -29,4 +29,3 @@
          reg-spec ...)]))
 
 (comptime-require-pkgs)
-(reprovide "price-lists.rkt")

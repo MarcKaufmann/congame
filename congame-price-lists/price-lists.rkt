@@ -10,6 +10,9 @@
          congame/components/registry
          congame/components/study)
 
+(provide
+ pl-study)
+
 (define-generics describable
   (describe describable))
 
@@ -143,4 +146,3 @@
                      next
                      'price-list))))))
 
-(register-study! 'pl-study pl-study)
