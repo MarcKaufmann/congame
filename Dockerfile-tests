@@ -5,6 +5,7 @@ COPY .git /opt/congame/.git
 COPY ci /opt/congame/ci
 COPY congame /opt/congame/congame
 COPY congame-core /opt/congame/congame-core
+COPY congame-example-study /opt/congame/congame-example-study
 COPY congame-tests /opt/congame/congame-tests
 COPY migrations /opt/congame/migrations
 COPY resources /opt/congame/resources

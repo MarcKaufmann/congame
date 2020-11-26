@@ -3,8 +3,9 @@ FROM ghcr.io/marckaufmann/racket:7.9-cs-full AS build
 WORKDIR /opt/congame
 COPY .git /opt/congame/.git
 COPY ci /opt/congame/ci
-COPY congame-core /opt/congame/congame-core
 COPY congame /opt/congame/congame
+COPY congame-core /opt/congame/congame-core
+COPY congame-example-study /opt/congame/congame-example-study
 COPY migrations /opt/congame/migrations
 COPY resources /opt/congame/resources
 COPY static /opt/congame/static
