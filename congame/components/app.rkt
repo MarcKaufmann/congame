@@ -14,7 +14,6 @@
          (prefix-in filter: web-server/dispatchers/dispatch-filter)
          (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
          web-server/dispatchers/filesystem-map
-         web-server/http
          web-server/managers/lru
          web-server/servlet-dispatch
          (prefix-in config: "../config.rkt")
@@ -22,6 +21,7 @@
          "auth.rkt"
          "mail.rkt"
          "sentry.rkt"
+         "study.rkt"
          "user.rkt")
 
 (provide
@@ -124,6 +124,7 @@
     (current-continuation-key-cookie-secure? #f))
   (current-continuation-wrapper stack)
   (current-reverse-uri-fn reverse-uri)
+  (current-git-sha config:git-sha)
 
   (define manager
     (make-threshold-LRU-manager (stack expired-page) (* 1024 1024 512)))

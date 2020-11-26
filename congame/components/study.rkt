@@ -22,10 +22,10 @@
          threading
          web-server/servlet
          (only-in xml xexpr?)
-         (prefix-in config: "../config.rkt")
          "registry.rkt")
 
 (provide
+ current-git-sha
  next
  done
  put
@@ -57,6 +57,10 @@
 
 ;; storage ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define/contract current-git-sha
+  (parameter/c (or/c #f string?))
+  (make-parameter #f))
+
 (define (deserialize* s)
   (deserialize (fasl->s-exp (open-input-bytes s))))
 
@@ -82,7 +86,7 @@ QUERY
                 (current-study-array)
                 (symbol->string k)
                 (serialize* v)
-                config:git-sha)))
+                (current-git-sha))))
 
 (define (get k [default (lambda ()
                           (error 'get "value not found for key ~.s" k))])
