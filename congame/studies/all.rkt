@@ -30,4 +30,3 @@
 
 (comptime-require-pkgs)
 (reprovide "price-lists.rkt")
-(reprovide "pjb-pilot.rkt")

@@ -2,11 +2,12 @@
 
 (require racket/contract
          racket/list
-         racket/match
          (except-in forms form)
          koyo/haml
-         congame/components/registry
          congame/components/study)
+
+(provide
+ pjb-pilot-study)
 
 ;; PjB Pilot has the following structure:
 ;;
@@ -182,5 +183,3 @@
                 (hash 'get-rest-then-elicit 'debrief-survey
                       'elicit-then-get-rest 'get-rest)))
     (make-step 'debrief-survey debrief-survey))))
-
-(register-study! 'pjb-pilot pjb-pilot-study)
