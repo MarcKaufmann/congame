@@ -35,6 +35,7 @@
      (λ () (put 'WTW 5))
      "Continue"))))
 
+; Add treatment for length of break?
 (define *rest-treatments* '(get-rest-then-elicit elicit-then-get-rest))
 (define *task-treatments* '(1 3))
 
@@ -89,11 +90,6 @@
    (:div
     (:h1 "Take a break")
     (button void "Continue"))))
-
-(define/contract (match/treatment treatment hot)
-  (-> symbol? (hash/c symbol? symbol?) (-> symbol?))
-  (λ ()
-    (hash-ref hot (get treatment))))
 
 (define (initialize-tasks)
   (haml
@@ -156,30 +152,36 @@
 (define pjb-pilot-study
   (make-study
    #:requires '()
-   #:provides '(WTW task-treatment rest-treatment)
+   ; FIXME: How should we resolve the fact that for proper completion I expect WTW,
+   ; but not when the person fails the study due to failing the tasks.
+   ; Use a different state than `done`? Doesn't seem justified. Rather implement a way to set all required
+   ; values to some kind of NA value, although maybe I should allow for error messages to be
+   ; attached to data values -- i.e. reasons for failing?
+   #:provides '(task-treatment rest-treatment)
    ;; TODO: Ensure work is done in appropriate time, i.e. all in one go, not too many breaks, and so on, all on the same day.
    (list
     (make-step 'explain-study (linear-handler "Study Explanation"))
     (make-step 'tutorial tutorial)
     (make-step/study 'required-tasks
                      task-study
-                     ; FIXME: Should fork depending on 'success? being #t or #f, no idea how to access right now
-                     (match/treatment
-                      'rest-treatment
-                      (hash 'get-rest-then-elicit 'get-rest
-                            'elicit-then-get-rest 'elicit-WTW))
+                     (lambda ()
+                       (if (not (get 'success?))
+                           done
+                           (case (get 'rest-treatment)
+                             [(get-rest-then-elicit) 'get-rest]
+                             [(elicit-then-get-rest) 'elicit-WTW])))
                      #:require-bindings '([n task-treatment])
-                     #:provide-bindings '())
+                     #:provide-bindings '([success? success?]))
     (make-step 'get-rest
                get-rest
-               (match/treatment
-                'rest-treatment
-                (hash 'get-rest-then-elicit 'elicit-WTW
-                      'elicit-then-get-rest 'debrief-survey)))
+               (lambda ()
+                 (case (get 'rest-treatment)
+                   [(get-rest-then-elicit) 'elicit-WTW]
+                   [(elicit-then-get-rest) 'debrief-survey])))
     (make-step 'elicit-WTW
                elicit-WTW
-               (match/treatment
-                'rest-treatment
-                (hash 'get-rest-then-elicit 'debrief-survey
-                      'elicit-then-get-rest 'get-rest)))
+               (lambda ()
+                 (case (get 'rest-treatment)
+                   [(get-rest-then-elicit) 'debrief-survey]
+                   [(elicit-then-get-rest) 'get-rest])))
     (make-step 'debrief-survey debrief-survey))))
