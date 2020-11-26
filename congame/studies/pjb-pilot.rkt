@@ -144,10 +144,10 @@
 
 (define task-study
   (make-study
-   #:requires '(n) ;; TODO: This currently doesn't do anything I believe
+   #:requires '(n)
    #:provides '(success? correct-answers wrong-answers)
    (list
-    (make-step 'start-tasks initialize-tasks) ;; FIXME: Once n is dealt with, stop passing as parameter
+    (make-step 'start-tasks initialize-tasks)
     (make-step 'task task task-completion)
     (make-step 'success success (λ () done))
     (make-step 'failure failure (λ () done)))))
