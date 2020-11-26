@@ -60,6 +60,19 @@ local development .  You can disable this requirement by setting
 `current-continuation-key-cookie-secure?` parameter to `#f` before the
 application is started.
 
+## Installing study packages
+
+* The package's `info.rkt` needs to `(define congame-studies)` like so:
+
+``` racket
+(define congame-studies
+  ;; Path to package, followed by the study provided by the package that you want to use
+  '((congame-example-study/example consent-study)
+    (congame-example-study/example simple-study)))
+```
+
+    $ raco pkg install congame-example-study/  # install and build the study pakckage and its deps
+
 ## Running the app locally
 
     $ nvm use
