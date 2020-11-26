@@ -4,7 +4,7 @@ congame is *the best experimental economics software written in Racket*. [zTree]
 
 1. It is tedious and errorprone to have multi-part studies across several days or weeks
 2. It is tedious and errorprone to reuse and compose substudies into larger studies
-3. Specification of the experimental study are interweaved with code that deals with web specific concerns 
+3. Specification of the experimental study are interweaved with code that deals with web specific concerns
 
 congame addresses the first concern fully, and eases the other two -- at least for the kinds of studies I run. Unsurprisingly, congame lacks many features of oTree (and other behavioral research software):
 
@@ -44,6 +44,7 @@ The features that will get implemented will however be determined by the priorit
     $ nvm use && npm install && npm run build
     $ raco pkg install chief
     $ raco pkg install congame/        # install and build the application and its deps
+    $ raco pkg install congame-doc/    # install and build the docs and their deps
     $ raco pkg install congame-tests/  # install and build the tests and their deps
 
 ### Development environment
@@ -62,6 +63,10 @@ application is started.
 
     $ nvm use
     $ raco chief start
+
+## Re-building the documentation
+
+    $ raco setup --tidy --check-pkg-deps --unused-pkg-deps congame
 
 
 [Postgres]: https://www.postgresql.org/
