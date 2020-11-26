@@ -7,6 +7,7 @@ COPY congame /opt/congame/congame
 COPY congame-core /opt/congame/congame-core
 COPY congame-example-study /opt/congame/congame-example-study
 COPY congame-pjb-studies/ /opt/congame/congame-pjb-studies
+COPY congame-price-lists/ /opt/congame/congame-price-lists
 COPY congame-tests /opt/congame/congame-tests
 COPY migrations /opt/congame/migrations
 COPY resources /opt/congame/resources
@@ -17,6 +18,7 @@ RUN raco pkg install -D --auto --batch \
   congame-core/ \
   congame-example-study/ \
   congame-pjb-studies/ \
+  congame-price-lists/ \
   congame/ \
   congame-tests/
 CMD ["raco", "test", "/opt/congame/congame-tests"]

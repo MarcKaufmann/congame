@@ -7,6 +7,7 @@ COPY congame /opt/congame/congame
 COPY congame-core /opt/congame/congame-core
 COPY congame-example-study /opt/congame/congame-example-study
 COPY congame-pjb-studies /opt/congame/congame-pjb-studies
+COPY congame-price-lists /opt/congame/congame-price-lists
 COPY migrations /opt/congame/migrations
 COPY resources /opt/congame/resources
 COPY static /opt/congame/static
@@ -16,6 +17,7 @@ RUN raco pkg install -D --auto --batch \
   congame-core/ \
   congame-example-study/ \
   congame-pjb-studies/ \
+  congame-price-lists/ \
   congame/
 RUN raco koyo dist ++lang north
 
