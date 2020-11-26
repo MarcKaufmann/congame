@@ -582,7 +582,10 @@ QUERY
 
             (and participant
                  (list
-                  (lookup-registered-study (study-meta-racket-id meta))
+                  (lookup-registered-study
+                   (study-meta-racket-id meta)
+                   (lambda (id)
+                     (error 'lookup-registered-study "No such registered study: ~s~n. Did you install the necessary congame-studies?" id)))
                   participant)))]
 
       [else #f])))
