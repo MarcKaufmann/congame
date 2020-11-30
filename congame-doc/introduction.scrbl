@@ -6,8 +6,6 @@
 
 @title{Introduction}
 
-@defmodule[congame/components/study]
-
 @defproc[(run-study [s study?]
                     [req request? (current-request)]
                     [#:bindings bindings (hash/c symbol? any/c) (hasheq)]) any/c]{
