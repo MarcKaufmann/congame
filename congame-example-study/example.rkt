@@ -11,8 +11,13 @@
  consent-study
  simple-study)
 
-(define-runtime-path song-path "christmas-song.ogg")
-(define-static-resource song song-path)
+;; Directory resources:
+(define-runtime-path songs-path "songs")
+(define-static-resource songs songs-path)
+
+;; File resources:
+(define-runtime-path christmas-song-path (build-path "songs" "christmas.ogg"))
+(define-static-resource christmas-song christmas-song-path)
 
 ;; example ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -94,9 +99,11 @@
    (:div
     (:h1 "Relax and listen to some music")
     (:audio
-     ([:autoplay ""]
-      [:controls ""]
-      [:src (resource-uri song)]))
+     ([:controls ""]
+      [:src (resource-uri christmas-song)]))
+    (:audio
+     ([:controls ""]
+      [:src (resource-uri songs "christmas.ogg")]))
     (:br)
     (button void "Continue"))))
 

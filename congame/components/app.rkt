@@ -106,6 +106,9 @@
       (verify-page flashes users)]
 
      [("resource" (string-arg))
+      serve-resource-page]
+
+     [("resource" (string-arg) (string-arg))
       serve-resource-page]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
@@ -129,8 +132,10 @@
   (current-continuation-wrapper stack)
   (current-reverse-uri-fn reverse-uri)
   (current-resource-uri-fn
-   (lambda (r)
-     (reverse-uri 'serve-resource-page (resource-id r))))
+   (lambda (r subr)
+     (if subr
+         (reverse-uri 'serve-resource-page (resource-id r) subr)
+         (reverse-uri 'serve-resource-page (resource-id r)))))
   (current-git-sha config:git-sha)
 
   (define manager
