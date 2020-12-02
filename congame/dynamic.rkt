@@ -6,6 +6,7 @@
          koyo/database
          koyo/database/migrator
          koyo/flash
+         koyo/job
          koyo/logging
          koyo/mail/postmark
          koyo/server
@@ -30,8 +31,10 @@
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth db flashes mailer migrator sessions users) make-app]
+  [app (auth broker broker-admin db flashes mailer migrator sessions users) make-app]
   [auth (sessions users) make-auth-manager]
+  [broker (db) make-broker]
+  [broker-admin (broker) (make-broker-admin-factory "/admin/jobs")]
   [db (make-database-factory
        (lambda ()
          (postgresql-connect #:database config:db-name
@@ -55,7 +58,8 @@
                                           #:secret-key config:session-secret-key
                                           #:store (make-memory-session-store
                                                    #:file-path config:session-path))]
-  [users (db) make-user-manager])
+  [users (db) make-user-manager]
+  [worker (broker) (make-worker-factory)])
 
 
 ;; Interface ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

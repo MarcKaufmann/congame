@@ -47,8 +47,8 @@
 (struct app (dispatcher)
   #:methods gen:component [])
 
-(define/contract (make-app auth db flashes mailer _migrator sessions users)
-  (-> auth-manager? database? flash-manager? mailer? migrator? session-manager? user-manager? app?)
+(define/contract (make-app auth broker broker-admin db flashes mailer _migrator sessions users)
+  (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? session-manager? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
@@ -82,6 +82,11 @@
      [("admin" "studies" (integer-arg) "instances" (integer-arg) "participants" (integer-arg))
       #:roles (admin)
       (admin:view-study-participant-page db)]
+
+     [("admin" "jobs" (string-arg) ...)
+      #:roles (admin)
+      (lambda (req . _args)
+        ((broker-admin-handler broker-admin) req))]
 
      [("study" (string-arg))
       #:roles (user)
@@ -127,6 +132,7 @@
         (wrap-cors)
         (wrap-profiler)))
 
+  (current-broker broker)
   (when config:debug
     (current-continuation-key-cookie-secure? #f))
   (current-continuation-wrapper stack)
