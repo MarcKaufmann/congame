@@ -2,7 +2,9 @@
 
 (define collection "congame-example-study")
 (define deps '("base"
-               "congame-core"))
+               "congame-core"
+               "forms-lib"
+               "koyo-lib"))
 (define build-deps '())
 (define congame-studies
   '((congame-example-study/example consent-study)

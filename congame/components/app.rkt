@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          component
+         congame/components/resource
          congame/components/study
          koyo
          koyo/database/migrator
@@ -102,7 +103,10 @@
       (signup-page auth mailer users)]
 
      [("verify" (integer-arg) (string-arg))
-      (verify-page flashes users)]))
+      (verify-page flashes users)]
+
+     [("resource" (string-arg))
+      serve-resource-page]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)
@@ -124,6 +128,9 @@
     (current-continuation-key-cookie-secure? #f))
   (current-continuation-wrapper stack)
   (current-reverse-uri-fn reverse-uri)
+  (current-resource-uri-fn
+   (lambda (r)
+     (reverse-uri 'serve-resource-page (resource-id r))))
   (current-git-sha config:git-sha)
 
   (define manager

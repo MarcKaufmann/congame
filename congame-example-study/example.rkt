@@ -1,12 +1,18 @@
 #lang racket/base
 
-(require (except-in forms form)
+(require (for-syntax racket/base)
+         congame/components/resource
+         congame/components/study
+         (except-in forms form)
          koyo/haml
-         congame/components/study)
+         racket/runtime-path)
 
 (provide
  consent-study
  simple-study)
+
+(define-runtime-path song-path "christmas-song.ogg")
+(define-static-resource song song-path)
 
 ;; example ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -83,6 +89,17 @@
     (:h1 "You are in the simple study")
     (button void "Continue"))))
 
+(define (listen-to-some-music)
+  (haml
+   (:div
+    (:h1 "Relax and listen to some music")
+    (:audio
+     ([:autoplay ""]
+      [:controls ""]
+      [:src (resource-uri song)]))
+    (:br)
+    (button void "Continue"))))
+
 (define (simple-info-2)
   (haml
    (:div
@@ -98,6 +115,7 @@
   (make-study
    (list
     (make-step 'simple-info-1 simple-info-1)
+    (make-step 'listen listen-to-some-music)
     (make-step 'simple-info-2 simple-info-2)
     (make-step/study 'deep (wrap-sub-study deep-study echo-wrapper)))))
 

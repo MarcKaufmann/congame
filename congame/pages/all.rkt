@@ -14,6 +14,7 @@
  "auth.rkt"
  "common.rkt"
  "dashboard.rkt"
+ "resource.rkt"
  "study.rkt")
 
 (reprovide/admin
