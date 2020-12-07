@@ -93,4 +93,6 @@ application is started.
 
 ## License
 
-    congame is licensed under the 3-Clause BSD license. See [congame-doc/LICENSE].
+    congame is licensed under the 3-Clause BSD license. 
+    
+See [LICENSE](congame-doc/LICENSE).
