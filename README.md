@@ -89,3 +89,8 @@ application is started.
 [chief]: https://github.com/Bogdanp/racket-chief
 [node]: https://nodejs.org/en/
 [nvm]: https://github.com/nvm-sh/nvm
+
+
+## License
+
+    congame is licensed under the 3-Clause BSD license.
