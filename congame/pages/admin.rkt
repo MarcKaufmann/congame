@@ -21,7 +21,8 @@
          web-server/dispatchers/dispatch
          web-server/http
          "../components/template.rkt"
-         "../studies/all.rkt")
+         "../studies/all.rkt"
+         "render.rkt")
 
 (provide
  studies-page
@@ -237,21 +238,11 @@
            (:td (~a (study-instance-status the-instance)))))
          (:h4
           (:a
-           ([:href (embed/url
-                    (lambda (_req)
-                      ;; XXX: n+1 queries here.  Refactor to use a single query if this is ever a problem.
-                      (response/jsexpr
-                       (hash
-                        'study-id study-id
-                        'instance-id study-instance-id
-                        'participants
-                        (for/list ([p (in-list participants)])
-                          (define pid (study-participant/admin-id p))
-                          (hash
-                           'participant-id pid
-                           'instance-id study-instance-id
-                           'study-id study-id
-                           'vars (map ->jsexpr (lookup-study-vars db pid))))))))])
+           ([:href
+             (embed/url
+              (lambda (_req)
+                (response/jsexpr
+                 (study-participants->jsexpr db study-id study-instance-id participants))))])
            "Export JSON"))
          (:h2 "Participants")
          (:table.table

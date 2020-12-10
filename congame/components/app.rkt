@@ -89,10 +89,17 @@
       (lambda (req . _args)
         ((broker-admin-handler broker-admin) req))]
 
-     [("api" "test")
+     [("api" "v1" "studies.json")
       #:roles (api)
-      (lambda (req)
-        (response/json "hello!"))]
+      (api:studies db)]
+
+     [("api" "v1" "studies" (integer-arg) "instances.json")
+      #:roles (api)
+      (api:study-instances db)]
+
+     [("api" "v1" "studies" (integer-arg) "instances" (integer-arg) "participants.json")
+      #:roles (api)
+      (api:study-participants db)]
 
      [("study" (string-arg))
       #:roles (user)
