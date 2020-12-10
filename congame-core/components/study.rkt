@@ -12,6 +12,7 @@
          (except-in forms form)
          racket/contract
          racket/fasl
+         racket/generic
          racket/match
          racket/port
          racket/sequence
@@ -22,6 +23,7 @@
          threading
          web-server/servlet
          (only-in xml xexpr?)
+         "export.rkt"
          "registry.rkt")
 
 (provide
@@ -469,7 +471,16 @@ QUERY
    [id symbol/f]
    [value binary/f]
    [first-put-at datetime-tz/f]
-   [last-put-at datetime-tz/f]))
+   [last-put-at datetime-tz/f])
+  #:methods gen:jsexprable
+  [(define/generic ->jsexpr/super ->jsexpr)
+   (define (->jsexpr v)
+     (match-define (study-var _ stack id _ first-put-at last-put-at) v)
+     (hash 'stack (vector->list stack)
+           'id (symbol->string id)
+           'value (->jsexpr/super (study-var-value/deserialized v))
+           'first-put-at (moment->iso8601 first-put-at)
+           'last-put-at (moment->iso8601 last-put-at)))])
 
 (define study-var-value/deserialized
   (compose1 deserialize* study-var-value))

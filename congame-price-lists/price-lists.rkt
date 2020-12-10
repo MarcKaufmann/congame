@@ -5,8 +5,10 @@
          racket/format
          racket/generic
          racket/list
+         racket/match
          racket/random
          racket/serialize
+         congame/components/export
          congame/components/registry
          congame/components/study)
 
@@ -23,7 +25,12 @@
   [(define (describe o)
      (format "Work: ~a money: ~a"
              (option-work o)
-             (option-money o)))])
+             (option-money o)))]
+  #:methods gen:jsexprable
+  [(define (->jsexpr o)
+     (hash 'type "option"
+           'work (option-work o)
+           'money (option-money o)))])
 
 (serializable-struct option/timed (work money work-time decision-time)
   #:transparent
@@ -33,13 +40,33 @@
              (option/timed-work o)
              (option/timed-money o)
              (option/timed-work-time o)
-             (option/timed-decision-time o)))])
+             (option/timed-decision-time o)))]
+  #:methods gen:jsexprable
+  [(define (->jsexpr o)
+     (match-define (option/timed work money work-time decision-time) o)
+     (hash 'type "option/timed"
+           'work work
+           'money money
+           'work-time work-time
+           'decision-time decision-time))])
 
 (serializable-struct choice (chosen options)
-  #:transparent)
+  #:transparent
+  #:methods gen:jsexprable
+  [(define/generic ->jsexpr/super ->jsexpr)
+   (define (->jsexpr c)
+     (hash 'type "choice"
+           'chose (->jsexpr/super (choice-chosen c))
+           'options (->jsexpr/super (choice-options c))))])
 
 (serializable-struct price-list (treatment choices)
-  #:transparent)
+  #:transparent
+  #:methods gen:jsexprable
+  [(define/generic ->jsexpr/super ->jsexpr)
+   (define (->jsexpr pl)
+     (hash 'type "price-list"
+           'treatment (->jsexpr/super (price-list-treatment pl))
+           'choices (->jsexpr/super (price-list-choices pl))))])
 
 (define possible-treatments
   '(((a 0) (a 1))
@@ -145,4 +172,3 @@
                  (if (null? (get 'treatments))
                      next
                      'price-list))))))
-

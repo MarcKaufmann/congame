@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base)
+         congame/components/export
          congame/components/registry
          congame/components/study
          deta
@@ -8,6 +9,7 @@
          koyo/continuation
          koyo/database
          koyo/haml
+         koyo/json
          koyo/url
          (except-in forms form)
          racket/contract
@@ -253,6 +255,7 @@
               (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))
               (:td (~a (study-participant/admin-progress p)))))))))))))
 
+;; TODO: Stop showing e-mail and show participant ID instead.
 (define/contract ((view-study-participant-page db) _req study-id study-instance-id participant-id)
   (-> database? (-> request? id/c id/c id/c response?))
   (define the-study
@@ -263,6 +266,8 @@
     (lookup-study-participant/admin db participant-id))
   (unless (and the-study the-instance the-participant)
     (next-dispatcher))
+  (define vars
+    (lookup-study-vars db participant-id))
   (send/suspend/dispatch/protect
    (lambda (embed/url)
      (page
@@ -280,6 +285,18 @@
                       (redirect/get/forget/protect)
                       (redirect-to (reverse-uri 'admin:view-study-participant-page study-id study-instance-id participant-id))))])
            "Clear Participant Progress"))
+         (:h4
+          (:a
+           ([:href (embed/url
+                    (lambda (_req)
+                      (redirect/get/forget/protect)
+                      (response/json
+                       (hash
+                        'participant-id participant-id
+                        'instance-id study-instance-id
+                        'study-id study-id
+                        'vars (map ->jsexpr vars)))))])
+           "Export JSON"))
          (:table.table
           (:thead
            (:tr
@@ -289,7 +306,7 @@
             (:th "Last Put At")
             (:th "Value")))
           (:tbody
-           ,@(for/list ([v (in-list (lookup-study-vars db participant-id))])
+           ,@(for/list ([v (in-list vars)])
                (haml
                 (:tr
                  (:td (:pre (~a (study-var-stack v))))
