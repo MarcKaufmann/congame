@@ -4,7 +4,8 @@
          racket/list
          (except-in forms form)
          koyo/haml
-         congame/components/study)
+         congame/components/study
+         congame-price-lists/price-lists)
 
 (provide
  pjb-pilot-study)
@@ -177,11 +178,12 @@
                (lambda ()
                  (case (get 'rest-treatment)
                    [(get-rest-then-elicit) 'elicit-WTW]
-                   [(elicit-then-get-rest) 'debrief-survey])))
+                   [(elicit-then-get-rest) 'price-lists])))
     (make-step 'elicit-WTW
                elicit-WTW
                (lambda ()
                  (case (get 'rest-treatment)
-                   [(get-rest-then-elicit) 'debrief-survey]
+                   [(get-rest-then-elicit) 'price-lists]
                    [(elicit-then-get-rest) 'get-rest])))
+    (make-step/study 'price-lists pl-study)
     (make-step 'debrief-survey debrief-survey))))
