@@ -217,43 +217,63 @@
     (next-dispatcher))
   (define participants
     (list-study-instance-participants/admin db study-instance-id))
-  (page
-   (container
-    (haml
-     (:section.study-instance
-      (:h1 (study-instance-name the-instance))
-      (:h4
-       (:a
-        ([:href (reverse-uri 'admin:edit-study-instance-page study-id study-instance-id)])
-        "Edit"))
-      (:table.table
-       (:tr
-        (:th "Slug")
-        (:td (study-instance-slug the-instance)))
-       (:tr
-        (:th "Status")
-        (:td (~a (study-instance-status the-instance)))))
-      (:h2 "Participants")
-      (:table.table
-       (:thead
-        (:tr
-         (:th "Participant ID")
-         (:th "Email")
-         (:th "Completed?")
-         (:th "Enrolled At")
-         (:th "Progress")))
-       (:tbody
-        ,@(for/list ([p (in-list participants)])
-            (haml
-             (:tr
-              (:td
-               (:a
-                ([:href (reverse-uri 'admin:view-study-participant-page study-id study-instance-id (study-participant/admin-id p))])
-                (~a (study-participant/admin-id p))))
-              (:td (study-participant/admin-email p))
-              (:td (if (study-participant/admin-completed? p) "yes" "no"))
-              (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))
-              (:td (~a (study-participant/admin-progress p)))))))))))))
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (page
+      (container
+       (haml
+        (:section.study-instance
+         (:h1 (study-instance-name the-instance))
+         (:h4
+          (:a
+           ([:href (reverse-uri 'admin:edit-study-instance-page study-id study-instance-id)])
+           "Edit"))
+         (:table.table
+          (:tr
+           (:th "Slug")
+           (:td (study-instance-slug the-instance)))
+          (:tr
+           (:th "Status")
+           (:td (~a (study-instance-status the-instance)))))
+         (:h4
+          (:a
+           ([:href (embed/url
+                    (lambda (_req)
+                      ;; XXX: n+1 queries here.  Refactor to use a single query if this is ever a problem.
+                      (response/jsexpr
+                       (hash
+                        'study-id study-id
+                        'instance-id study-instance-id
+                        'participants
+                        (for/list ([p (in-list participants)])
+                          (define pid (study-participant/admin-id p))
+                          (hash
+                           'participant-id pid
+                           'instance-id study-instance-id
+                           'study-id study-id
+                           'vars (map ->jsexpr (lookup-study-vars db pid))))))))])
+           "Export JSON"))
+         (:h2 "Participants")
+         (:table.table
+          (:thead
+           (:tr
+            (:th "Participant ID")
+            (:th "Email")
+            (:th "Completed?")
+            (:th "Enrolled At")
+            (:th "Progress")))
+          (:tbody
+           ,@(for/list ([p (in-list participants)])
+               (haml
+                (:tr
+                 (:td
+                  (:a
+                   ([:href (reverse-uri 'admin:view-study-participant-page study-id study-instance-id (study-participant/admin-id p))])
+                   (~a (study-participant/admin-id p))))
+                 (:td (study-participant/admin-email p))
+                 (:td (if (study-participant/admin-completed? p) "yes" "no"))
+                 (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))
+                 (:td (~a (study-participant/admin-progress p)))))))))))))))
 
 ;; TODO: Stop showing e-mail and show participant ID instead.
 (define/contract ((view-study-participant-page db) _req study-id study-instance-id participant-id)
@@ -289,7 +309,6 @@
           (:a
            ([:href (embed/url
                     (lambda (_req)
-                      (redirect/get/forget/protect)
                       (response/json
                        (hash
                         'participant-id participant-id
