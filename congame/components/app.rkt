@@ -6,6 +6,7 @@
          congame/components/study
          koyo
          koyo/database/migrator
+         koyo/json
          koyo/sentry
          net/url
          racket/contract
@@ -87,6 +88,11 @@
       #:roles (admin)
       (lambda (req . _args)
         ((broker-admin-handler broker-admin) req))]
+
+     [("api" "test")
+      #:roles (api)
+      (lambda (req)
+        (response/json "hello!"))]
 
      [("study" (string-arg))
       #:roles (user)

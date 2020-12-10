@@ -3,11 +3,13 @@
 (require component
          db
          deta
+         file/sha1
          gregor
          koyo/database
          koyo/profiler
          koyo/random
          racket/contract
+         racket/random
          racket/string
          threading
          "hash.rkt")
@@ -15,13 +17,16 @@
 ;; user ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- (schema-out user))
+ (schema-out user)
+ user-admin?
+ generate-api-key)
 
 (define-schema user
   ([id id/f #:primary-key #:auto-increment]
    [username string/f #:contract non-empty-string? #:wrapper string-downcase]
    [(password-hash "") string/f]
-   [(admin? #f) boolean/f]
+   [(api-key #f) string/f #:nullable]
+   [(role 'user) symbol/f #:contract (or/c 'user 'bot 'api 'admin)]
    [(verified? #f) boolean/f]
    [(verification-code (generate-random-string)) string/f #:contract non-empty-string?]
    [(created-at (now/moment)) datetime-tz/f]
@@ -29,7 +34,22 @@
 
   #:pre-persist-hook
   (lambda (u)
-    (set-user-updated-at u (now/moment))))
+    (define user-with-key
+      (cond
+        [(user-api-key u) u]
+        [else (set-user-api-key u (generate-api-key u))]))
+    (set-user-updated-at user-with-key (now/moment))))
+
+(define/contract (user-admin? u)
+  (-> user? boolean?)
+  (eq? (user-role u) 'admin))
+
+(define/contract (generate-api-key u)
+  (-> user? string?)
+  (bytes->hex-string
+   (sha224-bytes
+    (bytes-append (string->bytes/utf-8 (user-username u))
+                  (crypto-random-bytes 32)))))
 
 (define/contract (set-user-password u p)
   (-> user? string? user?)
@@ -60,6 +80,7 @@
  make-user-manager
  user-manager?
  user-manager-lookup/id
+ user-manager-lookup/api-key
  user-manager-lookup/username
  user-manager-create!
  user-manager-create-reset-token!
@@ -127,6 +148,14 @@
     (with-database-connection [conn (user-manager-db um)]
       (lookup conn (~> (from user #:as u)
                        (where (= u.id ,id)))))))
+
+(define/contract (user-manager-lookup/api-key um key)
+  (-> user-manager? string? (or/c false/c user?))
+  (with-timing 'user-manager (format "(user-manager/lookup/api-key ~v)" key)
+    (with-database-connection [conn (user-manager-db um)]
+      (lookup conn (~> (from user #:as u)
+                       (where (and (= u.role "api")
+                                   (= u.api-key ,key))))))))
 
 (define/contract (user-manager-lookup/username um username)
   (-> user-manager? string? (or/c false/c user?))

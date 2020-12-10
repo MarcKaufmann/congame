@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          component
+         koyo/json
          koyo/profiler
          koyo/session
          koyo/url
@@ -65,27 +66,45 @@
           (-> request? response?)))
 
   (with-timing 'auth "wrap-auth-required"
-    (define roles (req-roles req))
-    (define-values (u ok?)
-      (cond
-        [(null? roles)
-         (values #f #t)]
+    (let/ec return
+      (define roles (req-roles req))
+      (define-values (u ok?)
+        (cond
+          [(null? roles)
+           (values #f #t)]
 
-        [(and~>> (session-ref session-key #f)
-                 (string->number)
-                 (user-manager-lookup/id (auth-manager-users am)))
-         => (lambda (user)
-              (values user (if (memq 'admin roles)
-                               (user-admin? user)
-                               #t)))]
+          [(and (equal? roles '(api))
+                (and~> (request-headers/raw req)
+                       (headers-assq* #"authorization" _)
+                       (header-value)
+                       (bytes->string/utf-8)
+                       (user-manager-lookup/api-key (auth-manager-users am) _)))
+           => (lambda (u)
+                (values u #t))]
+
+          [(equal? roles '(api))
+           (return
+            (response/json
+             #:code 401
+             (hasheq 'error "authorization failed")))]
+
+          [(and~>> (session-ref session-key #f)
+                   (string->number)
+                   (user-manager-lookup/id (auth-manager-users am)))
+           => (lambda (u)
+                (values u (case (user-role u)
+                            [(admin) #t]
+                            [(api)   #f]
+                            [(bot)   (equal? roles '(user))]
+                            [else    (equal? roles '(user))])))]
+
+          [else
+           (values #f #f)]))
+
+      (cond
+        [ok?
+         (parameterize ([current-user u])
+           (handler req))]
 
         [else
-         (values #f #f)]))
-
-    (cond
-      [ok?
-       (parameterize ([current-user u])
-         (handler req))]
-
-      [else
-       (redirect-to (make-application-url "login" #:query `((return . ,(url->string (request-uri req))))))])))
+         (redirect-to (make-application-url "login" #:query `((return . ,(url->string (request-uri req))))))]))))
