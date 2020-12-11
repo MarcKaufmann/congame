@@ -3,3 +3,4 @@ compiled
 coverage
 node_modules
 static
+ip-notification.*
