@@ -4,20 +4,17 @@
          congame/components/resource
          congame/components/study
          (except-in forms form)
-         koyo/haml
-         racket/runtime-path)
+         koyo/haml)
 
 (provide
  consent-study
  simple-study)
 
 ;; Directory resources:
-(define-runtime-path songs-path "songs")
-(define-static-resource songs songs-path)
+(define-static-resource songs "songs")
 
 ;; File resources:
-(define-runtime-path christmas-song-path (build-path "songs" "christmas.ogg"))
-(define-static-resource christmas-song christmas-song-path)
+(define-static-resource christmas-song (build-path "songs" "christmas.ogg"))
 
 ;; example ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

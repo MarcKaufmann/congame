@@ -1,8 +1,10 @@
 #lang racket/base
 
 (require (for-syntax racket/base
+                     racket/syntax
                      syntax/parse)
-         file/md5)
+         file/md5
+         racket/runtime-path)
 
 (provide
  define-static-resource
@@ -23,10 +25,12 @@
 (define-syntax (define-static-resource stx)
   (syntax-parse stx
     [(_ name:id e:expr)
-     #'(begin
-         (define p e)
-         (define name (resource (hash-file p) p))
-         (register! name))]))
+     (with-syntax ([path-name (format-id #'name "~a-path" #'name)])
+       (define drp-stmt (datum->syntax stx `(,#'define-runtime-path ,#'path-name ,#'e)))
+       #`(begin
+           #,drp-stmt
+           (define name (resource (hash-file path-name) path-name))
+           (register! name)))]))
 
 (define (hash-file p)
   (bytes->string/utf-8
