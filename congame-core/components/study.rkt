@@ -12,6 +12,7 @@
          (except-in forms form)
          racket/contract
          racket/fasl
+         racket/format
          racket/generic
          racket/match
          racket/port
@@ -23,6 +24,7 @@
          threading
          web-server/servlet
          (only-in xml xexpr?)
+         "bot.rkt"
          "export.rkt"
          "registry.rkt")
 
@@ -177,17 +179,18 @@ QUERY
        (with-widget-parameterization
          body ...))])
 
-(define/widget (button action label)
+(define/widget (button action label #:id [id ""])
   (haml
    (:a
-    ([:href
+    ([:data-widget-id (when-bot id)]
+     [:href
       (embed
        (lambda (_req)
          (action)
          (continue)))])
     label)))
 
-(define/widget (form f action render)
+(define/widget (form f action render #:id [id ""])
   (match (form-run f this-request)
     [(list 'passed res _)
      (action res)
@@ -198,8 +201,8 @@ QUERY
       (:form
        ([:action (embed
                   (lambda (_req)
-                    (response/xexpr
-                     ((step-handler this-step)))))]
+                    (response/step this-step)))]
+        [:data-widget-id (when-bot id)]
         [:method "POST"])
        (render rw)))]))
 
@@ -282,6 +285,16 @@ QUERY
                                     (wrapper (step-handler a-step))
                                     (step-transition a-step))]))]))
 
+(define (response/step s)
+  (response/xexpr
+   (haml
+    (:div.step
+     ([:data-step-id (when-bot (step-id s))])
+     ((step-handler s))))))
+
+(define-syntax-rule (when-bot e)
+  (if (current-user-bot?) (~a e) ""))
+
 
 ;; study ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define-logger study)
@@ -353,7 +366,7 @@ QUERY
                          [current-request req]
                          [current-return return]
                          [current-step the-step])
-            (response/xexpr ((step-handler the-step)))))))
+            (response/step the-step)))))
      servlet-prompt))
 
   (log-study-debug "step ~.s returned ~.s" the-step res)

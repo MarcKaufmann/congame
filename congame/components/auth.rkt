@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          component
+         congame/components/bot
          koyo/json
          koyo/profiler
          koyo/session
@@ -103,7 +104,8 @@
 
       (cond
         [ok?
-         (parameterize ([current-user u])
+         (parameterize ([current-user u]
+                        [current-user-bot? (and u (eq? 'bot (user-role u)))])
            (handler req))]
 
         [else

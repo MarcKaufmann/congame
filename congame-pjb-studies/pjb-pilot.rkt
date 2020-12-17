@@ -108,12 +108,14 @@
    (:div
     (:h1 "Click button that says 'Well done' for task completion!")
     (button
+     #:id 'correct-answer
      (λ ()
        (put 'remaining-tasks (sub1 (get 'remaining-tasks)))
        (put 'correct-answers (add1 (get 'correct-answers))))
      "Well done")
     (:br)
     (button
+     #:id 'wrong-answer
      (λ ()
        (put 'wrong-answers (add1 (get 'wrong-answers))))
      "I hAz no brAinZ..."))))
