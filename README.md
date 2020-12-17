@@ -73,6 +73,10 @@ application is started.
 
     $ raco pkg install congame-example-study/  # install and build the study pakckage and its deps
 
+Make sure to `touch` or otherwise modify `congame/studies/all.rkt`
+every time you install a new study package to ensure that package is
+visible to the web app.
+
 ## Running the app locally
 
     $ nvm use
@@ -93,6 +97,6 @@ application is started.
 
 ## License
 
-    congame is licensed under the 3-Clause BSD license. 
-    
+    congame is licensed under the 3-Clause BSD license.
+
 See [LICENSE](congame-doc/LICENSE).
