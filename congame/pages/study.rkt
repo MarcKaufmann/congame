@@ -50,7 +50,11 @@
                 (run-study s req)))
              (mark-participant-completed! manager)
              (redirect/get/forget/protect))
-           (page '(p "Yer done"))])]
+           (page
+            (haml
+             (:div
+              ([:data-study-done "yes"])
+              (:p "Yer done"))))])]
 
     [else
      (next-dispatcher)]))

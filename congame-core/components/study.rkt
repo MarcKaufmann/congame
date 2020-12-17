@@ -289,7 +289,10 @@ QUERY
   (response/xexpr
    (haml
     (:div.step
-     ([:data-step-id (when-bot (step-id s))])
+     ([:data-study-stack (when-bot (call-with-output-string
+                                    (lambda (out)
+                                      (write (current-study-stack) out))))]
+      [:data-step-id (when-bot (step-id s))])
      ((step-handler s))))))
 
 (define-syntax-rule (when-bot e)
