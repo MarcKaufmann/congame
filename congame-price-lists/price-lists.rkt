@@ -2,12 +2,14 @@
 
 (require (prefix-in forms: forms)
          koyo/haml
+         marionette
          racket/format
          racket/generic
          racket/list
          racket/match
          racket/random
          racket/serialize
+         (prefix-in bot: (submod congame/components/bot actions))
          congame/components/export
          congame/components/registry
          congame/components/study)
@@ -160,6 +162,16 @@
     (render-options
      (apply make-price-list-options treatment)))))
 
+(define (price-list-step/bot n-fixed)
+  (for ([elt (in-list (bot:find-all "tr"))]
+        [n (in-naturals 1)])
+    (define radios (bot:element-find-all elt "input"))
+    (unless (null? radios)
+      (if (<= n n-fixed)
+          (element-click! (car radios))
+          (element-click! (cadr radios)))))
+  (element-click! (bot:find "button[type=submit]")))
+
 (define pl-study
   (make-study
    #:requires '()
@@ -168,6 +180,7 @@
     (make-step 'info info-step)
     (make-step 'price-list
                price-list-step
+               #:for-bot price-list-step/bot
                (lambda ()
                  (if (null? (get 'treatments))
                      next

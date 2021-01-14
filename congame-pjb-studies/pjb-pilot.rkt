@@ -5,7 +5,8 @@
          (except-in forms form)
          koyo/haml
          congame/components/study
-         congame-price-lists/price-lists)
+         congame-price-lists/price-lists
+         (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide
  pjb-pilot-study)
@@ -33,8 +34,32 @@
    (:div
     (:h1 "Eliciting WTW")
     (button
+     #:id 'willing
      (λ () (put 'WTW 5))
-     "Continue"))))
+     "Willing to work")
+    (button
+     #:id 'not-willing
+     (λ () (put 'WTW 0))
+     "Not willing to work"))))
+
+;; TODO: cleanup.
+(provide
+ willing-to-work?)
+
+;; TODO: Parameterized bots need bespoke values to try to ensure that
+;; bot writers provide the right arguments.
+(struct bot-willing-to-work? (yes?)
+  #:transparent)
+
+(define/contract (willing-to-work? willing?)
+  (-> boolean? bot-willing-to-work??)
+  (bot-willing-to-work? willing?))
+
+(define/contract (elicit-WTW/bot bwt)
+  (-> bot-willing-to-work? void?)
+  (bot:click (if (bot-willing-to-work?-yes? bwt)
+                 'willing
+                 'not-willing)))
 
 ; Add treatment for length of break?
 (define *rest-treatments* '(get-rest-then-elicit elicit-then-get-rest))
@@ -120,6 +145,12 @@
        (put 'wrong-answers (add1 (get 'wrong-answers))))
      "I hAz no brAinZ..."))))
 
+(define (task/bot correct?)
+  (bot:click
+   (if correct?
+       'correct-answer
+       'wrong-answer)))
+
 (define (success)
   (haml
    (:div
@@ -148,9 +179,9 @@
    #:provides '(success? correct-answers wrong-answers)
    (list
     (make-step 'start-tasks initialize-tasks)
-    (make-step 'task task task-completion)
-    (make-step 'success success (λ () done))
-    (make-step 'failure failure (λ () done)))))
+    (make-step 'task task #:for-bot task/bot task-completion)
+    (make-step 'success success #:for-bot bot:continuer (λ () done))
+    (make-step 'failure failure #:for-bot bot:continuer (λ () done)))))
 
 (define pjb-pilot-study
   (make-study
@@ -163,7 +194,9 @@
    #:provides '(task-treatment rest-treatment)
    ;; TODO: Ensure work is done in appropriate time, i.e. all in one go, not too many breaks, and so on, all on the same day.
    (list
-    (make-step 'explain-study (linear-handler "Study Explanation"))
+    (make-step
+     'explain-study
+     (linear-handler "Study Explanation"))
     (make-step 'tutorial tutorial)
     (make-step/study 'required-tasks
                      task-study
@@ -177,12 +210,14 @@
                      #:provide-bindings '([success? success?]))
     (make-step 'get-rest
                get-rest
+               #:for-bot bot:continuer
                (lambda ()
                  (case (get 'rest-treatment)
                    [(get-rest-then-elicit) 'elicit-WTW]
                    [(elicit-then-get-rest) 'price-lists])))
     (make-step 'elicit-WTW
                elicit-WTW
+               #:for-bot elicit-WTW/bot
                (lambda ()
                  (case (get 'rest-treatment)
                    [(get-rest-then-elicit) 'price-lists]

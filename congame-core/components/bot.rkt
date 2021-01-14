@@ -67,7 +67,11 @@
    run-bot
    current-page
    continuer
-   click)
+   click
+   find
+   find-all
+   element-find
+   element-find-all)
 
   (define INFINITE-LOOP-THRESHOLD 25)
 
@@ -76,21 +80,27 @@
   (define current-page
     (make-parameter #f))
 
+  (define current-delay
+    (make-parameter 0))
+
   (define/contract (run-bot b
                             #:study-url url
                             #:username username
                             #:password password
-                            #:headless? [headless? #t])
+                            #:headless? [headless? #t]
+                            #:delay [delay 0])
     (->* (bot?
           #:study-url string?
           #:username string?
           #:password string?)
-         (#:headless? boolean?)
+         (#:headless? boolean?
+          #:delay real?)
          void?)
     (call-with-marionette/browser/page!
      #:headless? headless?
      (lambda (p)
-       (parameterize ([current-page p])
+       (parameterize ([current-page p]
+                      [current-delay delay])
          (page-goto! p url)
          (maybe-log-in! username password)
          (execute! b)))))
@@ -116,6 +126,7 @@
         (hash-ref (bot-steppers b) path (lambda ()
                                           (raise-bot-error "no stepper for path ~s" path))))
       ((bot-stepper-action stepper))
+      (sleep (current-delay))
       (execute! b (cons path previous-paths))))
 
   (define (count-path-run paths)
@@ -143,6 +154,15 @@
 
   (define (find selector)
     (page-query-selector! (current-page) selector))
+
+  (define (find-all selector)
+    (page-query-selector-all! (current-page) selector))
+
+  (define (element-find elt selector)
+    (element-query-selector! elt selector))
+
+  (define (element-find-all elt selector)
+    (element-query-selector-all! elt selector))
 
   (define (find-attribute attr)
     (define elt (find (format "[~a]" attr)))

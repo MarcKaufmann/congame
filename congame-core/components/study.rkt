@@ -25,6 +25,7 @@
          web-server/servlet
          (only-in xml xexpr?)
          "bot.rkt"
+         (prefix-in bot: (submod "bot.rkt" actions))
          "export.rkt"
          "registry.rkt")
 
@@ -214,7 +215,13 @@ QUERY
 
 ;; step ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(struct step (id handler transition)
+(module+ private
+  (provide
+   (struct-out step)
+   (struct-out step/study)
+   (struct-out study)))
+
+(struct step (id handler handler/bot transition)
   #:transparent)
 
 (struct step/study step (study)
@@ -228,9 +235,22 @@ QUERY
 (define transition/c (-> (or/c done? next? step-id/c)))
 (define binding/c (list/c symbol? symbol?))
 
-(define/contract (make-step id handler [transition (lambda () next)])
-  (->* (step-id/c handler/c) (transition/c) step?)
-  (step id handler transition))
+(define (default-transition)
+  next)
+
+(define/contract (make-step id
+                            handler
+                            [transition default-transition]
+                            #:for-bot [handler/bot
+                                       (lambda ()
+                                         (if (eq? transition default-transition)
+                                             (bot:continuer)
+                                             (raise-user-error "no bot transition for step" id)))])
+  (->* (step-id/c handler/c)
+       (transition/c
+        #:for-bot procedure?)
+       step?)
+  (step id handler handler/bot transition))
 
 (define/contract (make-step/study id s
                                   [transition (lambda () next)]
@@ -266,6 +286,7 @@ QUERY
          (put dst-id (hash-ref result-bindings src-id (lambda ()
                                                         (error 'run-study/step "expected binding ~s to be provided by sub-study~n  bound to: ~s~n  at step: ~.s" src-id dst-id id)))))
        (continue)))
+   void
    transition
    s))
 
