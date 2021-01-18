@@ -75,13 +75,6 @@
                   (nav
                    (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
                    (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out)))]
-               #;(apply nav
-                      (apply append
-                             (list (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
-                                   (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out)))
-                             (if (user-admin? (current-user))
-                                 (list (nav-item (reverse-uri 'admin:studies-page) (translate 'nav-admin)))
-                                 '())))
                [else
                 (nav (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
                      (nav-item (reverse-uri 'login-page) (translate 'nav-log-in))

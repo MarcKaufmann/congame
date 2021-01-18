@@ -14,6 +14,16 @@
          congame/components/registry
          congame/components/study)
 
+;;; TODO:
+;;; This is designed the wrong way. Goals:
+;;; Provide price-list-step that creates a step for general types of price-lists
+;;; It has to have options for `fixed`, `variable`, `from`, `to`, and `increment`
+;;; Increment should be a function that can increment.
+;;; On the other hand, studies have the benefits of defining their #:requires and #:provides,
+;;; which allows for some type checking, whereas a step does not. Why do I care? Because of
+;;; hooking steps up with models and types of data we want to collect. It may be possible
+;;; to test steps as well. Or not, since steps don't have return values anymore.
+
 (provide
  pl-study)
 
