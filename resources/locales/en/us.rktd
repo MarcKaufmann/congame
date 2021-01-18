@@ -2,6 +2,7 @@
  (nav-log-in                . "Log in")
  (nav-log-out               . "Log out")
  (nav-sign-up               . "Sign up")
+ (nav-admin                 . "Admin")
 
  (subtitle-not-found              . "Page Not Found")
  (subtitle-log-in                 . "Log In")

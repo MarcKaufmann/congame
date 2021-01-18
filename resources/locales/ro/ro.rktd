@@ -2,6 +2,7 @@
  (nav-log-in                . "Conectare")
  (nav-log-out               . "Deconectare")
  (nav-sign-up               . "Înregistrare")
+ (nav-admin                 . "Administrare")
 
  (subtitle-not-found              . "Pagină inexistentă")
  (subtitle-log-in                 . "Conectează-te")

@@ -10,7 +10,8 @@
          web-server/http
          xml
          (prefix-in config: "../config.rkt")
-         "auth.rkt")
+         "auth.rkt"
+         (only-in "user.rkt" user-admin?))
 
 (provide
  static-uri
@@ -62,9 +63,21 @@
          (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")])))
         (:body
          (when show-nav?
+           ; FIXME: Idiomatic way to pass argument based on condition, using conditional in arg-list. I.e.:
+           ; (nav (nav-item ...) (nav-item) (when condition (nav-item)))
+           ; Or fix the way the nav gets accumulated and passed around?
            (if (current-user)
-               (nav (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
-                    (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out)))
+               (nav
+                 (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
+                 (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out))
+                 (nav-item (reverse-uri 'admin:studies-page) (translate 'nav-admin)))
+               #;(apply nav
+                      (apply append
+                             (list (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
+                                   (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out)))
+                             (if (user-admin? (current-user))
+                                 (list (nav-item (reverse-uri 'admin:studies-page) (translate 'nav-admin)))
+                                 '())))
                (nav (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
                     (nav-item (reverse-uri 'login-page) (translate 'nav-log-in))
                     (nav-item (reverse-uri 'signup-page) (translate 'nav-sign-up)))))
