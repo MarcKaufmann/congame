@@ -183,6 +183,12 @@
     (make-step 'success success #:for-bot bot:continuer (λ () done))
     (make-step 'failure failure #:for-bot bot:continuer (λ () done)))))
 
+(define pl1
+  (make-pl #:name 'pl1
+           #:fixed-work 0
+           #:fixed-money 0
+           #:adjustable-work 10
+           #:levels-of-money '(0 1 2 3)))
 (define pjb-pilot-study
   (make-study
    #:requires '()
@@ -214,13 +220,15 @@
                (lambda ()
                  (case (get 'rest-treatment)
                    [(get-rest-then-elicit) 'elicit-WTW]
-                   [(elicit-then-get-rest) 'price-lists])))
+                   [(elicit-then-get-rest) 'price-list])))
     (make-step 'elicit-WTW
                elicit-WTW
                #:for-bot elicit-WTW/bot
                (lambda ()
                  (case (get 'rest-treatment)
-                   [(get-rest-then-elicit) 'price-lists]
+                   [(get-rest-then-elicit) 'price-list]
                    [(elicit-then-get-rest) 'get-rest])))
-    (make-step/study 'price-lists pl-study)
+    (make-step 'price-list
+               (price-list-step pl1)
+               #:for-bot price-list-step/bot)
     (make-step 'debrief-survey debrief-survey))))

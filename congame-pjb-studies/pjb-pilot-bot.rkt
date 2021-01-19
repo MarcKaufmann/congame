@@ -13,8 +13,6 @@
   (define (model id)
     (match id
       ['(*root* elicit-WTW)
-       1
-       #;
        (willing-to-work? #t)]
 
       ['(*root* required-tasks task)
@@ -23,14 +21,14 @@
        (begin0 (zero? c)
          (set! c (add1 c)))]
 
-      ['(*root* price-lists price-list)
+      ['(*root* price-list)
        1]
 
       [_
        (values)]))
 
   (run-bot
-   #:study-url "http://127.0.0.1:5100/study/pjb-pilot"
+   #:study-url "http://127.0.0.1:5100/study/pilot1"
    #:username "bot@example.com"
    #:password "password"
    ;; #:headless? #f
