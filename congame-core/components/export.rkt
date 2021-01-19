@@ -1,11 +1,15 @@
 #lang racket/base
 
-(require racket/generic)
+(require racket/contract
+         racket/generic
+         json)
 
 (provide
  gen:jsexprable
  jsexprable?
- ->jsexpr)
+
+ (contract-out
+  [->jsexpr (-> any/c jsexpr?)]))
 
 (define (list->jsexpr xs)
   (map ->jsexpr xs))
