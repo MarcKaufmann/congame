@@ -11,23 +11,11 @@
 (provide
  pjb-pilot-study)
 
-;; PjB Pilot has the following structure:
-;;
-;; 1. Sign-up
-;; 2. Have study explained
-;; 3. Tutorial
-;; 4. Do [N] tasks
-;; 5. Depending on treatment:
-;;   - TIRED: Elicit WTW right away instead of extra rest, then rest
-;;   - RESTED: rest, then elicit WTW right away instead of extra rest
-;; 6. Debrief survey
-
-(define (linear-handler title)
-  (λ ()
-    (haml
-     (:div
-      (:h1 title)
-      (button void "Continue")))))
+(define (study-explanation)
+  (haml
+   (:div
+    (:h1 "Study Explanation")
+    (button void "Continue"))))
 
 (define (elicit-WTW)
   (haml
@@ -65,6 +53,7 @@
 (define *rest-treatments* '(get-rest-then-elicit elicit-then-get-rest))
 (define *task-treatments* '(1 3))
 
+; TODO: `make-balanced-shuffle` should be provided by a module of helper functions
 (define (make-balanced-shuffle original)
   (define ts (shuffle original))
   (λ ()
@@ -76,6 +65,7 @@
            (set! ts (shuffle original))
            (first ts)])))
 
+; FIXME: This setup does not balance at the rest x task treatments jointly
 (define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
 (define next-balanced-task-treatment (make-balanced-shuffle *task-treatments*))
 
@@ -167,11 +157,10 @@
      (λ () (put 'success? #f))
      "The End"))))
 
-(define task-completion
-  (λ ()
-    (cond [(zero? (get 'remaining-tasks)) 'success]
-          [(> (get 'wrong-answers) 1) 'failure]
-          [else 'task])))
+(define (task-completion)
+  (cond [(zero? (get 'remaining-tasks)) 'success]
+        [(> (get 'wrong-answers) 1) 'failure]
+        [else 'task]))
 
 (define task-study
   (make-study
@@ -189,46 +178,76 @@
            #:fixed-money 0
            #:adjustable-work 10
            #:levels-of-money '(0 1 2 3)))
+
+; TODO: Would it make sense to define transitions separately from steps, so that we have a list of
+; steps available at a given study-level (including steps for substudies) and a separate part for
+; the logic of the study in terms of transitions, which ignores handlers and bots, and only
+; relates conditions for how steps follow each other based on available variables and treatments.
+; It may even be better to define transitions at the study, rather than at the step, level. Then
+; a situation where the value of a treatment leads to A -> B -> C, while another leads to C -> B -> A
+; can easily be defined at the study level, whereas it requires repeatedly defining and checking things
+; for each step: each step needs to check the value of the treatment, so the code has to be defined
+; again and again, even though it really just needs to be written once at the study level.
+; Probably it is best to keep the ability of steps overriding the study-transition, but adding
+; functionality for defining step-transition at the study-level.
+(define (determine-extra-tasks)
+  (haml
+   (:div
+    (:h1 "Determining extra tasks and payment you do now")
+    (button
+     (λ ()
+       (put 'extra-tasks 3))
+     "Continue to tasks"))))
+
+(define elicit-WTW-and-work
+  (make-study
+   #:requires '()
+   #:provides '(WTW)
+   (list
+    (make-step 'elicit-immediate-WTW
+               elicit-WTW
+               #:for-bot elicit-WTW/bot)
+    (make-step 'determine-extra-tasks
+               determine-extra-tasks)
+    (make-step/study 'extra-tasks
+                     task-study
+                     (λ () done)
+                     #:require-bindings '([n extra-tasks])
+                     #:provide-bindings '([success? success?])))))
+
 (define pjb-pilot-study
   (make-study
    #:requires '()
-   ; FIXME: How should we resolve the fact that for proper completion I expect WTW,
-   ; but not when the person fails the study due to failing the tasks.
-   ; Use a different state than `done`? Doesn't seem justified. Rather implement a way to set all required
-   ; values to some kind of NA value, although maybe I should allow for error messages to be
-   ; attached to data values -- i.e. reasons for failing?
+   ; FIXME: #:provides should include WTW, but we won't get that if the person fails the tasks.
+   ; Upon failing a study, call/set some default values for provide, error codes attached to data or NA.
    #:provides '(task-treatment rest-treatment)
    ;; TODO: Ensure work is done in appropriate time, i.e. all in one go, not too many breaks, and so on, all on the same day.
    (list
-    (make-step
-     'explain-study
-     (linear-handler "Study Explanation"))
+    (make-step 'explain-study study-explanation)
     (make-step 'tutorial tutorial)
     (make-step/study 'required-tasks
                      task-study
-                     (lambda ()
+                     (λ ()
                        (if (not (get 'success?))
                            done
                            (case (get 'rest-treatment)
                              [(get-rest-then-elicit) 'get-rest]
-                             [(elicit-then-get-rest) 'elicit-WTW])))
+                             [(elicit-then-get-rest) 'elicit-WTW-and-work])))
+                     ; TODO: Document how #:require-bindings and #:provide-bindings work
                      #:require-bindings '([n task-treatment])
                      #:provide-bindings '([success? success?]))
     (make-step 'get-rest
                get-rest
                #:for-bot bot:continuer
-               (lambda ()
+               (λ ()
                  (case (get 'rest-treatment)
-                   [(get-rest-then-elicit) 'elicit-WTW]
-                   [(elicit-then-get-rest) 'price-list])))
-    (make-step 'elicit-WTW
-               elicit-WTW
-               #:for-bot elicit-WTW/bot
-               (lambda ()
-                 (case (get 'rest-treatment)
-                   [(get-rest-then-elicit) 'price-list]
-                   [(elicit-then-get-rest) 'get-rest])))
-    (make-step 'price-list
-               (price-list-step pl1)
-               #:for-bot price-list-step/bot)
+                   [(get-rest-then-elicit) 'elicit-WTW-and-work]
+                   [(elicit-then-get-rest) 'debrief-survey])))
+    (make-step/study 'elicit-WTW-and-work
+                     elicit-WTW-and-work
+                     (λ ()
+                       (case (get 'rest-treatment)
+                         [(get-rest-then-elicit) 'debrief-survey]
+                         [(elicit-then-get-rest) 'get-rest]))
+                     #:provide-bindings '([WTW WTW]))
     (make-step 'debrief-survey debrief-survey))))

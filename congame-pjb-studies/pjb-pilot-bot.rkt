@@ -12,7 +12,7 @@
 (module+ main
   (define (model id)
     (match id
-      ['(*root* elicit-WTW)
+      ['(*root* elicit-WTW-and-work elicit-immediate-WTW)
        (willing-to-work? #t)]
 
       ['(*root* required-tasks task)
@@ -21,8 +21,11 @@
        (begin0 (zero? c)
          (set! c (add1 c)))]
 
-      ['(*root* price-list)
+      #;['(*root* price-list)
        1]
+
+      ['(*root* elicit-WTW-and-work extra-tasks task)
+       #t]
 
       [_
        (values)]))
