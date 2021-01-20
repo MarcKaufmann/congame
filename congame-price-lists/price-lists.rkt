@@ -3,9 +3,11 @@
 (require (prefix-in forms: forms)
          koyo/haml
          marionette
+         racket/contract
          racket/format
          racket/generic
          racket/match
+         racket/random
          racket/serialize
          (prefix-in bot: (submod congame/components/bot actions))
          (submod congame/components/bot actions)
@@ -22,8 +24,17 @@
 (provide
  price-list-step
  price-list-step/bot
+ price-list-chosen
+ price-list-alternative
  pl-study
- make-pl)
+ pl-random-choice
+ price-list-extra-work
+ make-pl
+
+ gen:describable
+ describable/c
+ describable?
+ describe)
 
 (define-generics describable
   (describe describable))
@@ -78,7 +89,7 @@
            'chose (->jsexpr/super (choice-chosen c))
            'options (->jsexpr/super (choice-options c))))])
 
-(serializable-struct price-list (name fixed adjustable levels answers)
+(serializable-struct price-list (name fixed adjustable levels answers random-choice)
   #:transparent
   #:methods gen:jsexprable
   [(define/generic ->jsexpr/super ->jsexpr)
@@ -88,7 +99,33 @@
            'fixed (->jsexpr/super (price-list-fixed pl))
            'adjustable (->jsexpr/super (price-list-adjustable pl))
            'levels (->jsexpr/super (price-list-levels pl))
-           'answers (->jsexpr/super (price-list-answers pl))))])
+           'answers (->jsexpr/super (price-list-answers pl))
+           'random-choice (->jsexpr/super (price-list-random-choice pl))))])
+
+; TODO: error if no random-choice yet set
+(define (price-list-chosen pl)
+  (hash-ref (price-list-random-choice pl) 'chosen))
+
+(define (price-list-alternative pl)
+  (hash-ref (price-list-random-choice pl) 'alternative))
+
+(define (price-list-extra-work pl)
+  (option-work (price-list-chosen pl)))
+
+(define/contract (pl-random-choice pl)
+  ; This should update the initial price-list and update the random choice field
+  ; TODO: Check with Bogdan whether this is a good idea, to overwrite the initial price-list
+  ; It has the benefit of keeping the information together that belongs together.
+  (-> price-list? price-list?)
+  ; TODO: What to do with an empty answer list?
+  (match-define (price-list name fixed adjustable levels answers random-choice) pl)
+  (define determined-choice (random-ref answers))
+  (define adjusted-option (set-level/adjustable adjustable (car determined-choice)))
+  (struct-copy price-list pl
+               (random-choice
+                (if (equal? (cadr determined-choice) 'fixed)
+                    (hash 'chosen fixed 'alternative adjusted-option)
+                    (hash 'chosen adjusted-option 'alternative fixed)))))
 
 (define ((rw-pl pl) rw)
   (haml
@@ -121,7 +158,7 @@
        ([:type "submit"])
        "Submit"))))))
 
-(define (render-pl pl)
+(define (render-pl pl #:pl-name [pl-name #f])
   (define the-form
     (forms:form
      list
@@ -147,11 +184,12 @@
       ; before running through half the study.
       ; TODO: Is it sensible to require it to be uniqe? If not, then it may be impossible (or hard)
       ; to infer which specific choice this was, as was the case in study in summer 2020.
-      (put (string->symbol
-            (string-append
-             "price-list-"
-             (symbol->string (price-list-name pl))))
-            (struct-copy price-list pl (answers choices))))
+      (put (or pl-name
+               (string->symbol
+                (string-append
+                 "price-list-"
+                 (symbol->string (price-list-name pl)))))
+           (struct-copy price-list pl (answers choices))))
     (rw-pl pl))))
 
 ;; TODO: Improve interface. In fact, option types should be definable by users, since
@@ -165,13 +203,14 @@
               (option fixed-work fixed-money)
               (adjustable-option adjustable-work)
               levels-of-money
-              null))
+              null
+              (hash)))
 
-(define ((price-list-step pl))
+(define ((price-list-step pl #:pl-name [pl-name #f]))
   (haml
    (:div
     (:h1 "Price List")
-    (render-pl pl))))
+    (render-pl pl #:pl-name pl-name))))
 
 (define (price-list-step/bot n-fixed)
   (for ([elt (in-list (bot:find-all "tr"))]
@@ -188,7 +227,8 @@
                                (option 0 0)
                                (adjustable-option 10)
                                '(0 1 2)
-                               null)))
+                               null
+                               (hash))))
 
   (define (info-step)
     (haml

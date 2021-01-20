@@ -80,10 +80,19 @@
      "Finish Tutorial"))))
 
 (define (compute-payments)
-  void)
+  ; TODO: implement
+  (haml
+   (:div
+    (:h1 "Your Payment")
+    (:p "... (TBC)")
+    (button void "Continue"))))
 
 (define (send-completion-email)
-  void)
+  ; TODO: implement
+  (haml
+   (:div
+    (:h1 "Sending completion email")
+    (button void "Continue"))))
 
 (define (debrief-survey)
   (haml
@@ -118,6 +127,7 @@
        (put 'wrong-answers 0))
      "Start Tasks"))))
 
+; TODO: Split tasks out of this study into submodule of helper module
 (define (task)
   (haml
    (:div
@@ -158,7 +168,7 @@
      "The End"))))
 
 (define (task-completion)
-  (cond [(zero? (get 'remaining-tasks)) 'success]
+  (cond [(<= (get 'remaining-tasks) 0) 'success]
         [(> (get 'wrong-answers) 1) 'failure]
         [else 'task]))
 
@@ -167,12 +177,15 @@
    #:requires '(n)
    #:provides '(success? correct-answers wrong-answers)
    (list
-    (make-step 'start-tasks initialize-tasks)
+    (make-step 'start-tasks
+               initialize-tasks
+               task-completion
+               #:for-bot bot:continuer)
     (make-step 'task task #:for-bot task/bot task-completion)
     (make-step 'success success #:for-bot bot:continuer (λ () done))
     (make-step 'failure failure #:for-bot bot:continuer (λ () done)))))
 
-(define pl1
+(define pl-extra-tasks
   (make-pl #:name 'pl1
            #:fixed-work 0
            #:fixed-money 0
@@ -191,13 +204,37 @@
 ; Probably it is best to keep the ability of steps overriding the study-transition, but adding
 ; functionality for defining step-transition at the study-level.
 (define (determine-extra-tasks)
+  ; TODO: Needs to do the appropriate choice from the WTW answer
   (haml
    (:div
     (:h1 "Determining extra tasks and payment you do now")
     (button
      (λ ()
-       (put 'extra-tasks 3))
-     "Continue to tasks"))))
+       (define pl/answers (get 'WTW))
+       (define pl/answers+choice (pl-random-choice pl/answers))
+       (define extra-tasks (price-list-extra-work pl/answers+choice))
+       (put 'WTW pl/answers+choice)
+       (put 'extra-tasks extra-tasks))
+     "See extra tasks"))))
+
+(define (see-extra-tasks)
+  (define pl/answers+choice (get 'WTW))
+  (define chosen (price-list-chosen pl/answers+choice))
+  (define alternative (price-list-alternative pl/answers+choice))
+  (define extra-tasks (get 'extra-tasks))
+  (define continue-text
+    (if (> extra-tasks 0)
+        (format "Continue to ~a extra tasks" extra-tasks)
+        "Continue with no extra tasks"))
+  (haml
+   (:div
+    (:h1 "Extra Tasks")
+    (:p "The choice that was randomly selected was between the following two options:")
+    (:ol
+     (:li (describe chosen))
+     (:li (describe alternative)))
+    (:p "You chose the first choice.")
+    (button void continue-text))))
 
 (define elicit-WTW-and-work
   (make-study
@@ -205,13 +242,24 @@
    #:provides '(WTW)
    (list
     (make-step 'elicit-immediate-WTW
-               elicit-WTW
-               #:for-bot elicit-WTW/bot)
+               ; TODO: Is it sensible to pass the put-name as an argument? It is not a coherent mechanism.
+               ; It feels to me that using steps is like using (limited) globals, while studies create
+               ; their own scopes, making them more composable. Well, except some variables have to be shared.
+               (price-list-step pl-extra-tasks #:pl-name 'WTW)
+               #:for-bot price-list-step/bot)
     (make-step 'determine-extra-tasks
                determine-extra-tasks)
+    (make-step 'see-extra-tasks
+               see-extra-tasks
+               (λ ()
+                 (if (> (get 'extra-tasks) 0)
+                     'extra-tasks
+                     done))
+               #:for-bot bot:continuer)
     (make-step/study 'extra-tasks
                      task-study
                      (λ () done)
+                     ; TODO: Can #:require-bindings take values, or does it have to refer to defined binding?
                      #:require-bindings '([n extra-tasks])
                      #:provide-bindings '([success? success?])))))
 
@@ -250,4 +298,7 @@
                          [(get-rest-then-elicit) 'debrief-survey]
                          [(elicit-then-get-rest) 'get-rest]))
                      #:provide-bindings '([WTW WTW]))
-    (make-step 'debrief-survey debrief-survey))))
+    (make-step 'debrief-survey debrief-survey)
+    (make-step 'compute-payments compute-payments)
+    (make-step 'send-completion-email send-completion-email)
+    )))
