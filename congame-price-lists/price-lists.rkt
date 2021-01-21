@@ -247,23 +247,29 @@
                  #:for-bot price-list-step/bot
                  ))))
 
+
+;; bots ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ pl-bot
+ pl-bot-model)
+
+(define pl-bot
+  (study->bot pl-study))
+
+;; Default model runs default bot. Alter model to alter bot behavior.
+(define (pl-bot-model id)
+  (match id
+    ['(*root* price-list)
+     0]
+
+    [_ (values)]))
+
 (module+ main
-
-  (define pl-bot
-    (study->bot pl-study))
-
-  ;; Default model runs default bot. Alter model to alter bot behavior.
-  (define (model id)
-    (match id
-      ['(*root* price-list)
-       0]
-
-      [_ (values)]))
-
   (run-bot
    #:study-url "http://127.0.0.1:5100/study/pl-test1"
    #:username "bot@example.com"
    #:password "password"
    ;; #:headless? #f
    ;; #:delay 3
-   (pl-bot model)))
+   (pl-bot pl-bot-model)))
