@@ -224,7 +224,10 @@
       (container
        (haml
         (:section.study-instance
-         (:h1 (study-instance-name the-instance))
+         (:h1
+          (:a
+           ([:href (reverse-uri 'admin:view-study-page study-id)])
+           (study-instance-name the-instance)))
          (:h4
           (:a
            ([:href (reverse-uri 'admin:edit-study-instance-page study-id study-instance-id)])
