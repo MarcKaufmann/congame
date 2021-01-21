@@ -20,6 +20,7 @@
          threading
          web-server/dispatchers/dispatch
          web-server/http
+         "../components/bot-set.rkt"
          "../components/template.rkt"
          "../studies/all.rkt"
          "render.rkt")
@@ -31,7 +32,8 @@
  create-study-instance-page
  edit-study-instance-page
  view-study-instance-page
- view-study-participant-page)
+ view-study-participant-page
+ create-study-instance-bot-sets-page)
 
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
@@ -248,6 +250,10 @@
                  (study-participants->jsexpr db study-id study-instance-id participants))))])
            "Export JSON"))
          (:h2 "Participants")
+         (:h3
+          (:a
+           ([:href (reverse-uri 'admin:create-study-instance-bot-sets-page study-id study-instance-id)])
+           "Create Bot Set"))
          (:table.table
           (:thead
            (:tr
@@ -289,7 +295,16 @@
        (haml
         (:section.study-participant
          (:h1 (study-participant/admin-email the-participant))
-         (:h4 "Instance '" (study-instance-name the-instance) "' of study '" (study-meta-name the-study) "'")
+         (:h4
+          "Instance '"
+          (:a
+           ([:href (reverse-uri 'admin:view-study-instance-page study-id study-instance-id)])
+           (study-instance-name the-instance))
+          "' of study '"
+          (:a
+           ([:href (reverse-uri 'admin:view-study-page study-id)])
+           (study-meta-name the-study))
+          "'")
          (:h4
           (:a
            ([:onclick "return confirm('Are you sure?')"]
@@ -330,3 +345,101 @@
                        (with-output-to-string
                          (lambda ()
                            (pretty-print (study-var-value/deserialized v))))))))))))))))))
+
+(define/contract ((create-study-instance-bot-sets-page db) req study-id study-instance-id)
+  (-> database? (-> request? id/c id/c response?))
+  (define the-study
+    (lookup-study-meta db study-id))
+  (define the-instance
+    (lookup-study-instance db study-instance-id))
+  (unless (and the-study the-instance)
+    (next-dispatcher))
+  (define study-racket-id
+    (study-meta-racket-id the-study))
+  (define bot-form
+    (make-study-bot-set-form study-racket-id))
+  (let bot-loop ([req req])
+    (send/suspend/dispatch/protect
+     (lambda (embed/url)
+       (match (form-run bot-form req)
+         [(list 'passed (list info bot-count) _)
+          ;; Fudge the method so the second `form-run' doesn't
+          ;; immediately think this is a submission.
+          (define req* (struct-copy request req [method #"GET"]))
+          (let model-loop ([req req*])
+            (match (form-run (make-study-bot-set-model-form info) req)
+              [(list 'passed model _)
+               ;; TODO: Redirect to bot set page.  Bot set page must
+               ;; have "run" action.  Change the password for bots on
+               ;; every run so it doesn't have to be jotted down
+               ;; anywhere and so that it can still be secure.
+               (define the-bot-set
+                 (create-bot-set! db
+                                  #:study-id study-id
+                                  #:study-instance-id study-instance-id
+                                  #:bot-id (bot-info-id info)
+                                  #:model-id (object-name model)
+                                  #:bot-count bot-count))
+               (redirect-to (reverse-uri 'admin:view-study-instance-page study-id study-instance-id))]
+
+              [(list _ _ rw)
+               (page
+                (container
+                 (haml
+                  (:section.create-bot-set
+                   (:h1 "Select a model")
+                   (:form
+                    ([:action (embed/url model-loop)]
+                     [:method "POST"])
+                    (:label
+                     "Model"
+                     (rw "model" (widget-select
+                                  (for/list ([(id _) (in-hash (bot-info-models info))])
+                                    (define id* (symbol->string id))
+                                    (cons id* id*)))))
+                    (:button
+                     ([:type "submit"])
+                     "Create Bot Set"))))))]))]
+
+         [(list _ _ rw)
+          (page
+           (container
+            (haml
+             (:section.create-bot-set
+              (:h1 "Create Bot Set")
+              (:form
+               ([:action (embed/url bot-loop)]
+                [:method "POST"])
+               (:label
+                "Bot "
+                (rw "bot" (widget-select
+                           (for/list ([(id _) (in-hash (get-bot-infos-for-study study-racket-id))])
+                                  (define id* (symbol->string id))
+                                  (cons id* id*)))))
+               (:br)
+               (:label
+                "Count "
+                (rw "bot-count" (widget-number))
+                ,@(rw "bot-count" (widget-errors)))
+               (:br)
+               (:button
+                ([:type "submit"])
+                "Next"))))))])))))
+
+(define (make-study-bot-set-form study-id)
+  (form* ([bot (ensure binding/symbol
+                       (required)
+                       (one-of
+                        (for/list ([(id info) (in-hash (get-bot-infos-for-study study-id))])
+                          (cons id info))))]
+          [bot-count (ensure binding/number (required) (lambda (n)
+                                                         (if (exact-positive-integer? n)
+                                                             (ok n)
+                                                             (err "count must be a positive integer"))))])
+    (list bot bot-count)))
+
+(define (make-study-bot-set-model-form info)
+  (form* ([model (ensure binding/symbol (required) (one-of
+                                                    (for/list ([(id model) (in-hash (bot-info-models info))])
+                                                      (cons id model))))])
+    model))

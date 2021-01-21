@@ -12,7 +12,7 @@
  register-bot!
  get-bot-infos-for-study)
 
-(struct bot-info (bot models)
+(struct bot-info (id bot models)
   #:transparent)
 
 (define *study-registry*
@@ -35,7 +35,8 @@
                 (lambda (bots-for-study)
                   (when (hash-has-key? bots-for-study id)
                     (raise-user-error 'register-bot! "a bot with id ~s is already registered with study ~s" id for-study))
-                  (hash-set bots-for-study id (bot-info bot models)))
+                  (hash-set bots-for-study id (bot-info id bot (for/hash ([m (in-list models)])
+                                                                 (values (object-name m) m)))))
                 hasheq))
 
 (define/contract (get-registered-studies)
@@ -44,7 +45,7 @@
 
 (define/contract (get-bot-infos-for-study id)
   (-> symbol? (hash/c symbol? bot-info?))
-  (hash-ref *bot-registry* id null))
+  (hash-ref *bot-registry* id hasheq))
 
 (define/contract (lookup-registered-study id [failure-thunk (lambda (id) #f)])
   (->* (symbol?)
