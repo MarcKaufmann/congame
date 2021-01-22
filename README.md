@@ -94,6 +94,9 @@ visible to the web app.
 [node]: https://nodejs.org/en/
 [nvm]: https://github.com/nvm-sh/nvm
 
+## Acknowledgement
+
+The creation of this software was supported by Közép-Europai Egyetem (KEE) / Central European University, New York (CEU NY) / Budapesti Közép-Europai Egyetem Alapítvány (CEUB-F) / Central European University Private University (CEU PU).
 
 ## License
 
