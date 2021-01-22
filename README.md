@@ -96,7 +96,7 @@ visible to the web app.
 
 ## Acknowledgement
 
-The creation of this software was supported by Közép-Europai Egyetem (KEE) / Central European University, New York (CEU NY) / Budapesti Közép-Europai Egyetem Alapítvány (CEUB-F) / Central European University Private University (CEU PU).
+The creation of this software was supported by Central European University (CEU).
 
 ## License
 
