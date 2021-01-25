@@ -1,8 +1,9 @@
 #lang racket/base
 
-(require racket/contract
-         racket/list
+(require (prefix-in forms: (only-in forms form))
          (except-in forms form)
+         racket/contract
+         racket/list
          koyo/haml
          congame/components/study
          congame-price-lists/price-lists
@@ -13,10 +14,14 @@
  pjb-pilot-study)
 
 (define (study-explanation)
-  (define practice-tasks (get 'practice-tasks))
+  (put 'practice-tasks 3)
+  (put 'participation-fee 2.00)
+  (put 'required-tasks 15)
+  (define required-tasks (get 'required-tasks))
+  (define practice-tasks (number->string (get 'practice-tasks)))
   (define participation-fee (get 'participation-fee))
   (haml
-   (:div
+   (:div.container
     (:h1 "Study Explanation")
 
     (:h2 "Tutorial")
@@ -44,16 +49,81 @@
   (haml
    (:div
     (:h1 "Consent Form")
-    ; TODO: Implement as form, have consent form in a tools module
-    (button void "I consent"))))
+    (render-consent-form))))
+
 
 (define (test-comprehension)
   (haml
    (:div
-    (:h1 "Comprehension Test")
-    (:p "Comprehension Test")
-    (button void "Submit"))))
+    (:h1 "Comprehension Tests")
+    (render-comprehension-form))))
 
+(define (render-comprehension-form)
+  (define the-form
+    (form* ([understand? (ensure binding/text (required))])
+           (list understand?)))
+  (haml
+    (form
+     the-form
+     ; after successful submit
+     (λ (answer) (put 'comprehension-test answer))
+     ; renderer: (-> rw xexpr)
+     (λ (rw)
+       `(form ((action "")
+               (method "POST"))
+              (label
+               "Do you understand this?"
+               ,(rw "understand?" (widget-text)))
+              ,@(rw "understand?" (widget-errors))
+              (button ((type "Submit")) "Submit"))))))
+
+(define (render-requirements-form)
+  (define the-form
+    (form* ((play-audio? (ensure binding/boolean (required #:message "You cannot continue if you can't play the audio")))
+            (has-audio? (ensure binding/boolean (required #:message "You cannot continue without audio")))
+            (has-time?  (ensure binding/boolean (required #:message "You cannot continue if you don't have time"))))
+           (hash 'play-audio? play-audio?
+                 'has-audio? has-audio?
+                 'has-time? has-time?
+                 'satisfies-requirements? (and play-audio? has-audio? has-time?))))
+  (haml
+   (form
+    the-form
+    (λ (answer)
+      (put 'requirements-test answer)
+      (put 'satisfies-requirements? (hash-ref answer 'satisfies-requirements?)))
+    (λ (rw)
+      `(div
+        (div
+         (audio
+          ((controls "")
+           (src ,(resource-uri christmas-song)))))
+        (div
+         (form ((action "")
+                (method "POST"))
+               (label
+                "Can you play and hear the above audio?"
+                ,(rw "play-audio?" (widget-checkbox)))
+               ,@(rw "play-audio?" (widget-errors))
+               (br)
+               (label
+                "Can you listen to music/audio during this study?"
+                ,(rw "has-audio?" (widget-checkbox)))
+               ,@(rw "has-audio?" (widget-errors))
+               (br)
+               (label
+                "Do you have time to finish the study within the next hour?"
+                ,(rw "has-time?" (widget-checkbox)))
+               ,@(rw "has-time?" (widget-errors))
+               (br)
+               (button ((type "submit")) "Submit"))))))))
+
+(define (test-study-requirements)
+  (haml
+   (:div
+    (:h1 "Requirements for Study")
+    (:p "Please check the following requirements. If they do not hold, you cannot complete the study, hence you cannot continue:")
+    (render-requirements-form))))
 
 (define (elicit-WTW)
   (haml
@@ -107,62 +177,67 @@
 (define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
 (define next-balanced-task-treatment (make-balanced-shuffle *task-treatments*))
 
-(define (tutorial)
-  (haml
-   (:div
-    (:h1 "Tutorial")
-    (button
-     void
-     "Finish Tutorial"))))
 
-(define (test-study-requirements)
-  (haml
-   (:div
-    (:h1 "Test Requirements")
-    (:p "You will now start the main study.")
-    (button
-     ; TODO: Treatment assignment should also be done at the study, not step, level!!
-     ; Can this be done, given the need for `put`?
-     (λ ()
-       (put 'rest-treatment (next-balanced-rest-treatment))
-       (put 'task-treatment (next-balanced-task-treatment)))
-     "Start Study"))))
-
-(define (compute-payments)
+(define (show-payments)
   ; TODO: implement
   (haml
    (:div
-    (:h1 "Your Payment")
-    (:p "... (TBC)")
-    (button void "Continue"))))
+    (:h1 "Payment Page")
+    (:p "Within the next week, you will receive the following payments for your participation in this study:")
+    (:p "TBD")
+    (button void "Finish Study"))))
+
+(define (compute-payments)
+  (void))
 
 (define (send-completion-email)
   ; TODO: implement
+  void)
+
+(define (render-debrief-form)
+  (define the-form
+    (form* ([gender (ensure binding/text (required))])
+           gender))
   (haml
-   (:div
-    (:h1 "Sending completion email")
-    (button void "Continue"))))
+   (form
+    the-form
+    (λ (survey-response)
+      (put 'debrief-survey survey-response)
+      (compute-payments)
+      (send-completion-email))
+    (λ (rw)
+      `(form ((action "")
+              (method "POST"))
+             (label
+              "What is your gender?"
+              ,(rw "gender" (widget-text)))
+             ,@(rw "gender" (widget-errors))
+             (button ((type "submit")) "Submit"))))))
 
 (define (debrief-survey)
   (haml
    (:div
     (:h1 "Debrief Survey")
-    (button
-     (λ ()
-       (compute-payments)
-       (send-completion-email))
-     "The End"))))
+    (render-debrief-form))))
 
-(define (required-tasks)
-  (haml
-   (:div
-    (:h1 "Required Tasks")
-    (button void "Continue"))))
+(require (for-syntax racket/base) ; Needed to use strings in define-static-resource. Why? Just Cause.
+         congame/components/resource)
+
+;; Directory resources:
+(define-static-resource songs "songs")
+
+;; File resources:
+(define-static-resource christmas-song (build-path "songs" "christmas.ogg"))
 
 (define (get-rest)
   (haml
    (:div
-    (:h1 "Take a break")
+    ; TODO: How can I ensure that the music is listened to at the normal pace before continuing is possible?
+    (:h1 "Relax and listen to some music")
+    (:audio
+     ([:controls ""]
+      [:src (resource-uri christmas-song)]))
+    (:br)
     (button void "Continue"))))
 
 (define (initialize-tasks)
@@ -312,8 +387,34 @@
                      #:require-bindings '([n extra-tasks])
                      #:provide-bindings '([success? success?])))))
 
+(define (task-failure)
+  (haml
+   (:div
+    (:h1 "You failed the tasks")
+    (:p "You failed the tasks, therefore you cannot complete the study.")
+    ; TODO: Is there a reason why we should have a button here to continue anyway? E.g. in terms
+    ; of marking the study as done? Ideally states such as this wouldn't require a further click.
+    (button void "The end")
+    )))
+
+(define (requirements-failure)
+  (haml
+   (:div
+    (:h1 "You do not satisfy the requirements")
+    (:p "You fail some of the requirements for the study, therefore you cannot complete the study.")
+    (button void "The End"))))
+
+(define (consent-failure)
+  (haml
+   (:div
+    (:h1 "You did not consent")
+    (:p "You did not consent to the study, therefore you cannot complete the study.")
+    (button void "The End"))))
+
 (define pjb-pilot-study
   (make-study
+   ; FIXME: No natural way to pass in #:requires for top-level study. The requires should
+   ; provided when creating a study-instance as parameters to configure.
    #:requires '()
    ; FIXME: #:provides should include WTW, but we won't get that if the person fails the tasks.
    ; Upon failing a study, call/set some default values for provide, error codes attached to data or NA.
@@ -325,21 +426,51 @@
     ; the nameing and `get`ting at the study level. E.g. make-step could do the mapping from 'required-tasks
     ; to the first argument or some such.
     (make-step 'explain-study study-explanation)
-    (make-step 'tutorial tutorial)
+    (make-step
+     'test-study-requirements
+     test-study-requirements
+     (λ ()
+       (if (not (get 'satisfies-requirements?))
+           'requirements-failure
+           'tutorial-tasks)))
+    (make-step/study
+     'tutorial-tasks
+     task-study
+     (λ ()
+       (if (not (get 'tutorial-success?))
+           'task-failure
+           'test-comprehension))
+     ; TODO: Document that the LHS is the binding being assigned the value of the RHS
+     #:require-bindings '([n practice-tasks])
+     #:provide-bindings '([tutorial-success? success?]))
     (make-step 'test-comprehension test-comprehension)
-    (make-step 'consent consent)
-    (make-step 'test-study-requirements test-study-requirements)
-    (make-step/study 'required-tasks
-                     task-study
-                     (λ ()
-                       (if (not (get 'success?))
-                           done
-                           (case (get 'rest-treatment)
-                             [(get-rest-then-elicit) 'get-rest]
-                             [(elicit-then-get-rest) 'elicit-WTW-and-work])))
-                     ; TODO: Document how #:require-bindings and #:provide-bindings work
-                     #:require-bindings '([n task-treatment])
-                     #:provide-bindings '([success? success?]))
+    (make-step
+     'consent
+     consent
+     (λ ()
+       ; TODO: The fact that I check only once means that, if by chance we jump past this stage
+       ; then the study would simply continue. In general it might be good to have this property
+       ; enforced from a given stage onwards.
+       (cond [(not (get 'consent?))
+              'consent-failure]
+             [else
+              ; TODO: Treatment assignment should also be done at the study, not step, level!!
+              ; Can this be done, given the need for `put`?
+              (put 'rest-treatment (next-balanced-rest-treatment))
+              (put 'task-treatment (next-balanced-task-treatment))
+             'required-tasks])))
+    (make-step/study
+     'required-tasks
+     task-study
+     (λ ()
+       (if (not (get 'success?))
+           'task-failure
+           (case (get 'rest-treatment)
+             [(get-rest-then-elicit) 'get-rest]
+             [(elicit-then-get-rest) 'elicit-WTW-and-work])))
+     ; TODO: Document how #:require-bindings and #:provide-bindings work
+     #:require-bindings '([n task-treatment])
+     #:provide-bindings '([success? success?]))
     (make-step 'get-rest
                get-rest
                #:for-bot bot:continuer
@@ -355,6 +486,8 @@
                          [(elicit-then-get-rest) 'get-rest]))
                      #:provide-bindings '([WTW WTW]))
     (make-step 'debrief-survey debrief-survey)
-    (make-step 'compute-payments compute-payments)
-    (make-step 'send-completion-email send-completion-email)
+    (make-step 'show-payments show-payments (λ () done))
+    (make-step 'task-failure task-failure (λ () done))
+    (make-step 'requirements-failure requirements-failure (λ () done))
+    (make-step 'consent-failure consent-failure (λ () done))
     )))
