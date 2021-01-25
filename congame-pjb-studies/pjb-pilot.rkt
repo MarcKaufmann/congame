@@ -6,16 +6,54 @@
          koyo/haml
          congame/components/study
          congame-price-lists/price-lists
+         "study-tools.rkt"
          (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide
  pjb-pilot-study)
 
 (define (study-explanation)
+  (define practice-tasks (get 'practice-tasks))
+  (define participation-fee (get 'participation-fee))
   (haml
    (:div
     (:h1 "Study Explanation")
+
+    (:h2 "Tutorial")
+    (:p "You are starting the tutorial for this study:")
+    (:ul
+     (:li "A study description (this page)")
+     (:li "Describing the tasks in this study and doing " practice-tasks " practice tasks")
+     (:li "Asking you if you agree to participate in the study"))
+    (:p "You will not receive any payment for completing the tutorial.")
+
+    (:h2 "Main Study")
+    (:p "If you decide to participate in the study, you will do the following:")
+    (:ul
+     (:li "complete " required-tasks " required tasks")
+     (:li "choose whether to do additional tasks for bonus payments")
+     (:li "do another 10-minute task involving sound")
+     (:li "fill in a brief survey"))
+    (:p "If you complete the study, you will receive " (pp-money participation-fee) " as a participation fee, as well as any bonus payment from the additional tasks you choose.")
+
+    (:p (:strong "Note:") " Since one of the tasks requires sound, you need to have headphones or be in a place where you can listen to sound." )
+
     (button void "Continue"))))
+
+(define (consent)
+  (haml
+   (:div
+    (:h1 "Consent Form")
+    ; TODO: Implement as form, have consent form in a tools module
+    (button void "I consent"))))
+
+(define (test-comprehension)
+  (haml
+   (:div
+    (:h1 "Comprehension Test")
+    (:p "Comprehension Test")
+    (button void "Submit"))))
+
 
 (define (elicit-WTW)
   (haml
@@ -74,10 +112,21 @@
    (:div
     (:h1 "Tutorial")
     (button
+     void
+     "Finish Tutorial"))))
+
+(define (test-study-requirements)
+  (haml
+   (:div
+    (:h1 "Test Requirements")
+    (:p "You will now start the main study.")
+    (button
+     ; TODO: Treatment assignment should also be done at the study, not step, level!!
+     ; Can this be done, given the need for `put`?
      (λ ()
        (put 'rest-treatment (next-balanced-rest-treatment))
        (put 'task-treatment (next-balanced-task-treatment)))
-     "Finish Tutorial"))))
+     "Start Study"))))
 
 (define (compute-payments)
   ; TODO: implement
@@ -271,8 +320,15 @@
    #:provides '(task-treatment rest-treatment)
    ;; TODO: Ensure work is done in appropriate time, i.e. all in one go, not too many breaks, and so on, all on the same day.
    (list
+    ; TODO: Would it maybe be better to define step-handlers with normal arguments and pass them in?
+    ; Rather than use (get 'n) inside? That way we can define more re-usable steps, while dealing with
+    ; the nameing and `get`ting at the study level. E.g. make-step could do the mapping from 'required-tasks
+    ; to the first argument or some such.
     (make-step 'explain-study study-explanation)
     (make-step 'tutorial tutorial)
+    (make-step 'test-comprehension test-comprehension)
+    (make-step 'consent consent)
+    (make-step 'test-study-requirements test-study-requirements)
     (make-step/study 'required-tasks
                      task-study
                      (λ ()
