@@ -17,9 +17,9 @@
 
       ['(*root* required-tasks task)
        #t
-       #;
-       (begin0 (zero? c)
-         (set! c (add1 c)))]
+       #;(begin0 (zero? c)
+           (set! c (add1 c)))
+       ]
 
       #;['(*root* price-list)
        1]

@@ -2,12 +2,14 @@
 
 (require (prefix-in forms: (only-in forms form))
          (except-in forms form)
+         marionette
          racket/contract
          racket/list
          koyo/haml
          congame/components/study
          congame-price-lists/price-lists
          "study-tools.rkt"
+         "tasks.rkt"
          (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide
@@ -117,6 +119,13 @@
                ,@(rw "has-time?" (widget-errors))
                (br)
                (button ((type "submit")) "Submit"))))))))
+
+(define (test-study-requirements-step/bot)
+  (for ([checkbox (bot:element-find-all "input[type=checkbox]")])
+    (display checkbox)
+    (flush-output)
+    (element-click! checkbox))
+  (element-click! (bot:find "button[type=submit]")))
 
 (define (test-study-requirements)
   (haml
@@ -240,75 +249,6 @@
     (:br)
     (button void "Continue"))))
 
-(define (initialize-tasks)
-  (haml
-   (:div
-    (:h1 "Start the tasks NOW!")
-    (button
-     (λ ()
-       (put 'remaining-tasks (get 'n))
-       (put 'correct-answers 0)
-       (put 'wrong-answers 0))
-     "Start Tasks"))))
-
-; TODO: Split tasks out of this study into submodule of helper module
-(define (task)
-  (haml
-   (:div
-    (:h1 "Click button that says 'Well done' for task completion!")
-    (button
-     #:id 'correct-answer
-     (λ ()
-       (put 'remaining-tasks (sub1 (get 'remaining-tasks)))
-       (put 'correct-answers (add1 (get 'correct-answers))))
-     "Well done")
-    (:br)
-    (button
-     #:id 'wrong-answer
-     (λ ()
-       (put 'wrong-answers (add1 (get 'wrong-answers))))
-     "I hAz no brAinZ..."))))
-
-(define (task/bot correct?)
-  (bot:click
-   (if correct?
-       'correct-answer
-       'wrong-answer)))
-
-(define (success)
-  (haml
-   (:div
-    (:h1 "You GENIUS!")
-    (button
-     (λ () (put 'success? #t))
-     "Continue"))))
-
-(define (failure)
-  (haml
-   (:div
-    (:h1 "There, there...")
-    (button
-     (λ () (put 'success? #f))
-     "The End"))))
-
-(define (task-completion)
-  (cond [(<= (get 'remaining-tasks) 0) 'success]
-        [(> (get 'wrong-answers) 1) 'failure]
-        [else 'task]))
-
-(define task-study
-  (make-study
-   #:requires '(n)
-   #:provides '(success? correct-answers wrong-answers)
-   (list
-    (make-step 'start-tasks
-               initialize-tasks
-               task-completion
-               #:for-bot bot:continuer)
-    (make-step 'task task #:for-bot task/bot task-completion)
-    (make-step 'success success #:for-bot bot:continuer (λ () done))
-    (make-step 'failure failure #:for-bot bot:continuer (λ () done)))))
-
 (define pl-extra-tasks
   (make-pl #:name 'pl1
            #:fixed-work 0
@@ -429,6 +369,7 @@
     (make-step
      'test-study-requirements
      test-study-requirements
+     #:for-bot test-study-requirements-step/bot
      (λ ()
        (if (not (get 'satisfies-requirements?))
            'requirements-failure
