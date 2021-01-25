@@ -222,30 +222,30 @@
           (element-click! (cadr radios)))))
   (element-click! (bot:find "button[type=submit]")))
 
-  (define price-lists
-    (hash 'choice1 (price-list 'choice1
-                               (option 0 0)
-                               (adjustable-option 10)
-                               '(0 1 2)
-                               null
-                               (hash))))
+(define price-lists
+  (hash 'choice1 (price-list 'choice1
+                             (option 0 0)
+                             (adjustable-option 10)
+                             '(0 1 2)
+                             null
+                             (hash))))
 
-  (define (info-step)
-    (haml
-     (:div
-      (:h1 "You are in the Price Lists study")
-      (button void "Continue"))))
+(define (info-step)
+  (haml
+   (:div
+    (:h1 "You are in the Price Lists study")
+    (button void "Continue"))))
 
-  (define pl-study
-    (make-study
-     #:requires '()
-     #:provides '()
-     (list
-      (make-step 'info info-step)
-      (make-step 'price-list
-                 (price-list-step (hash-ref price-lists 'choice1))
-                 #:for-bot price-list-step/bot
-                 ))))
+(define pl-study
+  (make-study
+   #:requires '()
+   #:provides '()
+   (list
+    (make-step 'info info-step)
+    (make-step 'price-list
+               (price-list-step (hash-ref price-lists 'choice1))
+               #:for-bot price-list-step/bot
+               ))))
 
 
 ;; bots ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
