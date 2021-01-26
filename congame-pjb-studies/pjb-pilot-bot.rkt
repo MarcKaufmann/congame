@@ -15,6 +15,9 @@
       #;['(*root* elicit-WTW-and-work elicit-immediate-WTW)
        (willing-to-work? #t)]
 
+      ['(*root* tutorial-tasks task)
+       #t]
+
       ['(*root* required-tasks task)
        #t
        #;(begin0 (zero? c)

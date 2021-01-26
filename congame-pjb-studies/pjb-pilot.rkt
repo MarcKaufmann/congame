@@ -53,7 +53,6 @@
     (:h1 "Consent Form")
     (render-consent-form))))
 
-
 (define (test-comprehension)
   (haml
    (:div
@@ -78,6 +77,12 @@
                ,(rw "understand?" (widget-text)))
               ,@(rw "understand?" (widget-errors))
               (button ((type "Submit")) "Submit"))))))
+
+(define (test-comprehension/bot)
+  (define f (bot:find "form"))
+  (for ([input (bot:element-find-all f "input")])
+    (element-type! input "I, Robot"))
+  (element-click! (bot:find "button[type=submit]")))
 
 (define (render-requirements-form)
   (define the-form
@@ -222,6 +227,12 @@
               ,(rw "gender" (widget-text)))
              ,@(rw "gender" (widget-errors))
              (button ((type "submit")) "Submit"))))))
+
+(define (debrief-survey/bot)
+  (define f (bot:find "form"))
+  (for ([input (bot:element-find-all f "input")])
+    (element-type! input "Bot, James Bot"))
+  (element-click! (bot:find "button[type=submit]")))
 
 (define (debrief-survey)
   (haml
@@ -384,7 +395,7 @@
      ; TODO: Document that the LHS is the binding being assigned the value of the RHS
      #:require-bindings '([n practice-tasks])
      #:provide-bindings '([tutorial-success? success?]))
-    (make-step 'test-comprehension test-comprehension)
+    (make-step 'test-comprehension test-comprehension #:for-bot test-comprehension/bot)
     (make-step
      'consent
      consent
@@ -399,7 +410,8 @@
               ; Can this be done, given the need for `put`?
               (put 'rest-treatment (next-balanced-rest-treatment))
               (put 'task-treatment (next-balanced-task-treatment))
-             'required-tasks])))
+              'required-tasks]))
+     #:for-bot consent/bot)
     (make-step/study
      'required-tasks
      task-study
@@ -426,9 +438,9 @@
                          [(get-rest-then-elicit) 'debrief-survey]
                          [(elicit-then-get-rest) 'get-rest]))
                      #:provide-bindings '([WTW WTW]))
-    (make-step 'debrief-survey debrief-survey)
-    (make-step 'show-payments show-payments (λ () done))
-    (make-step 'task-failure task-failure (λ () done))
-    (make-step 'requirements-failure requirements-failure (λ () done))
-    (make-step 'consent-failure consent-failure (λ () done))
+    (make-step 'debrief-survey debrief-survey #:for-bot debrief-survey/bot)
+    (make-step 'show-payments show-payments (λ () done) #:for-bot bot:continuer)
+    (make-step 'task-failure task-failure (λ () done) #:for-bot bot:continuer)
+    (make-step 'requirements-failure requirements-failure (λ () done) #:for-bot bot:continuer)
+    (make-step 'consent-failure consent-failure (λ () done) #:for-bot bot:continuer)
     )))

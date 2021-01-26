@@ -2,12 +2,15 @@
 
 (require (except-in forms form)
          (prefix-in forms: (only-in forms form))
+         marionette
          koyo/haml
-         congame/components/study)
+         congame/components/study
+         (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide
  pp-money
- render-consent-form)
+ render-consent-form
+ consent/bot)
 
 (define/contract (pp-money amount #:currency [currency "€"])
   (-> number? string?)
@@ -33,3 +36,8 @@
                ,(rw "consent?" (widget-checkbox))
               ,@(rw "consent?" (widget-errors))
               (button ((type "Submit")) "Submit")))))))
+
+(define (consent/bot)
+  (define consent-checkbox (bot:find "input[type=checkbox]"))
+  (element-click! consent-checkbox)
+  (element-click! (bot:find "button[type=submit]")))
