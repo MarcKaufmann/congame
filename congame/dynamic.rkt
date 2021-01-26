@@ -87,7 +87,7 @@
                 (study                . ,config:log-level)
                 (system               . ,config:log-level))))
 
-  ; Marc: Putting this here because koyo-experiment did. Some bootstrapping this or that probably.
+  ; FIXME: Marc: Putting this here because koyo-experiment did. Some bootstrapping this or that probably.
 
   (when config:sentry-dsn
     (current-sentry (make-sentry config:sentry-dsn
