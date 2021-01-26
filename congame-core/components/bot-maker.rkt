@@ -20,6 +20,8 @@
        [(step id _ handler/bot _)
         (make-bot-stepper id (lambda ()
                                (define id* (reverse (cons id stack)))
+                               ; FIXME: The arity exception was raised for a faulty call *inside* of handler/bot
+                               ; How to avoid confusion from this? Pass on e (at least), and be less sure about source of error.
                                (with-handlers ([exn:fail:contract:arity?
                                                 (lambda (_e)
                                                   (raise-user-error (format "step ~s expects ~s arguments" id* (procedure-arity handler/bot))))]

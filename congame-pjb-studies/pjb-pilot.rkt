@@ -121,8 +121,8 @@
                (button ((type "submit")) "Submit"))))))))
 
 (define (test-study-requirements-step/bot)
-  (for ([checkbox (bot:element-find-all "input[type=checkbox]")])
-    (display checkbox)
+  (for ([checkbox (bot:find-all "input[type=checkbox]")])
+    (displayln (format "checkbox is ~a" checkbox))
     (flush-output)
     (element-click! checkbox))
   (element-click! (bot:find "button[type=submit]")))
@@ -369,11 +369,11 @@
     (make-step
      'test-study-requirements
      test-study-requirements
-     #:for-bot test-study-requirements-step/bot
      (λ ()
        (if (not (get 'satisfies-requirements?))
            'requirements-failure
-           'tutorial-tasks)))
+           'tutorial-tasks))
+     #:for-bot test-study-requirements-step/bot)
     (make-step/study
      'tutorial-tasks
      task-study
