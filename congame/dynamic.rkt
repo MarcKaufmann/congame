@@ -33,7 +33,12 @@
 (define-system prod
   [app (auth broker broker-admin db flashes mailer migrator sessions users) make-app]
   [auth (sessions users) make-auth-manager]
-  [broker (db) make-broker]
+  ;; TODO: Check this still holds.
+  ;; Some of our jobs depend on the mailer so we need the explicit
+  ;; dep. here to avoid running into issues like:
+  ;; https://github.com/MarcKaufmann/projection-bias-experiment/issues/57
+  [broker (db mailer) (lambda (db _mailer)
+                        (make-broker db))]
   [broker-admin (broker) (make-broker-admin-factory "/admin/jobs")]
   [db (make-database-factory
        (lambda ()

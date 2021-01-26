@@ -6,7 +6,10 @@
          racket/contract
          racket/list
          koyo/haml
+         koyo/job
+         koyo/sentry
          congame/components/study
+         congame/components/sentry
          congame-price-lists/price-lists
          "study-tools.rkt"
          "tasks.rkt"
@@ -204,9 +207,23 @@
 (define (compute-payments)
   (void))
 
+(define-job (send-study-completion-email u payment)
+  ; TODO: Check that reason for sentry is to find out when jobs fail.
+  ; TODO: Is sentry configured?
+  (with-sentry
+    (define mailer (system-ref 'mailer))
+    (mailer-send-study-completed-email mailer u payment)))
+
+(define (get-payment participant-id)
+  ; FIXME: Get/Compute the payment
+  (pp-money 10))
+
 (define (send-completion-email)
-  ; TODO: implement
-  void)
+  (schedule-at
+   (get-moment)
+   (send-completion-email
+    (user-username (current-user))
+    (get-payment (current-participant-id)))))
 
 (define (render-debrief-form)
   (define the-form
@@ -217,6 +234,7 @@
     the-form
     (λ (survey-response)
       (put 'debrief-survey survey-response)
+      ; FIXME: Where should I really call these functions?
       (compute-payments)
       (send-completion-email))
     (λ (rw)

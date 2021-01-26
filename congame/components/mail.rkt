@@ -27,6 +27,27 @@
                       'name (user-username user)
                       'username (user-username user))))
 
+(define/contract (mailer-send-study-completed-email m u payment)
+  ; FIXME: Add information on the study that was completed, say the name (or so) of the study
+  (-> mailer? user? string? void?)
+  (define action-url
+    (make-application-url "study"))
+  (define login-url
+    (make-application-url "login"))
+  (define recpt (user-username u))
+
+  (mail-adapter-send-email-with-template
+   (mailer-adapter m)
+   #:to recpt
+   #:from (mailer-sender m)
+   #:template-alias "study-completed"
+   #:template-model (mailer-merge-common-variables m
+                      'action_url action-url
+                      'name recpt
+                      'username recpt
+                      'payment payment
+                      )))
+
 (define/contract (mailer-send-password-reset-email m user token)
   (-> mailer? user? non-empty-string? void?)
 
