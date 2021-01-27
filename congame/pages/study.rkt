@@ -36,6 +36,8 @@
   (redirect-to (reverse-uri 'study-page (study-instance-slug i))))
 
 (define ((study-page db) req slug)
+  (displayln (format "study-page current-user: ~a" (current-user)))
+  (flush-output)
   (cond
     [(lookup-study db slug (user-id (current-user)))
      => (match-lambda

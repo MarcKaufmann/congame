@@ -24,6 +24,7 @@
  pjb-pilot-study)
 
 (define (study-explanation)
+  ; FIXME: These values should be configured somewhere else -- `#:requires` of the study
   (put 'practice-tasks 3)
   (put 'participation-fee 2.00)
   (put 'required-tasks 15)
