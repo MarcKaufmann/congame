@@ -9,12 +9,9 @@
          racket/list
          koyo/haml
          koyo/job
-         koyo/sentry
-         congame/components/auth
          congame/components/mail
          congame/components/sentry
          congame/components/study
-         congame/components/user
          congame-price-lists/price-lists
          "study-tools.rkt"
          "tasks.rkt"
