@@ -42,7 +42,16 @@
  make-step/study
  wrap-sub-study
  make-study
- run-study)
+ run-study
+ ; FIXME: Is this the right function to expose?
+ participant-email
+ current-participant-id
+ ; current-step
+ amount/c
+ get-payment
+ put-payment!
+ get-all-payments
+ )
 
 ;; TODO:
 ;; * admin: add studies, instances, visualize, reset users' data
@@ -115,6 +124,49 @@ QUERY
 
 (define (current-study-array)
   (list->pg-array (map symbol->string (current-study-ids))))
+
+; FIXME: Using exact naturals would be even better, but then
+; we need to ensure that the payments are included in cents, rather
+; than whole dollars. This will almost surely lead to errors of rounding
+; or misunderstanding.
+(define amount/c
+  (and/c number? (or/c positive? zero?)))
+
+; FIXME: The other schemas are later, but for the contract I need `study-payment?`
+
+(define-schema study-payment
+  #:table "payments"
+  ([participant-id integer/f]
+   [(timestamp (now/moment)) datetime-tz/f]
+   [payment-name string/f]
+   [payment (numeric/f 6 2)]))
+
+(define/contract (put-payment! k payment)
+  (-> symbol? amount/c study-payment?)
+  (with-database-connection [conn (current-database)]
+    (insert-one! conn (make-study-payment #:participant-id (current-participant-id)
+                                          #:payment-name (symbol->string k)
+                                          #:payment payment))))
+
+(define (get-payment k)
+  ; FIXME: What's the bug again if the primary key is not determined by a single field?
+  ; I shouldn't look for... otherwise I get the wrong result?
+  (define result
+    (with-database-connection [conn (current-database)]
+      (lookup conn (~> (from study-payment #:as p)
+                       (where (and (= ,(current-participant-id) p.participant-id)
+                                   (= ,(symbol->string k) p.payment-name)))))))
+  (cond [result => study-payment-payment]
+        [else
+         (error "no payment ~a found for participant ~a" k (current-participant-id))]))
+
+(define (get-all-payments)
+  (with-database-connection [conn (current-database)]
+    (for/hash ([p (in-entities conn
+                               (~> (from study-payment #:as p)
+                                   (where (= ,(current-participant-id) p.participant-id))))])
+      (values (string->symbol (study-payment-payment-name p))
+              (study-payment-payment p)))))
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -451,6 +503,7 @@ QUERY
  (schema-out study-participant)
  (schema-out study-participant/admin)
  (schema-out study-var)
+ (schema-out study-payment)
  study-var-value/deserialized
  make-study-manager
  call-with-study-manager
@@ -659,6 +712,13 @@ QUERY
                      (select p.id u.username p.progress p.completed? p.enrolled-at)
                      (project-onto study-participant/admin-schema)))))
 
+(define/contract (participant-email pid)
+  (-> id/c string?)
+  (study-participant/admin-email
+    (lookup-study-participant/admin
+     (study-manager-db (current-study-manager))
+     pid)))
+
 (define/contract (lookup-study-vars db participant-id)
   (-> database? id/c (listof study-var?))
   (with-database-connection [conn db]
@@ -679,6 +739,10 @@ QUERY
                           [progress ,(list->pg-array null)])))
     (query-exec conn (~> (from "study_data" #:as d)
                          (where (= d.participant-id ,participant-id))
+                         (delete)))
+    ; FIXME: Bogdan: check that this deletes only participant payments from DB, nothing else.
+    (query-exec conn (~> (from "study_payments" #:as p)
+                         (where (= p.id ,participant-id))
                          (delete)))))
 
 (define (update-participant-progress! step-id)

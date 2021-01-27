@@ -1,15 +1,20 @@
 #lang racket/base
 
-(require (prefix-in forms: (only-in forms form))
+(require component
+         (prefix-in forms: (only-in forms form))
          (except-in forms form)
+         gregor
          marionette
          racket/contract
          racket/list
          koyo/haml
          koyo/job
          koyo/sentry
-         congame/components/study
+         congame/components/auth
+         congame/components/mail
          congame/components/sentry
+         congame/components/study
+         congame/components/user
          congame-price-lists/price-lists
          "study-tools.rkt"
          "tasks.rkt"
@@ -196,47 +201,51 @@
 
 
 (define (show-payments)
-  ; TODO: implement
   (haml
    (:div
     (:h1 "Payment Page")
     (:p "Within the next week, you will receive the following payments for your participation in this study:")
-    (:p "TBD")
+    (:p (get-total-payment))
+    (:ul
+     ,@(for/list ([(name payment) (in-hash (get-all-payments))])
+         (haml
+          (:li (symbol->string name) ": " (pp-money payment)))))
     (button void "Finish Study"))))
 
-(define (compute-payments)
-  (void))
-
-(define-job (send-study-completion-email u payment)
-  ; TODO: Check that reason for sentry is to find out when jobs fail.
+(define-job (send-study-completion-email p payment)
   ; TODO: Is sentry configured?
   (with-sentry
     (define mailer (system-ref 'mailer))
-    (mailer-send-study-completed-email mailer u payment)))
+    (mailer-send-study-completed-email mailer p payment)))
 
-(define (get-payment participant-id)
-  ; FIXME: Get/Compute the payment
-  (pp-money 10))
+(define (get-total-payment)
+  (pp-money
+   (apply + (hash-values (get-all-payments)))))
 
-(define (send-completion-email)
+(define (send-completion-email pid)
+  ; FIXME: All emails should check that the user they are being sent to is not a bot.
   (schedule-at
-   (get-moment)
-   (send-completion-email
-    (user-username (current-user))
-    (get-payment (current-participant-id)))))
+   (now/moment)
+   (send-study-completion-email
+    (participant-email pid)
+    (get-total-payment))))
 
 (define (render-debrief-form)
   (define the-form
     (form* ([gender (ensure binding/text (required))])
            gender))
+  ; FIXME: Explanation: Why is current-user not available, but current-study-manager?
+  ; (Assuming we provide it?) More generally, what can and cannot be accessed and
+  ; manipulated in the action function?
+  (define pid (current-participant-id))
   (haml
    (form
     the-form
     (λ (survey-response)
       (put 'debrief-survey survey-response)
       ; FIXME: Where should I really call these functions?
-      (compute-payments)
-      (send-completion-email))
+      (put-payment! 'participation-fee (get 'participation-fee))
+      (send-completion-email pid))
     (λ (rw)
       `(form ((action "")
               (method "POST"))
@@ -306,8 +315,10 @@
        (define pl/answers (get 'WTW))
        (define pl/answers+choice (pl-random-choice pl/answers))
        (define extra-tasks (price-list-extra-work pl/answers+choice))
+       (define extra-money (price-list-extra-money pl/answers+choice))
        (put 'WTW pl/answers+choice)
-       (put 'extra-tasks extra-tasks))
+       (put 'extra-tasks extra-tasks)
+       (put 'extra-money extra-money))
      "See extra tasks"))))
 
 (define (see-extra-tasks)
@@ -351,10 +362,18 @@
                #:for-bot bot:continuer)
     (make-step/study 'extra-tasks
                      task-study
-                     (λ () done)
+                     (λ ()
+                       ; FIXME: Is it kosher to use `put` and code that changes the DB in these
+                       ; transition functions?
+                       (displayln (list "PAY!!" (get 'extra-money)))
+                       (flush-output)
+                       (when (get 'success?)
+                         (put-payment! 'extra-tasks-bonus (get 'extra-money)))
+                       done)
                      ; TODO: Can #:require-bindings take values, or does it have to refer to defined binding?
                      #:require-bindings '([n extra-tasks])
-                     #:provide-bindings '([success? success?])))))
+                     #:provide-bindings '([success? success?]))
+    )))
 
 (define (task-failure)
   (haml

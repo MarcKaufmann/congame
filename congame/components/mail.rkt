@@ -9,7 +9,8 @@
 (provide
  (all-from-out koyo/mail)
  mailer-send-welcome-email
- mailer-send-password-reset-email)
+ mailer-send-password-reset-email
+ mailer-send-study-completed-email)
 
 (define/contract (mailer-send-welcome-email m user)
   (-> mailer? user? void?)

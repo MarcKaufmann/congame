@@ -29,6 +29,7 @@
  pl-study
  pl-random-choice
  price-list-extra-work
+ price-list-extra-money
  make-pl
 
  gen:describable
@@ -111,6 +112,9 @@
 
 (define (price-list-extra-work pl)
   (option-work (price-list-chosen pl)))
+
+(define (price-list-extra-money pl)
+  (option-money (price-list-chosen pl)))
 
 (define/contract (pl-random-choice pl)
   ; This should update the initial price-list and update the random choice field
