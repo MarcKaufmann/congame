@@ -13,10 +13,10 @@
          racket/string
          threading
          web-server/servlet
-         "../components/auth.rkt"
+         congame/components/auth
          congame/components/mail
-         "../components/template.rkt"
-         "../components/user.rkt"
+         congame/components/template
+         congame/components/user
          "forms.rkt")
 
 ;; login & logout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

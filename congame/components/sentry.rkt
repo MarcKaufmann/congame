@@ -3,8 +3,8 @@
 (require racket/contract
          sentry
          web-server/http
-         "auth.rkt"
-         "user.rkt")
+         congame/components/auth
+         congame/components/user)
 
 (provide
  with-sentry

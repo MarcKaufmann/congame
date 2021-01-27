@@ -21,10 +21,10 @@
          web-server/servlet-dispatch
          (prefix-in config: "../config.rkt")
          "../pages/all.rkt"
-         "auth.rkt"
+         congame/components/auth
          congame/components/mail
-         "sentry.rkt"
-         "user.rkt")
+         congame/components/sentry
+         congame/components/user)
 
 (provide
  make-app

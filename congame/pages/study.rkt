@@ -7,9 +7,9 @@
          racket/match
          web-server/dispatchers/dispatch
          web-server/http
-         "../components/auth.rkt"
-         "../components/template.rkt"
-         "../components/user.rkt")
+         congame/components/auth
+         congame/components/template
+         congame/components/user)
 
 (provide
  study-instances-page
