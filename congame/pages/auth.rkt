@@ -14,7 +14,7 @@
          threading
          web-server/servlet
          "../components/auth.rkt"
-         "../components/mail.rkt"
+         congame/components/mail
          "../components/template.rkt"
          "../components/user.rkt"
          "forms.rkt")

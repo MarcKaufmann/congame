@@ -16,7 +16,7 @@
          sentry
          "components/app.rkt"
          "components/auth.rkt"
-         "components/mail.rkt"
+         congame/components/mail
          "components/user.rkt"
          (prefix-in config: "config.rkt"))
 

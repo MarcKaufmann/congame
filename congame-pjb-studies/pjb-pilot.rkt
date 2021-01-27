@@ -9,10 +9,10 @@
          racket/list
          koyo/haml
          koyo/job
-         congame/components/mail
          congame/components/sentry
          congame/components/study
          congame-price-lists/price-lists
+         congame/components/mail
          "study-tools.rkt"
          "tasks.rkt"
          (prefix-in bot: (submod congame/components/bot actions)))

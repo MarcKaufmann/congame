@@ -22,7 +22,7 @@
          (prefix-in config: "../config.rkt")
          "../pages/all.rkt"
          "auth.rkt"
-         "mail.rkt"
+         congame/components/mail
          "sentry.rkt"
          "user.rkt")
 
