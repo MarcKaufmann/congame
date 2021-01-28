@@ -246,6 +246,7 @@ QUERY
 (define/widget (form f action render #:id [id ""])
   (match (form-run f this-request)
     [(list 'passed res _)
+     (redirect/get/forget/protect)
      (action res)
      (continue)]
 
@@ -438,6 +439,11 @@ QUERY
      (lambda (return)
        (send/suspend/dispatch/protect
         (lambda (embed/url)
+          ;; These parameterizations are closed-over and re-set by
+          ;; `embed` within handlers when necessary because `call/cc`
+          ;; above captures everything outside up to the
+          ;; `servlet-prompt' (in our case up to
+          ;; `wrap-protect-continuations').
           (parameterize ([current-embed/url embed/url]
                          [current-request req]
                          [current-return return]
@@ -640,7 +646,6 @@ QUERY
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)
   (with-database-transaction [conn db]
-    #:isolation 'serializable
     (cond
       [(lookup conn
                (~> (from study-instance #:as i)

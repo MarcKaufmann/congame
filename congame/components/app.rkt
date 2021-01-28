@@ -88,6 +88,10 @@
       #:roles (admin)
       (admin:create-study-instance-bot-sets-page db)]
 
+     [("admin" "studies" (integer-arg) "instances" (integer-arg) "bot-sets" (integer-arg))
+      #:roles (admin)
+      (admin:view-study-instance-bot-set-page db)]
+
      [("admin" "jobs" (string-arg) ...)
       #:roles (admin)
       (lambda (req . _args)
