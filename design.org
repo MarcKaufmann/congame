@@ -1,0 +1,45 @@
+#+TITLE: Design
+
+Questions and features about congame's design. The first category is about improving the current version of congame -- without major data structure changes or major syntactic sugar. The second category is about improvements that require major changes, or at least appear to require them.
+
+## Design improvements of current version
+
+Topics: study flow; user-specific step actions; treatment specification and control flow; parameterize bots; error messages
+
+1. [Bogdan] How to pass in `#:requires` to the top level study?
+   - [Not Today!] Set them at the instance level when creating a new instance. Q: Should they be changeable in admin interface?
+2. [Bogdan] How can I take participant-specific actions after a given step?
+   - Example: in "pjb-pilot.rkt" in `render-debrief-form`, should I call `put-payment!` there? Seems dumb, since we can have multiple submit hits.
+   - The action handlers after forms (and normal steps too?) do not have access to `(current-user)`. This is probably sensible, but how does one take actions that depend on what the person did?
+   - We have `get` and `put`, but any action such as sending mail requires some information that is not available to the study designer
+3. Parameterized bots: how to ensure the right values get passed in?
+4. Error messages and handlers should be such that, if an error is due to the bot or step calls, then we highlight them as such, but that we ensure that lower level similar errors do not get caught as such. Example: bots with wrong arity of argument call was not due to the wrong number of arguments passed to the bot, but to the wrong number of arguments used within the correctly parameterized but wrongly coded bot-handler.
+5. Add helper functions for treatment randomization, balancing, etc
+6. Move most of the transitions from step-level to study-level
+   + Would it make sense to define transitions separately from steps, so that we have a list of steps available at a given study-level (including steps for substudies) and a separate part for the logic of the study in terms of transitions, which ignores handlers and bots, and only relates conditions for how steps follow each other based on available variables and treatments. It may even be better to define transitions at the study, rather than at the step, level. Then a situation where the value of a treatment leads to A -> B -> C, while another leads to C -> B -> A can easily be defined at the study level, whereas it requires repeatedly defining and checking things for each step: each step needs to check the value of the treatment, so the code has to be defined again and again, even though it really just needs to be written once at the study level. Probably it is best to keep the ability of steps overriding the study-transition, but adding functionality for defining step-transition at the study-level.
+7. Step *handlers* that collect data, such as `price-list-step`, need to know where to `put` the data they receive, unless we find a mechanism for returning their answer to the parent study calling them. Does it make sense to demand that there is a key-word for where to store the data? Anything better?
+8. Have a mechanism for why data isn't set when it isn't. Related to how failures are dealt with, but not only.
+   - Example: failing tasks leads to no answer given to later WTW questions, hence a `#:provides` fails. For later data analysis, we may care about why we didn't see it, e.g. for selection analysis.
+   - Example: a person may answer all the questions, but the price list is inconsistent. Thus the *derived* quantity `WTW` doesn't exist, and should be `NA:inconsistent-switches` or some such, as opposed to `NA:failed-tasks`
+
+### Features
+
+- Email: we should not send emails to bots
+  - Later we should allow bots to be emailed and to check these emails arrive for testing, but this probably requires a lot of effort
+- buttons and submits: How to put time limits on when it is possible to move on? E.g. for listening to music: wait until it has finished, and after at least as much time as the music takes to play
+- Redesign failure modes, i.e. ways to end the study, so that we don't just have the "Yer done" page upon success. Instead we should equally mark participants as completed under different scenarios (such as failing tasks), and have a common way of sending people there, e.g. `(done 'failed-task)` vs `(done 'success)`.
+  - This interferes with the `#:provides`, since a failed run need not set all the variables that a successful run provides. Easy solution: upon failing, we don't expect the provides and hence don't throw an error. Slightly harder: we can define a new `#:provides` for each failure mode.
+- helper functions to deal with timing
+
+### Documentation
+
+1. How to configure Sentry
+2. [Bogdan] Why is `current-user` not available after form submit, but `current-study-manager`? I get the former, but am puzzled by the latter being available: I believe it's because its set in the thread before handlers get called, but I thought that `current-user` is also set there, so it's weird that `current-user is missing`
+3. [Bogdan] Document more clearly what is available at what stage. Maybe even enforce it by requiring all calls for user-specific content to be done via a few handlers such as `get` and `put`
+4. [Bogdan] Can `#:require-bindings` in `make-step/study` take values, or only the name of the value being passed in?
+5. Document `make-step`, `make-step/study`, and friends
+
+## Design improvements requiring major changes
+
+- [Bogdan] Steps: Should step *handlers* be parameterized instead of using `get` and `put` inside of them? The problem with `get` and `put` is that it's harder to reuse across different studies, and if one uses helper steps defined by different people in different packages, one will get name collisions.
+  + TODO: Would it maybe be better to define step-handlers with normal arguments and pass them in? Rather than use (get 'n) inside? That way we can define more re-usable steps, while dealing with the nameing and `get`ting at the study level. E.g. make-step could do the mapping from 'required-tasks to the first argument or some such.

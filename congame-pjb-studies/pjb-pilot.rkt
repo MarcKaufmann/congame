@@ -21,7 +21,6 @@
  pjb-pilot-study)
 
 (define (study-explanation)
-  ; FIXME: These values should be configured somewhere else -- `#:requires` of the study
   (put 'practice-tasks 3)
   (put 'participation-fee 2.00)
   (put 'required-tasks 15)
@@ -181,7 +180,6 @@
 (define *rest-treatments* '(get-rest-then-elicit elicit-then-get-rest))
 (define *task-treatments* '(1 3))
 
-; TODO: `make-balanced-shuffle` should be provided by a module of helper functions
 (define (make-balanced-shuffle original)
   (define ts (shuffle original))
   (λ ()
@@ -193,10 +191,8 @@
            (set! ts (shuffle original))
            (first ts)])))
 
-; FIXME: This setup does not balance at the rest x task treatments jointly
 (define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
 (define next-balanced-task-treatment (make-balanced-shuffle *task-treatments*))
-
 
 (define (show-payments)
   (haml
@@ -211,7 +207,6 @@
     (button void "Finish Study"))))
 
 (define-job (send-study-completion-email p payment)
-  ; TODO: Is sentry configured?
   (with-sentry
     (define mailer (system-ref 'mailer))
     (mailer-send-study-completed-email mailer p payment)))
@@ -221,7 +216,6 @@
    (apply + (hash-values (get-all-payments)))))
 
 (define (send-completion-email pid)
-  ; FIXME: All emails should check that the user they are being sent to is not a bot.
   (schedule-at
    (now/moment)
    (send-study-completion-email
@@ -232,9 +226,6 @@
   (define the-form
     (form* ([gender (ensure binding/text (required))])
            gender))
-  ; FIXME: Explanation: Why is current-user not available, but current-study-manager?
-  ; (Assuming we provide it?) More generally, what can and cannot be accessed and
-  ; manipulated in the action function?
   (define pid (current-participant-id))
   (haml
    (form
@@ -277,7 +268,9 @@
 (define (get-rest)
   (haml
    (:div
-    ; TODO: How can I ensure that the music is listened to at the normal pace before continuing is possible?
+    ; FIXME: How can I ensure that the music is listened to at the normal pace before continuing is possible?
+    ; Or at least that the continue button can only be clicked after a certain while? While JS solution might
+    ; be good as a userfriendly interface, it should ultimately be enforced at the server level (I don't trust client side).
     (:h1 "Relax and listen to some music")
     (:audio
      ([:controls ""]
@@ -292,19 +285,7 @@
            #:adjustable-work 10
            #:levels-of-money '(0 1 2 3)))
 
-; TODO: Would it make sense to define transitions separately from steps, so that we have a list of
-; steps available at a given study-level (including steps for substudies) and a separate part for
-; the logic of the study in terms of transitions, which ignores handlers and bots, and only
-; relates conditions for how steps follow each other based on available variables and treatments.
-; It may even be better to define transitions at the study, rather than at the step, level. Then
-; a situation where the value of a treatment leads to A -> B -> C, while another leads to C -> B -> A
-; can easily be defined at the study level, whereas it requires repeatedly defining and checking things
-; for each step: each step needs to check the value of the treatment, so the code has to be defined
-; again and again, even though it really just needs to be written once at the study level.
-; Probably it is best to keep the ability of steps overriding the study-transition, but adding
-; functionality for defining step-transition at the study-level.
 (define (determine-extra-tasks)
-  ; TODO: Needs to do the appropriate choice from the WTW answer
   (haml
    (:div
     (:h1 "Determining extra tasks and payment you do now")
@@ -344,7 +325,7 @@
    #:provides '(WTW)
    (list
     (make-step 'elicit-immediate-WTW
-               ; TODO: Is it sensible to pass the put-name as an argument? It is not a coherent mechanism.
+               ; TODO: Is it sensible to pass the pl-name as an argument? It is not a coherent mechanism.
                ; It feels to me that using steps is like using (limited) globals, while studies create
                ; their own scopes, making them more composable. Well, except some variables have to be shared.
                (price-list-step pl-extra-tasks #:pl-name 'WTW)
@@ -361,10 +342,6 @@
     (make-step/study 'extra-tasks
                      task-study
                      (λ ()
-                       ; FIXME: Is it kosher to use `put` and code that changes the DB in these
-                       ; transition functions?
-                       (displayln (list "PAY!!" (get 'extra-money)))
-                       (flush-output)
                        (when (get 'success?)
                          (put-payment! 'extra-tasks-bonus (get 'extra-money)))
                        done)
@@ -378,8 +355,7 @@
    (:div
     (:h1 "You failed the tasks")
     (:p "You failed the tasks, therefore you cannot complete the study.")
-    ; TODO: Is there a reason why we should have a button here to continue anyway? E.g. in terms
-    ; of marking the study as done? Ideally states such as this wouldn't require a further click.
+    ; TODO: Improve how to deal with failures
     (button void "The end")
     )))
 
@@ -399,18 +375,9 @@
 
 (define pjb-pilot-study
   (make-study
-   ; FIXME: No natural way to pass in #:requires for top-level study. The requires should
-   ; provided when creating a study-instance as parameters to configure.
    #:requires '()
-   ; FIXME: #:provides should include WTW, but we won't get that if the person fails the tasks.
-   ; Upon failing a study, call/set some default values for provide, error codes attached to data or NA.
    #:provides '(task-treatment rest-treatment)
-   ;; TODO: Ensure work is done in appropriate time, i.e. all in one go, not too many breaks, and so on, all on the same day.
    (list
-    ; TODO: Would it maybe be better to define step-handlers with normal arguments and pass them in?
-    ; Rather than use (get 'n) inside? That way we can define more re-usable steps, while dealing with
-    ; the nameing and `get`ting at the study level. E.g. make-step could do the mapping from 'required-tasks
-    ; to the first argument or some such.
     (make-step 'explain-study study-explanation)
     (make-step
      'test-study-requirements
@@ -456,7 +423,6 @@
            (case (get 'rest-treatment)
              [(get-rest-then-elicit) 'get-rest]
              [(elicit-then-get-rest) 'elicit-WTW-and-work])))
-     ; TODO: Document how #:require-bindings and #:provide-bindings work
      #:require-bindings '([n task-treatment])
      #:provide-bindings '([success? success?]))
     (make-step 'get-rest
