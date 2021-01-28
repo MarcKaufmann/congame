@@ -740,9 +740,8 @@ QUERY
     (query-exec conn (~> (from "study_data" #:as d)
                          (where (= d.participant-id ,participant-id))
                          (delete)))
-    ; FIXME: Bogdan: check that this deletes only participant payments from DB, nothing else.
-    (query-exec conn (~> (from "study_payments" #:as p)
-                         (where (= p.id ,participant-id))
+    (query-exec conn (~> (from "payments" #:as p)
+                         (where (= p.participant_id ,participant-id))
                          (delete)))))
 
 (define (update-participant-progress! step-id)
