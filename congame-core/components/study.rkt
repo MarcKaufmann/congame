@@ -246,6 +246,7 @@ QUERY
 (define/widget (form f action render #:id [id ""])
   (match (form-run f this-request)
     [(list 'passed res _)
+     (redirect/get/forget/protect)
      (action res)
      (continue)]
 
