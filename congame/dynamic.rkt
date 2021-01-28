@@ -18,7 +18,7 @@
          congame/components/auth
          congame/components/mail
          congame/components/user
-         (prefix-in config: "config.rkt"))
+         (prefix-in config: congame/config))
 
 ;; System ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
