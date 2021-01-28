@@ -18,6 +18,7 @@
 
 (provide
  (schema-out user)
+ set-user-password
  user-admin?
  generate-api-key)
 
@@ -29,6 +30,7 @@
    [(role 'user) symbol/f #:contract (or/c 'user 'bot 'api 'admin)]
    [(verified? #f) boolean/f]
    [(verification-code (generate-random-string)) string/f #:contract non-empty-string?]
+   [(bot-set-id #f) integer/f #:nullable]
    [(created-at (now/moment)) datetime-tz/f]
    [(updated-at (now/moment)) datetime-tz/f])
 

@@ -2,11 +2,15 @@
 
 (require deta
          gregor
-         koyo/database)
+         koyo/database
+         racket/contract
+         threading
+         "user.rkt")
 
 (provide
  (schema-out bot-set)
- create-bot-set!)
+ create-bot-set!
+ lookup-bot-set)
 
 (define-schema bot-set
   #:table "bot_sets"
@@ -21,5 +25,26 @@
 (define create-bot-set!
   (make-keyword-procedure
    (lambda (kws kw-args db)
-     (with-database-connection [conn db]
-       (insert-one! conn (keyword-apply make-bot-set kws kw-args null))))))
+     (with-database-transaction [conn db]
+       (define the-set
+         (insert-one! conn (keyword-apply make-bot-set kws kw-args null)))
+       (define the-users
+         (for/list ([id (in-range (bot-set-bot-count the-set))])
+           (make-user
+            #:username (format "bot-~a-~a--~a-~a@example.com"
+                               (bot-set-study-id the-set)
+                               (bot-set-study-instance-id the-set)
+                               (bot-set-id the-set)
+                               id)
+            #:role 'bot
+            #:verified? #t
+            #:bot-set-id (bot-set-id the-set))))
+
+       (apply insert! conn the-users)
+       the-set))))
+
+(define/contract (lookup-bot-set db id)
+  (-> database? id/c (or/c #f bot-set?))
+  (with-database-connection [conn db]
+    (lookup conn (~> (from bot-set #:as s)
+                     (where (= s.id ,id))))))
