@@ -9,6 +9,7 @@
          racket/list
          koyo/haml
          koyo/job
+         congame/components/bot
          congame/components/sentry
          congame/components/study
          congame-price-lists/price-lists
@@ -216,11 +217,12 @@
    (apply + (hash-values (get-all-payments)))))
 
 (define (send-completion-email pid)
-  (schedule-at
-   (now/moment)
-   (send-study-completion-email
-    (participant-email pid)
-    (get-total-payment))))
+  (unless (current-user-bot?)
+    (schedule-at
+     (now/moment)
+     (send-study-completion-email
+      (participant-email pid)
+      (get-total-payment)))))
 
 (define (render-debrief-form)
   (define the-form
