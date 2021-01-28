@@ -34,7 +34,7 @@
        (define the-users
          (for/list ([id (in-range (bot-set-bot-count the-set))])
            (make-user
-            #:username (format "bot-~a-~a--~a-~a@example.com"
+            #:username (format "bot-~a-~a-~a-~a@example.com"
                                (bot-set-study-id the-set)
                                (bot-set-study-instance-id the-set)
                                (bot-set-id the-set)
