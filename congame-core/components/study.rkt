@@ -646,7 +646,6 @@ QUERY
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)
   (with-database-transaction [conn db]
-    #:isolation 'serializable
     (cond
       [(lookup conn
                (~> (from study-instance #:as i)

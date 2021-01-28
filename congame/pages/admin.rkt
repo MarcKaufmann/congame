@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base)
+         (submod congame/components/bot actions)
          congame/components/export
          congame/components/registry
          congame/components/study
@@ -17,11 +18,13 @@
          racket/match
          racket/port
          racket/pretty
+         racket/string
          threading
          web-server/dispatchers/dispatch
          web-server/http
          "../components/bot-set.rkt"
          "../components/template.rkt"
+         "../components/user.rkt"
          "../studies/all.rkt"
          "render.rkt")
 
@@ -33,7 +36,8 @@
  edit-study-instance-page
  view-study-instance-page
  view-study-participant-page
- create-study-instance-bot-sets-page)
+ create-study-instance-bot-sets-page
+ view-study-instance-bot-set-page)
 
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
@@ -369,10 +373,6 @@
           (let model-loop ([req req*])
             (match (form-run (make-study-bot-set-model-form info) req)
               [(list 'passed model _)
-               ;; TODO: Redirect to bot set page.  Bot set page must
-               ;; have "run" action.  Change the password for bots on
-               ;; every run so it doesn't have to be jotted down
-               ;; anywhere and so that it can still be secure.
                (define the-bot-set
                  (create-bot-set! db
                                   #:study-id study-id
@@ -380,7 +380,11 @@
                                   #:bot-id (bot-info-id info)
                                   #:model-id (object-name model)
                                   #:bot-count bot-count))
-               (redirect-to (reverse-uri 'admin:view-study-instance-page study-id study-instance-id))]
+               (redirect-to
+                (reverse-uri 'admin:view-study-instance-bot-set-page
+                             study-id
+                             study-instance-id
+                             (bot-set-id the-bot-set)))]
 
               [(list _ _ rw)
                (page
@@ -443,3 +447,57 @@
                                                     (for/list ([(id model) (in-hash (bot-info-models info))])
                                                       (cons id model))))])
     model))
+
+(define/contract ((view-study-instance-bot-set-page db) req study-id study-instance-id bot-set-id)
+  (-> database? (-> request? id/c id/c id/c response?))
+  (define the-study
+    (lookup-study-meta db study-id))
+  (define the-instance
+    (lookup-study-instance db study-instance-id))
+  (define the-bot-set
+    (lookup-bot-set db bot-set-id))
+  (unless (and the-study the-instance the-bot-set)
+    (next-dispatcher))
+  ;; TODO: Bot set page must have "run" action.  Change
+  ;; the password for bots on every run so it doesn't
+  ;; have to be jotted down anywhere and so that it can
+  ;; still be secure.
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (page
+      (container
+       (haml
+        (:section.bot-set
+         (:h1 "Bot set for " (study-instance-name the-instance))
+         (:h3 "Model " (~a (bot-set-model-id the-bot-set)))
+         (:a
+          ([:href (embed/url (make-bot-runner db the-study the-instance the-bot-set))])
+          "Run bots!"))))))))
+
+;; TODO: Clear participants on re-run.
+(define ((make-bot-runner db the-study the-instance the-set) _req)
+  (define-values (password users)
+    (prepare-bot-set! db the-set))
+  (define study-racket-id
+    (study-meta-racket-id the-study))
+  (define bot-infos
+    (get-bot-infos-for-study study-racket-id))
+  (define bot-info
+    (hash-ref bot-infos (bot-set-bot-id the-set)))
+  (define bot (bot-info-bot bot-info))
+  (define model (hash-ref (bot-info-models bot-info) (bot-set-model-id the-set)))
+  (for ([u (in-list users)])
+    ;; FIXME: Rename study-page to study-instance-page.
+    (run-bot
+     #:study-url (apply
+                  make-application-url
+                  (string-split
+                   (reverse-uri 'study-page (study-instance-slug the-instance))
+                   "/"))
+     #:username (user-username u)
+     #:password password
+     (bot model)))
+  (redirect-to
+   (reverse-uri 'admin:view-study-instance-page
+                (study-meta-id the-study)
+                (study-instance-id the-instance))))

@@ -1,8 +1,10 @@
 #lang racket/base
 
-(require deta
+(require congame/components/study
+         deta
          gregor
          koyo/database
+         koyo/random
          racket/contract
          threading
          "user.rkt")
@@ -10,7 +12,8 @@
 (provide
  (schema-out bot-set)
  create-bot-set!
- lookup-bot-set)
+ lookup-bot-set
+ prepare-bot-set!)
 
 (define-schema bot-set
   #:table "bot_sets"
@@ -40,7 +43,8 @@
             #:verified? #t
             #:bot-set-id (bot-set-id the-set))))
 
-       (apply insert! conn the-users)
+       (for ([u (in-list (apply insert! conn the-users))])
+         (enroll-participant! db (user-id u) (bot-set-study-instance-id the-set)))
        the-set))))
 
 (define/contract (lookup-bot-set db id)
@@ -48,3 +52,14 @@
   (with-database-connection [conn db]
     (lookup conn (~> (from bot-set #:as s)
                      (where (= s.id ,id))))))
+
+(define/contract (prepare-bot-set! db the-set)
+  (-> database? bot-set? (values string? (listof user?)))
+  (with-database-transaction [conn db]
+    (define password
+      (generate-random-string 64))
+    (define updated-users
+      (for/list ([u (in-entities conn (~> (from user #:as u)
+                                          (where (= u.bot-set-id ,(bot-set-id the-set)))))])
+        (set-user-password u password)))
+    (values password (apply update! conn updated-users))))
