@@ -19,5 +19,14 @@ ALTER TABLE users
 
 -- @down {
 ALTER TABLE users
+  ADD COLUMN is_admin BOOLEAN NOT NULL DEFAULT FALSE;
+-- }
+
+-- @down {
+UPDATE users SET is_admin = TRUE WHERE role = 'admin';
+-- }
+
+-- @down {
+ALTER TABLE users
   DROP COLUMN role;
 -- }

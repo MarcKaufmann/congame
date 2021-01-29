@@ -16,5 +16,5 @@ CREATE TABLE bot_sets(
 -- }
 
 -- @down {
-DROP TABLE bot_sets;
+DROP TABLE bot_sets CASCADE;
 -- }
