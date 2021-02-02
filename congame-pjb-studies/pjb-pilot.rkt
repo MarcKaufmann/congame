@@ -113,16 +113,24 @@
      (λ (rw)
        `(div
          (div
-          ,@(haml
-             (:figure
-              (:audio
-               ([:src (resource-uri christmas-song)]))
-              (.audio-controls
-               (:button#playpause ((:type "button")) "Play/Pause")
-               (:button#volume-up ((:type "button")) "Vol+")
-               (:button#volume-down ((:type "button")) "Vol-"))
-              (:figcaption "What a song"))
-             (:script ([:src "js/audio-player.js"]))))
+          ,(haml
+            (:figure#audioContainer
+             (:audio#audio
+              ([:src (resource-uri christmas-song)]))
+             (:div#audio-controls
+              (:button#playpause
+               ((:type "button")
+                (:data-state "play"))
+               "Play/Pause")
+              (:button#volume-up
+               ((:type "button")
+                (:data-state "volup"))
+               "Vol+")
+              (:button#volume-down
+               ((:type "button")
+                (:data-state "voldown"))
+               "Vol-"))
+             (:figcaption "What a song"))))
          (div
           (form ((action "")
                  (method "POST"))
@@ -292,17 +300,25 @@
      ; Or at least that the continue button can only be clicked after a certain while? While JS solution might
      ; be good as a userfriendly interface, it should ultimately be enforced at the server level (I don't trust client side).
      (:h1 "Relax and listen to some music")
-     (:figure
-      (:audio
+     (:figure#audioContainer
+      (:audio#audio
        ([:src (resource-uri christmas-song)]))
-      (.audio-controls
-       (:button#playpause "Play/Pause")
-       (:button#volume-up "Vol+")
-       (:button#volume-down "Vol-"))
+      (:div#audio-controls
+       (:button#playpause
+        ((:type "button")
+         (:data-state "play"))
+        "Play/Pause")
+       (:button#volume-up
+        ((:type "button")
+         (:data-state "volup"))
+        "Vol+")
+       (:button#volume-down
+        ((:type "button")
+         (:data-state "voldown"))
+        "Vol-"))
       (:figcaption "What a song"))
-     (:script ([:src "js/audio-player.js"]))
-     (:br)
-     (button void "Continue")))))
+      (:br)
+      (button void "Continue")))))
 
 (define pl-extra-tasks
   (make-pl #:name 'pl1
