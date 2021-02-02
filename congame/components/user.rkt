@@ -26,7 +26,7 @@
   ([id id/f #:primary-key #:auto-increment]
    [username string/f #:contract non-empty-string? #:wrapper string-downcase]
    [(password-hash "") string/f]
-   [(api-key #f) string/f #:nullable]
+   [api-key string/f #:nullable]
    [(role 'user) symbol/f #:contract (or/c 'user 'bot 'api 'admin)]
    [(verified? #f) boolean/f]
    [(verification-code (generate-random-string)) string/f #:contract non-empty-string?]
