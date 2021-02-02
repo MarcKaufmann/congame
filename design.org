@@ -7,7 +7,6 @@ Questions and features about congame's design. The first category is about impro
 Topics: study flow; user-specific step actions; treatment specification and control flow; parameterize bots; error messages
 
 1. Check what is available in widget-actions and document it
-1. Disable form double submit
 2. [Bogdan] How to pass in `#:requires` to the top level study?
    - Set them at the instance level when creating a new instance. Q: Should they be changeable in admin interface?
      - Better to start a new instance with new `#:requires` -- this will depend on how we deal with recruitment (e.g. so that new people get sent to the new instance)
@@ -49,5 +48,5 @@ Topics: study flow; user-specific step actions; treatment specification and cont
 ** Design improvements requiring major changes
 
 - [Bogdan] Steps: Should step *handlers* be parameterized instead of using `get` and `put` inside of them? The problem with `get` and `put` is that it's harder to reuse across different studies, and if one uses helper steps defined by different people in different packages, one will get name collisions.
-    + Bogdan suggests to ... what, use it as a wrapped lambda, rather than do anything clever. Then ensure that I don't use get and put, instead use the passed in arguments
+  + Bogdan suggests to ... what, use it as a wrapped lambda, rather than do anything clever. Then ensure that I don't use get and put, instead use the passed in arguments
   + TODO: Would it maybe be better to define step-handlers with normal arguments and pass them in? Rather than use (get 'n) inside? That way we can define more re-usable steps, while dealing with the nameing and `get`ting at the study level. E.g. make-step could do the mapping from 'required-tasks to the first argument or some such.
