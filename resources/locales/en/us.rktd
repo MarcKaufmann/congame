@@ -3,6 +3,7 @@
  (nav-log-out               . "Log out")
  (nav-sign-up               . "Sign up")
  (nav-admin                 . "Admin")
+ (nav-jobs                  . "Jobs")
 
  (subtitle-not-found              . "Page Not Found")
  (subtitle-log-in                 . "Log In")

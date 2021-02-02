@@ -63,7 +63,9 @@
               (nav
                (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
                (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out))
-               (nav-item (reverse-uri 'admin:studies-page) (translate 'nav-admin)))]
+               (nav-item (reverse-uri 'admin:studies-page) (translate 'nav-admin))
+               (nav-item "/admin/jobs" (translate 'nav-jobs)) )
+              ]
              [(current-user)
               (nav
                (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))

@@ -3,6 +3,7 @@
  (nav-log-out               . "Deconectare")
  (nav-sign-up               . "Înregistrare")
  (nav-admin                 . "Administrare")
+ (nav-jobs                  . "Sarcini")
 
  (subtitle-not-found              . "Pagină inexistentă")
  (subtitle-log-in                 . "Conectează-te")
