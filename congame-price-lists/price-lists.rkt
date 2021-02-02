@@ -13,7 +13,8 @@
          (submod congame/components/bot actions)
          congame/components/bot-maker
          congame/components/export
-         congame/components/study)
+         congame/components/study
+         congame/components/template)
 
 ;;; TODO: Should we provide just pl-step or pl-study? The latter defines #:requires and #:provides,
 ;;; which allows for some type checking, unlike steps. Useful for configuring via symbolic models
@@ -132,35 +133,37 @@
                     (hash 'chosen adjusted-option 'alternative fixed)))))
 
 (define ((rw-pl pl) rw)
-  (haml
-   (:table
-    ,@(for/list ([(level i) (in-indexed (price-list-levels pl))])
-        (define field-name (format "option-~a" i))
-        (define option-by-type
-          (hash 'fixed (price-list-fixed pl)
-                'adjustable (set-level/adjustable (price-list-adjustable pl) level)))
-        (haml
-         (:tr
-          ,@(for/list ([t '(fixed adjustable)])
-              (haml
-               (:td
-                (rw field-name (lambda (name _value _errors)
-                                 (haml
-                                  (:label
-                                   (:input
-                                    ([:name name]
-                                     [:type "radio"]
-                                     [:value (~a t)]))
-                                   (describe (hash-ref option-by-type t)))))))))
-          ,@(let ([errors (rw field-name (forms:widget-errors))])
-              (if (null? errors)
-                  null
-                  `((tr (td ([colspan "2"]) ,@errors))))))))
-    (:tr
-     (:td
-      (:button
-       ([:type "submit"])
-       "Submit"))))))
+  ((page/xexpr)
+   (haml
+    (.container
+     (:table
+      ,@(for/list ([(level i) (in-indexed (price-list-levels pl))])
+          (define field-name (format "option-~a" i))
+          (define option-by-type
+            (hash 'fixed (price-list-fixed pl)
+                  'adjustable (set-level/adjustable (price-list-adjustable pl) level)))
+          (haml
+           (:tr
+            ,@(for/list ([t '(fixed adjustable)])
+                (haml
+                 (:td
+                  (rw field-name (lambda (name _value _errors)
+                                   (haml
+                                    (:label
+                                     (:input
+                                      ([:name name]
+                                       [:type "radio"]
+                                       [:value (~a t)]))
+                                     (describe (hash-ref option-by-type t)))))))))
+            ,@(let ([errors (rw field-name (forms:widget-errors))])
+                (if (null? errors)
+                    null
+                    `((tr (td ([colspan "2"]) ,@errors))))))))
+      (:tr
+       (:td
+        (:button.button
+         ([:type "submit"])
+         "Submit"))))))))
 
 (define (render-pl pl #:pl-name [pl-name #f])
   (define the-form
@@ -179,22 +182,24 @@
                                           [(hash-ref option-by-type v #f) (forms:ok (list level v))]
                                           [else (forms:err "Invalid option selected.")])))))))
 
-  (haml
-   (form
-    the-form
-    (lambda (choices)
-      ; FIXME: put relies on unique id, so name has to be unique.
-      ; Ideally this should be enforced somewhere in the design so it throws an error
-      ; before running through half the study.
-      ; TODO: Is it sensible to require it to be uniqe? If not, then it may be impossible (or hard)
-      ; to infer which specific choice this was, as was the case in study in summer 2020.
-      (put (or pl-name
-               (string->symbol
-                (string-append
-                 "price-list-"
-                 (symbol->string (price-list-name pl)))))
-           (struct-copy price-list pl (answers choices))))
-    (rw-pl pl))))
+  ((page/xexpr)
+   (haml
+    (.container
+     (form
+      the-form
+      (lambda (choices)
+        ; FIXME: put relies on unique id, so name has to be unique.
+        ; Ideally this should be enforced somewhere in the design so it throws an error
+        ; before running through half the study.
+        ; TODO: Is it sensible to require it to be uniqe? If not, then it may be impossible (or hard)
+        ; to infer which specific choice this was, as was the case in study in summer 2020.
+        (put (or pl-name
+                 (string->symbol
+                  (string-append
+                   "price-list-"
+                   (symbol->string (price-list-name pl)))))
+             (struct-copy price-list pl (answers choices))))
+      (rw-pl pl))))))
 
 ;; TODO: Improve interface. In fact, option types should be definable by users, since
 ;; price lists should work with all kinds of options.
@@ -211,10 +216,11 @@
               (hash)))
 
 (define ((price-list-step pl #:pl-name [pl-name #f]))
-  (haml
-   (:div
-    (:h1 "Price List")
-    (render-pl pl #:pl-name pl-name))))
+  ((page/xexpr)
+   (haml
+    (.container
+     (:h1 "Price List")
+     (render-pl pl #:pl-name pl-name)))))
 
 (define (price-list-step/bot n-fixed)
   (for ([elt (in-list (bot:find-all "tr"))]
@@ -235,10 +241,11 @@
                              (hash))))
 
 (define (info-step)
-  (haml
-   (:div
-    (:h1 "You are in the Price Lists study")
-    (button void "Continue"))))
+  ((page/xexpr)
+   (haml
+    (.container
+     (:h1 "You are in the Price Lists study")
+     (button void "Continue")))))
 
 (define pl-study
   (make-study

@@ -86,7 +86,7 @@
                      "Do you understand this?"
                      ,(rw "understand?" (widget-text)))
                     ,@(rw "understand?" (widget-errors))
-                    (button ((type "Submit")) "Submit")))))))))
+                    (button ((type "Submit") (class "button")) "Submit")))))))))
 
 (define (test-comprehension/bot)
   (define f (bot:find "form"))
@@ -134,7 +134,7 @@
                  ,(rw "has-time?" (widget-checkbox)))
                 ,@(rw "has-time?" (widget-errors))
                 (br)
-                (button ((type "submit")) "Submit")))))))))
+                (button ((type "submit") (class "button")) "Submit")))))))))
 
 (define (test-study-requirements-step/bot)
   (for ([checkbox (bot:find-all "input[type=checkbox]")])
@@ -253,7 +253,7 @@
                "What is your gender?"
                ,(rw "gender" (widget-text)))
               ,@(rw "gender" (widget-errors))
-              (button ((type "submit")) "Submit")))))))
+              (button ((type "submit") (class "button")) "Submit")))))))
 
 (define (debrief-survey/bot)
   (define f (bot:find "form"))

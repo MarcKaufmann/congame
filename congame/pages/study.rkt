@@ -20,15 +20,16 @@
    (lambda (embed/url)
      (page
       (haml
-       (:ul
-        ,@(for/list ([i (in-list (list-active-study-instances db))])
-            (haml
-             (:li
-              (study-instance-name i)
-              " " 'mdash " "
-              (:a
-               ([:href (embed/url (enroll db i))])
-               "Enroll"))))))))))
+       (.container
+        (:ul
+         ,@(for/list ([i (in-list (list-active-study-instances db))])
+             (haml
+              (:li
+               (study-instance-name i)
+               " " 'mdash " "
+               (:a
+                ([:href (embed/url (enroll db i))])
+                "Enroll")))))))))))
 
 (define ((enroll db i) _req)
   (enroll-participant! db (user-id (current-user)) (study-instance-id i))
