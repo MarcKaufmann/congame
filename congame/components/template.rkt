@@ -16,7 +16,8 @@
 (provide
  static-uri
  container
- page)
+ page
+ page/xexpr)
 
 (define (static-uri path)
   (define path/full (format "/static/~a?rev=~a" path config:version))
@@ -41,6 +42,52 @@
       [:up-alias uri])
      label))))
 
+(define ((page/xexpr #:subtitle [subtitle #f]
+                     #:show-nav? [show-nav? #f])
+         . content)
+  (haml
+   (:html
+    (:head
+     (:meta ([:charset "utf-8"]))
+     (:meta ([:name "viewport"] [:content "width=device-width, initial-scale=1"]))
+
+     (:title (if subtitle (~a subtitle " - congame") "congame"))
+     (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
+     (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")])))
+    (:body
+     (when show-nav?
+       ; FIXME: Idiomatic way to pass argument based on condition, using conditional in arg-list. I.e.:
+       ; (nav (nav-item ...) (nav-item) (when condition (nav-item)))
+       ; Or fix the way the nav gets accumulated and passed around?
+       (cond [(and (current-user) (user-admin? (current-user)))
+              (nav
+               (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
+               (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out))
+               (nav-item (reverse-uri 'admin:studies-page) (translate 'nav-admin)))]
+             [(current-user)
+              (nav
+               (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
+               (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out)))]
+             [else
+              (nav (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
+                   (nav-item (reverse-uri 'login-page) (translate 'nav-log-in))
+                   (nav-item (reverse-uri 'signup-page) (translate 'nav-sign-up)))]))
+
+     (unless (null? (current-flash-messages))
+       (container
+        (haml
+         (:ul.flash
+          ,@(for/list ([flash (current-flash-messages)])
+              (haml
+               (:li
+                ([:class (format "flash__item flash__item--~a" (car flash))])
+                (cdr flash))))))))
+
+     (.content ,@content)
+
+     (:script ([:src (static-uri "vendor/unpoly.min.js")]))
+     (:script ([:src (static-uri "js/app.js")]))))))
+
 (define (page #:subtitle [subtitle #f]
               #:show-nav? [show-nav? #t]
               . content)
@@ -52,48 +99,8 @@
 
   (with-timing 'template "page"
     (define page
-      (haml
-       (:html
-        (:head
-         (:meta ([:charset "utf-8"]))
-         (:meta ([:name "viewport"] [:content "width=device-width, initial-scale=1"]))
-
-         (:title (if subtitle (~a subtitle " - congame") "congame"))
-         (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
-         (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")])))
-        (:body
-         (when show-nav?
-           ; FIXME: Idiomatic way to pass argument based on condition, using conditional in arg-list. I.e.:
-           ; (nav (nav-item ...) (nav-item) (when condition (nav-item)))
-           ; Or fix the way the nav gets accumulated and passed around?
-           (cond [(and (current-user) (user-admin? (current-user)))
-                  (nav
-                   (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
-                   (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out))
-                   (nav-item (reverse-uri 'admin:studies-page) (translate 'nav-admin)))]
-                 [(current-user)
-                  (nav
-                   (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
-                   (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out)))]
-               [else
-                (nav (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
-                     (nav-item (reverse-uri 'login-page) (translate 'nav-log-in))
-                     (nav-item (reverse-uri 'signup-page) (translate 'nav-sign-up)))]))
-
-         (unless (null? (current-flash-messages))
-           (container
-            (haml
-             (:ul.flash
-              ,@(for/list ([flash (current-flash-messages)])
-                  (haml
-                   (:li
-                    ([:class (format "flash__item flash__item--~a" (car flash))])
-                    (cdr flash))))))))
-
-         (.content ,@content)
-
-         (:script ([:src (static-uri "vendor/unpoly.min.js")]))
-         (:script ([:src (static-uri "js/app.js")]))))))
+      (apply (page/xexpr #:subtitle subtitle
+                         #:show-nav? show-nav?) content))
 
     (response
      200

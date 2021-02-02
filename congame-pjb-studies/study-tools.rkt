@@ -20,7 +20,7 @@
   (define the-form
     ; TODO: Check with Bogdan that this always yields #t or #f, unlike the HTML version which returns nothing
     ; if the form isn't checked. Is it safe to rely on such behavior?
-    (form* ([consent? (ensure binding/boolean)])
+    (form* ([consent? (ensure binding/boolean (required #:message "You can only participate in the study if you agree. Otherwise you are free to leave."))])
            consent?))
   (haml
     (form

@@ -12,6 +12,7 @@
          congame/components/bot
          congame/components/sentry
          congame/components/study
+         congame/components/template
          congame-price-lists/price-lists
          congame/components/mail
          "study-tools.rkt"
@@ -25,8 +26,9 @@
   (define required-tasks (get 'required-tasks))
   (define practice-tasks (number->string (get 'practice-tasks)))
   (define participation-fee (get 'participation-fee))
-  (haml
-   (:div.container
+  ((page/xexpr)
+   (haml
+   (:div.container.container
     (:h1 "Study Explanation")
 
     (:h2 "Tutorial")
@@ -48,38 +50,43 @@
 
     (:p (:strong "Note:") " Since one of the tasks requires sound, you need to have headphones or be in a place where you can listen to sound." )
 
-    (button void "Continue"))))
+    (button void "Continue")))))
 
 (define (consent)
-  (haml
-   (:div
+  ((page/xexpr)
+   (haml
+   (:div.container
     (:h1 "Consent Form")
-    (render-consent-form))))
+    (render-consent-form)))))
 
 (define (test-comprehension)
-  (haml
-   (:div
-    (:h1 "Comprehension Tests")
-    (render-comprehension-form))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "Comprehension Tests")
+     (render-comprehension-form)))))
 
 (define (render-comprehension-form)
   (define the-form
     (form* ([understand? (ensure binding/text (required))])
            (list understand?)))
-  (haml
-    (form
-     the-form
-     ; after successful submit
-     (λ (answer) (put 'comprehension-test answer))
-     ; renderer: (-> rw xexpr)
-     (λ (rw)
-       `(form ((action "")
-               (method "POST"))
-              (label
-               "Do you understand this?"
-               ,(rw "understand?" (widget-text)))
-              ,@(rw "understand?" (widget-errors))
-              (button ((type "Submit")) "Submit"))))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (form
+      the-form
+      ; after successful submit
+      (λ (answer) (put 'comprehension-test answer))
+      ; renderer: (-> rw xexpr)
+      (λ (rw)
+        `(div ((class "container"))
+              (form ((action "")
+                     (method "POST"))
+                    (label
+                     "Do you understand this?"
+                     ,(rw "understand?" (widget-text)))
+                    ,@(rw "understand?" (widget-errors))
+                    (button ((type "Submit")) "Submit")))))))))
 
 (define (test-comprehension/bot)
   (define f (bot:find "form"))
@@ -96,37 +103,38 @@
                  'has-audio? has-audio?
                  'has-time? has-time?
                  'satisfies-requirements? (and play-audio? has-audio? has-time?))))
-  (haml
-   (form
-    the-form
-    (λ (answer)
-      (put 'requirements-test answer)
-      (put 'satisfies-requirements? (hash-ref answer 'satisfies-requirements?)))
-    (λ (rw)
-      `(div
-        (div
-         (audio
-          ((controls "")
-           (src ,(resource-uri christmas-song)))))
-        (div
-         (form ((action "")
-                (method "POST"))
-               (label
-                "Can you play and hear the above audio?"
-                ,(rw "play-audio?" (widget-checkbox)))
-               ,@(rw "play-audio?" (widget-errors))
-               (br)
-               (label
-                "Can you listen to music/audio during this study?"
-                ,(rw "has-audio?" (widget-checkbox)))
-               ,@(rw "has-audio?" (widget-errors))
-               (br)
-               (label
-                "Do you have time to finish the study within the next hour?"
-                ,(rw "has-time?" (widget-checkbox)))
-               ,@(rw "has-time?" (widget-errors))
-               (br)
-               (button ((type "submit")) "Submit"))))))))
+  ((page/xexpr)
+   (haml
+    (form
+     the-form
+     (λ (answer)
+       (put 'requirements-test answer)
+       (put 'satisfies-requirements? (hash-ref answer 'satisfies-requirements?)))
+     (λ (rw)
+       `(div
+         (div
+          (audio
+           ((controls "")
+            (src ,(resource-uri christmas-song)))))
+         (div
+          (form ((action "")
+                 (method "POST"))
+                (label
+                 "Can you play and hear the above audio?"
+                 ,(rw "play-audio?" (widget-checkbox)))
+                ,@(rw "play-audio?" (widget-errors))
+                (br)
+                (label
+                 "Can you listen to music/audio during this study?"
+                 ,(rw "has-audio?" (widget-checkbox)))
+                ,@(rw "has-audio?" (widget-errors))
+                (br)
+                (label
+                 "Do you have time to finish the study within the next hour?"
+                 ,(rw "has-time?" (widget-checkbox)))
+                ,@(rw "has-time?" (widget-errors))
+                (br)
+                (button ((type "submit")) "Submit")))))))))
 
 (define (test-study-requirements-step/bot)
   (for ([checkbox (bot:find-all "input[type=checkbox]")])
@@ -136,24 +144,26 @@
   (element-click! (bot:find "button[type=submit]")))
 
 (define (test-study-requirements)
-  (haml
-   (:div
-    (:h1 "Requirements for Study")
-    (:p "Please check the following requirements. If they do not hold, you cannot complete the study, hence you cannot continue:")
-    (render-requirements-form))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "Requirements for Study")
+     (:p "Please check the following requirements. If they do not hold, you cannot complete the study, hence you cannot continue:")
+     (render-requirements-form)))))
 
 (define (elicit-WTW)
-  (haml
-   (:div
-    (:h1 "Eliciting WTW")
-    (button
-     #:id 'willing
-     (λ () (put 'WTW 5))
-     "Willing to work")
-    (button
-     #:id 'not-willing
-     (λ () (put 'WTW 0))
-     "Not willing to work"))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "Eliciting WTW")
+     (button
+      #:id 'willing
+      (λ () (put 'WTW 5))
+      "Willing to work")
+     (button
+      #:id 'not-willing
+      (λ () (put 'WTW 0))
+      "Not willing to work")))))
 
 ;; TODO: cleanup.
 (provide
@@ -193,16 +203,17 @@
 (define next-balanced-task-treatment (make-balanced-shuffle *task-treatments*))
 
 (define (show-payments)
-  (haml
-   (:div
-    (:h1 "Payment Page")
-    (:p "Within the next week, you will receive the following payments for your participation in this study:")
-    (:p (get-total-payment))
-    (:ul
-     ,@(for/list ([(name payment) (in-hash (get-all-payments))])
-         (haml
-          (:li (symbol->string name) ": " (pp-money payment)))))
-    (button void "Finish Study"))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "Payment Page")
+     (:p "Within the next week, you will receive the following payments for your participation in this study:")
+     (:p (get-total-payment))
+     (:ul
+      ,@(for/list ([(name payment) (in-hash (get-all-payments))])
+          (haml
+           (:li (symbol->string name) ": " (pp-money payment))))
+      (button void "Finish Study"))))))
 
 (define-job (send-study-completion-email p payment)
   (with-sentry
@@ -226,22 +237,23 @@
     (form* ([gender (ensure binding/text (required))])
            gender))
   (define pid (current-participant-id))
-  (haml
-   (form
-    the-form
-    (λ (survey-response)
-      (put 'debrief-survey survey-response)
-      ; FIXME: Where should I really call these functions?
-      (put-payment! 'participation-fee (get 'participation-fee))
-      (send-completion-email pid))
-    (λ (rw)
-      `(form ((action "")
-              (method "POST"))
-             (label
-              "What is your gender?"
-              ,(rw "gender" (widget-text)))
-             ,@(rw "gender" (widget-errors))
-             (button ((type "submit")) "Submit"))))))
+  ((page/xexpr)
+   (haml
+    (form
+     the-form
+     (λ (survey-response)
+       (put 'debrief-survey survey-response)
+       ; FIXME: Where should I really call these functions?
+       (put-payment! 'participation-fee (get 'participation-fee))
+       (send-completion-email pid))
+     (λ (rw)
+       `(form ((action "")
+               (method "POST"))
+              (label
+               "What is your gender?"
+               ,(rw "gender" (widget-text)))
+              ,@(rw "gender" (widget-errors))
+              (button ((type "submit")) "Submit")))))))
 
 (define (debrief-survey/bot)
   (define f (bot:find "form"))
@@ -250,10 +262,11 @@
   (element-click! (bot:find "button[type=submit]")))
 
 (define (debrief-survey)
-  (haml
-   (:div
-    (:h1 "Debrief Survey")
-    (render-debrief-form))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "Debrief Survey")
+     (render-debrief-form)))))
 
 (require (for-syntax racket/base) ; Needed to use strings in define-static-resource. Why? Just Cause.
          congame/components/resource)
@@ -265,8 +278,9 @@
 (define-static-resource christmas-song (build-path "songs" "christmas.ogg"))
 
 (define (get-rest)
-  (haml
-   (:div
+  ((page/xexpr)
+   (haml
+   (:div.container
     ; FIXME: How can I ensure that the music is listened to at the normal pace before continuing is possible?
     ; Or at least that the continue button can only be clicked after a certain while? While JS solution might
     ; be good as a userfriendly interface, it should ultimately be enforced at the server level (I don't trust client side).
@@ -275,7 +289,7 @@
      ([:controls ""]
       [:src (resource-uri christmas-song)]))
     (:br)
-    (button void "Continue"))))
+    (button void "Continue")))))
 
 (define pl-extra-tasks
   (make-pl #:name 'pl1
@@ -285,19 +299,20 @@
            #:levels-of-money '(0 1 2 3)))
 
 (define (determine-extra-tasks)
-  (haml
-   (:div
-    (:h1 "Determining extra tasks and payment you do now")
-    (button
-     (λ ()
-       (define pl/answers (get 'WTW))
-       (define pl/answers+choice (pl-random-choice pl/answers))
-       (define extra-tasks (price-list-extra-work pl/answers+choice))
-       (define extra-money (price-list-extra-money pl/answers+choice))
-       (put 'WTW pl/answers+choice)
-       (put 'extra-tasks extra-tasks)
-       (put 'extra-money extra-money))
-     "See extra tasks"))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "Determining extra tasks and payment you do now")
+     (button
+      (λ ()
+        (define pl/answers (get 'WTW))
+        (define pl/answers+choice (pl-random-choice pl/answers))
+        (define extra-tasks (price-list-extra-work pl/answers+choice))
+        (define extra-money (price-list-extra-money pl/answers+choice))
+        (put 'WTW pl/answers+choice)
+        (put 'extra-tasks extra-tasks)
+        (put 'extra-money extra-money))
+      "See extra tasks")))))
 
 (define (see-extra-tasks)
   (define pl/answers+choice (get 'WTW))
@@ -308,15 +323,16 @@
     (if (> extra-tasks 0)
         (format "Continue to ~a extra tasks" extra-tasks)
         "Continue with no extra tasks"))
-  (haml
-   (:div
-    (:h1 "Extra Tasks")
-    (:p "The choice that was randomly selected was between the following two options:")
-    (:ol
-     (:li (describe chosen))
-     (:li (describe alternative)))
-    (:p "You chose the first choice.")
-    (button void continue-text))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "Extra Tasks")
+     (:p "The choice that was randomly selected was between the following two options:")
+     (:ol
+      (:li (describe chosen))
+      (:li (describe alternative)))
+     (:p "You chose the first choice.")
+     (button void continue-text)))))
 
 (define elicit-WTW-and-work
   (make-study
@@ -350,27 +366,30 @@
     )))
 
 (define (task-failure)
-  (haml
-   (:div
-    (:h1 "You failed the tasks")
-    (:p "You failed the tasks, therefore you cannot complete the study.")
-    ; TODO: Improve how to deal with failures
-    (button void "The end")
-    )))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "You failed the tasks")
+     (:p "You failed the tasks, therefore you cannot complete the study.")
+     ; TODO: Improve how to deal with failures
+     (button void "The end")
+     ))))
 
 (define (requirements-failure)
-  (haml
-   (:div
-    (:h1 "You do not satisfy the requirements")
-    (:p "You fail some of the requirements for the study, therefore you cannot complete the study.")
-    (button void "The End"))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "You do not satisfy the requirements")
+     (:p "You fail some of the requirements for the study, therefore you cannot complete the study.")
+     (button void "The End")))))
 
 (define (consent-failure)
-  (haml
-   (:div
-    (:h1 "You did not consent")
-    (:p "You did not consent to the study, therefore you cannot complete the study.")
-    (button void "The End"))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "You did not consent")
+     (:p "You did not consent to the study, therefore you cannot complete the study.")
+     (button void "The End")))))
 
 (define pjb-pilot-study-no-config
   (make-study
@@ -448,16 +467,17 @@
 ; TODO: Allow `make-step/study` to refer to values, not just to symbols, so I don't need
 ; redundant wrapper steps like `welcome`.
 (define (welcome)
-  (haml
-   (:div
-    (:h1 "Welcome")
-    (:p "Start when you are ready.")
-    (button
-     (λ ()
-       (put 'practice-tasks 3)
-       (put 'participation-fee 2.00)
-       (put 'required-tasks 15))
-     "Start"))))
+  ((page/xexpr)
+   (haml
+    (:div.container
+     (:h1 "Welcome")
+     (:p "Start when you are ready.")
+     (button
+      (λ ()
+        (put 'practice-tasks 3)
+        (put 'participation-fee 2.00)
+        (put 'required-tasks 15))
+      "Start")))))
 
 (define pjb-pilot-study
   (make-study
