@@ -113,9 +113,16 @@
      (λ (rw)
        `(div
          (div
-          (audio
-           ((controls "")
-            (src ,(resource-uri christmas-song)))))
+          ,@(haml
+             (:figure
+              (:audio
+               ([:src (resource-uri christmas-song)]))
+              (.audio-controls
+               (:button#playpause ((:type "button")) "Play/Pause")
+               (:button#volume-up ((:type "button")) "Vol+")
+               (:button#volume-down ((:type "button")) "Vol-"))
+              (:figcaption "What a song"))
+             (:script ([:src "js/audio-player.js"]))))
          (div
           (form ((action "")
                  (method "POST"))
@@ -280,16 +287,22 @@
 (define (get-rest)
   ((page/xexpr)
    (haml
-   (:div.container
-    ; FIXME: How can I ensure that the music is listened to at the normal pace before continuing is possible?
-    ; Or at least that the continue button can only be clicked after a certain while? While JS solution might
-    ; be good as a userfriendly interface, it should ultimately be enforced at the server level (I don't trust client side).
-    (:h1 "Relax and listen to some music")
-    (:audio
-     ([:controls ""]
-      [:src (resource-uri christmas-song)]))
-    (:br)
-    (button void "Continue")))))
+    (:div.container
+     ; FIXME: How can I ensure that the music is listened to at the normal pace before continuing is possible?
+     ; Or at least that the continue button can only be clicked after a certain while? While JS solution might
+     ; be good as a userfriendly interface, it should ultimately be enforced at the server level (I don't trust client side).
+     (:h1 "Relax and listen to some music")
+     (:figure
+      (:audio
+       ([:src (resource-uri christmas-song)]))
+      (.audio-controls
+       (:button#playpause "Play/Pause")
+       (:button#volume-up "Vol+")
+       (:button#volume-down "Vol-"))
+      (:figcaption "What a song"))
+     (:script ([:src "js/audio-player.js"]))
+     (:br)
+     (button void "Continue")))))
 
 (define pl-extra-tasks
   (make-pl #:name 'pl1
