@@ -49,3 +49,6 @@
 
 (comptime-require-studies)
 (comptime-require-bots)
+
+(displayln (list "Bot registry: " (get-registered-bots)))
+(flush-output)

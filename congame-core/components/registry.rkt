@@ -6,6 +6,7 @@
 (provide
  register-study!
  get-registered-studies
+ get-registered-bots
  lookup-registered-study
 
  (struct-out bot-info)
@@ -42,6 +43,11 @@
 (define/contract (get-registered-studies)
   (-> (hash/c symbol? any/c))
   (hash-copy *study-registry*))
+
+(define/contract (get-registered-bots)
+  (-> (hash/c symbol? any/c))
+  (hash-copy *bot-registry*))
+
 
 (define/contract (get-bot-infos-for-study id)
   (-> symbol? (hash/c symbol? bot-info?))

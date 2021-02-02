@@ -22,9 +22,6 @@
  pjb-pilot-study)
 
 (define (study-explanation)
-  (put 'practice-tasks 3)
-  (put 'participation-fee 2.00)
-  (put 'required-tasks 15)
   (define required-tasks (get 'required-tasks))
   (define practice-tasks (number->string (get 'practice-tasks)))
   (define participation-fee (get 'participation-fee))
@@ -375,9 +372,9 @@
     (:p "You did not consent to the study, therefore you cannot complete the study.")
     (button void "The End"))))
 
-(define pjb-pilot-study
+(define pjb-pilot-study-no-config
   (make-study
-   #:requires '()
+   #:requires '(participation-fee practice-tasks required-tasks)
    #:provides '(task-treatment rest-treatment)
    (list
     (make-step 'explain-study study-explanation)
@@ -447,3 +444,31 @@
     (make-step 'requirements-failure requirements-failure (λ () done) #:for-bot bot:continuer)
     (make-step 'consent-failure consent-failure (λ () done) #:for-bot bot:continuer)
     )))
+
+; TODO: Allow `make-step/study` to refer to values, not just to symbols, so I don't need
+; redundant wrapper steps like `welcome`.
+(define (welcome)
+  (haml
+   (:div
+    (:h1 "Welcome")
+    (:p "Start when you are ready.")
+    (button
+     (λ ()
+       (put 'practice-tasks 3)
+       (put 'participation-fee 2.00)
+       (put 'required-tasks 15))
+     "Start"))))
+
+(define pjb-pilot-study
+  (make-study
+   #:requires '()
+   #:provides '(task-treatment rest-treatment)
+   (list
+    (make-step 'welcome welcome)
+    (make-step/study 'the-study
+                     pjb-pilot-study-no-config
+                     #:provide-bindings '([task-treatment task-treatment]
+                                          [rest-treatment rest-treatment])
+                     #:require-bindings '([practice-tasks practice-tasks]
+                                          [participation-fee participation-fee]
+                                          [required-tasks required-tasks])))))
