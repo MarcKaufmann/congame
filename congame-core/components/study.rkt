@@ -234,7 +234,7 @@ QUERY
 
 (define/widget (button action label #:id [id ""])
   (haml
-   (:a.button
+   (:a.button.next-button
     ([:data-widget-id (when-bot id)]
      [:href
       (embed

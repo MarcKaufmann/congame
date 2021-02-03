@@ -8,10 +8,18 @@
         // Check that document is loaded before running.
         document.addEventListener('DOMContentLoaded', (event) => {
 
+            var nextButton = document.getElementsByClassName('next-button')[0];
+
+            nextButton.style.display = 'none';
+
             // Obtain handles to main elements
             var audioContainer = document.getElementById('audio-container');
             var audioTrack = document.getElementById('audio-track');
             var audioControls = document.getElementById('audio-controls');
+
+            audioTrack.addEventListener('ended', (event) => {
+                nextButton.style.display = 'block';
+            });
 
             console.log({message: "Check audio track", audioTrack: audioTrack});
 
