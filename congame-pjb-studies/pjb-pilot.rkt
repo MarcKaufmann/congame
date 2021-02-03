@@ -13,6 +13,7 @@
          congame/components/sentry
          congame/components/study
          congame/components/template
+         congame-pjb-studies/relax
          congame-price-lists/price-lists
          congame/components/mail
          "study-tools.rkt"
@@ -94,17 +95,6 @@
     (element-type! input "I, Robot"))
   (element-click! (bot:find "button[type=submit]")))
 
-(define (audio-container src #:caption [caption ""])
-  (haml
-   (:figure#audio-container
-    (:audio#audio-track ([:src src]))
-    (:div#audio-controls
-     (:button#play ((:type "button")) "Play")
-     (:button#pause ((:type "button")) "Pause")
-     (:button#volume-up ((:type "button")) "Vol+")
-     (:button#volume-down ((:type "button")) "Vol-"))
-    (:figcaption "What a song")))
-  )
 (define (render-requirements-form)
   (define the-form
     (form* ((play-audio? (ensure binding/boolean (required #:message "You cannot continue if you can't play the audio")))
@@ -124,7 +114,7 @@
      (λ (rw)
        `(div
          (div
-          ,(audio-container (resource-uri christmas-song) #:caption "What a song"))
+          ,(audio-container (resource-uri song1) #:caption "What a song"))
          (div
           (form ((action "")
                  (method "POST"))
@@ -143,7 +133,8 @@
                  ,(rw "has-time?" (widget-checkbox)))
                 ,@(rw "has-time?" (widget-errors))
                 (br)
-                (button ((type "submit") (class "button")) "Submit")))))))))
+                (div ((class "hide-audio-button"))
+                     (button ((type "submit") (class "button")) "Submit"))))))))))
 
 (define (test-study-requirements-step/bot)
   (for ([checkbox (bot:find-all "input[type=checkbox]")])
@@ -280,23 +271,8 @@
 (require (for-syntax racket/base) ; Needed to use strings in define-static-resource. Why? Just Cause.
          congame/components/resource)
 
-;; Directory resources:
-(define-static-resource songs "songs")
-
 ;; File resources:
-(define-static-resource christmas-song (build-path "songs" "christmas.ogg"))
-
-(define (get-rest)
-  ((page/xexpr)
-   (haml
-    (:div.container
-     ; FIXME: How can I ensure that the music is listened to at the normal pace before continuing is possible?
-     ; Or at least that the continue button can only be clicked after a certain while? While JS solution might
-     ; be good as a userfriendly interface, it should ultimately be enforced at the server level (I don't trust client side).
-     (:h1 "Relax and listen to some music")
-     (audio-container (resource-uri christmas-song) #:caption "Still a great song...")
-     (:br)
-     (button void "Continue")))))
+(define-static-resource song1 (build-path "songs" "song1.mp3"))
 
 (define pl-extra-tasks
   (make-pl #:name 'pl1
@@ -450,13 +426,12 @@
              [(elicit-then-get-rest) 'elicit-WTW-and-work])))
      #:require-bindings '([n task-treatment])
      #:provide-bindings '([success? success?]))
-    (make-step 'get-rest
-               get-rest
-               #:for-bot bot:continuer
-               (λ ()
-                 (case (get 'rest-treatment)
-                   [(get-rest-then-elicit) 'elicit-WTW-and-work]
-                   [(elicit-then-get-rest) 'debrief-survey])))
+    (make-step/study 'get-rest
+                     (relax-study)
+                     (λ ()
+                       (case (get 'rest-treatment)
+                         [(get-rest-then-elicit) 'elicit-WTW-and-work]
+                         [(elicit-then-get-rest) 'debrief-survey])))
     (make-step/study 'elicit-WTW-and-work
                      elicit-WTW-and-work
                      (λ ()
