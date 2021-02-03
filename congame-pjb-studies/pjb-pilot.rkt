@@ -94,6 +94,17 @@
     (element-type! input "I, Robot"))
   (element-click! (bot:find "button[type=submit]")))
 
+(define (audio-container src #:caption [caption ""])
+  (haml
+   (:figure#audio-container
+    (:audio#audio-track ([:src src]))
+    (:div#audio-controls
+     (:button#play ((:type "button")) "Play")
+     (:button#pause ((:type "button")) "Pause")
+     (:button#volume-up ((:type "button")) "Vol+")
+     (:button#volume-down ((:type "button")) "Vol-"))
+    (:figcaption "What a song")))
+  )
 (define (render-requirements-form)
   (define the-form
     (form* ((play-audio? (ensure binding/boolean (required #:message "You cannot continue if you can't play the audio")))
@@ -113,24 +124,7 @@
      (λ (rw)
        `(div
          (div
-          ,(haml
-            (:figure#audioContainer
-             (:audio#audio
-              ([:src (resource-uri christmas-song)]))
-             (:div#audio-controls
-              (:button#playpause
-               ((:type "button")
-                (:data-state "play"))
-               "Play/Pause")
-              (:button#volume-up
-               ((:type "button")
-                (:data-state "volup"))
-               "Vol+")
-              (:button#volume-down
-               ((:type "button")
-                (:data-state "voldown"))
-               "Vol-"))
-             (:figcaption "What a song"))))
+          ,(audio-container (resource-uri christmas-song) #:caption "What a song"))
          (div
           (form ((action "")
                  (method "POST"))
@@ -300,25 +294,9 @@
      ; Or at least that the continue button can only be clicked after a certain while? While JS solution might
      ; be good as a userfriendly interface, it should ultimately be enforced at the server level (I don't trust client side).
      (:h1 "Relax and listen to some music")
-     (:figure#audioContainer
-      (:audio#audio
-       ([:src (resource-uri christmas-song)]))
-      (:div#audio-controls
-       (:button#playpause
-        ((:type "button")
-         (:data-state "play"))
-        "Play/Pause")
-       (:button#volume-up
-        ((:type "button")
-         (:data-state "volup"))
-        "Vol+")
-       (:button#volume-down
-        ((:type "button")
-         (:data-state "voldown"))
-        "Vol-"))
-      (:figcaption "What a song"))
-      (:br)
-      (button void "Continue")))))
+     (audio-container (resource-uri christmas-song) #:caption "Still a great song...")
+     (:br)
+     (button void "Continue")))))
 
 (define pl-extra-tasks
   (make-pl #:name 'pl1
