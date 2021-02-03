@@ -114,7 +114,7 @@
      (λ (rw)
        `(div
          (div
-          ,(audio-container (resource-uri song1) #:caption "What a song"))
+          ,(audio-container "song1.mp3" #:caption "What a song"))
          (div
           (form ((action "")
                  (method "POST"))
@@ -253,7 +253,7 @@
                "What is your gender?"
                ,(rw "gender" (widget-text)))
               ,@(rw "gender" (widget-errors))
-              (button ((type "submit") (class "button")) "Submit")))))))
+              (button ((type "submit") (class "button next-button")) "Submit")))))))
 
 (define (debrief-survey/bot)
   (define f (bot:find "form"))

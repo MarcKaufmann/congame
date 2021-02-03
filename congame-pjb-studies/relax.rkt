@@ -1,38 +1,38 @@
 #lang racket
 
 (require
+ racket/contract
  koyo/haml
+ marionette
+ (except-in forms form)
  congame/components/resource
  congame/components/study
  congame/components/template
+ (prefix-in config: (only-in congame/config support-email))
  (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide
  relax-study
  audio-container)
 
-;; File resources:
-(define-static-resource song1 (build-path "songs" "song1.mp3"))
-(define-static-resource song2 (build-path "songs" "song2.mp3"))
-(define-static-resource song3 (build-path "songs" "song3.mp3"))
+;; Directory resource
+(define-static-resource songs "songs")
 
-(define songs
-  (hash 'song1 song1
-        'song2 song2
-        'song3 song3))
-
-(define (audio-container resource #:caption [caption ""])
+(define/contract (audio-container song-name #:caption [caption ""])
+  (->* (string?)
+       (#:caption string?)
+       any)
   (haml
    (:figure#audio-container
     ;; FIXME: Why does `(resource-uri song1)` explode with `application: not a procedure;` error?
     ;; Some compile-time vs runtime thingy-thingy?
-    (:audio#audio-track ([:src (resource-uri resource)]))
+    (:audio#audio-track ([:src (resource-uri songs song-name)]))
     (:div#audio-controls
      (:button#play ((:type "button")) "Play")
      (:button#pause ((:type "button")) "Pause")
      (:button#volume-up ((:type "button")) "Vol+")
      (:button#volume-down ((:type "button")) "Vol-"))
-    (:figcaption "What a song"))))
+    (:figcaption caption))))
 
 (define (explain-relaxing)
   ((page/xexpr)
@@ -49,29 +49,72 @@
   (define songs-played (get 'songs-played-so-far))
   (define next-song-name
     (list-ref song-names songs-played))
-  (define next-song
-    (hash-ref songs next-song-name))
-  (displayln next-song)
-  (flush-output)
   ((page/xexpr)
    (haml
     (.container
-     (:h1 "Play a Song")
-     (audio-container next-song)
+     (:h1 "Play Song " (number->string (add1 songs-played))
+          " out of " (number->string (length song-names)))
+     (audio-container next-song-name #:caption "What a song...")
      (.hide-audio-button
       (button
        (λ ()
          (put 'songs-played-so-far (add1 songs-played)))
-       "Continue"))))))
+       "Continue"))
+     (:h3 "Instructions")
+
+     (:ul
+      (:li "Press the play button to start the song.")
+      (:li "The 'Continue' button will appear once the song has finished playing."))
+
+     (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")))))
+
+; Has to be called in a runtime context with `current-participant-id`
+(define (get-song i)
+  (list-ref (get 'songs-to-play) i))
+
+(define evaluation-form
+  (form* ([preferred-song (ensure binding/text (required)
+                                  (one-of '(("first"  . 0)
+                                            ("second" . 1)
+                                            ("third"  . 2))))])
+         (get-song preferred-song)))
+
+(define (render-evaluation-form rw)
+  (haml
+   (:form ((:action "")
+           (:method "POST"))
+          (:label.radio-group "Which was your favorite song?"
+                  (rw "preferred-song"
+                      (widget-radio-group '(("first"  . "First song")
+                                            ("second" . "Second song")
+                                            ("third"  . "Third song")))))
+          ,@(rw "preferred-song" (widget-errors))
+          (:button.button.next-button ((:type "submit")) "Submit"))))
 
 (define (evaluate-songs)
   ((page/xexpr)
    (haml
     (.container
-     (:h1 "Evaluate Songs")
-     (button void "Continue")))))
+     (:h1 "Song Evaluation")
+     (form
+      evaluation-form
+      (λ (answer)
+        (displayln (format "Favorite song is ~a" answer))
+        (flush-output))
+      render-evaluation-form)
+     (:h3 "Less than 5-second snippets of the songs")
+     ,@(for/list ([song-name (in-list (get 'songs-to-play))]
+                  [rank      (in-list '("First" "Second" "Third"))])
+         (haml
+          (:figure (:figcaption (string-append rank " song"))
+                   (:audio ([:controls ""]
+                            [:src (resource-uri songs (string-append "snip-" song-name))])))))))))
 
-
+(define (evaluate-songs/bot)
+  (define f (bot:find "form"))
+  (define rs (bot:element-find-all f "input[type=radio]"))
+  (element-click! (car rs))
+  (element-click! (bot:find "button[type=submit]")))
 
 ;; FIXME: It would be better if randomization could also be done at the study rather than step level.
 ;; That's more natural. If we can write transitions study-wide, than this is perfectly doable.
@@ -84,7 +127,7 @@
                explain-relaxing
                (λ ()
                  (put 'songs-to-play
-                      (shuffle '(song1 song2 song3)))
+                      (shuffle '("song1.mp3" "song2.mp3" "song3.mp3")))
                  (put 'songs-played-so-far 0)
                  'play-songs)
                #:for-bot bot:continuer)
@@ -95,4 +138,6 @@
                      'play-songs
                      'evaluate-songs))
                #:for-bot bot:continuer)
-    (make-step 'evaluate-songs evaluate-songs))))
+    (make-step 'evaluate-songs
+               evaluate-songs
+               #:for-bot evaluate-songs/bot))))

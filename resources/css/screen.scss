@@ -189,6 +189,11 @@ input {
   margin: 0em 0.4em;
 }
 
+// Vertical alignment of radio buttons by default
+.radio-group label {
+  display: block;
+}
+
 /* Audio */
 
 /*
