@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require congame/components/study
+         db
          deta
          gregor
          koyo/database
@@ -70,5 +71,10 @@
     (define updated-users
       (for/list ([u (in-entities conn (~> (from user #:as u)
                                           (where (= u.bot-set-id ,(bot-set-id the-set)))))])
+        (define participant-id
+          (query-value conn (~> (from "study_participants" #:as p)
+                                (select id)
+                                (where (= p.user-id ,(user-id u))))))
+        (clear-participant-progress! db participant-id)
         (set-user-password u password)))
     (values password (apply update! conn updated-users))))

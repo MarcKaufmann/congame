@@ -476,10 +476,6 @@
     (lookup-bot-set db bot-set-id))
   (unless (and the-study the-instance the-bot-set)
     (next-dispatcher))
-  ;; TODO: Bot set page must have "run" action.  Change
-  ;; the password for bots on every run so it doesn't
-  ;; have to be jotted down anywhere and so that it can
-  ;; still be secure.
   (send/suspend/dispatch/protect
    (lambda (embed/url)
      (page
@@ -496,7 +492,6 @@
           ([:href (embed/url (make-bot-runner db the-study the-instance the-bot-set))])
           "Run bots!"))))))))
 
-;; TODO: Clear participants on re-run.
 (define ((make-bot-runner db the-study the-instance the-set) _req)
   (define-values (password users)
     (prepare-bot-set! db the-set))

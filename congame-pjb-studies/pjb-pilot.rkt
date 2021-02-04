@@ -131,11 +131,17 @@
                     (button ((type "submit") (class "button")) "Submit")))))))))
 
 (define (test-study-requirements-step/bot)
+  #;(element-click! (bot:find "#play"))
   (for ([checkbox (bot:find-all "input[type=checkbox]")])
     (displayln (format "checkbox is ~a" checkbox))
     (flush-output)
     (element-click! checkbox))
-  (element-click! (bot:find "button[type=submit]")))
+  ;; Use JS to submit the page faster; actually click the play button
+  ;; and wait for the button to appear to simulate the real world.
+  (void
+   (page-execute-async! (bot:current-page) "document.querySelector('form').submit()"))
+  #;(element-click! (page-wait-for! (bot:current-page) "button[type=submit]"))
+  )
 
 (define (test-study-requirements)
   (haml
