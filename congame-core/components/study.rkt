@@ -642,16 +642,21 @@ QUERY
                            (where (= i.status "active"))
                            (order-by ([i.created-at #:desc])))))))
 
-(define/contract (list-study-instance-participants/admin db instance-id)
-  (-> database? id/c (listof study-participant/admin?))
+(define/contract (list-study-instance-participants/admin db instance-id [include-bots? #f])
+  (->* (database? id/c) (boolean?) (listof study-participant/admin?))
   (with-database-connection [conn db]
+    (define q
+      (~> (from study-participant #:as p)
+          (join user #:as u #:on (= u.id p.user-id))
+          (where (= p.instance-id ,instance-id))
+          (order-by ([p.enrolled-at #:desc]))
+          (select p.id u.username p.progress p.completed? p.enrolled-at)
+          (project-onto study-participant/admin-schema)))
+
     (sequence->list
-     (in-entities conn (~> (from study-participant #:as p)
-                           (join user #:as u #:on (= u.id p.user-id))
-                           (where (= p.instance-id ,instance-id))
-                           (order-by ([p.enrolled-at #:desc]))
-                           (select p.id u.username p.progress p.completed? p.enrolled-at)
-                           (project-onto study-participant/admin-schema))))))
+     (in-entities conn (cond
+                         [include-bots? q]
+                         [else (where q (not (= u.role "bot")))])))))
 
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)
