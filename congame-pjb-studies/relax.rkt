@@ -16,6 +16,7 @@
 
 ;; Directory resource
 (define-static-resource songs "songs")
+(define-static-resource audio-player.js "audio-player.js")
 
 (define/contract (audio-container song-name #:caption [caption ""])
   (->* (string?)
@@ -29,7 +30,10 @@
      (:button#pause ((:type "button")) "Pause")
      (:button#volume-up ((:type "button")) "Vol+")
      (:button#volume-down ((:type "button")) "Vol-"))
-    (:figcaption caption))))
+    (:figcaption caption)
+    (:script
+     ([:type "text/javascript"]
+      [:src (resource-uri audio-player.js)])))))
 
 (define (explain-relaxing)
   (haml
