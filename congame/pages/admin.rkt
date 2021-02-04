@@ -276,26 +276,30 @@
                  (:td
                   (~a (bot-set-bot-count bs))))))))
          (:h2 "Participants")
-         (:table.table
-          (:thead
-           (:tr
-            (:th "Participant ID")
-            (:th "Email")
-            (:th "Completed?")
-            (:th "Enrolled At")
-            (:th "Progress")))
-          (:tbody
-           ,@(for/list ([p (in-list participants)])
-               (haml
-                (:tr
-                 (:td
-                  (:a
-                   ([:href (reverse-uri 'admin:view-study-participant-page study-id study-instance-id (study-participant/admin-id p))])
-                   (~a (study-participant/admin-id p))))
-                 (:td (study-participant/admin-email p))
-                 (:td (if (study-participant/admin-completed? p) "yes" "no"))
-                 (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))
-                 (:td (~a (study-participant/admin-progress p)))))))))))))))
+         (render-participant-list study-id study-instance-id participants))))))))
+
+(define (render-participant-list study-id study-instance-id participants)
+  (haml
+   (:table.table
+    (:thead
+     (:tr
+      (:th "Participant ID")
+      (:th "Email")
+      (:th "Completed?")
+      (:th "Enrolled At")
+      (:th "Progress")))
+    (:tbody
+     ,@(for/list ([p (in-list participants)])
+         (haml
+          (:tr
+           (:td
+            (:a
+             ([:href (reverse-uri 'admin:view-study-participant-page study-id study-instance-id (study-participant/admin-id p))])
+             (~a (study-participant/admin-id p))))
+           (:td (study-participant/admin-email p))
+           (:td (if (study-participant/admin-completed? p) "yes" "no"))
+           (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))
+           (:td (~a (study-participant/admin-progress p))))))))))
 
 ;; TODO: Stop showing e-mail and show participant ID instead.
 (define/contract ((view-study-participant-page db) _req study-id study-instance-id participant-id)
@@ -476,6 +480,8 @@
     (lookup-bot-set db bot-set-id))
   (unless (and the-study the-instance the-bot-set)
     (next-dispatcher))
+  (define participants
+    (list-study-instance-participants/admin db study-instance-id bot-set-id))
   (send/suspend/dispatch/protect
    (lambda (embed/url)
      (page
@@ -490,7 +496,9 @@
          (:h3 "Model " (~a (bot-set-model-id the-bot-set)))
          (:a
           ([:href (embed/url (make-bot-runner db the-study the-instance the-bot-set))])
-          "Run bots!"))))))))
+          "Run bots!")
+         (:h2 "Participants")
+         (render-participant-list study-id study-instance-id participants))))))))
 
 (define ((make-bot-runner db the-study the-instance the-set) _req)
   (define-values (password users)

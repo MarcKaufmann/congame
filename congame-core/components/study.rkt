@@ -642,8 +642,8 @@ QUERY
                            (where (= i.status "active"))
                            (order-by ([i.created-at #:desc])))))))
 
-(define/contract (list-study-instance-participants/admin db instance-id [include-bots? #f])
-  (->* (database? id/c) (boolean?) (listof study-participant/admin?))
+(define/contract (list-study-instance-participants/admin db instance-id [for-bot-set #f])
+  (->* (database? id/c) ((or/c #f id/c)) (listof study-participant/admin?))
   (with-database-connection [conn db]
     (define q
       (~> (from study-participant #:as p)
@@ -654,9 +654,9 @@ QUERY
           (project-onto study-participant/admin-schema)))
 
     (sequence->list
-     (in-entities conn (cond
-                         [include-bots? q]
-                         [else (where q (not (= u.role "bot")))])))))
+     (in-entities conn (if for-bot-set
+                           (where q (= u.bot-set-id ,for-bot-set))
+                           (where q (not (= u.role "bot"))))))))
 
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)
