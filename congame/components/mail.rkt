@@ -29,7 +29,6 @@
                       'username (user-username user))))
 
 (define/contract (mailer-send-study-completed-email m recpt payment)
-  ; FIXME: Add information on the study that was completed, say the name (or so) of the study
   (-> mailer? string? string? void?)
   (define action-url
     (make-application-url "study"))

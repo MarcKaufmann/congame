@@ -56,9 +56,6 @@
      (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")])))
     (:body
      (when show-nav?
-       ; FIXME: Idiomatic way to pass argument based on condition, using conditional in arg-list. I.e.:
-       ; (nav (nav-item ...) (nav-item) (when condition (nav-item)))
-       ; Or fix the way the nav gets accumulated and passed around?
        (cond [(and (current-user) (user-admin? (current-user)))
               (nav
                (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))

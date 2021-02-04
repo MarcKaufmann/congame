@@ -243,7 +243,6 @@
      the-form
      (λ (survey-response)
        (put 'debrief-survey survey-response)
-       ; FIXME: Where should I really call these functions?
        (put-payment! 'participation-fee (get 'participation-fee))
        (send-completion-email pid))
      (λ (rw)
@@ -323,9 +322,6 @@
    #:provides '(WTW)
    (list
     (make-step 'elicit-immediate-WTW
-               ; TODO: Is it sensible to pass the pl-name as an argument? It is not a coherent mechanism.
-               ; It feels to me that using steps is like using (limited) globals, while studies create
-               ; their own scopes, making them more composable. Well, except some variables have to be shared.
                (price-list-step pl-extra-tasks #:pl-name 'WTW)
                #:for-bot price-list-step/bot)
     (make-step 'determine-extra-tasks
@@ -343,7 +339,6 @@
                        (when (get 'success?)
                          (put-payment! 'extra-tasks-bonus (get 'extra-money)))
                        done)
-                     ; TODO: Can #:require-bindings take values, or does it have to refer to defined binding?
                      #:require-bindings '([n extra-tasks])
                      #:provide-bindings '([success? success?]))
     )))

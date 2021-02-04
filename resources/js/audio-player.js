@@ -21,13 +21,6 @@
         var volumeDown = document.getElementById('volume-down');
 
         playAudio.addEventListener('click', function(e) {
-            // FIXME: The commented out `if` statement does not work, presumably because
-            // audio.paused or audio.ended are undefined and then everythign falls apart.
-            // In the console, the function however *does* work.
-            // congame also runs this file twice, and seems to load audio-player.js directly,
-            // although I thought it should only load a single app.js file with *.js files concatenated.
-            // if (audio.paused || audio.ended) audio.play();
-            // else audio.pause();
             audioTrack.play();
         });
 

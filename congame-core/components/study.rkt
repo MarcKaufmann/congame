@@ -43,7 +43,6 @@
  wrap-sub-study
  make-study
  run-study
- ; FIXME: Is this the right function to expose?
  participant-email
  current-participant-id
  ; current-step
@@ -149,8 +148,6 @@ QUERY
                                           #:payment payment))))
 
 (define (get-payment k)
-  ; FIXME: What's the bug again if the primary key is not determined by a single field?
-  ; I shouldn't look for... otherwise I get the wrong result?
   (define result
     (with-database-connection [conn (current-database)]
       (lookup conn (~> (from study-payment #:as p)

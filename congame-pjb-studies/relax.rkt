@@ -24,8 +24,6 @@
        any)
   (haml
    (:figure#audio-container
-    ;; FIXME: Why does `(resource-uri song1)` explode with `application: not a procedure;` error?
-    ;; Some compile-time vs runtime thingy-thingy?
     (:audio#audio-track ([:src (resource-uri songs song-name)]))
     (:div#audio-controls
      (:button#play ((:type "button")) "Play")
@@ -70,6 +68,7 @@
 
 ; Has to be called in a runtime context with `current-participant-id`
 (define (get-song i)
+  ;; FIXME: Add a special error message to get for better error handling.
   (list-ref (get 'songs-to-play) i))
 
 (define evaluation-form
@@ -116,8 +115,6 @@
   (element-click! (car rs))
   (element-click! (bot:find "button[type=submit]")))
 
-;; FIXME: It would be better if randomization could also be done at the study rather than step level.
-;; That's more natural. If we can write transitions study-wide, than this is perfectly doable.
 (define (relax-study)
   (make-study
    #:requires '()
