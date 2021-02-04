@@ -44,7 +44,7 @@
 
   if (supportsAudio) {
     // Check that document is loaded before running.
-    document.addEventListener("DOMContentLoaded", event => {
+    up.compiler("#audio-container", function() {
       var hideAudioButtons = document.getElementsByClassName(
         "hide-audio-button"
       );

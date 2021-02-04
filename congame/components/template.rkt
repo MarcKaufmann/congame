@@ -53,8 +53,13 @@
 
      (:title (if subtitle (~a subtitle " - congame") "congame"))
      (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
-     #;(:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
-     )
+     (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
+     (:script
+      ([:defer "defer"]
+       [:src (static-uri "vendor/unpoly.min.js")]))
+     (:script
+      ([:defer "defer"]
+       [:scr (static-uri "js/app.js")])))
     (:body
      (when show-nav?
        (cond [(and (current-user) (user-admin? (current-user)))
@@ -83,10 +88,7 @@
                 ([:class (format "flash__item flash__item--~a" (car flash))])
                 (cdr flash))))))))
 
-     (.content ,@content)
-
-     #;(:script ([:src (static-uri "vendor/unpoly.min.js")]))
-     (:script ([:src (static-uri "js/app.js")]))))))
+     (.content ,@content)))))
 
 (define (page #:subtitle [subtitle #f]
               #:show-nav? [show-nav? #t]
