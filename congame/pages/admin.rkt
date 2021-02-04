@@ -224,6 +224,8 @@
     (next-dispatcher))
   (define participants
     (list-study-instance-participants/admin db study-instance-id))
+  (define bot-sets
+    (list-bot-sets db study-instance-id))
   (send/suspend/dispatch/protect
    (lambda (embed/url)
      (page
@@ -253,11 +255,27 @@
                 (response/jsexpr
                  (study-participants->jsexpr db study-id study-instance-id participants))))])
            "Export JSON"))
-         (:h2 "Participants")
+         (:h2 "Bot Sets")
          (:h3
           (:a
            ([:href (reverse-uri 'admin:create-study-instance-bot-sets-page study-id study-instance-id)])
            "Create Bot Set"))
+         (:table.table
+          (:thead
+           (:tr
+            (:th "Bot Set ID")
+            (:th "Bot Count")))
+          (:tbody
+           ,@(for/list ([bs (in-list bot-sets)])
+               (haml
+                (:tr
+                 (:td
+                  (:a
+                   ([:href (reverse-uri 'admin:view-study-instance-bot-set-page study-id study-instance-id (bot-set-id bs))])
+                   (~a (bot-set-id bs))))
+                 (:td
+                  (~a (bot-set-bot-count bs))))))))
+         (:h2 "Participants")
          (:table.table
           (:thead
            (:tr
@@ -448,7 +466,7 @@
                                                       (cons id model))))])
     model))
 
-(define/contract ((view-study-instance-bot-set-page db) req study-id study-instance-id bot-set-id)
+(define/contract ((view-study-instance-bot-set-page db) _req study-id study-instance-id bot-set-id)
   (-> database? (-> request? id/c id/c id/c response?))
   (define the-study
     (lookup-study-meta db study-id))
@@ -468,7 +486,11 @@
       (container
        (haml
         (:section.bot-set
-         (:h1 "Bot set for " (study-instance-name the-instance))
+         (:h1
+          "Bot set for "
+          (:a
+           ([:href (reverse-uri 'admin:view-study-instance-page study-id study-instance-id)])
+           (study-instance-name the-instance)))
          (:h3 "Model " (~a (bot-set-model-id the-bot-set)))
          (:a
           ([:href (embed/url (make-bot-runner db the-study the-instance the-bot-set))])

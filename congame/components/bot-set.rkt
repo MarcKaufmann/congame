@@ -13,6 +13,7 @@
  (schema-out bot-set)
  create-bot-set!
  lookup-bot-set
+ list-bot-sets
  prepare-bot-set!)
 
 (define-schema bot-set
@@ -52,6 +53,14 @@
   (with-database-connection [conn db]
     (lookup conn (~> (from bot-set #:as s)
                      (where (= s.id ,id))))))
+
+(define/contract (list-bot-sets db study-instance-id)
+  (-> database? id/c (listof bot-set?))
+  (with-database-connection [conn db]
+    (for/list ([bs (in-entities conn (~> (from bot-set #:as s)
+                                         (where (= s.study-instance-id ,study-instance-id))
+                                         (order-by ([s.created-at]))))])
+      bs)))
 
 (define/contract (prepare-bot-set! db the-set)
   (-> database? bot-set? (values string? (listof user?)))
