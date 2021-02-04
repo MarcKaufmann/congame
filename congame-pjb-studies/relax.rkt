@@ -7,7 +7,6 @@
  (except-in forms form)
  congame/components/resource
  congame/components/study
- congame/components/template
  (prefix-in config: (only-in congame/config support-email))
  (prefix-in bot: (submod congame/components/bot actions)))
 
@@ -33,38 +32,36 @@
     (:figcaption caption))))
 
 (define (explain-relaxing)
-  ((page/xexpr)
-   (haml
-    (.container
-     (:h1 "Three Songs")
-     (:p "You will listen to a different song on each of the next three pages. Each song is between 3 and 4 minutes long. You can continue to the following page only after having listened until the end of the song. After that, you will be asked to rank the songs according along several dimensions.")
-     (button
-      void
-      "Continue")))))
+  (haml
+   (.container
+    (:h1 "Three Songs")
+    (:p "You will listen to a different song on each of the next three pages. Each song is between 3 and 4 minutes long. You can continue to the following page only after having listened until the end of the song. After that, you will be asked to rank the songs according along several dimensions.")
+    (button
+     void
+     "Continue"))))
 
 (define (play-songs)
   (define song-names (get 'songs-to-play))
   (define songs-played (get 'songs-played-so-far))
   (define next-song-name
     (list-ref song-names songs-played))
-  ((page/xexpr)
-   (haml
-    (.container
-     (:h1 "Play Song " (number->string (add1 songs-played))
-          " out of " (number->string (length song-names)))
-     (audio-container next-song-name #:caption "What a song...")
-     (.hide-audio-button
-      (button
-       (λ ()
-         (put 'songs-played-so-far (add1 songs-played)))
-       "Continue"))
-     (:h3 "Instructions")
+  (haml
+   (.container
+    (:h1 "Play Song " (number->string (add1 songs-played))
+         " out of " (number->string (length song-names)))
+    (audio-container next-song-name #:caption "What a song...")
+    (.hide-audio-button
+     (button
+      (λ ()
+        (put 'songs-played-so-far (add1 songs-played)))
+      "Continue"))
+    (:h3 "Instructions")
 
-     (:ul
-      (:li "Press the play button to start the song.")
-      (:li "The 'Continue' button will appear once the song has finished playing."))
+    (:ul
+     (:li "Press the play button to start the song.")
+     (:li "The 'Continue' button will appear once the song has finished playing."))
 
-     (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")))))
+    (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") "."))))
 
 ; Has to be called in a runtime context with `current-participant-id`
 (define (get-song i)
@@ -91,23 +88,22 @@
           (:button.button.next-button ((:type "submit")) "Submit"))))
 
 (define (evaluate-songs)
-  ((page/xexpr)
-   (haml
-    (.container
-     (:h1 "Song Evaluation")
-     (form
-      evaluation-form
-      (λ (answer)
-        (displayln (format "Favorite song is ~a" answer))
-        (flush-output))
-      render-evaluation-form)
-     (:h3 "Less than 5-second snippets of the songs")
-     ,@(for/list ([song-name (in-list (get 'songs-to-play))]
-                  [rank      (in-list '("First" "Second" "Third"))])
-         (haml
-          (:figure (:figcaption (string-append rank " song"))
-                   (:audio ([:controls ""]
-                            [:src (resource-uri songs (string-append "snip-" song-name))])))))))))
+  (haml
+   (.container
+    (:h1 "Song Evaluation")
+    (form
+     evaluation-form
+     (λ (answer)
+       (displayln (format "Favorite song is ~a" answer))
+       (flush-output))
+     render-evaluation-form)
+    (:h3 "Less than 5-second snippets of the songs")
+    ,@(for/list ([song-name (in-list (get 'songs-to-play))]
+                 [rank      (in-list '("First" "Second" "Third"))])
+        (haml
+         (:figure (:figcaption (string-append rank " song"))
+                  (:audio ([:controls ""]
+                           [:src (resource-uri songs (string-append "snip-" song-name))]))))))))
 
 (define (evaluate-songs/bot)
   (define f (bot:find "form"))

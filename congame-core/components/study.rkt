@@ -43,6 +43,7 @@
  wrap-sub-study
  make-study
  run-study
+ current-xexpr-wrapper
  participant-email
  current-participant-id
  ; current-step
@@ -356,15 +357,20 @@ QUERY
                                     (wrapper (step-handler a-step))
                                     (step-transition a-step))]))]))
 
+(define/contract current-xexpr-wrapper
+  (parameter/c (-> xexpr? xexpr?))
+  (make-parameter values))
+
 (define (response/step s)
   (response/xexpr
-   (haml
-    (:div.step
-     ([:data-study-stack (when-bot (call-with-output-string
-                                    (lambda (out)
-                                      (write (current-study-stack) out))))]
-      [:data-step-id (when-bot (step-id s))])
-     ((step-handler s))))))
+   ((current-xexpr-wrapper)
+    (haml
+     (:div.step
+      ([:data-study-stack (when-bot (call-with-output-string
+                                     (lambda (out)
+                                       (write (current-study-stack) out))))]
+       [:data-step-id (when-bot (step-id s))])
+      ((step-handler s)))))))
 
 (define-syntax-rule (when-bot e)
   (if (current-user-bot?) (~a e) ""))

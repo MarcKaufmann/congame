@@ -42,9 +42,9 @@
       [:up-alias uri])
      label))))
 
-(define ((page/xexpr #:subtitle [subtitle #f]
-                     #:show-nav? [show-nav? #f])
-         . content)
+(define (page/xexpr #:subtitle [subtitle #f]
+                    #:show-nav? [show-nav? #f]
+                    . content)
   (haml
    (:html
     (:head
@@ -53,7 +53,8 @@
 
      (:title (if subtitle (~a subtitle " - congame") "congame"))
      (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
-     (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")])))
+     #;(:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
+     )
     (:body
      (when show-nav?
        (cond [(and (current-user) (user-admin? (current-user)))
@@ -84,7 +85,7 @@
 
      (.content ,@content)
 
-     (:script ([:src (static-uri "vendor/unpoly.min.js")]))
+     #;(:script ([:src (static-uri "vendor/unpoly.min.js")]))
      (:script ([:src (static-uri "js/app.js")]))))))
 
 (define (page #:subtitle [subtitle #f]
@@ -95,11 +96,12 @@
   ;; grab the current profile here and then pass it in to ensure that
   ;; the right profile gets rendered.
   (define profile (current-profile))
-
-  (with-timing 'template "page"
+  (with-timing 'template "(page ...)"
     (define page
-      (apply (page/xexpr #:subtitle subtitle
-                         #:show-nav? show-nav?) content))
+      (apply page/xexpr
+             #:subtitle subtitle
+             #:show-nav? show-nav?
+             content))
 
     (response
      200

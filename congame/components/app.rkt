@@ -24,7 +24,8 @@
          congame/components/auth
          congame/components/mail
          congame/components/sentry
-         congame/components/user)
+         congame/components/user
+         congame/components/template)
 
 (provide
  make-app
@@ -164,6 +165,7 @@
          (reverse-uri 'serve-resource-page (resource-id r) subr)
          (reverse-uri 'serve-resource-page (resource-id r)))))
   (current-git-sha config:git-sha)
+  (current-xexpr-wrapper page/xexpr)
 
   (define manager
     (make-threshold-LRU-manager (stack expired-page) (* 1024 1024 512)))

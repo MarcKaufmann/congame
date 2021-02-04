@@ -1,59 +1,57 @@
-(function () {
+(function() {
+  function audioControlsHideButton(hideAudioButton) {
+    hideAudioButton.style.display = "none";
 
-    function audioControlsHideButton(hideAudioButton) {
+    // Obtain handles to main elements
+    var audioContainer = document.getElementById("audio-container");
+    var audioTrack = document.getElementById("audio-track");
+    var audioControls = document.getElementById("audio-controls");
 
-        hideAudioButton.style.display = 'none';
+    audioTrack.addEventListener("ended", event => {
+      hideAudioButton.style.display = "block";
+    });
 
-        // Obtain handles to main elements
-        var audioContainer = document.getElementById('audio-container');
-        var audioTrack = document.getElementById('audio-track');
-        var audioControls = document.getElementById('audio-controls');
+    console.log({ message: "Check audio track", audioTrack: audioTrack });
 
-        audioTrack.addEventListener('ended', (event) => {
-            hideAudioButton.style.display = 'block';
-        });
+    var playAudio = document.getElementById("play");
+    var pauseAudio = document.getElementById("pause");
+    var volumeUp = document.getElementById("volume-up");
+    var volumeDown = document.getElementById("volume-down");
 
-        console.log({message: "Check audio track", audioTrack: audioTrack});
+    playAudio.addEventListener("click", function(e) {
+      audioTrack.play();
+    });
 
-        var playAudio = document.getElementById('play');
-        var pauseAudio = document.getElementById('pause');
-        var volumeUp = document.getElementById('volume-up');
-        var volumeDown = document.getElementById('volume-down');
+    pauseAudio.addEventListener("click", function(e) {
+      audioTrack.pause();
+    });
 
-        playAudio.addEventListener('click', function(e) {
-            audioTrack.play();
-        });
+    volumeUp.addEventListener("click", function(e) {
+      var currentVolume = Math.floor(audioTrack.volume * 10) / 10;
+      audioTrack.volume += 0.05;
+      audioTrack.muted = false;
+    });
 
-        pauseAudio.addEventListener('click', function(e) {
-            audioTrack.pause();
-        })
+    volumeDown.addEventListener("click", event => {
+      var currentVolume = Math.floor(audioTrack.volume * 10) / 10;
+      if (currentVolume > 0) audioTrack.volume -= 0.05;
+      else audioTrack.muted = true;
+    });
+  }
 
-        volumeUp.addEventListener('click', function(e) {
-            var currentVolume = Math.floor(audioTrack.volume * 10) / 10;
-            audioTrack.volume += 0.05;
-            audioTrack.muted = false;
-        })
+  // Does the browser actually support the audio element?
+  var supportsAudio = !!document.createElement("audio").canPlayType;
 
-        volumeDown.addEventListener('click', (event) => {
-            var currentVolume = Math.floor(audioTrack.volume * 10) / 10;
-            if (currentVolume > 0) audioTrack.volume -= 0.05;
-            else audioTrack.muted = true;
-        })
-    }
+  if (supportsAudio) {
+    // Check that document is loaded before running.
+    document.addEventListener("DOMContentLoaded", event => {
+      var hideAudioButtons = document.getElementsByClassName(
+        "hide-audio-button"
+      );
 
-    // Does the browser actually support the audio element?
-    var supportsAudio = !!document.createElement('audio').canPlayType;
-
-    if (supportsAudio) {
-
-        // Check that document is loaded before running.
-        document.addEventListener('DOMContentLoaded', (event) => {
-
-            var hideAudioButtons = document.getElementsByClassName('hide-audio-button');
-
-            if (hideAudioButtons.length > 0) {
-                audioControlsHideButton(hideAudioButtons[0]);
-            }
-        });
-    }
+      if (hideAudioButtons.length > 0) {
+        audioControlsHideButton(hideAudioButtons[0]);
+      }
+    });
+  }
 })();
