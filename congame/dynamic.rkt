@@ -85,9 +85,8 @@
                 (server               . ,config:log-level)
                 (session              . ,config:log-level)
                 (study                . ,config:log-level)
-                (system               . ,config:log-level))))
-
-  ; FIXME: Marc: Putting this here because koyo-experiment did. Some bootstrapping this or that probably.
+                (system               . ,config:log-level)
+                (worker               . info))))
 
   (when config:sentry-dsn
     (current-sentry (make-sentry config:sentry-dsn
