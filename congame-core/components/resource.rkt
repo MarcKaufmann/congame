@@ -17,7 +17,9 @@
   (make-hash))
 
 (define current-resource-uri-fn
-  (make-parameter #f))
+  (make-parameter
+   (lambda (r subr)
+     (format "stub://~a/~a" (resource-id r) subr))))
 
 (struct resource (id path)
   #:transparent)
