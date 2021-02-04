@@ -13,7 +13,7 @@
  not-found-page
  expired-page)
 
-(define/contract (not-found-page req)
+(define/contract (not-found-page _req)
   (-> request? response?)
   (page
    #:subtitle (translate 'subtitle-not-found)

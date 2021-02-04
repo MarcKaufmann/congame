@@ -1,6 +1,6 @@
 #lang info
 
-(define collection "congame")
+(define collection "congame-web")
 (define deps '("base"
                "component-lib"
                "congame-core"

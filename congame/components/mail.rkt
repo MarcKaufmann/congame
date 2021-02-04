@@ -4,7 +4,7 @@
          koyo/url
          racket/contract
          racket/string
-         congame/components/user)
+         "user.rkt")
 
 (provide
  (all-from-out koyo/mail)

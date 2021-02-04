@@ -7,7 +7,7 @@
  (except-in forms form)
  congame/components/resource
  congame/components/study
- (prefix-in config: (only-in congame/config support-email))
+ (prefix-in config: (only-in congame-web/config support-email))
  (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide

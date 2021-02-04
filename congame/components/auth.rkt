@@ -13,7 +13,7 @@
          racket/string
          threading
          web-server/http
-         congame/components/user)
+         "user.rkt")
 
 ;; auth-manager ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

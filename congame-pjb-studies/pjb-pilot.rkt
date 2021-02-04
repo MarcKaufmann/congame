@@ -10,11 +10,11 @@
          koyo/haml
          koyo/job
          congame/components/bot
-         congame/components/sentry
          congame/components/study
          congame-pjb-studies/relax
          congame-price-lists/price-lists
-         congame/components/mail
+         congame-web/components/sentry
+         congame-web/components/mail
          "study-tools.rkt"
          "tasks.rkt"
          (prefix-in bot: (submod congame/components/bot actions)))

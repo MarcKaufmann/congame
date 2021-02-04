@@ -6,7 +6,6 @@
          congame/components/study
          koyo
          koyo/database/migrator
-         koyo/json
          koyo/sentry
          net/url
          racket/contract
@@ -21,11 +20,11 @@
          web-server/servlet-dispatch
          (prefix-in config: "../config.rkt")
          "../pages/all.rkt"
-         congame/components/auth
-         congame/components/mail
-         congame/components/sentry
-         congame/components/user
-         congame/components/template)
+         "auth.rkt"
+         "mail.rkt"
+         "sentry.rkt"
+         "template.rkt"
+         "user.rkt")
 
 (provide
  make-app

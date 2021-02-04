@@ -7,8 +7,8 @@
          rackunit
          threading
 
-         congame/components/mail
-         congame/components/user
+         congame-web/components/mail
+         congame-web/components/user
          "../common.rkt")
 
 (provide

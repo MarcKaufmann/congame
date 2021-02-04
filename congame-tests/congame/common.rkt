@@ -8,9 +8,9 @@
          racket/runtime-path
          rackunit/text-ui
 
-         congame/components/mail
-         congame/components/user
-         (prefix-in config: congame/config))
+         congame-web/components/mail
+         congame-web/components/user
+         (prefix-in config: congame-web/config))
 
 
 ;; database ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

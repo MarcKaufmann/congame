@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require congame/components/export
-         congame/components/study
+(require congame/components/study
          koyo/database
          racket/contract
          web-server/http

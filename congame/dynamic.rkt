@@ -14,11 +14,11 @@
          racket/contract
          racket/runtime-path
          sentry
-         congame/components/app
-         congame/components/auth
-         congame/components/mail
-         congame/components/user
-         (prefix-in config: congame/config))
+         "components/app.rkt"
+         "components/auth.rkt"
+         "components/mail.rkt"
+         "components/user.rkt"
+         (prefix-in config: "config.rkt"))
 
 ;; System ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
