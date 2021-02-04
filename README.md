@@ -77,6 +77,11 @@ Make sure to `touch` or otherwise modify `congame/studies/all.rkt`
 every time you install a new study package to ensure that package is
 visible to the web app.
 
+## Updating study caches
+
+Run `./bin/bust-study-caches.sh` after adding studies or bots to
+`info.rkt` files within study packages.
+
 ## Running the app locally
 
     $ nvm use

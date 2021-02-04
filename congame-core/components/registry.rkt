@@ -48,12 +48,11 @@
   (-> (hash/c symbol? any/c))
   (hash-copy *bot-registry*))
 
-
 (define/contract (get-bot-infos-for-study id)
   (-> symbol? (hash/c symbol? bot-info?))
   (hash-ref *bot-registry* id hasheq))
 
-(define/contract (lookup-registered-study id [failure-thunk (lambda (id) #f)])
+(define/contract (lookup-registered-study id [failure-thunk (lambda (_id) #f)])
   (->* (symbol?)
        ((-> symbol? any/c))
        (or/c #f any/c))
