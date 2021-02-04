@@ -425,30 +425,15 @@
     (make-step 'consent-failure consent-failure (λ () done) #:for-bot bot:continuer)
     )))
 
-; TODO: Allow `make-step/study` to refer to values, not just to symbols, so I don't need
-; redundant wrapper steps like `welcome`.
-(define (welcome)
-  (haml
-   (:div.container
-    (:h1 "Welcome")
-    (:p "Start when you are ready.")
-    (button
-     (λ ()
-       (put 'practice-tasks 3)
-       (put 'participation-fee 2.00)
-       (put 'required-tasks 15))
-     "Start"))))
-
 (define pjb-pilot-study
   (make-study
    #:requires '()
    #:provides '(task-treatment rest-treatment)
    (list
-    (make-step 'welcome welcome)
     (make-step/study 'the-study
                      pjb-pilot-study-no-config
                      #:provide-bindings '([task-treatment task-treatment]
                                           [rest-treatment rest-treatment])
-                     #:require-bindings '([practice-tasks practice-tasks]
-                                          [participation-fee participation-fee]
-                                          [required-tasks required-tasks])))))
+                     #:require-bindings '([practice-tasks (const 3)]
+                                          [participation-fee (const 2.00)]
+                                          [required-tasks (const 15)])))))

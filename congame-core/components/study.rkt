@@ -141,6 +141,9 @@ QUERY
    [payment-name string/f]
    [payment (numeric/f 6 2)]))
 
+;; Since this doesn't have a primary key, the returned study-payment
+;; entity can't be update!d or delete!d.  Inserting the same payment
+;; twice raises a constraint error.
 (define/contract (put-payment! k payment)
   (-> symbol? amount/c study-payment?)
   (with-database-connection [conn (current-database)]
@@ -284,7 +287,7 @@ QUERY
 (define step-id/c symbol?)
 (define handler/c (-> xexpr?))
 (define transition/c (-> (or/c done? next? step-id/c)))
-(define binding/c (list/c symbol? symbol?))
+(define binding/c (list/c symbol? (or/c symbol? (list/c 'const any/c))))
 
 (define (default-transition)
   next)
@@ -326,9 +329,13 @@ QUERY
                  (cons (list required-id required-id) bindings))))
      (define bindings
        (for/hasheq ([binding (in-list all-required-bindings)])
-         (match-define (list dst-id src-id) binding)
-         (values dst-id (get src-id (lambda ()
-                                      (error 'get "value not found for key ~.s in sub-study~n  bound to: ~s~n  required by step: ~.s" src-id dst-id id))))))
+         (match binding
+           [`(,dst-id (const ,v))
+            (values dst-id v)]
+
+           [`(,dst-id ,src-id)
+            (values dst-id (get src-id (lambda ()
+                                         (error 'get "value not found for key ~.s in sub-study~n  bound to: ~s~n  required by step: ~.s" src-id dst-id id))))])))
      (with-widget-parameterization
        (define result-bindings
          (run-study s #:bindings bindings))
