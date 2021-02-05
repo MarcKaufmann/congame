@@ -2,7 +2,7 @@
 
 (require rackunit
 
-         congame/components/hash)
+         congame-web/components/hash)
 
 (provide
  hash-tests)

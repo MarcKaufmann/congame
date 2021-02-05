@@ -5,8 +5,8 @@
          koyo/testing
          rackunit
 
-         congame/components/auth
-         congame/components/user
+         congame-web/components/auth
+         congame-web/components/user
          "../common.rkt")
 
 (provide

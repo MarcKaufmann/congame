@@ -5,7 +5,7 @@
          racket/match
          rackunit
 
-         congame/components/user
+         congame-web/components/user
          "../common.rkt")
 
 (provide
