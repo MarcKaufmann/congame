@@ -1,7 +1,10 @@
-#lang racket
+#lang racket/base
 
 (require
+ (for-syntax racket/base)
  racket/contract
+ racket/list
+ racket/random
  koyo/haml
  marionette
  (except-in forms form)
@@ -116,6 +119,12 @@
   (element-click! (car rs))
   (element-click! (bot:find "button[type=submit]")))
 
+(define (play-songs/bot)
+  (element-click! (bot:find "#play"))
+  #;(void
+   (page-execute-async! (bot:current-page) "document.querySelector('form').submit()"))
+  (element-click! (page-wait-for! (bot:current-page) "a.next-button")))
+
 (define (relax-study)
   (make-study
    #:requires '()
@@ -135,7 +144,7 @@
                  (if (> (length (get 'songs-to-play)) (get 'songs-played-so-far))
                      'play-songs
                      'evaluate-songs))
-               #:for-bot bot:continuer)
+               #:for-bot play-songs/bot)
     (make-step 'evaluate-songs
                evaluate-songs
                #:for-bot evaluate-songs/bot))))

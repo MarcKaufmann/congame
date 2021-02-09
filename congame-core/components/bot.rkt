@@ -70,6 +70,7 @@
    click
    find
    find-all
+   find-attribute
    element-find
    element-find-all)
 

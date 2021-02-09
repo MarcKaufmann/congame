@@ -8,10 +8,12 @@
          racket/serialize
          racket/string
          koyo/haml
+         marionette
          congame/components/study
          congame/components/resource
          "generate-matrices.rkt"
          (prefix-in config: congame-web/config)
+         congame/components/bot
          (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide task-study)
@@ -144,13 +146,20 @@
        (when config:debug
          (haml
           (.container.debug
-           (:p "Answer: " (number->string (matrix-answer m)))))))))))
+           (:p "Answer: " (number->string (matrix-answer m))))))
+       (when (current-user-bot?)
+         (haml
+          (.container
+           (:p ([:data-answer (number->string (matrix-answer m))]) "")))))))))
 
 (define (task/bot correct?)
-  (bot:click
-   (if correct?
-       'correct-answer
-       'wrong-answer)))
+  (define answer (bot:find-attribute "data-answer"))
+  (define input
+    (bot:element-find
+     (bot:find "form")
+     "input"))
+  (element-type! input answer)
+  (element-click! (bot:find "button[type=submit]")))
 
 (define (task-completion)
   (cond [(<= (get 'remaining-tasks) 0)

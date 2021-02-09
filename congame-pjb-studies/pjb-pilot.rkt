@@ -132,17 +132,18 @@
                     (button ((type "submit") (class "button")) "Submit")))))))))
 
 (define (test-study-requirements-step/bot)
-  #;(element-click! (bot:find "#play"))
+  (element-click! (bot:find "#play"))
   (for ([checkbox (bot:find-all "input[type=checkbox]")])
     (displayln (format "checkbox is ~a" checkbox))
     (flush-output)
     (element-click! checkbox))
   ;; Use JS to submit the page faster; actually click the play button
   ;; and wait for the button to appear to simulate the real world.
-  (void
+  ;; FIXME: JS version to skip wait leads to checkbox clicking being done after the page is submitted,
+  ;; leading to an error.
+  #;(void
    (page-execute-async! (bot:current-page) "document.querySelector('form').submit()"))
-  #;(element-click! (page-wait-for! (bot:current-page) "button[type=submit]"))
-  )
+  (element-click! (page-wait-for! (bot:current-page) "button[type=submit]")))
 
 (define (test-study-requirements)
   (haml
@@ -333,7 +334,8 @@
                        (when (get 'success?)
                          (put-payment! 'extra-tasks-bonus (get 'extra-money)))
                        done)
-                     #:require-bindings '([n extra-tasks])
+                     #:require-bindings '([n extra-tasks]
+                                          [max-wrong-tasks extra-tasks])
                      #:provide-bindings '([success? success?]))
     )))
 
@@ -378,6 +380,8 @@
      'tutorial-tasks
      task-study
      (λ ()
+       (displayln "DOES THIS GET WRITTEN?")
+       (flush-output)
        (if (not (get 'tutorial-success?))
            'task-failure
            'test-comprehension))
@@ -410,7 +414,8 @@
            (case (get 'rest-treatment)
              [(get-rest-then-elicit) 'get-rest]
              [(elicit-then-get-rest) 'elicit-WTW-and-work])))
-     #:require-bindings '([n task-treatment])
+     #:require-bindings '([n task-treatment]
+                          [max-wrong-tasks task-treatment])
      #:provide-bindings '([success? success?]))
     (make-step/study 'get-rest
                      (relax-study)
