@@ -341,9 +341,9 @@
   (haml
    (:div.container
     (:h1 "You failed the tasks")
-    (:p "You failed the tasks, therefore you cannot complete the study.")
+    (:p "You failed the tasks and cannot continue the study.")
     ; TODO: Improve how to deal with failures
-    (button void "The end")
+    #;(button void "The end")
     )))
 
 (define (requirements-failure)

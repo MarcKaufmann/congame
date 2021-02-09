@@ -2,16 +2,54 @@
 
 (require (for-syntax racket/base)
          (except-in forms form)
+         racket/match
          racket/random
+         racket/runtime-path
+         racket/serialize
+         racket/string
          koyo/haml
          congame/components/study
          congame/components/resource
+         "generate-matrices.rkt"
+         (prefix-in config: congame-web/config)
          (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide task-study)
 
+;; Generate the matrices if there is no csv mapping to them
+(define-static-resource matrix-dir "matrices")
+(define-runtime-path matrix-csv "matrix.csv")
+
+(define n-matrices 5)
+
+; TODO: Why does `(current-directory)` yield congame instead of congame/congame-pjb-studies?
+; And why do relative paths (such as "matrix.csv") not work with `file-exists?` at run-time?
+(unless (file-exists? matrix-csv)
+  (list->file
+   (list-of-large-matrices
+    n-matrices
+    (resource-path matrix-dir))
+   matrix-csv))
+
 (define task-description
   (haml (:p "Description")))
+
+;; Load the matrix data
+
+(serializable-struct matrix (id answer file) #:transparent)
+
+(define MATRICES
+  (call-with-input-file matrix-csv
+    (λ (in)
+      (for/list ([line (in-lines in)])
+        (match-define (list id answer file)
+          (string-split line ","))
+        (matrix (string->number id)
+                (string->number answer)
+                file)))))
+
+(define (random-matrix)
+  (random-ref MATRICES))
 
 (define (initialize-tasks)
   (define n (get 'n))
@@ -25,19 +63,26 @@
      (λ ()
        (put 'remaining-tasks (get 'n))
        (put 'correct-answers 0)
-       (put 'wrong-answers 0))
+       (put 'wrong-answers 0)
+       (put 'current-matrix (random-matrix)))
      "Start Tasks"))))
 
-(define-static-resource matrix-dir "matrices")
-
-(define (task m)
+(define (task)
+  (define m (get 'current-matrix))
+  (displayln (list "matrix in task: " m))
+  (flush-output)
   (define (correct-answer? m n)
+    (displayln (list "matrix in correct-answer?" m))
+    (flush-output)
     (= (matrix-answer m) n))
   (define task-form
     (form* ([number-of-ones (ensure binding/number (required))])
            number-of-ones))
   (define submit-action
     (λ (number-of-ones)
+      (define m (get 'current-matrix))
+      (displayln (list "answer provided:" number-of-ones))
+      (flush-output)
       ; TODO: Should I store all answers participants give in a DB table for the task study?
       ; We should develop a system how substudies can create required tables if needed
       ; Why needed? Because I want to have a table that has current-state, matrix-id, and answer given,
@@ -48,6 +93,10 @@
              (put 'correct-answers (add1 (get 'correct-answers)))]
             [else
              (put 'wrong-answers (add1 (get 'wrong-answers)))])))
+  ;; BUG: form doesn't run the initial submit-action, but the one that gets created
+  ;; on the next call to the whole handler or step!! That seems pretty wrong.
+  ;; While one can work around it, it will inevitably lead to hard-to-find bugs, and
+  ;; is conceptually wrong.
   (form
    task-form
    submit-action
@@ -60,23 +109,28 @@
        (+ tasks-remaining tasks-correct))
      (haml
       (.container
-       (:h1 "Count the cells with 1's in them")
-       (:p (format "You completed ~a out of ~a tasks (~a wrong guesses out of at most ~a)"
-                   tasks-correct
-                   tasks-total
-                   tasks-wrong
-                   max-tasks-wrong))
-       (:p (format "If you get more than ~a wrong guesses, you drop out of the study." max-tasks-wrong))
-       (.matrix
-        (:img.matrix ([:src (resource-uri matrix-dir (matrix-file m))])))
-       (:form
-        ([:action ""]
-         [:method "POST"])
-        (:label
-         "How many cells with the number 1 are in the matrix? (Note: cells with 01, 10, or 11 do not count.)"
-         (rw "number-of-ones" (widget-number)))
-        ,@(rw "number-of-ones" (widget-errors))
-        (:button ([:type "submit"]) "Submit")))))))
+       (.container
+        (:h1 "Count the cells with 1's in them")
+        (:p (format "You completed ~a out of ~a tasks (~a wrong guesses out of at most ~a)"
+                    tasks-correct
+                    tasks-total
+                    tasks-wrong
+                    max-tasks-wrong))
+        (:p (format "If you get more than ~a wrong guesses, you drop out of the study." max-tasks-wrong))
+        (.matrix
+         (:img.matrix ([:src (resource-uri matrix-dir (matrix-file m))])))
+        (:form
+         ([:action ""]
+          [:method "POST"])
+         (:label
+          "How many cells with the number 1 are in the matrix? (Note: cells with 01, 10, or 11 do not count.)"
+          (rw "number-of-ones" (widget-number)))
+         ,@(rw "number-of-ones" (widget-errors))
+         (:button.button ([:type "submit"]) "Submit")))
+       (when config:debug
+         (haml
+          (.container.debug
+           (:p "Answer: " (number->string (matrix-answer m)))))))))))
 
 (define (task/bot correct?)
   (bot:click
@@ -84,34 +138,16 @@
        'correct-answer
        'wrong-answer)))
 
-(define (success)
-  (haml
-   (:div
-    (:h1 "You GENIUS!")
-    (button
-     (λ () (put 'success? #t))
-     "Continue"))))
-
-(define (failure)
-  (haml
-   (:div
-    (:h1 "There, there...")
-    (button
-     (λ () (put 'success? #f))
-     "The End"))))
-
 (define (task-completion)
-  (cond [(<= (get 'remaining-tasks) 0) 'success]
-        [(> (get 'wrong-answers) (get 'max-wrong-tasks)) 'failure]
-        [else 'task]))
-
-(struct matrix (id answer file) #:transparent)
-
-(define matrices
-  (list (matrix 1 1 "matrix1.png")))
-
-(define (random-matrix)
-  (random-ref matrices))
+  (cond [(<= (get 'remaining-tasks) 0)
+         (put 'success? #t)
+         done]
+        [(> (get 'wrong-answers) (get 'max-wrong-tasks))
+         (put 'success? #f)
+         done]
+        [else
+         (put 'current-matrix (random-matrix))
+         'task]))
 
 (define task-study
   (make-study
@@ -122,9 +158,4 @@
                initialize-tasks
                task-completion
                #:for-bot bot:continuer)
-    (make-step 'task (λ ()
-                       (task (random-matrix)))
-               #:for-bot task/bot
-               task-completion)
-    (make-step 'success success #:for-bot bot:continuer (λ () done))
-    (make-step 'failure failure #:for-bot bot:continuer (λ () done)))))
+    (make-step 'task task #:for-bot task/bot task-completion))))
