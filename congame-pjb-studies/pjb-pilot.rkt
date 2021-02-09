@@ -23,7 +23,7 @@
  pjb-pilot-study)
 
 (define (study-explanation)
-  (define required-tasks (get 'required-tasks))
+  (define required-tasks (number->string (get 'required-tasks)))
   (define practice-tasks (number->string (get 'practice-tasks)))
   (define participation-fee (get 'participation-fee))
   (haml
@@ -31,11 +31,12 @@
     (:h1 "Study Explanation")
 
     (:h2 "Tutorial")
-    (:p "You are starting the tutorial for this study:")
+    (:p "You are starting the tutorial for this study which consists of the following:")
     (:ul
-     (:li "A study description (this page)")
-     (:li "Describing the tasks in this study and doing " practice-tasks " practice tasks")
-     (:li "Asking you if you agree to participate in the study"))
+     (:li "a study description (this page)")
+     (:li "a page to check that your sound works")
+     (:li "a description of the tasks in this study and doing " practice-tasks " practice tasks")
+     (:li "a form asking whether you agree to participate in the study"))
     (:p "You will not receive any payment for completing the tutorial.")
 
     (:h2 "Main Study")
@@ -43,11 +44,11 @@
     (:ul
      (:li "complete " required-tasks " required tasks")
      (:li "choose whether to do additional tasks for bonus payments")
-     (:li "do another 10-minute task involving sound")
+     (:li "do another 10-minute task involving sound/audio")
      (:li "fill in a brief survey"))
     (:p "If you complete the study, you will receive " (pp-money participation-fee) " as a participation fee, as well as any bonus payment from the additional tasks you choose.")
 
-    (:p (:strong "Note:") " Since one of the tasks requires sound, you need to have headphones or be in a place where you can listen to sound." )
+    (:p (:strong "Note:") " The study requires sound, so you need headphones or be able to listen to sound on your speakers." )
 
     (button void "Continue"))))
 
@@ -108,7 +109,7 @@
     (λ (rw)
       `(div
         (div
-         ,(audio-container "song1.mp3" #:caption "What a song"))
+         ,(audio-container "test-audio.mp3" #:caption "What a song"))
         (div
          (form ((action "")
                 (method "POST"))
@@ -147,7 +148,7 @@
   (haml
    (:div.container
     (:h1 "Requirements for Study")
-    (:p "Please check the following requirements. If they do not hold, you cannot complete the study, hence you cannot continue:")
+    (:p "Please check that you can play the test audio by hitting the play button, otherwise you cannot complete the study. Once the track has finished, a 'Continue' button will appear.")
     (render-requirements-form))))
 
 (define (elicit-WTW)
