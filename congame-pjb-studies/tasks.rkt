@@ -1,6 +1,7 @@
-#lang racket
+#lang racket/base
 
-(require (except-in forms form)
+(require (for-syntax racket/base)
+         (except-in forms form)
          racket/random
          koyo/haml
          congame/components/study

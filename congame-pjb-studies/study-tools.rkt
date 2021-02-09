@@ -1,7 +1,9 @@
-#lang racket
+#lang racket/base
 
 (require (except-in forms form)
          (prefix-in forms: (only-in forms form))
+         racket/contract
+         racket/format
          marionette
          koyo/haml
          congame/components/study
