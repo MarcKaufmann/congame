@@ -381,8 +381,8 @@
        (if (not (get 'tutorial-success?))
            'task-failure
            'test-comprehension))
-     ; TODO: Document that the LHS is the binding being assigned the value of the RHS
-     #:require-bindings '([n practice-tasks])
+     #:require-bindings '([n practice-tasks]
+                          [max-wrong-tasks practice-tasks])
      #:provide-bindings '([tutorial-success? success?]))
     (make-step 'test-comprehension test-comprehension #:for-bot test-comprehension/bot)
     (make-step
