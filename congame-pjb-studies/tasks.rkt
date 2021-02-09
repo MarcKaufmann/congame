@@ -31,8 +31,22 @@
     (resource-path matrix-dir))
    matrix-csv))
 
-(define task-description
-  (haml (:p "Description")))
+; TODO: Write down that resource-uri will lead to stub if using a constant computed at compile time...
+(define (task-description)
+  (haml
+    (.container.info
+      (:h3 "Matrix Task Description")
+      (:p "Each page will look like the screenshot below.")
+      (:ul
+        (:li "You have to count the number of cells that contain exactly the number 1")
+        (:li "Cells containing the number 11 or 10 do not count")
+        (:li "If you get more tasks wrong than you have to get right, you fail the tasks and thus the tutorial")
+        (:li "If you get a matrix wrong, you will be given a new one."))
+      (.container.screenshot
+        (:h2 "Screenshot of Toy Matrix")
+        (:h3 "Count only cells with exactly \"1\" in it")
+        (:p "In this toy 2 by 2 matrix, only 1 cell contains exactly the number 1. The cells containing 10 and 11 do not count:")
+        (:img ([:src (resource-uri matrix-dir "matrix-screenshot.png")]))))))
 
 ;; Load the matrix data
 
@@ -58,7 +72,7 @@
    (.container
     (:h1 "Doing Tasks")
     (:p "You now have to do " n-string " tasks successfully, and you can get at most " n-string " wrong. If you get more wrong, you automatically fail and drop out of the study.")
-    task-description
+    (task-description)
     (button
      (λ ()
        (put 'remaining-tasks (get 'n))
