@@ -71,7 +71,7 @@ application is started.
     (congame-example-study/example simple-study)))
 ```
 
-    $ raco pkg install congame-example-study/  # install and build the study pakckage and its deps
+    $ raco pkg install congame-example-study/  # install and build the study package and its deps
 
 Make sure to `touch` or otherwise modify `congame/studies/all.rkt`
 every time you install a new study package to ensure that package is
