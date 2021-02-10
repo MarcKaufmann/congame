@@ -31,6 +31,7 @@
  pl-random-choice
  price-list-extra-work
  price-list-extra-money
+ price-list-switch
  make-pl
 
  gen:describable
@@ -45,9 +46,9 @@
   #:transparent
   #:methods gen:describable
   [(define (describe o)
-     (format "Work: ~a money: ~a"
+     (format "Do ~a extra tasks for ~a"
              (option-work o)
-             (option-money o)))]
+             (pp-money (option-money o))))]
   #:methods gen:jsexprable
   [(define (->jsexpr o)
      (hash 'type "option"
@@ -104,6 +105,23 @@
            'answers (->jsexpr/super (price-list-answers pl))
            'random-choice (->jsexpr/super (price-list-random-choice pl))))])
 
+(define (price-list-switch pl)
+  (define first-switch
+    (memf (λ (a)
+            (eq? (cadr a) 'adjustable))
+          (price-list-answers pl)))
+  (define switch-back?
+    (memf (λ (a)
+            (eq? (cadr a) 'fixed))
+          (or first-switch '())))
+  (cond [(and first-switch (not switch-back?))
+         (caar first-switch)]
+        [(and first-switch switch-back?)
+         'switch-back]
+        [else
+         'never-switched]))
+
+
 ; TODO: error if no random-choice yet set
 (define (price-list-chosen pl)
   (hash-ref (price-list-random-choice pl) 'chosen))
@@ -135,10 +153,10 @@
 (define ((rw-pl pl) rw)
   (haml
    (.container
-    (:table
+    (:table.price-list
      ,@(for/list ([(level i) (in-indexed (price-list-levels pl))])
          (define field-name (format "option-~a" i))
-         (define option-by-type
+         (define options
            (hash 'fixed (price-list-fixed pl)
                  'adjustable (set-level/adjustable (price-list-adjustable pl) level)))
          (haml
@@ -153,7 +171,7 @@
                                      ([:name name]
                                       [:type "radio"]
                                       [:value (~a t)]))
-                                    (describe (hash-ref option-by-type t)))))))))
+                                    (describe (hash-ref options t)))))))))
            ,@(let ([errors (rw field-name (forms:widget-errors))])
                (if (null? errors)
                    null
@@ -171,14 +189,14 @@
      (for/list ([(level i) (in-indexed (price-list-levels pl))])
        (define field-name
          (string->symbol (format "option-~a" i)))
-       (define option-by-type
+       (define options
          (hash 'fixed (price-list-fixed pl)
                'adjustable (set-level/adjustable (price-list-adjustable pl) level)))
        (cons field-name (forms:ensure forms:binding/symbol
                                       (forms:required)
                                       (lambda (v)
                                         (cond
-                                          [(hash-ref option-by-type v #f) (forms:ok (list level v))]
+                                          [(hash-ref options v #f) (forms:ok (list level v))]
                                           [else (forms:err "Invalid option selected.")])))))))
 
   (haml
@@ -213,10 +231,11 @@
               null
               (hash)))
 
-(define ((price-list-step pl #:pl-name [pl-name #f]))
+(define ((price-list-step pl #:title title #:pl-name [pl-name #f]))
   (haml
    (.container
-    (:h1 "Price List")
+    (:h1 title)
+    (:p "In each row, choose which option you prefer.")
     (render-pl pl #:pl-name pl-name))))
 
 (define (price-list-step/bot n-fixed)
@@ -245,12 +264,13 @@
 
 (define pl-study
   (make-study
-   #:requires '()
+   #:requires '(pl-title)
    #:provides '()
    (list
     (make-step 'info info-step)
     (make-step 'price-list
-               (price-list-step (hash-ref price-lists 'choice1))
+               (λ ()
+                 (price-list-step (hash-ref price-lists 'choice1) #:title (get 'pl-title)))
                #:for-bot price-list-step/bot
                ))))
 

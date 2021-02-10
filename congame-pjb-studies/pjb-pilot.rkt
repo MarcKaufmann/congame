@@ -7,6 +7,7 @@
          marionette
          racket/contract
          racket/list
+         racket/random
          koyo/haml
          koyo/job
          congame/components/bot
@@ -158,19 +159,6 @@
     (:p "Please check that you can play the test audio by hitting the play button, otherwise you cannot complete the study. Once the track has finished, a 'Continue' button will appear.")
     (render-requirements-form))))
 
-(define (elicit-WTW)
-  (haml
-   (:div.container
-    (:h1 "Eliciting WTW")
-    (button
-     #:id 'willing
-     (λ () (put 'WTW 5))
-     "Willing to work")
-    (button
-     #:id 'not-willing
-     (λ () (put 'WTW 0))
-     "Not willing to work"))))
-
 ;; TODO: cleanup.
 (provide
  willing-to-work?)
@@ -276,12 +264,20 @@
 ;; File resources:
 (define-static-resource song1 (build-path "songs" "song1.mp3"))
 
-(define pl-extra-tasks
-  (make-pl #:name 'pl1
+(define stepsize 0.2)
+(define money-levels
+  (build-list 10 (λ (i) (* i stepsize))))
+(define (pl-extra-tasks t name)
+  (make-pl #:name name
            #:fixed-work 0
            #:fixed-money 0
-           #:adjustable-work 10
-           #:levels-of-money '(0 1 2 3)))
+           #:adjustable-work t
+           #:levels-of-money money-levels))
+
+(define PRICE-LISTS
+  (hash 'pl10 (pl-extra-tasks 10 'pl10)
+        'pl7  (pl-extra-tasks 7 'pl7)
+        'pl5  (pl-extra-tasks 5 'pl5)))
 
 (define (determine-extra-tasks)
   (haml
@@ -289,17 +285,29 @@
     (:h1 "Determining extra tasks and payment you do now")
     (button
      (λ ()
-       (define pl/answers (get 'WTW))
+       (define pls (get 'price-lists))
+       ; FIXME: I still rely on price-list names being unique,
+       ; and not clashing with other key-names.
+       (define wtws
+         (for/hash ([pl pls])
+           (values pl (price-list-switch (get pl)))))
+       (displayln (format "wtws: ~a" wtws))
+       (flush-output)
+       (put 'WTWs wtws)
+       (define pl-that-counts (random-ref pls))
+       (put 'price-list-that-counts pl-that-counts)
+       (define pl/answers (get pl-that-counts))
        (define pl/answers+choice (pl-random-choice pl/answers))
+       ; Store price list with the choice that counts. TODO: Dangerous to overwrite original, no?
+       (put 'choice-that-counts pl/answers+choice)
        (define extra-tasks (price-list-extra-work pl/answers+choice))
        (define extra-money (price-list-extra-money pl/answers+choice))
-       (put 'WTW pl/answers+choice)
        (put 'extra-tasks extra-tasks)
        (put 'extra-money extra-money))
      "See extra tasks"))))
 
 (define (see-extra-tasks)
-  (define pl/answers+choice (get 'WTW))
+  (define pl/answers+choice (get 'choice-that-counts))
   (define chosen (price-list-chosen pl/answers+choice))
   (define alternative (price-list-alternative pl/answers+choice))
   (define extra-tasks (get 'extra-tasks))
@@ -317,13 +325,44 @@
     (:p "You chose the first choice.")
     (button void continue-text))))
 
+(define (introduce-WTW)
+  (define pls (get 'price-lists))
+  (define n (length pls))
+  (haml
+   (.container
+    (:h1 "Extra Effort Choices")
+    (:p "On the next " (number->string n) " pages, you will make choices about doing extra tasks for bonus payments. After you have made your choices, the computer randomly picks one of the pages, and one of the choices on that page as the choice that counts. If for that choice you picked the extra tasks over no extra tasks, then you have to do the extra tasks and will receive the extra payment. If you do not, you fail the study and will not receive the bonus nor the completion fee.")
+    (button
+     (λ ()
+       (put 'remaining-price-lists (shuffle pls))
+       (put 'answered-price-lists '()))
+     "Continue"))))
+
 (define elicit-WTW-and-work
   (make-study
-   #:requires '()
-   #:provides '(WTW)
+   #:requires '(price-lists)
+   #:provides '(WTWs)
    (list
+    (make-step 'introduce-WTW introduce-WTW)
     (make-step 'elicit-immediate-WTW
-               (price-list-step pl-extra-tasks #:pl-name 'WTW)
+               (λ ()
+                 (define next-pl-name
+                   (car (get 'remaining-price-lists)))
+                 (define n (add1 (length (get 'answered-price-lists))))
+                 ((price-list-step (hash-ref PRICE-LISTS next-pl-name)
+                                  #:title (format "Extra Work Choice Number ~a" n)
+                                  #:pl-name next-pl-name)))
+               (λ ()
+                 (define pls (get 'remaining-price-lists))
+                 (define previously-answered-pls
+                   (get 'answered-price-lists))
+                 (put 'answered-price-lists (cons (car pls) previously-answered-pls))
+                 (define remaining-pls (cdr pls))
+                 (put 'remaining-price-lists remaining-pls)
+                 ; TODO: Should I reverse the answered price-lists so that I get original order?
+                 (if (empty? remaining-pls)
+                     'determine-extra-tasks
+                     'elicit-immediate-WTW))
                #:for-bot price-list-step/bot)
     (make-step 'determine-extra-tasks
                determine-extra-tasks)
@@ -373,7 +412,7 @@
 
 (define pjb-pilot-study-no-config
   (make-study
-   #:requires '(participation-fee practice-tasks required-tasks)
+   #:requires '(participation-fee practice-tasks required-tasks price-lists)
    #:provides '(task-treatment rest-treatment)
    (list
     (make-step 'explain-study study-explanation)
@@ -389,8 +428,6 @@
      'tutorial-tasks
      task-study
      (λ ()
-       (displayln "DOES THIS GET WRITTEN?")
-       (flush-output)
        (if (not (get 'tutorial-success?))
            'task-failure
            'test-comprehension))
@@ -442,7 +479,8 @@
                        (case (get 'rest-treatment)
                          [(get-rest-then-elicit) 'debrief-survey]
                          [(elicit-then-get-rest) 'get-rest]))
-                     #:provide-bindings '([WTW WTW]))
+                     #:require-bindings '([price-lists price-lists])
+                     #:provide-bindings '([WTWs WTWs]))
     (make-step 'debrief-survey debrief-survey #:for-bot debrief-survey/bot)
     (make-step 'show-payments show-payments (λ () done) #:for-bot bot:continuer)
     (make-step 'task-failure task-failure (λ () done) #:for-bot bot:continuer)
@@ -459,6 +497,7 @@
                      pjb-pilot-study-no-config
                      #:provide-bindings '([task-treatment task-treatment]
                                           [rest-treatment rest-treatment])
-                     #:require-bindings '([practice-tasks (const 3)]
+                     #:require-bindings `([practice-tasks (const 2)]
                                           [participation-fee (const 2.00)]
-                                          [required-tasks (const 15)])))))
+                                          [required-tasks (const 3)]
+                                          [price-lists (const ,(hash-keys PRICE-LISTS))])))))
