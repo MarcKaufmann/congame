@@ -3,7 +3,8 @@
 (define collection "congame-pjb-studies")
 (define deps '("base"
                "congame-core"
-               "congame-price-lists"))
+               "congame-price-lists"
+               "2htpd/image"))
 (define build-deps '())
 (define congame-studies
   '((congame-pjb-studies/pjb-pilot pjb-pilot-study)))
