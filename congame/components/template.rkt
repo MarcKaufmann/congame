@@ -9,9 +9,9 @@
          racket/format
          web-server/http
          xml
-         (prefix-in config: "../config.rkt")
-         "auth.rkt"
-         (only-in "user.rkt" user-admin?))
+         (prefix-in config: congame-web/config) ;"../config.rkt")
+         congame-web/components/auth ;"auth.rkt"
+         (only-in congame-web/components/user user-admin?)) ;"user.rkt" user-admin?))
 
 (provide
  static-uri

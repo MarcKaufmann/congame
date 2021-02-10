@@ -3,7 +3,7 @@
 (require koyo/haml
          racket/contract
          web-server/http
-         "../components/template.rkt")
+         congame-web/components/template) ;"../components/template.rkt")
 
 (provide
  dashboard-page)

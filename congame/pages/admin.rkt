@@ -22,9 +22,9 @@
          threading
          web-server/dispatchers/dispatch
          web-server/http
-         "../components/bot-set.rkt"
-         "../components/template.rkt"
-         "../components/user.rkt"
+         congame-web/components/bot-set ;"../components/bot-set.rkt"
+         congame-web/components/template ;"../components/template.rkt"
+         congame-web/components/user ;"../components/user.rkt"
          "../studies/all.rkt"
          "render.rkt")
 

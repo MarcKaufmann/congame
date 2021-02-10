@@ -18,13 +18,13 @@
          web-server/dispatchers/filesystem-map
          web-server/managers/lru
          web-server/servlet-dispatch
-         (prefix-in config: "../config.rkt")
+         (prefix-in config: congame-web/config ) ;"../config.rkt")
          "../pages/all.rkt"
-         "auth.rkt"
-         "mail.rkt"
-         "sentry.rkt"
-         "template.rkt"
-         "user.rkt")
+         congame-web/components/auth ;"auth.rkt"
+         congame-web/components/mail ;"mail.rkt"
+         congame-web/components/sentry ;"sentry.rkt"
+         congame-web/components/template ;"template.rkt"
+         congame-web/components/user) ;"user.rkt")
 
 (provide
  make-app
