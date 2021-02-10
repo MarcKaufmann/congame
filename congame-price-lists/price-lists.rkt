@@ -13,7 +13,8 @@
          (submod congame/components/bot actions)
          congame/components/bot-maker
          congame/components/export
-         congame/components/study)
+         congame/components/study
+         congame/tools)
 
 ;;; TODO: Should we provide just pl-step or pl-study? The latter defines #:requires and #:provides,
 ;;; which allows for some type checking, unlike steps. Useful for configuring via symbolic models

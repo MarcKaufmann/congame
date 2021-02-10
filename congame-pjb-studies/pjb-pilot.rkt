@@ -15,7 +15,7 @@
          congame-price-lists/price-lists
          congame-web/components/sentry
          congame-web/components/mail
-         "study-tools.rkt"
+         congame/tools
          "tasks.rkt"
          (prefix-in bot: (submod congame/components/bot actions)))
 
