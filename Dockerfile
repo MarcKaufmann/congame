@@ -5,6 +5,7 @@ COPY .git /opt/congame/.git
 COPY ci /opt/congame/ci
 COPY congame /opt/congame/congame
 COPY congame-core /opt/congame/congame-core
+COPY study-tools /opt/congame/study-tools
 COPY congame-example-study /opt/congame/congame-example-study
 COPY congame-pjb-studies /opt/congame/congame-pjb-studies
 COPY congame-price-lists /opt/congame/congame-price-lists
@@ -15,6 +16,7 @@ COPY static /opt/congame/static
 RUN ci/setup-catalogs.sh
 RUN raco pkg install -D --auto --batch \
   congame-core/ \
+  study-tools/ \
   congame-example-study/ \
   congame-pjb-studies/ \
   congame-price-lists/ \
