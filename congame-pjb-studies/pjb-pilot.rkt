@@ -22,6 +22,18 @@
 (provide
  pjb-pilot-study)
 
+(define (study-description required-tasks participation-fee)
+  (haml
+   (:div
+    (:h2 "Main Study Description")
+    (:p "If you decide to participate in the study, you will do the following:")
+    (:ul
+     (:li "complete " required-tasks " required tasks")
+     (:li "choose whether to do additional tasks for bonus payments")
+     (:li "do another 10-minute task involving sound/audio")
+     (:li "fill in a brief survey"))
+    (:p "If you complete the study, you will receive " (pp-money participation-fee) " as a participation fee, as well as any bonus payment from the additional tasks you choose."))))
+
 (define (study-explanation)
   (define required-tasks (number->string (get 'required-tasks)))
   (define practice-tasks (number->string (get 'practice-tasks)))
@@ -39,23 +51,17 @@
      (:li "a form asking whether you agree to participate in the study"))
     (:p "You will not receive any payment for completing the tutorial.")
 
-    (:h2 "Main Study")
-    (:p "If you decide to participate in the study, you will do the following:")
-    (:ul
-     (:li "complete " required-tasks " required tasks")
-     (:li "choose whether to do additional tasks for bonus payments")
-     (:li "do another 10-minute task involving sound/audio")
-     (:li "fill in a brief survey"))
-    (:p "If you complete the study, you will receive " (pp-money participation-fee) " as a participation fee, as well as any bonus payment from the additional tasks you choose.")
-
+    (study-description required-tasks participation-fee)
     (:p (:strong "Note:") " The study requires sound, so you need headphones or be able to listen to sound on your speakers." )
 
     (button void "Continue"))))
 
 (define (consent)
+  (define required-tasks (number->string (get 'required-tasks)))
+  (define participation-fee (get 'participation-fee))
   (haml
    (:div.container
-    (:h1 "Consent Form")
+    (study-description required-tasks participation-fee)
     (render-consent-form))))
 
 (define (test-comprehension)
@@ -335,7 +341,10 @@
                          (put-payment! 'extra-tasks-bonus (get 'extra-money)))
                        done)
                      #:require-bindings '([n extra-tasks]
-                                          [max-wrong-tasks extra-tasks])
+                                          ; The value was passed in even when it wasn't yet required! BUG?
+                                          [max-wrong-tasks extra-tasks]
+                                          [title (const "Extra Tasks")]
+                                          [hide-description? (const #t)])
                      #:provide-bindings '([success? success?]))
     )))
 
@@ -386,7 +395,9 @@
            'task-failure
            'test-comprehension))
      #:require-bindings '([n practice-tasks]
-                          [max-wrong-tasks practice-tasks])
+                          [max-wrong-tasks practice-tasks]
+                          [title (const "Practice Tasks")]
+                          [hide-description? (const #f)])
      #:provide-bindings '([tutorial-success? success?]))
     (make-step 'test-comprehension test-comprehension #:for-bot test-comprehension/bot)
     (make-step
@@ -414,8 +425,10 @@
            (case (get 'rest-treatment)
              [(get-rest-then-elicit) 'get-rest]
              [(elicit-then-get-rest) 'elicit-WTW-and-work])))
-     #:require-bindings '([n task-treatment]
-                          [max-wrong-tasks task-treatment])
+     #:require-bindings '([n required-tasks]
+                          [max-wrong-tasks required-tasks]
+                          [title (const "Required Tasks")]
+                          [hide-description? (const #t)])
      #:provide-bindings '([success? success?]))
     (make-step/study 'get-rest
                      (relax-study)

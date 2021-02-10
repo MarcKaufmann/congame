@@ -20,11 +20,11 @@
 
 (define (render-consent-form)
   (define the-form
-    ; TODO: Check with Bogdan that this always yields #t or #f, unlike the HTML version which returns nothing
-    ; if the form isn't checked. Is it safe to rely on such behavior?
-    (form* ([consent? (ensure binding/boolean (required #:message "You can only participate in the study if you agree. Otherwise you are free to leave."))])
+    (form* ([consent? (ensure binding/boolean (required #:message "You can only continue with the study if you agree to participate."))])
            consent?))
   (haml
+   (:div
+    (:h2 "Consent Form")
     (form
      the-form
      ; after successful submit
@@ -36,8 +36,8 @@
               (label
                "I agree to participate in the study"
                ,(rw "consent?" (widget-checkbox))
-              ,@(rw "consent?" (widget-errors))
-              (button ((type "Submit")) "Submit")))))))
+               ,@(rw "consent?" (widget-errors))
+               (button ([type "Submit"] [class "button"]) "Submit"))))))))
 
 (define (consent/bot)
   (define consent-checkbox (bot:find "input[type=checkbox]"))

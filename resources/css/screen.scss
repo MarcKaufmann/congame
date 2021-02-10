@@ -238,3 +238,25 @@ input {
   background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAACGvgAAhr4Bvp1fbQAAABl0RVh0U29mdHdhcmUAd3d3Lmlua3NjYXBlLm9yZ5vuPBoAAAK4SURBVHic7Zs9UpBhDAajHszGg3k0CryGhRfBhjTMOP4Bm+TZnXkaqu/N7kDFp6p6rKofVfW9JJKn5z1W1Rf4WwTg6cUMIYyXARhCGL8KwBBC+F0AhnCcPw3AEI7ytwEYwjH+NQBDOML/BmAIy3mtAAxhKa8dgCEs460CMIQlvHUAhjCc9wrAEIby3gEYwjCoAAxhCHQAhgBDizcEGFq4IcDQog0BhhZsCDC0WEOAoYUaAgwt0hBgaIGGAEOLMwQYWpghwNCiDAGGFmQIMLQYQ4ChhRgCDC2CXnwItIApiw2BPvy0xYVAH3zqYkKgDz1950OgD7xlZ0OgD7tt50KgD7p1Z0KgD7l960OgD3hla0OgD3dt60KgD3Z1a0KgD3V940OgD5SysSHQh0nbuBDog6RuTAj0IdKHh0AfwMEh0A93cAj0gx0cAv1QB4dAP9DBIdAPc3AI9IMcHAL9EAeHQD/AwSHQH+7gEOgPdnAI9Ic6OAT6Ax0cAv1hDgzhw/MPJY9vVfX1I/0VwkP/SnLgn4Aa8EEOEt/QH+Yg8Q39gQ4S39Af6iDxDf3BDhLf0B/uIPEN/QAHiW/ohzhIfEM/yEHiG/phDhLf0A90kPiGfqiDxDf0gx0kvqEfnj7/PTx0uPiGPkTaxohv6IOkbJz4hj7M9Y0V39AHurrx4hv6UNe2RnxDH+zK1olv6MNt31rxDX3ArVsvvqEPuW1nxDf0QbfsnPiGPuz0nRXf0AeeuvPiG/rQ0xYjvqEPPmVx4hv68PRixTe0AMXD0CIUD0MLUTwMLUbxMLQgxcPQohQPQwtTPAwtTvEwtEDFw9AiFQ9DC1U8DC1W8TC0YMXD0KIVD0MLVzyM4sNRfDiKD0fx4Sg+HMWHo/hwFB+O4sNRfDiKD0fx4Sg+HMWHo/hwFB/OQ1V9pj9CGH4CLwPs7AQTzXQAAAAASUVORK5CYII=');
 }
 */
+
+/* Matrices and Tasks */
+
+.toggleable {
+  &__toggle {
+    display: none;
+  }
+
+  &__content {
+    display: block;
+  }
+
+  &--hidden {
+    .toggleable__toggle {
+      display: block;
+    }
+
+    .toggleable__content {
+      display: none;
+    }
+  }
+}
