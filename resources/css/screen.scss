@@ -242,19 +242,11 @@ input {
 /* Matrices and Tasks */
 
 .toggleable {
-  &__toggle {
-    display: none;
-  }
-
   &__content {
     display: block;
   }
 
   &--hidden {
-    .toggleable__toggle {
-      display: block;
-    }
-
     .toggleable__content {
       display: none;
     }
