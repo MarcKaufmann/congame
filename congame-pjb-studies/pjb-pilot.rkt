@@ -117,26 +117,23 @@
       `(div
         (div
          ,(audio-container "test-audio.mp3" #:caption "What a song"))
-        (div
-         (form ((action "")
-                (method "POST"))
-               (label
-                "Can you play and hear the above audio?"
-                ,(rw "play-audio?" (widget-checkbox)))
-               ,@(rw "play-audio?" (widget-errors))
-               (br)
-               (label
-                "Can you listen to music/audio during this study?"
-                ,(rw "has-audio?" (widget-checkbox)))
-               ,@(rw "has-audio?" (widget-errors))
-               (br)
-               (label
-                "Do you have time to finish the study within the next hour?"
-                ,(rw "has-time?" (widget-checkbox)))
-               ,@(rw "has-time?" (widget-errors))
-               (br)
-               (div ((class "hide-audio-button"))
-                    (button ((type "submit") (class "button")) "Submit")))))))))
+        (label
+         "Can you play and hear the above audio?"
+         ,(rw "play-audio?" (widget-checkbox)))
+        ,@(rw "play-audio?" (widget-errors))
+        (br)
+        (label
+         "Can you listen to music/audio during this study?"
+         ,(rw "has-audio?" (widget-checkbox)))
+        ,@(rw "has-audio?" (widget-errors))
+        (br)
+        (label
+         "Do you have time to finish the study within the next hour?"
+         ,(rw "has-time?" (widget-checkbox)))
+        ,@(rw "has-time?" (widget-errors))
+        (br)
+        (div ((class "hide-audio-button"))
+             (button ((type "submit") (class "button")) "Submit")))))))
 
 (define (test-study-requirements-step/bot)
   (element-click! (bot:find "#play"))
