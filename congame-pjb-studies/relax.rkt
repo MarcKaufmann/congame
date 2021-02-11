@@ -85,15 +85,14 @@
 
 (define (render-evaluation-form rw)
   (haml
-   (:form ((:action "")
-           (:method "POST"))
-          (:label.radio-group "Which was your favorite song?"
-                  (rw "preferred-song"
-                      (widget-radio-group '(("first"  . "First song")
-                                            ("second" . "Second song")
-                                            ("third"  . "Third song")))))
-          ,@(rw "preferred-song" (widget-errors))
-          (:button.button.next-button ((:type "submit")) "Submit"))))
+   (:div
+    (:label.radio-group "Which was your favorite song?"
+                        (rw "preferred-song"
+                            (widget-radio-group '(("first"  . "First song")
+                                                  ("second" . "Second song")
+                                                  ("third"  . "Third song")))))
+    ,@(rw "preferred-song" (widget-errors))
+    (:button.button.next-button ((:type "submit")) "Submit"))))
 
 (define (evaluate-songs)
   (haml

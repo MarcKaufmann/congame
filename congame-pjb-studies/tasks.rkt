@@ -147,14 +147,11 @@
         (:p (format "If you get more than ~a wrong guesses, you drop out of the study." max-tasks-wrong))
         (.matrix
          (:img.matrix ([:src (resource-uri matrix-dir (matrix-file m))])))
-        (:form
-         ([:action ""]
-          [:method "POST"])
-         (:label
-          "How many cells with the number 1 are in the matrix? (Note: cells with 01, 10, or 11 do not count.)"
-          (rw "number-of-ones" (widget-number)))
-         ,@(rw "number-of-ones" (widget-errors))
-         (:button.button ([:type "submit"]) "Submit")))
+        (:label
+         "How many cells with the number 1 are in the matrix? (Note: cells with 01, 10, or 11 do not count.)"
+         (rw "number-of-ones" (widget-number)))
+        ,@(rw "number-of-ones" (widget-errors))
+        (:button.button ([:type "submit"]) "Submit"))
        (when config:debug
          (haml
           (.container.debug
