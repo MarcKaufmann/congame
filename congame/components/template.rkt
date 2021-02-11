@@ -56,12 +56,10 @@
      (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
      (:script
       ([:defer "defer"]
-       [:type "text/javascript"]
        [:src (static-uri "vendor/unpoly.min.js")]))
      (:script
       ([:defer "defer"]
-       [:type "text/javascript"]
-       [:scr (static-uri "js/app.js")])))
+       [:src (static-uri "js/app.js")])))
     (:body
      (when show-nav?
        (cond [(and (current-user) (user-admin? (current-user)))
