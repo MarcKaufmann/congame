@@ -34,6 +34,7 @@ RUN apt-get update \
     libssl-dev \
     libglib2.0-0 \
     libfontconfig1 \
+    libcairo2 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
