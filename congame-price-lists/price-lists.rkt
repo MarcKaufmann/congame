@@ -9,6 +9,7 @@
          racket/match
          racket/random
          racket/serialize
+         web-server/http
          (prefix-in bot: (submod congame/components/bot actions))
          (submod congame/components/bot actions)
          congame/components/bot-maker
@@ -164,14 +165,18 @@
            ,@(for/list ([t '(fixed adjustable)])
                (haml
                 (:td
-                 (rw field-name (lambda (name _value _errors)
-                                  (haml
-                                   (:label
-                                    (:input
-                                     ([:name name]
-                                      [:type "radio"]
-                                      [:value (~a t)]))
-                                    (describe (hash-ref options t)))))))))
+                 (rw field-name (lambda (name binding _errors)
+                                  (define value (and binding (bytes->string/utf-8 (binding:form-value binding))))
+                                  (define field-value (~a t))
+                                  `(label
+                                    (input
+                                     ([name ,name]
+                                      [type "radio"]
+                                      [value ,field-value]
+                                      ,@(if (equal? value field-value)
+                                            '([checked "checked"])
+                                            '())))
+                                    ,(describe (hash-ref options t))))))))
            ,@(let ([errors (rw field-name (forms:widget-errors))])
                (if (null? errors)
                    null
