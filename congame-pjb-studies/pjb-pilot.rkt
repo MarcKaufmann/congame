@@ -338,6 +338,15 @@
        (put 'answered-price-lists '()))
      "Continue"))))
 
+(define (task-failure)
+  (haml
+   (:div.container
+    (:h1 "You failed the tasks")
+    (:p "You failed the tasks and cannot continue the study.")
+    ; TODO: Improve how to deal with failures
+    #;(button void "The end")
+    )))
+
 (define elicit-WTW-and-work
   (make-study
    #:requires '(price-lists)
@@ -376,25 +385,19 @@
     (make-step/study 'extra-tasks
                      task-study
                      (λ ()
-                       (when (get 'success?)
-                         (put-payment! 'extra-tasks-bonus (get 'extra-money)))
-                       done)
+                       (cond
+                         [(get 'success?)
+                          (put-payment! 'extra-tasks-bonus (get 'extra-money))
+                          done]
+                         [else
+                          'fail]))
                      #:require-bindings '([n extra-tasks]
                                           ; The value was passed in even when it wasn't yet required! BUG?
                                           [max-wrong-tasks extra-tasks]
                                           [title (const "Extra Tasks")]
                                           [hide-description? (const #t)])
                      #:provide-bindings '([success? success?]))
-    )))
-
-(define (task-failure)
-  (haml
-   (:div.container
-    (:h1 "You failed the tasks")
-    (:p "You failed the tasks and cannot continue the study.")
-    ; TODO: Improve how to deal with failures
-    #;(button void "The end")
-    )))
+    (make-step 'fail task-failure))))
 
 (define (requirements-failure)
   (haml
