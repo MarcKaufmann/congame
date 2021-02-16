@@ -4,7 +4,6 @@
  (for-syntax racket/base)
  racket/contract
  racket/list
- racket/random
  koyo/haml
  marionette
  (except-in forms form)
@@ -58,18 +57,19 @@
     (:h1 "Play Song " (number->string (add1 songs-played))
          " out of " (number->string (length song-names)))
     (audio-container next-song-name #:caption "What a song...")
-    (.hide-audio-button
-     (button
-      (λ ()
-        (put 'songs-played-so-far (add1 songs-played)))
-      "Continue"))
+
     (:h3 "Instructions")
 
     (:ul
      (:li "Press the play button to start the song.")
      (:li "The 'Continue' button will appear once the song has finished playing."))
 
-    (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") "."))))
+    (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")
+    (.hide-audio-button
+     (button
+      (λ ()
+        (put 'songs-played-so-far (add1 songs-played)))
+      "Continue")))))
 
 ; Has to be called in a runtime context with `current-participant-id`
 (define (get-song i)

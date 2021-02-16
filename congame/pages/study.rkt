@@ -56,9 +56,10 @@
              (redirect/get/forget/protect))
            (page
             (haml
-             (:div
+             (:div.container
               ([:data-study-done "yes"])
-              (:p "Yer done"))))])]
+              (:h1 "Thank You!")
+              (:p "You completed the study."))))])]
 
     [else
      (next-dispatcher)]))

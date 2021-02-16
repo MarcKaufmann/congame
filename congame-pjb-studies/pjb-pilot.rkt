@@ -10,6 +10,7 @@
          racket/random
          koyo/haml
          koyo/job
+         (prefix-in config: congame-web/config)
          congame/components/bot
          congame/components/study
          congame-pjb-studies/relax
@@ -197,13 +198,16 @@
   (haml
    (:div.container
     (:h1 "Payment Page")
-    (:p "Within the next week, you will receive the following payments for your participation in this study:")
-    (:p (get-total-payment))
+    (:p "Within the next week, you will receive a total payment of " (get-total-payment) " for this study. The detailed breakdown is as follows:")
     (:ul
      ,@(for/list ([(name payment) (in-hash (get-all-payments))])
          (haml
-          (:li (symbol->string name) ": " (pp-money payment))))
-     (button void "Finish Study")))))
+          (:li (symbol->string name) ": " (pp-money payment)))))
+    (:p "Shortly after finishing the study, you will receive an email from us. " (:a ((:href (string-append "mailto:" config:support-email))) "Email us") " if you have not received the payment by the end of next week." )
+    (button
+     (λ ()
+       (send-completion-email (current-participant-id)))
+     "Finish Study"))))
 
 (define-job (send-study-completion-email p payment)
   (with-sentry
@@ -226,14 +230,12 @@
   (define the-form
     (form* ([gender (ensure binding/text (required))])
            gender))
-  (define pid (current-participant-id))
   (haml
    (form
     the-form
     (λ (survey-response)
       (put 'debrief-survey survey-response)
-      (put-payment! 'participation-fee (get 'participation-fee))
-      (send-completion-email pid))
+      (put-payment! 'participation-fee (get 'participation-fee)))
     (λ (rw)
       `(form ((action "")
               (method "POST"))
@@ -279,7 +281,8 @@
 (define (determine-extra-tasks)
   (haml
    (:div.container
-    (:h1 "Determining extra tasks and payment you do now")
+    (:h1 "Determining the choice that counts")
+    (:p "The computer will now randomly determine one of the choice pages, and one of the choices on that page as the choice that counts.")
     (button
      (λ ()
        (define pls (get 'price-lists))
@@ -297,29 +300,26 @@
        (define pl/answers+choice (pl-random-choice pl/answers))
        ; Store price list with the choice that counts. TODO: Dangerous to overwrite original, no?
        (put 'choice-that-counts pl/answers+choice)
-       (define extra-tasks (price-list-extra-work pl/answers+choice))
-       (define extra-money (price-list-extra-money pl/answers+choice))
-       (put 'extra-tasks extra-tasks)
-       (put 'extra-money extra-money))
-     "See extra tasks"))))
+     "See extra tasks")))))
 
 (define (see-extra-tasks)
   (define pl/answers+choice (get 'choice-that-counts))
   (define chosen (price-list-chosen pl/answers+choice))
   (define alternative (price-list-alternative pl/answers+choice))
-  (define extra-tasks (get 'extra-tasks))
+  (define extra-tasks (option-work chosen))
+  (define extra-bonus (pp-money (option-money chosen)))
   (define continue-text
     (if (> extra-tasks 0)
-        (format "Continue to ~a extra tasks" extra-tasks)
-        "Continue with no extra tasks"))
+        (format "Continue to ~a extra tasks" extra-tasks " for a " extra-bonus " extra bonus.")
+        "Continue with no extra tasks or extra bonus."))
   (haml
    (:div.container
     (:h1 "Extra Tasks")
-    (:p "The choice that was randomly selected was between the following two options:")
+    (:p "The choice that was randomly selected was between the following two options, from which you chose the one listed first:")
     (:ol
      (:li (describe chosen))
      (:li (describe alternative)))
-    (:p "You chose the first choice.")
+    (:p continue-text)
     (button void continue-text))))
 
 (define (introduce-WTW)
@@ -391,7 +391,7 @@
                      #:require-bindings '([n extra-tasks]
                                           ; The value was passed in even when it wasn't yet required! BUG?
                                           [max-wrong-tasks extra-tasks]
-                                          [title (const "Extra Tasks")]
+                                          [title (const "Extra Tasks and Bonus")]
                                           [hide-description? (const #t)])
                      #:provide-bindings '([success? success?]))
     (make-step 'fail task-failure))))

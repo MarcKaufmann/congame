@@ -86,7 +86,7 @@
    (.container
     (:h1 title)
     (:p "You now have to do " n-string " tasks successfully, and you can get at most " n-string " wrong. If you get more wrong, you automatically fail and drop out of the study.")
-    (toggleable-xexpr "Show Task Description" (task-description) #:hidden? hide-description?)
+    (toggleable-xexpr "Show/Hide Task Description" (task-description) #:hidden? hide-description?)
     (button
      (λ ()
        (put 'remaining-tasks (get 'n))

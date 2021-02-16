@@ -35,6 +35,9 @@
  price-list-switch
  make-pl
 
+ option-money
+ option-work
+
  gen:describable
  describable/c
  describable?
