@@ -1,8 +1,10 @@
 #lang racket/base
 
+
 (require component
          (prefix-in forms: (only-in forms form))
          (except-in forms form)
+         (for-syntax racket/base) ; Needed to use strings in define-static-resource. Why? Just Cause.
          gregor
          marionette
          racket/contract
@@ -13,6 +15,7 @@
          koyo/job
          (prefix-in config: congame-web/config)
          congame/components/bot
+         congame/components/resource
          congame/components/study
          congame-pjb-studies/relax
          congame-price-lists/price-lists
@@ -68,6 +71,8 @@
 
     (button void "Continue"))))
 
+;;;; FORMS
+
 (define (consent)
   (define required-tasks (number->string (get 'required-tasks)))
   (define participation-fee (get 'participation-fee))
@@ -76,6 +81,8 @@
    (:div.container
     (study-description required-tasks required-tasks-fee participation-fee)
     (render-consent-form))))
+
+;; Comprehension Formm
 
 (define (test-comprehension)
   (haml
@@ -113,6 +120,8 @@
   (for ([input (bot:element-find-all f "input")])
     (element-type! input "I, Robot"))
   (element-click! (bot:find "button[type=submit]")))
+
+;; Requirements Form
 
 (define (render-requirements-form)
   (define the-form
@@ -171,6 +180,41 @@
     (:h1 "Requirements for Study")
     (:p "Please check that you can play the test audio by hitting the play button, otherwise you cannot complete the study. Once the track has finished, a 'Continue' button will appear.")
     (render-requirements-form))))
+
+;; Debrief Form
+
+(define (render-debrief-form)
+  (define the-form
+    (form* ([gender (ensure binding/text (required))])
+           gender))
+  (haml
+   (form
+    the-form
+    (λ (survey-response)
+      (put 'debrief-survey survey-response)
+      (put-payment! 'participation-fee (get 'participation-fee)))
+    (λ (rw)
+      `(form ((action "")
+              (method "POST"))
+             (label
+              "What is your gender?"
+              ,(rw "gender" (widget-text)))
+             ,@(rw "gender" (widget-errors))
+             (button ((type "submit") (class "button next-button")) "Submit"))))))
+
+(define (debrief-survey/bot)
+  (define f (bot:find "form"))
+  (for ([input (bot:element-find-all f "input")])
+    (element-type! input "Bot, James Bot"))
+  (element-click! (bot:find "button[type=submit]")))
+
+(define (debrief-survey)
+  (haml
+   (:div.container
+    (:h1 "Debrief Survey")
+    (render-debrief-form))))
+
+;;;;;; HANDLERS
 
 ;; TODO: cleanup.
 (provide
@@ -238,58 +282,6 @@
      (send-study-completion-email
       (participant-email pid)
       (get-total-payment)))))
-
-(define (render-debrief-form)
-  (define the-form
-    (form* ([gender (ensure binding/text (required))])
-           gender))
-  (haml
-   (form
-    the-form
-    (λ (survey-response)
-      (put 'debrief-survey survey-response)
-      (put-payment! 'participation-fee (get 'participation-fee)))
-    (λ (rw)
-      `(form ((action "")
-              (method "POST"))
-             (label
-              "What is your gender?"
-              ,(rw "gender" (widget-text)))
-             ,@(rw "gender" (widget-errors))
-             (button ((type "submit") (class "button next-button")) "Submit"))))))
-
-(define (debrief-survey/bot)
-  (define f (bot:find "form"))
-  (for ([input (bot:element-find-all f "input")])
-    (element-type! input "Bot, James Bot"))
-  (element-click! (bot:find "button[type=submit]")))
-
-(define (debrief-survey)
-  (haml
-   (:div.container
-    (:h1 "Debrief Survey")
-    (render-debrief-form))))
-
-(require (for-syntax racket/base) ; Needed to use strings in define-static-resource. Why? Just Cause.
-         congame/components/resource)
-
-;; File resources:
-(define-static-resource song1 (build-path "songs" "song1.mp3"))
-
-(define stepsize 0.2)
-(define money-levels
-  (build-list 10 (λ (i) (* i stepsize))))
-(define (pl-extra-tasks t name)
-  (make-pl #:name name
-           #:fixed-work 0
-           #:fixed-money 0
-           #:adjustable-work t
-           #:levels-of-money money-levels))
-
-(define PRICE-LISTS
-  (hash 'pl10 (pl-extra-tasks 10 'pl10)
-        'pl7  (pl-extra-tasks 7 'pl7)
-        'pl5  (pl-extra-tasks 5 'pl5)))
 
 (define (determine-extra-tasks)
   (haml
@@ -447,6 +439,25 @@
     (:p "You did not consent to the study, therefore you cannot complete the study.")
     (button void "The End"))))
 
+;;; PRICE-LIST CONFIGURATION
+
+(define stepsize 0.2)
+(define money-levels
+  (build-list 10 (λ (i) (* i stepsize))))
+(define (pl-extra-tasks t name)
+  (make-pl #:name name
+           #:fixed-work 0
+           #:fixed-money 0
+           #:adjustable-work t
+           #:levels-of-money money-levels))
+
+(define PRICE-LISTS
+  (hash 'pl10 (pl-extra-tasks 10 'pl10)
+        'pl7  (pl-extra-tasks 7 'pl7)
+        'pl5  (pl-extra-tasks 5 'pl5)))
+
+;;; MAIN STUDY
+
 (define pjb-pilot-study-no-config
   (make-study
    #:requires '(participation-fee
@@ -528,8 +539,7 @@
     (make-step 'show-payments show-payments (λ () done) #:for-bot bot:continuer)
     (make-step 'task-failure task-failure (λ () done) #:for-bot bot:continuer)
     (make-step 'requirements-failure requirements-failure (λ () done) #:for-bot bot:continuer)
-    (make-step 'consent-failure consent-failure (λ () done) #:for-bot bot:continuer)
-    )))
+    (make-step 'consent-failure consent-failure (λ () done) #:for-bot bot:continuer))))
 
 (define pjb-pilot-study
   (make-study
