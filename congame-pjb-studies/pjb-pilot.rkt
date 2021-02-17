@@ -28,13 +28,14 @@
 (provide
  pjb-pilot-study)
 
-(define (study-description required-tasks required-tasks-fee participation-fee)
+(define/contract (study-description required-tasks required-tasks-fee participation-fee)
+  (-> number? number? number? any/c)
   (haml
    (:div
     (:h2 "Main Study Description")
     (:p "If you decide to participate in the study, you will do the following:")
     (:ul
-     (:li "complete " required-tasks " required tasks")
+     (:li "complete " (number->string required-tasks) " required tasks")
      (:li "choose whether to do additional tasks for bonus payments")
      (:li "do a different 10-minute task involving sound/audio")
      (:li "fill in a brief survey"))
@@ -48,8 +49,8 @@
      (:li "an extra bonus, if you choose to do extra tasks")))))
 
 (define (study-explanation)
-  (define required-tasks (number->string (get 'required-tasks)))
-  (define practice-tasks (number->string (get 'practice-tasks)))
+  (define required-tasks (get 'required-tasks))
+  (define practice-tasks (get 'practice-tasks))
   (define participation-fee (get 'participation-fee))
   (define required-tasks-fee (get 'required-tasks-fee))
   (haml
@@ -61,7 +62,7 @@
     (:ul
      (:li "a study description (this page)")
      (:li "a page to check that your sound works")
-     (:li "a description of the tasks in this study and doing " practice-tasks " practice tasks")
+     (:li "a description of the tasks in this study and doing " (number->string practice-tasks) " practice tasks")
      (:li "a description of how extra tasks (or lack thereof) are determined by your decisions")
      (:li "a form asking whether you agree to participate in the study"))
     (:p "You will not receive any payment for completing the tutorial.")
@@ -74,7 +75,7 @@
 ;;;; FORMS
 
 (define (consent)
-  (define required-tasks (number->string (get 'required-tasks)))
+  (define required-tasks (get 'required-tasks))
   (define participation-fee (get 'participation-fee))
   (define required-tasks-fee (get 'required-tasks-fee))
   (haml
@@ -94,10 +95,26 @@
      (get 'required-tasks-fee)
      (get 'participation-fee)))))
 
+(define ((is-equal a #:message [message #f]) v)
+  (if (equal? v a)
+      (ok v)
+      (err (or message (format "Should be equal to ~a" a)))))
+
 (define (render-comprehension-form)
   (define the-form
-    (form* ([understand? (ensure binding/text (required))])
-           (list understand?)))
+    (form* ([what-if-fail-study? (ensure
+                                  binding/text
+                                  (required)
+                                  (is-equal "no-extra-no-participation-fee"
+                                            #:message "No. You receive payment for required tasks, but not for the participation fee."))]
+            [how-many-required-tasks? (ensure
+                                       binding/number
+                                       (required)
+                                       (is-equal (get 'required-tasks)
+                                                 #:message "No. Read the study description again."))])
+           (list what-if-fail-study?
+                 how-many-required-tasks?)))
+
   (haml
    (:div.container
     (form
@@ -106,14 +123,26 @@
      (λ (answer) (put 'comprehension-test answer))
      ; renderer: (-> rw xexpr)
      (λ (rw)
-       `(div ((class "container"))
-             (form ((action "")
-                    (method "POST"))
-                   (label
-                    "Do you understand this?"
-                    ,(rw "understand?" (widget-text)))
-                   ,@(rw "understand?" (widget-errors))
-                   (button ((type "Submit") (class "button")) "Submit"))))))))
+       (define n-tasks (number->string (get 'required-tasks)))
+       `(div
+         (div ((class "group"))
+              (label ((class "radio-group"))
+                     "Suppose you complete the required tasks and chose extra tasks. What happens if you fail the extra tasks -- either due to getting more than half the tasks wrong or not attempting them?"
+                     ,(rw "what-if-fail-study?"
+                          (widget-radio-group '(("no-payment-at-all" . "You will receive no payment at all")
+                                                ("no-extra-bonus" . "You will not receive the extra bonus payment, but you will receive the participation fee and the payment for the required tasks")
+                                                ("no-extra-no-participation-fee" . "You cannot complete the study and thus receive neither the extra bonus nor the participation fee.")))))
+              ,@(rw "what-if-fail-study?" (widget-errors)))
+         (div ((class "group"))
+              (label ((class "radio-group"))
+                     "How many required tasks do you have to do?"
+                     ,(rw "how-many-required-tasks?"
+                          (widget-radio-group `(("0" . "0")
+                                                ("5" . "5")
+                                                (,n-tasks . ,n-tasks)
+                                                ("15" . "15")))))
+              ,@(rw "how-many-required-tasks?" (widget-errors)))
+         (button ((type "Submit") (class "button")) "Submit")))))))
 
 (define (test-comprehension/bot)
   (define f (bot:find "form"))
@@ -183,10 +212,19 @@
 
 ;; Debrief Form
 
+(define ((input-in-range start end) v)
+  (if (memq v (range start end))
+      (ok v)
+      (err (format "You have to provide a number between ~a and ~a" start end))))
+
 (define (render-debrief-form)
   (define the-form
-    (form* ([gender (ensure binding/text (required))])
-           gender))
+    (form* ([gender (ensure binding/text (required))]
+            [how-clear (ensure binding/number (required) (input-in-range 1 5))]
+            [what-could-be-clearer (ensure binding/text)]
+            [how-relaxing (ensure binding/number (required) (input-in-range 1 5))]
+            [restful-activity (ensure binding/text (required))])
+           (list gender how-clear what-could-be-clearer how-relaxing restful-activity)))
   (haml
    (form
     the-form
@@ -194,13 +232,32 @@
       (put 'debrief-survey survey-response)
       (put-payment! 'participation-fee (get 'participation-fee)))
     (λ (rw)
-      `(form ((action "")
-              (method "POST"))
-             (label
-              "What is your gender?"
-              ,(rw "gender" (widget-text)))
-             ,@(rw "gender" (widget-errors))
-             (button ((type "submit") (class "button next-button")) "Submit"))))))
+      `(div
+        (label
+         "What is your gender?"
+         ,(rw "gender" (widget-text)))
+        ,@(rw "gender" (widget-errors))
+        (br)
+        (label
+         "How clear were the instructions on a scale from 1 (very unclear) to 5 (very clear)?"
+         ,(rw "how-clear" (widget-number)))
+        ,@(rw "how-clear" (widget-errors))
+        (br)
+        (label
+         "If not, what could have been clearer?"
+         ,(rw "what-could-be-clearer" (widget-text)))
+        ,@(rw "what-could-be-clearer" (widget-errors))
+        (br)
+        (label
+         "How restful did you find the songs after the required tasks, from 1 (very un-relaxing) to 5 (very relaxing)?"
+         ,(rw "how-relaxing" (widget-number)))
+        ,@(rw "how-relaxing" (widget-errors))
+        (br)
+        (label
+         "What activity would you find restful between two rounds of tasks?"
+         ,(rw "restful-activity" (widget-text)))
+        ,@(rw "restful-activity" (widget-errors))
+        (button ((type "submit") (class "button next-button")) "Submit"))))))
 
 (define (debrief-survey/bot)
   (define f (bot:find "form"))
