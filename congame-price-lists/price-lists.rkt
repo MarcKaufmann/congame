@@ -35,8 +35,7 @@
  price-list-switch
  make-pl
 
- option-money
- option-work
+ (struct-out option)
 
  gen:describable
  describable/c

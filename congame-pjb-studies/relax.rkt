@@ -42,7 +42,7 @@
   (haml
    (.container
     (:h1 "Three Songs")
-    (:p "You will listen to a different song on each of the next three pages. Each song is between 3 and 4 minutes long. You can continue to the following page only after having listened until the end of the song. After that, you will be asked to rank the songs according along several dimensions.")
+    (:p "You will listen to a different song on each of the next three pages. Each song is between 2 and 4 minutes long. You can continue to the following page only after having listened until the end of the song. After having listened to the songs, you will be asked to rank the songs along several dimensions.")
     (button
      void
      "Continue"))))
@@ -52,11 +52,13 @@
   (define songs-played (get 'songs-played-so-far))
   (define next-song-name
     (list-ref song-names songs-played))
+  (define song-display-name
+    (string-append "Song " (number->string (add1 songs-played))))
   (haml
    (.container
-    (:h1 "Play Song " (number->string (add1 songs-played))
+    (:h1 "Play Song " song-display-name
          " out of " (number->string (length song-names)))
-    (audio-container next-song-name #:caption "What a song...")
+    (audio-container next-song-name #:caption song-display-name)
 
     (:h3 "Instructions")
 
@@ -104,7 +106,7 @@
        (displayln (format "Favorite song is ~a" answer))
        (flush-output))
      render-evaluation-form)
-    (:h3 "Less than 5-second snippets of the songs")
+    (:h3 "20-second snippets of the songs")
     ,@(for/list ([song-name (in-list (get 'songs-to-play))]
                  [rank      (in-list '("First" "Second" "Third"))])
         (haml

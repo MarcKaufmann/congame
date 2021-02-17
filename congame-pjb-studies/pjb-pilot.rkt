@@ -7,6 +7,7 @@
          marionette
          racket/contract
          racket/list
+         racket/match
          racket/random
          koyo/haml
          koyo/job
@@ -24,7 +25,7 @@
 (provide
  pjb-pilot-study)
 
-(define (study-description required-tasks participation-fee)
+(define (study-description required-tasks required-tasks-fee participation-fee)
   (haml
    (:div
     (:h2 "Main Study Description")
@@ -32,14 +33,22 @@
     (:ul
      (:li "complete " required-tasks " required tasks")
      (:li "choose whether to do additional tasks for bonus payments")
-     (:li "do another 10-minute task involving sound/audio")
+     (:li "do a different 10-minute task involving sound/audio")
      (:li "fill in a brief survey"))
-    (:p "If you complete the study, you will receive " (pp-money participation-fee) " as a participation fee, as well as any bonus payment from the additional tasks you choose."))))
+    (:h3 "Payments")
+
+    (:p "You receive the following payments if you complete a given stage:")
+    (:ul
+     (:li (pp-money required-tasks-fee) " for required tasks")
+     (:li (pp-money participation-fee) " if you complete the whole study. "
+          (:strong "Note: ") "If you choose to do extra tasks, then you get the completion bonus only if you do the extra tasks.")
+     (:li "an extra bonus, if you choose to do extra tasks")))))
 
 (define (study-explanation)
   (define required-tasks (number->string (get 'required-tasks)))
   (define practice-tasks (number->string (get 'practice-tasks)))
   (define participation-fee (get 'participation-fee))
+  (define required-tasks-fee (get 'required-tasks-fee))
   (haml
    (:div.container.container
     (:h1 "Study Explanation")
@@ -50,10 +59,11 @@
      (:li "a study description (this page)")
      (:li "a page to check that your sound works")
      (:li "a description of the tasks in this study and doing " practice-tasks " practice tasks")
+     (:li "a description of how extra tasks (or lack thereof) are determined by your decisions")
      (:li "a form asking whether you agree to participate in the study"))
     (:p "You will not receive any payment for completing the tutorial.")
 
-    (study-description required-tasks participation-fee)
+    (study-description required-tasks required-tasks-fee participation-fee)
     (:p (:strong "Note:") " The study requires sound, so you need headphones or be able to listen to sound on your speakers." )
 
     (button void "Continue"))))
@@ -61,16 +71,21 @@
 (define (consent)
   (define required-tasks (number->string (get 'required-tasks)))
   (define participation-fee (get 'participation-fee))
+  (define required-tasks-fee (get 'required-tasks-fee))
   (haml
    (:div.container
-    (study-description required-tasks participation-fee)
+    (study-description required-tasks required-tasks-fee participation-fee)
     (render-consent-form))))
 
 (define (test-comprehension)
   (haml
    (:div.container
     (:h1 "Comprehension Tests")
-    (render-comprehension-form))))
+    (render-comprehension-form)
+    (study-description
+     (get 'required-tasks)
+     (get 'required-tasks-fee)
+     (get 'participation-fee)))))
 
 (define (render-comprehension-form)
   (define the-form
@@ -117,7 +132,7 @@
     (λ (rw)
       `(div
         (div
-         ,(audio-container "test-audio.mp3" #:caption "What a song"))
+         ,(audio-container "test-audio.mp3" #:caption "Audio Test"))
         (label
          "Can you play and hear the above audio?"
          ,(rw "play-audio?" (widget-checkbox)))
@@ -178,7 +193,6 @@
 
 ; Add treatment for length of break?
 (define *rest-treatments* '(get-rest-then-elicit elicit-then-get-rest))
-(define *task-treatments* '(1 3))
 
 (define (make-balanced-shuffle original)
   (define ts (shuffle original))
@@ -192,7 +206,6 @@
            (first ts)])))
 
 (define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
-(define next-balanced-task-treatment (make-balanced-shuffle *task-treatments*))
 
 (define (show-payments)
   (haml
@@ -291,26 +304,29 @@
        (define wtws
          (for/hash ([pl pls])
            (values pl (price-list-switch (get pl)))))
-       (displayln (format "wtws: ~a" wtws))
-       (flush-output)
        (put 'WTWs wtws)
+       ; pl-that-counts is the name of the price-list that counts
        (define pl-that-counts (random-ref pls))
        (put 'price-list-that-counts pl-that-counts)
        (define pl/answers (get pl-that-counts))
        (define pl/answers+choice (pl-random-choice pl/answers))
        ; Store price list with the choice that counts. TODO: Dangerous to overwrite original, no?
        (put 'choice-that-counts pl/answers+choice)
-     "See extra tasks")))))
+       (match-define (option extra-tasks extra-bonus)
+         (price-list-chosen pl/answers+choice))
+       (put 'extra-tasks extra-tasks)
+       (put 'extra-bonus extra-bonus))
+     "See extra tasks"))))
 
 (define (see-extra-tasks)
   (define pl/answers+choice (get 'choice-that-counts))
   (define chosen (price-list-chosen pl/answers+choice))
   (define alternative (price-list-alternative pl/answers+choice))
-  (define extra-tasks (option-work chosen))
-  (define extra-bonus (pp-money (option-money chosen)))
+  (define extra-tasks (get 'extra-tasks))
+  (define extra-bonus (pp-money (get 'extra-bonus)))
   (define continue-text
     (if (> extra-tasks 0)
-        (format "Continue to ~a extra tasks" extra-tasks " for a " extra-bonus " extra bonus.")
+        (format "Continue to ~a extra tasks for a ~a extra bonus " extra-tasks extra-bonus)
         "Continue with no extra tasks or extra bonus."))
   (haml
    (:div.container
@@ -343,6 +359,27 @@
     ; TODO: Improve how to deal with failures
     #;(button void "The end")
     )))
+
+(define-static-resource price-list-screenshot "price-list-screenshot.png")
+
+(define (tutorial-illustrate-elicitation)
+  (haml
+   (:div.container
+    (:h1 "Explaining Choice for Extra Tasks")
+    (:p "During the experiment, you will be given several pages of choices for doing extra tasks. Below you see a screenshot of such a page with some choices made. This determines the extra tasks and extra bonus you will receive from this study as follows:")
+    (:ol
+     (:li "The computer randomly selects one of the decision pages as the page-that-counts")
+     (:li "The computer randomly selects one of the choices on that page as the choice-that-counts")
+     (:li "If you picked the option without extra tasks, then you do not have to do any additional tasks and receive no extra bonus")
+     (:li "If you picked the option with extra tasks, then you have to do that many extra tasks and receive the extra bonus for that option. " (:strong "Note:") " If cannot skip the extra tasks, and thus can only complete the study and receive the participation bonus if you do the extra tasks."))
+    (.container.screenshot
+     (:h2 "Screenshot of an example Decision Page")
+     (:p "Suppose that the computer randomly selected the 7th choice on this page as the choice-that-counts. Then: ")
+     (:ul
+      (:li "The person would have to do 7 extra tasks and receive $1.20 upon completing the study")
+      (:li "If the person fails to do the 7 extra tasks, they receive neither the completion fee, nor the $1.20 -- they only receive the payment for those tasks they have already done"))
+     (:img ([:src (resource-uri price-list-screenshot)])))
+    (button void "Continue"))))
 
 (define elicit-WTW-and-work
   (make-study
@@ -384,7 +421,7 @@
                      (λ ()
                        (cond
                          [(get 'success?)
-                          (put-payment! 'extra-tasks-bonus (get 'extra-money))
+                          (put-payment! 'extra-tasks-bonus (get 'extra-bonus))
                           done]
                          [else
                           'fail]))
@@ -412,8 +449,12 @@
 
 (define pjb-pilot-study-no-config
   (make-study
-   #:requires '(participation-fee practice-tasks required-tasks price-lists)
-   #:provides '(task-treatment rest-treatment)
+   #:requires '(participation-fee
+                practice-tasks
+                required-tasks
+                required-tasks-fee
+                price-lists)
+   #:provides '(rest-treatment)
    (list
     (make-step 'explain-study study-explanation)
     (make-step
@@ -430,12 +471,13 @@
      (λ ()
        (if (not (get 'tutorial-success?))
            'task-failure
-           'test-comprehension))
+           'tutorial-illustrate-elicitation))
      #:require-bindings '([n practice-tasks]
                           [max-wrong-tasks practice-tasks]
                           [title (const "Practice Tasks")]
                           [hide-description? (const #f)])
      #:provide-bindings '([tutorial-success? success?]))
+    (make-step 'tutorial-illustrate-elicitation tutorial-illustrate-elicitation)
     (make-step 'test-comprehension test-comprehension #:for-bot test-comprehension/bot)
     (make-step
      'consent
@@ -450,18 +492,19 @@
               ; TODO: Treatment assignment should also be done at the study, not step, level!!
               ; Can this be done, given the need for `put`?
               (put 'rest-treatment (next-balanced-rest-treatment))
-              (put 'task-treatment (next-balanced-task-treatment))
               'required-tasks]))
      #:for-bot consent/bot)
     (make-step/study
      'required-tasks
      task-study
      (λ ()
-       (if (not (get 'success?))
-           'task-failure
-           (case (get 'rest-treatment)
-             [(get-rest-then-elicit) 'get-rest]
-             [(elicit-then-get-rest) 'elicit-WTW-and-work])))
+       (cond [(not (get 'success?))
+              'task-failure]
+             [else
+              (put-payment! 'required-tasks-fee (get 'required-tasks-fee))
+              (case (get 'rest-treatment)
+                [(get-rest-then-elicit) 'get-rest]
+                [(elicit-then-get-rest) 'elicit-WTW-and-work])]))
      #:require-bindings '([n required-tasks]
                           [max-wrong-tasks required-tasks]
                           [title (const "Required Tasks")]
@@ -491,13 +534,13 @@
 (define pjb-pilot-study
   (make-study
    #:requires '()
-   #:provides '(task-treatment rest-treatment)
+   #:provides '(rest-treatment)
    (list
     (make-step/study 'the-study
                      pjb-pilot-study-no-config
-                     #:provide-bindings '([task-treatment task-treatment]
-                                          [rest-treatment rest-treatment])
+                     #:provide-bindings '([rest-treatment rest-treatment])
                      #:require-bindings `([practice-tasks (const 2)]
                                           [participation-fee (const 2.00)]
                                           [required-tasks (const 3)]
+                                          [required-tasks-fee (const 1.00)]
                                           [price-lists (const ,(hash-keys PRICE-LISTS))])))))
