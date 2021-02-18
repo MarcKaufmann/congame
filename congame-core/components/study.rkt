@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base
+                     racket/syntax
                      syntax/parse/lib/function-header)
          db
          db/util/postgresql
@@ -53,20 +54,18 @@
  get-all-payments
  )
 
-;; TODO:
-;; * admin: add studies, instances, visualize, reset users' data
-
 ;; canaries ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-values (next next?)
-  (let ()
-    (struct next () #:transparent)
-    (values (next) next?)))
+(define-syntax-parser define-canary
+  [(_ id:id)
+   #:with id? (format-id #'id "~a?" #'id)
+   #'(define-values (id id?)
+       (let ()
+         (struct id () #:transparent)
+         (values (id) id?)))])
 
-(define-values (done done?)
-  (let ()
-    (struct done () #:transparent)
-    (values (done) done?)))
+(define-canary next)
+(define-canary done)
 
 
 ;; storage ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
