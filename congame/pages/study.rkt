@@ -8,7 +8,7 @@
          web-server/dispatchers/dispatch
          web-server/http
          congame-web/components/auth
-         congame-web/components/template
+         (prefix-in tpl: congame-web/components/template)
          congame-web/components/user)
          ;"../components/auth.rkt"
          ;"../components/template.rkt"
@@ -21,7 +21,7 @@
 (define ((study-instances-page db) _req)
   (send/suspend/dispatch/protect
    (lambda (embed/url)
-     (page
+     (tpl:page
       (haml
        (.container
         (:ul
@@ -54,7 +54,7 @@
                 (run-study s req)))
              (mark-participant-completed! manager)
              (redirect/get/forget/protect))
-           (page
+           (tpl:page
             (haml
              (:div.container
               ([:data-study-done "yes"])

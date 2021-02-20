@@ -23,7 +23,7 @@
          congame-web/components/auth ;"auth.rkt"
          congame-web/components/mail ;"mail.rkt"
          congame-web/components/sentry ;"sentry.rkt"
-         congame-web/components/template ;"template.rkt"
+         (prefix-in tpl: congame-web/components/template) ;"template.rkt"
          congame-web/components/user) ;"user.rkt")
 
 (provide
@@ -164,7 +164,7 @@
          (reverse-uri 'serve-resource-page (resource-id r) subr)
          (reverse-uri 'serve-resource-page (resource-id r)))))
   (current-git-sha config:git-sha)
-  (current-xexpr-wrapper page/xexpr)
+  (current-xexpr-wrapper tpl:page/xexpr)
 
   (define manager
     (make-threshold-LRU-manager (stack expired-page) (* 1024 1024 512)))
