@@ -30,31 +30,12 @@
          "export.rkt"
          "registry.rkt")
 
-(provide
- current-git-sha
- next
- done
- put
- get
- button
- form
- skip
- make-step
- make-step/study
- wrap-sub-study
- make-study
- run-study
- current-xexpr-wrapper
- participant-email
- current-participant-id
- ; current-step
- amount/c
- get-payment
- put-payment!
- get-all-payments
- )
 
 ;; canaries ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ next
+ done)
 
 (define-syntax-parser define-canary
   [(_ id:id)
@@ -69,6 +50,11 @@
 
 
 ;; storage ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ current-git-sha
+ put
+ get)
 
 (define/contract current-git-sha
   (parameter/c (or/c #f string?))
@@ -124,14 +110,24 @@ QUERY
 (define (current-study-array)
   (list->pg-array (map symbol->string (current-study-ids))))
 
-; FIXME: Using exact naturals would be even better, but then
-; we need to ensure that the payments are included in cents, rather
-; than whole dollars. This will almost surely lead to errors of rounding
-; or misunderstanding.
+
+;; payments ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ amount/c
+ get-payment
+ put-payment!
+ get-all-payments)
+
+; FIXME: Using exact naturals would be even better, but then we need
+; to ensure that the payments are included in cents, rather than whole
+; dollars. This will almost surely lead to errors of rounding or
+; misunderstanding.
 (define amount/c
   (and/c number? (or/c positive? zero?)))
 
-; FIXME: The other schemas are later, but for the contract I need `study-payment?`
+; FIXME: The other schemas are later, but for the contract I need
+; `study-payment?`
 
 (define-schema study-payment
   #:table "payments"
@@ -168,7 +164,14 @@ QUERY
       (values (string->symbol (study-payment-payment-name p))
               (study-payment-payment p)))))
 
+
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ page
+ button
+ form
+ skip)
 
 (define current-embed/url
   (make-parameter 'no-embed/url))
@@ -178,6 +181,16 @@ QUERY
 
 (define current-return
   (make-parameter 'no-return))
+
+(define current-renderer
+  (make-parameter 'no-renderer))
+
+(define-syntax-rule (page e)
+  (letrec ([render
+            (lambda ()
+              (parameterize ([current-renderer render])
+                e))])
+    (step-page render)))
 
 (define-syntax-rule (define-widget-stxparams id ...)
   (begin
@@ -197,6 +210,7 @@ QUERY
   (let ([embed/url (current-embed/url)]
         [the-request (current-request)]
         [the-step (current-step)]
+        [the-renderer (current-renderer)]
         [return (current-return)])
     (syntax-parameterize ([embed
                            (syntax-parser
@@ -206,7 +220,8 @@ QUERY
                                    (parameterize ([current-embed/url embed/url]
                                                   [current-request req]
                                                   [current-return return]
-                                                  [current-step the-step])
+                                                  [current-step the-step]
+                                                  [current-renderer the-renderer])
                                      (f req))))])]
 
                           [continue
@@ -255,7 +270,7 @@ QUERY
       (:form
        ([:action (embed
                   (lambda (_req)
-                    (response/step this-step)))]
+                    (response/render this-step (current-renderer))))]
         [:data-widget-id (when-bot id)]
         [:method "POST"])
        (render rw)))]))
@@ -267,6 +282,12 @@ QUERY
 
 
 ;; step ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ current-xexpr-wrapper
+ make-step
+ make-step/study
+ step-page?)
 
 (module+ private
   (provide
@@ -280,11 +301,14 @@ QUERY
 (struct step/study step (study)
   #:transparent)
 
+(struct step-page (renderer)
+  #:transparent)
+
 (struct study (requires provides steps)
   #:transparent)
 
 (define step-id/c symbol?)
-(define handler/c (-> xexpr?))
+(define handler/c (-> step-page?))
 (define transition/c (-> (or/c done? next? step-id/c)))
 (define binding/c (list/c symbol? (or/c symbol? (list/c 'const any/c))))
 
@@ -367,7 +391,7 @@ QUERY
   (parameter/c (-> xexpr? xexpr?))
   (make-parameter values))
 
-(define (response/step s)
+(define (response/render s r)
   (response/xexpr
    ((current-xexpr-wrapper)
     (haml
@@ -376,13 +400,22 @@ QUERY
                                      (lambda (out)
                                        (write (current-study-stack) out))))]
        [:data-step-id (when-bot (step-id s))])
-      ((step-handler s)))))))
+      (r))))))
+
+(define (response/step s)
+  (response/render s (step-page-renderer ((step-handler s)))))
 
 (define-syntax-rule (when-bot e)
   (if (current-user-bot?) (~a e) ""))
 
 
 ;; study ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ wrap-sub-study
+ make-study
+ run-study)
+
 (define-logger study)
 
 ;; This is actually a stack of step ids where each step represents a [sub]study.
@@ -527,6 +560,8 @@ QUERY
  list-all-study-instances
  list-active-study-instances
  list-study-instance-participants/admin
+ current-participant-id
+ participant-email
  clear-participant-progress!
  enroll-participant!
  mark-participant-completed!

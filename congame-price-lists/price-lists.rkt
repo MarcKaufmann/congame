@@ -239,11 +239,12 @@
               (hash)))
 
 (define ((price-list-step pl #:title title #:pl-name [pl-name #f]))
-  (haml
-   (.container
-    (:h1 title)
-    (:p "In each row, choose which option you prefer.")
-    (render-pl pl #:pl-name pl-name))))
+  (page
+   (haml
+    (.container
+     (:h1 title)
+     (:p "In each row, choose which option you prefer.")
+     (render-pl pl #:pl-name pl-name)))))
 
 (define (price-list-step/bot n-fixed)
   (for ([elt (in-list (bot:find-all "tr"))]

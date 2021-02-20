@@ -53,24 +53,25 @@
   (define practice-tasks (get 'practice-tasks))
   (define participation-fee (get 'participation-fee))
   (define required-tasks-fee (get 'required-tasks-fee))
-  (haml
-   (:div.container.container
-    (:h1 "Study Explanation")
+  (page
+   (haml
+    (:div.container.container
+     (:h1 "Study Explanation")
 
-    (:h2 "Tutorial")
-    (:p "You are starting the tutorial for this study which consists of the following:")
-    (:ul
-     (:li "a study description (this page)")
-     (:li "a page to check that your sound works")
-     (:li "a description of the tasks in this study and doing " (number->string practice-tasks) " practice tasks")
-     (:li "a description of how extra tasks (or lack thereof) are determined by your decisions")
-     (:li "a form asking whether you agree to participate in the study"))
-    (:p "You will not receive any payment for completing the tutorial.")
+     (:h2 "Tutorial")
+     (:p "You are starting the tutorial for this study which consists of the following:")
+     (:ul
+      (:li "a study description (this page)")
+      (:li "a page to check that your sound works")
+      (:li "a description of the tasks in this study and doing " (number->string practice-tasks) " practice tasks")
+      (:li "a description of how extra tasks (or lack thereof) are determined by your decisions")
+      (:li "a form asking whether you agree to participate in the study"))
+     (:p "You will not receive any payment for completing the tutorial.")
 
-    (study-description required-tasks required-tasks-fee participation-fee)
-    (:p (:strong "Note:") " The study requires sound, so you need headphones or be able to listen to sound on your speakers." )
+     (study-description required-tasks required-tasks-fee participation-fee)
+     (:p (:strong "Note:") " The study requires sound, so you need headphones or be able to listen to sound on your speakers." )
 
-    (button void "Continue"))))
+     (button void "Continue")))))
 
 ;;;; FORMS
 
@@ -78,22 +79,24 @@
   (define required-tasks (get 'required-tasks))
   (define participation-fee (get 'participation-fee))
   (define required-tasks-fee (get 'required-tasks-fee))
-  (haml
-   (:div.container
-    (study-description required-tasks required-tasks-fee participation-fee)
-    (render-consent-form))))
+  (page
+   (haml
+    (:div.container
+     (study-description required-tasks required-tasks-fee participation-fee)
+     (render-consent-form)))))
 
 ;; Comprehension Formm
 
 (define (test-comprehension)
-  (haml
-   (:div.container
-    (:h1 "Comprehension Tests")
-    (render-comprehension-form)
-    (study-description
-     (get 'required-tasks)
-     (get 'required-tasks-fee)
-     (get 'participation-fee)))))
+  (page
+   (haml
+    (:div.container
+     (:h1 "Comprehension Tests")
+     (render-comprehension-form)
+     (study-description
+      (get 'required-tasks)
+      (get 'required-tasks-fee)
+      (get 'participation-fee))))))
 
 (define ((is-equal a #:message [message #f]) v)
   (if (equal? v a)
@@ -204,11 +207,12 @@
   (element-click! (page-wait-for! (bot:current-page) "button[type=submit]")))
 
 (define (test-study-requirements)
-  (haml
-   (:div.container
-    (:h1 "Requirements for Study")
-    (:p "Please check that you can play the test audio by hitting the play button, otherwise you cannot complete the study. Once the track has finished, a 'Continue' button will appear.")
-    (render-requirements-form))))
+  (page
+   (haml
+    (:div.container
+     (:h1 "Requirements for Study")
+     (:p "Please check that you can play the test audio by hitting the play button, otherwise you cannot complete the study. Once the track has finished, a 'Continue' button will appear.")
+     (render-requirements-form)))))
 
 ;; Debrief Form
 
@@ -266,10 +270,11 @@
   (element-click! (bot:find "button[type=submit]")))
 
 (define (debrief-survey)
-  (haml
-   (:div.container
-    (:h1 "Debrief Survey")
-    (render-debrief-form))))
+  (page
+   (haml
+    (:div.container
+     (:h1 "Debrief Survey")
+     (render-debrief-form)))))
 
 ;;;;;; HANDLERS
 
@@ -309,19 +314,20 @@
 (define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
 
 (define (show-payments)
-  (haml
-   (:div.container
-    (:h1 "Payment Page")
-    (:p "Within the next week, you will receive a total payment of " (get-total-payment) " for this study. The detailed breakdown is as follows:")
-    (:ul
-     ,@(for/list ([(name payment) (in-hash (get-all-payments))])
-         (haml
-          (:li (symbol->string name) ": " (pp-money payment)))))
-    (:p "Shortly after finishing the study, you will receive an email from us. " (:a ((:href (string-append "mailto:" config:support-email))) "Email us") " if you have not received the payment by the end of next week." )
-    (button
-     (λ ()
-       (send-completion-email (current-participant-id)))
-     "Finish Study"))))
+  (page
+   (haml
+    (:div.container
+     (:h1 "Payment Page")
+     (:p "Within the next week, you will receive a total payment of " (get-total-payment) " for this study. The detailed breakdown is as follows:")
+     (:ul
+      ,@(for/list ([(name payment) (in-hash (get-all-payments))])
+          (haml
+           (:li (symbol->string name) ": " (pp-money payment)))))
+     (:p "Shortly after finishing the study, you will receive an email from us. " (:a ((:href (string-append "mailto:" config:support-email))) "Email us") " if you have not received the payment by the end of next week." )
+     (button
+      (λ ()
+        (send-completion-email (current-participant-id)))
+      "Finish Study")))))
 
 (define-job (send-study-completion-email p payment)
   (with-sentry
@@ -341,31 +347,32 @@
       (get-total-payment)))))
 
 (define (determine-extra-tasks)
-  (haml
-   (:div.container
-    (:h1 "Determining the choice that counts")
-    (:p "The computer will now randomly determine one of the choice pages, and one of the choices on that page as the choice that counts.")
-    (button
-     (λ ()
-       (define pls (get 'price-lists))
-       ; FIXME: I still rely on price-list names being unique,
-       ; and not clashing with other key-names.
-       (define wtws
-         (for/hash ([pl pls])
-           (values pl (price-list-switch (get pl)))))
-       (put 'WTWs wtws)
-       ; pl-that-counts is the name of the price-list that counts
-       (define pl-that-counts (random-ref pls))
-       (put 'price-list-that-counts pl-that-counts)
-       (define pl/answers (get pl-that-counts))
-       (define pl/answers+choice (pl-random-choice pl/answers))
-       ; Store price list with the choice that counts. TODO: Dangerous to overwrite original, no?
-       (put 'choice-that-counts pl/answers+choice)
-       (match-define (option extra-tasks extra-bonus)
-         (price-list-chosen pl/answers+choice))
-       (put 'extra-tasks extra-tasks)
-       (put 'extra-bonus extra-bonus))
-     "See extra tasks"))))
+  (page
+   (haml
+    (:div.container
+     (:h1 "Determining the choice that counts")
+     (:p "The computer will now randomly determine one of the choice pages, and one of the choices on that page as the choice that counts.")
+     (button
+      (λ ()
+        (define pls (get 'price-lists))
+        ; FIXME: I still rely on price-list names being unique,
+        ; and not clashing with other key-names.
+        (define wtws
+          (for/hash ([pl pls])
+            (values pl (price-list-switch (get pl)))))
+        (put 'WTWs wtws)
+        ; pl-that-counts is the name of the price-list that counts
+        (define pl-that-counts (random-ref pls))
+        (put 'price-list-that-counts pl-that-counts)
+        (define pl/answers (get pl-that-counts))
+        (define pl/answers+choice (pl-random-choice pl/answers))
+        ; Store price list with the choice that counts. TODO: Dangerous to overwrite original, no?
+        (put 'choice-that-counts pl/answers+choice)
+        (match-define (option extra-tasks extra-bonus)
+          (price-list-chosen pl/answers+choice))
+        (put 'extra-tasks extra-tasks)
+        (put 'extra-bonus extra-bonus))
+      "See extra tasks")))))
 
 (define (see-extra-tasks)
   (define pl/answers+choice (get 'choice-that-counts))
@@ -377,58 +384,62 @@
     (if (> extra-tasks 0)
         (format "Continue to ~a extra tasks for a ~a extra bonus " extra-tasks extra-bonus)
         "Continue with no extra tasks or extra bonus."))
-  (haml
-   (:div.container
-    (:h1 "Extra Tasks")
-    (:p "The choice that was randomly selected was between the following two options, from which you chose the one listed first:")
-    (:ol
-     (:li (describe chosen))
-     (:li (describe alternative)))
-    (:p continue-text)
-    (button void continue-text))))
+  (page
+   (haml
+    (:div.container
+     (:h1 "Extra Tasks")
+     (:p "The choice that was randomly selected was between the following two options, from which you chose the one listed first:")
+     (:ol
+      (:li (describe chosen))
+      (:li (describe alternative)))
+     (:p continue-text)
+     (button void continue-text)))))
 
 (define (introduce-WTW)
   (define pls (get 'price-lists))
   (define n (length pls))
-  (haml
-   (.container
-    (:h1 "Extra Effort Choices")
-    (:p "On the next " (number->string n) " pages, you will make choices about doing extra tasks for bonus payments. After you have made your choices, the computer randomly picks one of the pages, and one of the choices on that page as the choice that counts. If for that choice you picked the extra tasks over no extra tasks, then you have to do the extra tasks and will receive the extra payment. If you do not, you fail the study and will not receive the bonus nor the completion fee.")
-    (button
-     (λ ()
-       (put 'remaining-price-lists (shuffle pls))
-       (put 'answered-price-lists '()))
-     "Continue"))))
+  (page
+   (haml
+    (.container
+     (:h1 "Extra Effort Choices")
+     (:p "On the next " (number->string n) " pages, you will make choices about doing extra tasks for bonus payments. After you have made your choices, the computer randomly picks one of the pages, and one of the choices on that page as the choice that counts. If for that choice you picked the extra tasks over no extra tasks, then you have to do the extra tasks and will receive the extra payment. If you do not, you fail the study and will not receive the bonus nor the completion fee.")
+     (button
+      (λ ()
+        (put 'remaining-price-lists (shuffle pls))
+        (put 'answered-price-lists '()))
+      "Continue")))))
 
 (define (task-failure)
-  (haml
-   (:div.container
-    (:h1 "You failed the tasks")
-    (:p "You failed the tasks and cannot continue the study.")
-    ; TODO: Improve how to deal with failures
-    #;(button void "The end")
-    )))
+  (page
+   (haml
+    (:div.container
+     (:h1 "You failed the tasks")
+     (:p "You failed the tasks and cannot continue the study.")
+     ; TODO: Improve how to deal with failures
+     #;(button void "The end")
+     ))))
 
 (define-static-resource price-list-screenshot "price-list-screenshot.png")
 
 (define (tutorial-illustrate-elicitation)
-  (haml
-   (:div.container
-    (:h1 "Explaining Choice for Extra Tasks")
-    (:p "During the experiment, you will be given several pages of choices for doing extra tasks. Below you see a screenshot of such a page with some choices made. This determines the extra tasks and extra bonus you will receive from this study as follows:")
-    (:ol
-     (:li "The computer randomly selects one of the decision pages as the page-that-counts")
-     (:li "The computer randomly selects one of the choices on that page as the choice-that-counts")
-     (:li "If you picked the option without extra tasks, then you do not have to do any additional tasks and receive no extra bonus")
-     (:li "If you picked the option with extra tasks, then you have to do that many extra tasks and receive the extra bonus for that option. " (:strong "Note:") " If cannot skip the extra tasks, and thus can only complete the study and receive the participation bonus if you do the extra tasks."))
-    (.container.screenshot
-     (:h2 "Screenshot of an example Decision Page")
-     (:p "Suppose that the computer randomly selected the 7th choice on this page as the choice-that-counts. Then: ")
-     (:ul
-      (:li "The person would have to do 7 extra tasks and receive $1.20 upon completing the study")
-      (:li "If the person fails to do the 7 extra tasks, they receive neither the completion fee, nor the $1.20 -- they only receive the payment for those tasks they have already done"))
-     (:img ([:src (resource-uri price-list-screenshot)])))
-    (button void "Continue"))))
+  (page
+   (haml
+    (:div.container
+     (:h1 "Explaining Choice for Extra Tasks")
+     (:p "During the experiment, you will be given several pages of choices for doing extra tasks. Below you see a screenshot of such a page with some choices made. This determines the extra tasks and extra bonus you will receive from this study as follows:")
+     (:ol
+      (:li "The computer randomly selects one of the decision pages as the page-that-counts")
+      (:li "The computer randomly selects one of the choices on that page as the choice-that-counts")
+      (:li "If you picked the option without extra tasks, then you do not have to do any additional tasks and receive no extra bonus")
+      (:li "If you picked the option with extra tasks, then you have to do that many extra tasks and receive the extra bonus for that option. " (:strong "Note:") " If cannot skip the extra tasks, and thus can only complete the study and receive the participation bonus if you do the extra tasks."))
+     (.container.screenshot
+      (:h2 "Screenshot of an example Decision Page")
+      (:p "Suppose that the computer randomly selected the 7th choice on this page as the choice-that-counts. Then: ")
+      (:ul
+       (:li "The person would have to do 7 extra tasks and receive $1.20 upon completing the study")
+       (:li "If the person fails to do the 7 extra tasks, they receive neither the completion fee, nor the $1.20 -- they only receive the payment for those tasks they have already done"))
+      (:img ([:src (resource-uri price-list-screenshot)])))
+     (button void "Continue")))))
 
 (define elicit-WTW-and-work
   (make-study
@@ -483,18 +494,20 @@
     (make-step 'fail task-failure))))
 
 (define (requirements-failure)
-  (haml
-   (:div.container
-    (:h1 "You do not satisfy the requirements")
-    (:p "You fail some of the requirements for the study, therefore you cannot complete the study.")
-    (button void "The End"))))
+  (page
+   (haml
+    (:div.container
+     (:h1 "You do not satisfy the requirements")
+     (:p "You fail some of the requirements for the study, therefore you cannot complete the study.")
+     (button void "The End")))))
 
 (define (consent-failure)
-  (haml
-   (:div.container
-    (:h1 "You did not consent")
-    (:p "You did not consent to the study, therefore you cannot complete the study.")
-    (button void "The End"))))
+  (page
+   (haml
+    (:div.container
+     (:h1 "You did not consent")
+     (:p "You did not consent to the study, therefore you cannot complete the study.")
+     (button void "The End")))))
 
 ;;; PRICE-LIST CONFIGURATION
 

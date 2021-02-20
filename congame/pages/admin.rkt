@@ -23,7 +23,7 @@
          web-server/dispatchers/dispatch
          web-server/http
          congame-web/components/bot-set ;"../components/bot-set.rkt"
-         congame-web/components/template ;"../components/template.rkt"
+         (prefix-in tpl: congame-web/components/template) ;"../components/template.rkt"
          congame-web/components/user ;"../components/user.rkt"
          "../studies/all.rkt"
          "render.rkt")
@@ -42,8 +42,8 @@
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
   (define studies (list-studies db))
-  (page
-   (container
+  (tpl:page
+   (tpl:container
     (haml
      (:section.studies
       (:h1 "Studies")
@@ -111,8 +111,8 @@
           (redirect-to (reverse-uri 'admin:studies-page))]
 
          [(list _ _ rw)
-          (page
-           (container
+          (tpl:page
+           (tpl:container
             (haml
              (:section.create-study
               (:h1 "Create Study")
@@ -124,8 +124,8 @@
     (next-dispatcher))
   (define instances
     (list-study-instances db study-id))
-  (page
-   (container
+  (tpl:page
+   (tpl:container
     (haml
      (:section.studies
       (:h1 "Instances")
@@ -181,8 +181,8 @@
           (redirect-to (reverse-uri 'admin:view-study-page study-id))]
 
          [(list _ _ rw)
-          (page
-           (container
+          (tpl:page
+           (tpl:container
             (haml
              (:section.create-study
               (:h1 "Create Study Instance")
@@ -210,8 +210,8 @@
           (redirect-to (reverse-uri 'admin:view-study-instance-page study-id study-instance-id))]
 
          [(list _ _ rw)
-          (page
-           (container
+          (tpl:page
+           (tpl:container
             (haml
              (:section.edit-study-instance
               (:h1 "Edit Instance")
@@ -228,8 +228,8 @@
     (list-bot-sets db study-instance-id))
   (send/suspend/dispatch/protect
    (lambda (embed/url)
-     (page
-      (container
+     (tpl:page
+      (tpl:container
        (haml
         (:section.study-instance
          (:h1
@@ -316,8 +316,8 @@
     (lookup-study-vars db participant-id))
   (send/suspend/dispatch/protect
    (lambda (embed/url)
-     (page
-      (container
+     (tpl:page
+      (tpl:container
        (haml
         (:section.study-participant
          (:h1 (study-participant/admin-email the-participant))
@@ -409,8 +409,8 @@
                              (bot-set-id the-bot-set)))]
 
               [(list _ _ rw)
-               (page
-                (container
+               (tpl:page
+                (tpl:container
                  (haml
                   (:section.create-bot-set
                    (:h1 "Select a model")
@@ -428,8 +428,8 @@
                      "Create Bot Set"))))))]))]
 
          [(list _ _ rw)
-          (page
-           (container
+          (tpl:page
+           (tpl:container
             (haml
              (:section.create-bot-set
               (:h1 "Create Bot Set")
@@ -484,8 +484,8 @@
     (list-study-instance-participants/admin db study-instance-id bot-set-id))
   (send/suspend/dispatch/protect
    (lambda (embed/url)
-     (page
-      (container
+     (tpl:page
+      (tpl:container
        (haml
         (:section.bot-set
          (:h1

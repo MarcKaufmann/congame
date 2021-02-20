@@ -39,13 +39,14 @@
       [:src (resource-uri audio-player.js)])))))
 
 (define (explain-relaxing)
-  (haml
-   (.container
-    (:h1 "Three Songs")
-    (:p "You will listen to a different song on each of the next three pages. Each song is between 2 and 4 minutes long. You can continue to the following page only after having listened until the end of the song. After having listened to the songs, you will be asked to rank the songs along several dimensions.")
-    (button
-     void
-     "Continue"))))
+  (page
+   (haml
+    (.container
+     (:h1 "Three Songs")
+     (:p "You will listen to a different song on each of the next three pages. Each song is between 2 and 4 minutes long. You can continue to the following page only after having listened until the end of the song. After having listened to the songs, you will be asked to rank the songs along several dimensions.")
+     (button
+      void
+      "Continue")))))
 
 (define (play-songs)
   (define song-names (get 'songs-to-play))
@@ -54,24 +55,25 @@
     (list-ref song-names songs-played))
   (define song-display-name
     (string-append "Song " (number->string (add1 songs-played))))
-  (haml
-   (.container
-    (:h1 "Play Song " song-display-name
-         " out of " (number->string (length song-names)))
-    (audio-container next-song-name #:caption song-display-name)
+  (page
+   (haml
+    (.container
+     (:h1 "Play Song " song-display-name
+          " out of " (number->string (length song-names)))
+     (audio-container next-song-name #:caption song-display-name)
 
-    (:h3 "Instructions")
+     (:h3 "Instructions")
 
-    (:ul
-     (:li "Press the play button to start the song.")
-     (:li "The 'Continue' button will appear once the song has finished playing."))
+     (:ul
+      (:li "Press the play button to start the song.")
+      (:li "The 'Continue' button will appear once the song has finished playing."))
 
-    (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")
-    (.hide-audio-button
-     (button
-      (λ ()
-        (put 'songs-played-so-far (add1 songs-played)))
-      "Continue")))))
+     (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")
+     (.hide-audio-button
+      (button
+       (λ ()
+         (put 'songs-played-so-far (add1 songs-played)))
+       "Continue"))))))
 
 ; Has to be called in a runtime context with `current-participant-id`
 (define (get-song i)
@@ -97,22 +99,23 @@
     (:button.button.next-button ((:type "submit")) "Submit"))))
 
 (define (evaluate-songs)
-  (haml
-   (.container
-    (:h1 "Song Evaluation")
-    (form
-     evaluation-form
-     (λ (answer)
-       (displayln (format "Favorite song is ~a" answer))
-       (flush-output))
-     render-evaluation-form)
-    (:h3 "20-second snippets of the songs")
-    ,@(for/list ([song-name (in-list (get 'songs-to-play))]
-                 [rank      (in-list '("First" "Second" "Third"))])
-        (haml
-         (:figure (:figcaption (string-append rank " song"))
-                  (:audio ([:controls ""]
-                           [:src (resource-uri songs (string-append "snip-" song-name))]))))))))
+  (page
+   (haml
+    (.container
+     (:h1 "Song Evaluation")
+     (form
+      evaluation-form
+      (λ (answer)
+        (displayln (format "Favorite song is ~a" answer))
+        (flush-output))
+      render-evaluation-form)
+     (:h3 "20-second snippets of the songs")
+     ,@(for/list ([song-name (in-list (get 'songs-to-play))]
+                  [rank      (in-list '("First" "Second" "Third"))])
+         (haml
+          (:figure (:figcaption (string-append rank " song"))
+                   (:audio ([:controls ""]
+                            [:src (resource-uri songs (string-append "snip-" song-name))])))))))))
 
 (define (evaluate-songs/bot)
   (define f (bot:find "form"))
