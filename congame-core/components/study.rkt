@@ -208,20 +208,22 @@ QUERY
 (define-syntax-rule (with-widget-parameterization e ...)
   ;; Capture return here so that any embedded (via embed/url) lambda can close over it.
   (let ([embed/url (current-embed/url)]
-        [the-request (current-request)]
-        [the-step (current-step)]
         [the-renderer (current-renderer)]
-        [return (current-return)])
+        [the-request (current-request)]
+        [return (current-return)]
+        [the-step (current-step)]
+        [bot? (current-user-bot?)])
     (syntax-parameterize ([embed
                            (syntax-parser
                              [(_ f:expr)
                               #'(embed/url
                                  (lambda (req)
                                    (parameterize ([current-embed/url embed/url]
+                                                  [current-renderer the-renderer]
                                                   [current-request req]
                                                   [current-return return]
                                                   [current-step the-step]
-                                                  [current-renderer the-renderer])
+                                                  [current-user-bot? bot?])
                                      (f req))))])]
 
                           [continue
