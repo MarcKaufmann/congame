@@ -66,9 +66,13 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   docker run \
     --name "$CONTAINER_NAME" \
     --env-file "$RUN_PATH/env" \
+    --health-cmd "curl -f http://127.0.0.1:$CONTAINER_PORT" \
+    --health-interval '2s' \
     --link "postgres-13" \
     -v "$RUN_PATH":"$RUN_PATH" \
     -p "$CONTAINER_PORT":"$CONTAINER_PORT" \
     -d \
     "$IMAGE_NAME"
+  sleep 5
+  docker inspect --format '{{.State.Health.Status}}' "$CONTAINER_NAME" | tee | grep -q "healthy"
 EOF

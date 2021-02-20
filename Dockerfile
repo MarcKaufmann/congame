@@ -29,7 +29,9 @@ FROM ghcr.io/marckaufmann/debian:bullseye-slim
 COPY --from=build /opt/congame/dist /opt/congame
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends dumb-init \
+  && apt-get install -y --no-install-recommends \
+    curl \
+    dumb-init \
     libargon2-1 \
     libssl-dev \
     libglib2.0-0 \
