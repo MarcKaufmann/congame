@@ -692,7 +692,9 @@ QUERY
     (sequence->list
      (in-entities conn (if for-bot-set
                            (where q (= u.bot-set-id ,for-bot-set))
-                           (where q (not (= u.role "bot"))))))))
+                           (where q (or (not (= u.role "bot"))
+                                        (and (= u.role "bot")
+                                             (is u.bot-set-id null)))))))))
 
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)
