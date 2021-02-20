@@ -3,6 +3,7 @@
 (require (for-syntax racket/base)
          component
          congame/components/bot
+         koyo/database
          koyo/json
          koyo/profiler
          koyo/session
@@ -22,6 +23,7 @@
 
  make-auth-manager
  auth-manager?
+ auth-manager-impersonate!
  auth-manager-login!
  auth-manager-logout!
  wrap-auth-required
@@ -44,6 +46,10 @@
 (define/contract (make-auth-manager sessions users)
   (-> session-manager? user-manager? auth-manager?)
   (auth-manager sessions users))
+
+(define/contract (auth-manager-impersonate! _am user-id)
+  (-> auth-manager? id/c void?)
+  (session-set! session-key (number->string user-id)))
 
 (define/contract (auth-manager-login! am username password)
   (-> auth-manager? non-empty-string? non-empty-string? (or/c false/c user?))

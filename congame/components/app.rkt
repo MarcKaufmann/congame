@@ -82,7 +82,7 @@
 
      [("admin" "studies" (integer-arg) "instances" (integer-arg) "participants" (integer-arg))
       #:roles (admin)
-      (admin:view-study-participant-page db)]
+      (admin:view-study-participant-page auth db)]
 
      [("admin" "studies" (integer-arg) "instances" (integer-arg) "bot-sets" "new")
       #:roles (admin)

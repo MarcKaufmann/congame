@@ -22,6 +22,7 @@
          threading
          web-server/dispatchers/dispatch
          web-server/http
+         congame-web/components/auth ;"../components/auth.rkt"
          congame-web/components/bot-set ;"../components/bot-set.rkt"
          (prefix-in tpl: congame-web/components/template) ;"../components/template.rkt"
          congame-web/components/user ;"../components/user.rkt"
@@ -302,8 +303,8 @@
            (:td (~a (study-participant/admin-progress p))))))))))
 
 ;; TODO: Stop showing e-mail and show participant ID instead.
-(define/contract ((view-study-participant-page db) _req study-id study-instance-id participant-id)
-  (-> database? (-> request? id/c id/c id/c response?))
+(define/contract ((view-study-participant-page auth db) _req study-id study-instance-id participant-id)
+  (-> auth-manager? database? (-> request? id/c id/c id/c response?))
   (define the-study
     (lookup-study-meta db study-id))
   (define the-instance
@@ -351,6 +352,15 @@
                         'study-id study-id
                         'vars (map ->jsexpr vars)))))])
            "Export JSON"))
+         (:h4
+          (:a
+           ([:href
+             (embed/url
+              (lambda (_req)
+                (auth-manager-impersonate! auth (study-participant/admin-user-id the-participant))
+                (redirect/get/forget/protect)
+                (redirect-to (reverse-uri 'study-instances-page))))])
+           "Impersonate User"))
          (:table.table
           (:thead
            (:tr
