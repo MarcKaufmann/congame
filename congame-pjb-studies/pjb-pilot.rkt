@@ -615,6 +615,9 @@
   (make-study
    #:requires '()
    #:provides '(rest-treatment)
+   #:failure-handler (lambda (s reason)
+                       (eprintf "failed at ~e with reason ~e~n" s reason)
+                       'failed)
    (list
     (make-step/study 'the-study
                      pjb-pilot-study-no-config
@@ -623,4 +626,9 @@
                                           [participation-fee (const 2.00)]
                                           [required-tasks (const 3)]
                                           [required-tasks-fee (const 1.00)]
-                                          [price-lists (const ,(hash-keys PRICE-LISTS))])))))
+                                          [price-lists (const ,(hash-keys PRICE-LISTS))]))
+    (make-step 'failed
+               (lambda ()
+                 (page
+                  (haml
+                   (:h1 "You've failed."))))))))

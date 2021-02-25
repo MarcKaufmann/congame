@@ -317,12 +317,13 @@ QUERY
 (struct step-page (renderer)
   #:transparent)
 
-(struct study (requires provides steps)
+(struct study (requires provides steps failure-handler)
   #:transparent)
 
 (define step-id/c symbol?)
 (define handler/c (-> step-page?))
-(define transition/c (-> (or/c done? next? step-id/c)))
+(define transition-result/c (or/c done? next? step-id/c))
+(define transition/c (-> transition-result/c))
 (define binding/c (list/c symbol? (or/c symbol? (list/c 'const any/c))))
 
 (define (default-transition)
@@ -427,7 +428,8 @@ QUERY
 (provide
  wrap-sub-study
  make-study
- run-study)
+ run-study
+ fail)
 
 (define-logger study)
 
@@ -436,19 +438,21 @@ QUERY
   (make-parameter null))
 
 (define current-step
-  (make-parameter 'no-step))
+  (make-parameter #f))
 
 (define current-resume-stack
   (make-parameter null))
 
 (define/contract (make-study steps
                              #:requires [requires null]
-                             #:provides [provides null])
+                             #:provides [provides null]
+                             #:failure-handler [failure-hdl #f])
   (->* ((non-empty-listof step?))
        (#:requires (listof symbol?)
-        #:provides (listof symbol?))
+        #:provides (listof symbol?)
+        #:failure-handler (or/c #f (-> step? any/c step-id/c)))
        study?)
-  (study requires provides steps))
+  (study requires provides steps failure-hdl))
 
 (define/contract (run-study s
                             [req (current-request)]
@@ -458,33 +462,48 @@ QUERY
         #:bindings (hash/c symbol? any/c))
        any)
   (define resume-stack (current-resume-stack))
+  (define root? (not (current-step)))
   (define new-study-stack
-    (case (current-step)
-      [(no-step) '(*root*)]
-      [else (cons (step-id (current-step))
-                  (current-study-stack))]))
+    (if root?
+        '(*root*)
+        (cons (step-id (current-step))
+              (current-study-stack))))
   (log-study-debug "run study~n  steps: ~e~n  resume stack: ~e~n  new study stack: ~e"
                    (map step-id (study-steps s))
                    resume-stack
                    new-study-stack)
-  (parameterize ([current-study-stack new-study-stack])
-    (cond
-      ;; An empty resume stack means that this is the first time we've
-      ;; entered this [sub]study.
-      [(null? resume-stack)
-       ;; Only put bindings on the first step of the [sub]study, to
-       ;; avoid overwriting bindings that may have been set on
-       ;; subsequent steps on resume.
-       (for ([(id value) (in-hash bindings)])
-         (put id value))
-       (begin0 (run-step req s (study-next-step s))
-         (redirect/get/forget/protect))]
+  (with-handlers ([exn:fail:study?
+                   (lambda (e)
+                     (define hdl (study-failure-handler s))
+                     (define the-step (exn:fail:study-step e))
+                     (define the-reason (exn:fail:study-reason e))
+                     (cond
+                       [hdl
+                        (define next-step-id (hdl the-step the-reason))
+                        (define next-step (study-find-step s next-step-id))
+                        (run-step req s next-step)]
+                       [root?
+                        (error 'run-study "fail~n  step: ~e~n  reason: ~a" the-step the-reason)]
+                       [else
+                        (fail the-reason the-step)]))])
+    (parameterize ([current-study-stack new-study-stack])
+      (cond
+        ;; An empty resume stack means that this is the first time we've
+        ;; entered this [sub]study.
+        [(null? resume-stack)
+         ;; Only put bindings on the first step of the [sub]study, to
+         ;; avoid overwriting bindings that may have been set on
+         ;; subsequent steps on resume.
+         (for ([(id value) (in-hash bindings)])
+           (put id value))
+         (begin0 (run-step req s (study-next-step s))
+           (redirect/get/forget/protect))]
 
-      [else
-       (define the-step
-         (study-find-step s (car resume-stack) raise-resume-error))
-       (parameterize ([current-resume-stack (cdr resume-stack)])
-         (run-step req s the-step))])))
+        [else
+         (define the-step
+           (study-find-step s (car resume-stack) raise-resume-error))
+         (parameterize ([current-resume-stack (cdr resume-stack)])
+           (run-step req s the-step))]))))
 
 (define (raise-resume-error)
   (define resume-stack
@@ -559,6 +578,13 @@ QUERY
                 #:when (eq? (step-id a-step) id))
       a-step))
   (or st (failure-thunk)))
+
+(struct exn:fail:study exn:fail (step reason)
+  #:transparent)
+
+(define/contract (fail reason [s (current-step)])
+  (->* (any/c) (step?) void?)
+  (raise (exn:fail:study "study failed" (current-continuation-marks) s reason)))
 
 
 ;; db ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
