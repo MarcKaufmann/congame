@@ -459,9 +459,11 @@ QUERY
        any)
   (define resume-stack (current-resume-stack))
   (define new-study-stack
-    (if (eq? (current-step) 'no-step)
-        (list '*root*)
-        (cons (step-id (current-step)) (current-study-stack))))
+    (case (current-step)
+      [(no-step) '(*root*)]
+      [else (cons (step-id (current-step))
+                  (current-study-stack))]))
+  (log-study-debug "run~n  resume stack: ~e~n  new study stack: ~e" resume-stack new-study-stack)
   (parameterize ([current-study-stack new-study-stack])
     (cond
       ;; An empty resume stack means that this is the first time we've
@@ -487,7 +489,7 @@ QUERY
   (error 'run-study "failed to resume step in study~n  resume stack: ~.s" resume-stack))
 
 (define (run-step req s the-step)
-  (log-study-debug "running step: ~.s" the-step)
+  (log-study-debug "run step ~e" (step-id the-step))
   (update-participant-progress! (step-id the-step))
   (define res
     (call-with-current-continuation
