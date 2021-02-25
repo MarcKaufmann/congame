@@ -70,7 +70,7 @@
      (s-exp->fasl (serialize v) out))))
 
 (define (put k v)
-  (log-study-debug "PUT~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
+  (log-study-debug "put~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
   (with-database-connection [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_data (
@@ -90,7 +90,7 @@ QUERY
 
 (define (get k [default (lambda ()
                           (error 'get "value not found for key ~.s" k))])
-  (log-study-debug "GET~n  stack: ~s~n  key: ~s" (current-study-ids) k)
+  (log-study-debug "get~n  stack: ~s~n  key: ~s" (current-study-ids) k)
   (with-database-connection [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_data" #:as d)
@@ -463,7 +463,10 @@ QUERY
       [(no-step) '(*root*)]
       [else (cons (step-id (current-step))
                   (current-study-stack))]))
-  (log-study-debug "run~n  resume stack: ~e~n  new study stack: ~e" resume-stack new-study-stack)
+  (log-study-debug "run study~n  steps: ~e~n  resume stack: ~e~n  new study stack: ~e"
+                   (map step-id (study-steps s))
+                   resume-stack
+                   new-study-stack)
   (parameterize ([current-study-stack new-study-stack])
     (cond
       ;; An empty resume stack means that this is the first time we've
@@ -508,7 +511,7 @@ QUERY
             (response/step the-step)))))
      servlet-prompt))
 
-  (log-study-debug "step ~.s returned ~.s" the-step res)
+  (log-study-debug "step ~e returned ~e" (step-id the-step) res)
   (match res
     [(? response?)
      (send/back res)]
