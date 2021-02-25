@@ -380,6 +380,10 @@ QUERY
          (match-define (list dst-id src-id) binding)
          (put dst-id (hash-ref result-bindings src-id (lambda ()
                                                         (error 'run-study/step "expected binding ~s to be provided by sub-study~n  bound to: ~s~n  at step: ~.s" src-id dst-id id)))))
+       ;; We're done with the sub-study so clear out the resume stack
+       ;; (if any) to avoid issues with resuming at a boundary between
+       ;; two sub-studies (#24).
+       (current-resume-stack null)
        (continue)))
    void
    transition
@@ -501,14 +505,12 @@ QUERY
 
         [else
          (define the-step
-           (study-find-step s (car resume-stack) raise-resume-error))
+           (study-find-step s
+                            (car resume-stack)
+                            (lambda ()
+                              (error 'run-study "failed to resume step in study~n  resume stack: ~e" resume-stack))))
          (parameterize ([current-resume-stack (cdr resume-stack)])
            (run-step req s the-step))]))))
-
-(define (raise-resume-error)
-  (define resume-stack
-    (current-participant-progress (current-study-manager)))
-  (error 'run-study "failed to resume step in study~n  resume stack: ~.s" resume-stack))
 
 (define (run-step req s the-step)
   (log-study-debug "run step ~e" (step-id the-step))
