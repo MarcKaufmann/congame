@@ -621,6 +621,7 @@
    (list
     (make-step/study 'the-study
                      pjb-pilot-study-no-config
+                     (lambda () done)
                      #:provide-bindings '([rest-treatment rest-treatment])
                      #:require-bindings `([practice-tasks (const 2)]
                                           [participation-fee (const 2.00)]
