@@ -8,6 +8,7 @@
                "gregor-lib"
                "koyo-lib"
                "marionette-lib"
+               "sentry-lib"
                "threading-lib"
                "web-server-lib"))
 (define build-deps '())

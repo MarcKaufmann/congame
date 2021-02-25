@@ -21,6 +21,7 @@
          racket/serialize
          racket/string
          racket/stxparam
+         sentry
          syntax/parse/define
          threading
          web-server/servlet
@@ -140,11 +141,21 @@ QUERY
 ;; entity can't be update!d or delete!d.  Inserting the same payment
 ;; twice raises a constraint error.
 (define/contract (put-payment! k payment)
-  (-> symbol? amount/c study-payment?)
-  (with-database-connection [conn (current-database)]
-    (insert-one! conn (make-study-payment #:participant-id (current-participant-id)
-                                          #:payment-name (symbol->string k)
-                                          #:payment payment))))
+  (-> symbol? amount/c void?)
+  (with-handlers ([exn:fail?
+                   (lambda (e)
+                     (define pid (current-participant-id))
+                     (define user
+                       (make-sentry-user
+                        #:id (~a pid)
+                        #:email (participant-email pid)))
+                     (sentry-capture-exception! e #:user user)
+                     (log-study-error "put payment failed~n  exn: ~a" (exn-message e)))])
+    (void
+     (with-database-connection [conn (current-database)]
+       (insert-one! conn (make-study-payment #:participant-id (current-participant-id)
+                                             #:payment-name (symbol->string k)
+                                             #:payment payment))))))
 
 (define (get-payment k)
   (define result
