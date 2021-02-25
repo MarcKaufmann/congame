@@ -217,7 +217,7 @@
 ;; Debrief Form
 
 (define ((input-in-range start end) v)
-  (if (memq v (range start end))
+  (if (memq v (range start (add1 end)))
       (ok v)
       (err (format "You have to provide a number between ~a and ~a" start end))))
 
