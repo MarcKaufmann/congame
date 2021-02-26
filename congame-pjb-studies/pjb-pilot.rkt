@@ -48,6 +48,25 @@
           (:strong "Note: ") "If you choose to do extra tasks, then you get the completion bonus only if you do the extra tasks.")
      (:li "an extra bonus, if you choose to do extra tasks")))))
 
+(define (initialize)
+  (page
+   (haml
+    (:div.container
+     (:h1 "Start the Study")
+     (:p "Start the study when you are ready.")
+     (button
+      (λ ()
+        (define required-tasks (next-balanced-required-tasks-treatment))
+        (put 'required-tasks required-tasks)
+        (define required-tasks-fee
+          (+ 1.00
+             ; 10 cents for every extra task beyond 10
+             (* (- required-tasks 10) 0.10)
+             ; 0.50 cents with 50% -> equalizes payment between high- and low-required-tasks treatments
+             (random-ref '(0.00 0.50))))
+        (put 'required-tasks-fee required-tasks-fee))
+      "Start")))))
+
 (define (study-explanation)
   (define required-tasks (get 'required-tasks))
   (define practice-tasks (get 'practice-tasks))
@@ -297,8 +316,9 @@
                  'willing
                  'not-willing)))
 
-; Add treatment for length of break?
+;; TREATMENTS
 (define *rest-treatments* '(get-rest-then-elicit elicit-then-get-rest))
+(define *required-tasks-treatments* '(10 15))
 
 (define (make-balanced-shuffle original)
   (define ts (shuffle original))
@@ -312,6 +332,7 @@
            (first ts)])))
 
 (define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
+(define next-balanced-required-tasks-treatment (make-balanced-shuffle *required-tasks-treatments*))
 
 (define (show-payments)
   (page
@@ -521,10 +542,13 @@
            #:adjustable-work t
            #:levels-of-money money-levels))
 
+(define (make-price-lists/tasks lot)
+  (for/hash ([n lot])
+    (define pl-name (string-append "pl" (number->string n)))
+    (values pl-name (pl-extra-tasks n pl-name))))
+
 (define PRICE-LISTS
-  (hash 'pl10 (pl-extra-tasks 10 'pl10)
-        'pl7  (pl-extra-tasks 7 'pl7)
-        'pl5  (pl-extra-tasks 5 'pl5)))
+  (make-price-lists/tasks '(5 8 11 15)))
 
 ;;; MAIN STUDY
 
@@ -532,11 +556,10 @@
   (make-study
    #:requires '(participation-fee
                 practice-tasks
-                required-tasks
-                required-tasks-fee
                 price-lists)
    #:provides '(rest-treatment)
    (list
+    (make-step 'initialize initialize)
     (make-step 'explain-study study-explanation)
     (make-step
      'test-study-requirements
@@ -625,8 +648,6 @@
                      #:provide-bindings '([rest-treatment rest-treatment])
                      #:require-bindings `([practice-tasks (const 2)]
                                           [participation-fee (const 2.00)]
-                                          [required-tasks (const 3)]
-                                          [required-tasks-fee (const 1.00)]
                                           [price-lists (const ,(hash-keys PRICE-LISTS))]))
     (make-step 'failed
                (lambda ()
