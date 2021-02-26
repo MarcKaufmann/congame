@@ -226,11 +226,18 @@
 
 ;; TODO: Improve interface. In fact, option types should be definable by users, since
 ;; price lists should work with all kinds of options.
-(define (make-pl #:name name
-                 #:fixed-work fixed-work
-                 #:fixed-money fixed-money
-                 #:adjustable-work adjustable-work
-                 #:levels-of-money levels-of-money)
+(define/contract (make-pl #:name name
+                          #:fixed-work fixed-work
+                          #:fixed-money fixed-money
+                          #:adjustable-work adjustable-work
+                          #:levels-of-money levels-of-money)
+  (->* (#:name symbol?
+        #:fixed-work number?
+        #:fixed-money number?
+        #:adjustable-work number?
+        #:levels-of-money (listof number?))
+       ()
+       price-list?)
   (price-list name
               (option fixed-work fixed-money)
               (adjustable-option adjustable-work)

@@ -160,16 +160,17 @@
                      "How many required tasks do you have to do?"
                      ,(rw "how-many-required-tasks?"
                           (widget-radio-group `(("0" . "0")
-                                                ("5" . "5")
+                                                ("6" . "6")
                                                 (,n-tasks . ,n-tasks)
-                                                ("15" . "15")))))
+                                                ("13" . "13")))))
               ,@(rw "how-many-required-tasks?" (widget-errors)))
          (button ((type "Submit") (class "button")) "Submit")))))))
 
 (define (test-comprehension/bot)
   (define f (bot:find "form"))
-  (for ([input (bot:element-find-all f "input")])
-    (element-type! input "I, Robot"))
+  (element-click! (bot:find "input[value='no-extra-no-participation-fee']"))
+  ; FIXME: Brittle - relies on the correct answer being the third input.
+  (element-click! (caddr (bot:find-all "input[name='how-many-required-tasks?']")))
   (element-click! (bot:find "button[type=submit]")))
 
 ;; Requirements Form
@@ -284,8 +285,10 @@
 
 (define (debrief-survey/bot)
   (define f (bot:find "form"))
-  (for ([input (bot:element-find-all f "input")])
+  (for ([input (bot:element-find-all f "input[type=text]")])
     (element-type! input "Bot, James Bot"))
+  (for ([input (bot:element-find-all f "input[type=number]")])
+    (element-type! input "5"))
   (element-click! (bot:find "button[type=submit]")))
 
 (define (debrief-survey)
@@ -544,7 +547,7 @@
 
 (define (make-price-lists/tasks lot)
   (for/hash ([n lot])
-    (define pl-name (string-append "pl" (number->string n)))
+    (define pl-name (string->symbol (string-append "pl" (number->string n))))
     (values pl-name (pl-extra-tasks n pl-name))))
 
 (define PRICE-LISTS
@@ -574,7 +577,7 @@
      task-study
      (λ ()
        (if (not (get 'tutorial-success?))
-           'task-failure
+           (fail 'fail-tutorial-tasks)
            'tutorial-illustrate-elicitation))
      #:require-bindings '([n practice-tasks]
                           [max-wrong-tasks practice-tasks]
@@ -603,7 +606,7 @@
      task-study
      (λ ()
        (cond [(not (get 'success?))
-              'task-failure]
+              (fail 'fail-required-tasks)]
              [else
               (put-payment! 'required-tasks-fee (get 'required-tasks-fee))
               (case (get 'rest-treatment)
@@ -628,9 +631,7 @@
                          [(elicit-then-get-rest) 'get-rest]))
                      #:require-bindings '([price-lists price-lists])
                      #:provide-bindings '([WTWs WTWs]))
-    (make-step 'debrief-survey debrief-survey #:for-bot debrief-survey/bot)
-    (make-step 'show-payments show-payments (λ () done) #:for-bot bot:continuer)
-    (make-step 'task-failure task-failure (λ () done) #:for-bot bot:continuer)
+    (make-step 'debrief-survey debrief-survey (λ () done) #:for-bot debrief-survey/bot)
     (make-step 'requirements-failure requirements-failure (λ () done) #:for-bot bot:continuer)
     (make-step 'consent-failure consent-failure (λ () done) #:for-bot bot:continuer))))
 
@@ -639,18 +640,34 @@
    #:requires '()
    #:provides '(rest-treatment)
    #:failure-handler (lambda (s reason)
+                       (put 'fail-status reason)
                        (eprintf "failed at ~e with reason ~e~n" s reason)
-                       'failed)
+                       (put 'rest-treatment 'fail)
+                       reason)
    (list
     (make-step/study 'the-study
                      pjb-pilot-study-no-config
-                     (lambda () done)
+                     (lambda () 'show-payments)
                      #:provide-bindings '([rest-treatment rest-treatment])
                      #:require-bindings `([practice-tasks (const 2)]
                                           [participation-fee (const 2.00)]
                                           [price-lists (const ,(hash-keys PRICE-LISTS))]))
-    (make-step 'failed
+    (make-step 'fail-tutorial-tasks
                (lambda ()
                  (page
                   (haml
-                   (:h1 "You've failed."))))))))
+                   (.container
+                    (:h1 "You failed the tasks")
+                    (:p "The study ends here, since you failed too many tasks.")
+                    (button void "Finish Study")))))
+               (λ () done))
+    (make-step 'fail-required-tasks
+               (lambda ()
+                 (page
+                  (haml
+                   (.container
+                    (:h1 "You failed the tasks")
+                    (:p "The study ends here, since you failed too many tasks.")
+                    (button void "See payments")))))
+               (λ () 'show-payments))
+    (make-step 'show-payments show-payments (λ () done) #:for-bot bot:continuer))))

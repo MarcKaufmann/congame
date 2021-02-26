@@ -124,8 +124,8 @@
   (element-click! (bot:find "button[type=submit]")))
 
 (define (play-songs/bot)
-  #;(element-click! (bot:find "#play"))
   (void
+   (element-click! (bot:find "#play"))
    (page-execute-async! (bot:current-page) "document.querySelector('.next-button').click()"))
   #;(element-click! (page-wait-for! (bot:current-page) "a.next-button")))
 
