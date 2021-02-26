@@ -22,7 +22,7 @@
 (define-static-resource matrix-dir "matrices")
 (define-runtime-path matrix-csv "matrix.csv")
 
-(define n-matrices 5)
+(define n-matrices 200)
 
 ; TODO: Why does `(current-directory)` yield congame instead of congame/congame-pjb-studies?
 ; And why do relative paths (such as "matrix.csv") not work with `file-exists?` at run-time?
@@ -33,7 +33,6 @@
     (resource-path matrix-dir))
    matrix-csv))
 
-; TODO: Is this toggleable or only shows?
 (define (toggleable-xexpr message xexpr #:hidden? [hidden? #t])
   (haml
    (:div
