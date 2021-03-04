@@ -49,23 +49,16 @@
      (:li "an extra bonus, if you choose to do extra tasks")))))
 
 (define (initialize)
-  (page
-   (haml
-    (:div.container
-     (:h1 "Start the Study")
-     (:p "Start the study when you are ready.")
-     (button
-      (λ ()
-        (define required-tasks (next-balanced-required-tasks-treatment))
-        (put 'required-tasks required-tasks)
-        (define required-tasks-fee
-          (+ 1.00
-             ; 10 cents for every extra task beyond 10
-             (* (- required-tasks 10) 0.10)
-             ; 0.50 cents with 50% -> equalizes payment between high- and low-required-tasks treatments
-             (random-ref '(0.00 0.50))))
-        (put 'required-tasks-fee required-tasks-fee))
-      "Start")))))
+  (define required-tasks (next-balanced-required-tasks-treatment))
+  (put 'required-tasks required-tasks)
+  (define required-tasks-fee
+    (+ 1.00
+       ; 10 cents for every extra task beyond 10
+       (* (- required-tasks 10) 0.10)
+       ; 0.50 cents with 50% -> equalizes payment between high- and low-required-tasks treatments
+       (random-ref '(0.00 0.50))))
+  (put 'required-tasks-fee required-tasks-fee)
+  (skip))
 
 (define (study-explanation)
   (define required-tasks (get 'required-tasks))
