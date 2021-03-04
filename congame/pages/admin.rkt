@@ -38,7 +38,8 @@
  view-study-instance-page
  view-study-participant-page
  create-study-instance-bot-sets-page
- view-study-instance-bot-set-page)
+ view-study-instance-bot-set-page
+ stop-impersonation-page)
 
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
@@ -536,3 +537,10 @@
    (reverse-uri 'admin:view-study-instance-page
                 (study-meta-id the-study)
                 (study-instance-id the-instance))))
+
+
+(define/contract ((stop-impersonation-page am) _req)
+  (-> auth-manager? (-> request? response?))
+  (when (impostor?)
+    (auth-manager-stop-impersonation! am))
+  (redirect-to (reverse-uri 'study-instances-page)))

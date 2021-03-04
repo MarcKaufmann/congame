@@ -23,7 +23,9 @@
 
  make-auth-manager
  auth-manager?
+ impostor?
  auth-manager-impersonate!
+ auth-manager-stop-impersonation!
  auth-manager-login!
  auth-manager-logout!
  wrap-auth-required
@@ -32,6 +34,7 @@
  exn:fail:auth-manager:unverified?)
 
 (define session-key 'uid)
+(define session-impersonator-key 'session-impersonator-uid)
 
 (define/contract current-user
   (parameter/c (or/c false/c user?))
@@ -47,9 +50,19 @@
   (-> session-manager? user-manager? auth-manager?)
   (auth-manager sessions users))
 
-(define/contract (auth-manager-impersonate! _am user-id)
+(define/contract (impostor?)
+  (-> boolean?)
+  (not (not (session-ref session-impersonator-key #f))))
+
+(define/contract (auth-manager-impersonate! _am uid)
   (-> auth-manager? id/c void?)
-  (session-set! session-key (number->string user-id)))
+  (session-set! session-key (number->string uid))
+  (session-set! session-impersonator-key (number->string (user-id (current-user)))))
+
+(define/contract (auth-manager-stop-impersonation! _am)
+  (-> auth-manager? void?)
+  (session-set! session-key (session-ref session-impersonator-key))
+  (session-remove! session-impersonator-key))
 
 (define/contract (auth-manager-login! am username password)
   (-> auth-manager? non-empty-string? non-empty-string? (or/c false/c user?))

@@ -262,3 +262,10 @@ input {
 .price-list td input {
   margin: 0.5em;
 }
+
+.impostor-bar {
+  background: $cool-grey-9;
+  border-bottom: 1px solid $cool-grey-7;
+  padding: 6px 0;
+  text-align: center;
+}

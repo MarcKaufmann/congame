@@ -97,6 +97,9 @@
       (lambda (req . _args)
         ((broker-admin-handler broker-admin) req))]
 
+     [("admin" "stop-impersonation")
+      (admin:stop-impersonation-page auth)]
+
      [("api" "v1" "studies.json")
       #:roles (api)
       (api:studies db)]

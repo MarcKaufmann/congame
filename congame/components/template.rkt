@@ -61,14 +61,19 @@
       ([:defer "defer"]
        [:src (static-uri "js/app.js")])))
     (:body
+     (when (impostor?)
+       (haml
+        (.impostor-bar
+         (:a
+          ([:href (reverse-uri 'admin:stop-impersonation-page)])
+          "Stop impersonating user."))))
      (when show-nav?
        (cond [(and (current-user) (user-admin? (current-user)))
               (nav
                (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
                (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out))
                (nav-item (reverse-uri 'admin:studies-page) (translate 'nav-admin))
-               (nav-item "/admin/jobs" (translate 'nav-jobs)) )
-              ]
+               (nav-item "/admin/jobs" (translate 'nav-jobs)))]
              [(current-user)
               (nav
                (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
