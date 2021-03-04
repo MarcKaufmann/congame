@@ -40,7 +40,6 @@
 
 ;; TODO: Give bots the ability to `get' (but maybe not put!) data.
 (module+ main
-
   (run-bot
    #:study-url "http://127.0.0.1:5100/study/pilot1"
    #:username "bot@example.com"
