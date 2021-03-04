@@ -648,6 +648,7 @@ QUERY
   ([id integer/f]
    [user-id integer/f]
    [email string/f]
+   [role symbol/f]
    [progress (array/f string/f)]
    [completed? boolean/f]
    [enrolled-at datetime-tz/f]))
@@ -731,7 +732,7 @@ QUERY
           (join user #:as u #:on (= u.id p.user-id))
           (where (= p.instance-id ,instance-id))
           (order-by ([p.enrolled-at #:desc]))
-          (select p.id u.id u.username p.progress p.completed? p.enrolled-at)
+          (select p.id u.id u.username u.role p.progress p.completed? p.enrolled-at)
           (project-onto study-participant/admin-schema)))
 
     (sequence->list
@@ -812,7 +813,7 @@ QUERY
     (lookup conn (~> (from study-participant #:as p)
                      (join user #:as u #:on (= u.id p.user-id))
                      (where (= p.id ,participant-id))
-                     (select p.id u.id u.username p.progress p.completed? p.enrolled-at)
+                     (select p.id u.id u.username u.role p.progress p.completed? p.enrolled-at)
                      (project-onto study-participant/admin-schema)))))
 
 (define/contract (participant-email pid)

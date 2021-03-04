@@ -353,15 +353,17 @@
                         'study-id study-id
                         'vars (map ->jsexpr vars)))))])
            "Export JSON"))
-         (:h4
-          (:a
-           ([:href
-             (embed/url
-              (lambda (_req)
-                (auth-manager-impersonate! auth (study-participant/admin-user-id the-participant))
-                (redirect/get/forget/protect)
-                (redirect-to (reverse-uri 'study-instances-page))))])
-           "Impersonate User"))
+         (unless (eq? (study-participant/admin-role the-participant) 'admin)
+           (haml
+            (:h4
+             (:a
+              ([:href
+                (embed/url
+                 (lambda (_req)
+                   (auth-manager-impersonate! auth (study-participant/admin-user-id the-participant))
+                   (redirect/get/forget/protect)
+                   (redirect-to (reverse-uri 'study-instances-page))))])
+              "Impersonate User"))))
          (:table.table
           (:thead
            (:tr
