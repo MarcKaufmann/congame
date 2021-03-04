@@ -7,6 +7,7 @@
          racket/runtime-path
          racket/serialize
          racket/string
+         sentry
          koyo/haml
          marionette
          congame/components/study
@@ -24,14 +25,20 @@
 
 (define n-matrices 200)
 
-; TODO: Why does `(current-directory)` yield congame instead of congame/congame-pjb-studies?
-; And why do relative paths (such as "matrix.csv") not work with `file-exists?` at run-time?
-(unless (file-exists? matrix-csv)
-  (list->file
-   (list-of-large-matrices
-    n-matrices
-    (resource-path matrix-dir))
-   matrix-csv))
+(define matrix-exn #f)
+(define matrix-thd
+  (thread
+   (lambda ()
+     (with-handlers ([exn:fail?
+                      (lambda (e)
+                        (sentry-capture-exception! e)
+                        (set! matrix-exn e))])
+       (unless (file-exists? matrix-csv)
+         (list->file
+          (list-of-large-matrices
+           n-matrices
+           (resource-path matrix-dir))
+          matrix-csv))))))
 
 (define (toggleable-xexpr message xexpr #:hidden? [hidden? #t])
   (haml
@@ -77,6 +84,10 @@
   (random-ref MATRICES))
 
 (define (initialize-tasks)
+  (sync matrix-thd)
+  (when (exn:fail? matrix-exn)
+    (raise matrix-exn))
+
   (define n (get 'n))
   (define title (get 'title))
   (define n-string (number->string n))
