@@ -1,5 +1,8 @@
 FROM ghcr.io/marckaufmann/racket:7.9-cs-full
 
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends firefox
+
 WORKDIR /opt/congame
 COPY .git /opt/congame/.git
 COPY ci /opt/congame/ci
