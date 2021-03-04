@@ -1,7 +1,7 @@
 FROM ghcr.io/marckaufmann/racket:7.9-cs-full
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends firefox
+  && apt-get install -y --no-install-recommends firefox-esr
 
 WORKDIR /opt/congame
 COPY .git /opt/congame/.git
