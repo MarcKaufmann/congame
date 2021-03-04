@@ -606,6 +606,7 @@ QUERY
  list-all-study-instances
  list-active-study-instances
  list-study-instance-participants/admin
+ list-study-instance-payments/admin
  current-participant-id
  participant-email
  clear-participant-progress!
@@ -741,6 +742,18 @@ QUERY
                            (where q (or (not (= u.role "bot"))
                                         (and (= u.role "bot")
                                              (is u.bot-set-id null)))))))))
+
+(define/contract (list-study-instance-payments/admin db instance-id)
+  (-> database? id/c (listof (cons/c string? number?)))
+  (with-database-connection [conn db]
+    (for/list ([(username total)
+                (in-entities conn (~> (from study-participant #:as p)
+                                      (join study-payment #:as sp #:on (= sp.participant-id p.id))
+                                      (join "users" #:as u #:on (= u.id p.user-id))
+                                      (select u.username (sum sp.payment))
+                                      (group-by u.username)
+                                      (where (= p.instance-id ,instance-id))))])
+      (cons username total))))
 
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)

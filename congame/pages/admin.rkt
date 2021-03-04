@@ -257,6 +257,23 @@
                 (response/jsexpr
                  (study-participants->jsexpr db study-id study-instance-id participants))))])
            "Export JSON"))
+         (:h4
+          (:a
+           ([:href
+             (embed/url
+              (lambda (_req)
+                (define payments (list-study-instance-payments/admin db study-instance-id))
+                (response/output
+                 #:headers (list (make-header #"content-disposition" #"attachment; filename=\"payments.csv\""))
+                 (lambda (out)
+                   (for ([p (in-list payments)])
+                     (fprintf out
+                              "~a,~a~n"
+                              (car p)
+                              (~r
+                               #:precision '(= 2)
+                               (cdr p))))))))])
+           "Export Payments CSV"))
          (:h2 "Bot Sets")
          (:h3
           (:a
