@@ -28,6 +28,35 @@
 (provide
  pjb-pilot-study)
 
+(define required-matrix-piece-rate 0.15)
+(define high-workload 15)
+(define low-workload 10)
+(define practice-tasks 1)
+(define participation-fee 2.00)
+
+;;; PRICE-LIST CONFIGURATION
+
+(define pl-length 15)
+(define pl-stepsize 0.2)
+(define money-levels
+  (build-list pl-length (λ (i) (* i pl-stepsize))))
+(define (pl-extra-tasks t name)
+  (make-pl #:name name
+           #:fixed-work 0
+           #:fixed-money 0
+           #:adjustable-work t
+           #:levels-of-money money-levels))
+
+(define (make-price-lists/tasks lot)
+  (for/hash ([n lot])
+    (define pl-name (string->symbol (string-append "pl" (number->string n))))
+    (values pl-name (pl-extra-tasks n pl-name))))
+
+(define PRICE-LISTS
+  (make-price-lists/tasks '(5 8 11 15)))
+
+;; PAGE RENDERERS
+
 (define/contract (study-description required-tasks required-tasks-fee participation-fee)
   (-> number? number? number? any/c)
   (haml
@@ -36,27 +65,27 @@
     (:p "If you decide to participate in the study, you will do the following:")
     (:ul
      (:li "complete " (number->string required-tasks) " required tasks")
-     (:li "choose whether to do additional tasks for bonus payments")
+     (:li "choose whether to do extra tasks for bonus payments")
+     (:li "do the extra tasks chosen (if applicable)")
      (:li "do a different 10-minute task involving sound/audio")
      (:li "fill in a brief survey"))
-    (:h3 "Payments")
 
-    (:p "You receive the following payments if you complete a given stage:")
+    (:h3 "Payments")
+    (:p "You receive the following payments if you complete a given stage of the main study:")
     (:ul
      (:li (pp-money required-tasks-fee) " for required tasks")
      (:li (pp-money participation-fee) " if you complete the whole study. "
-          (:strong "Note: ") "If you choose to do extra tasks, then you get the completion bonus only if you do the extra tasks.")
-     (:li "an extra bonus, if you choose to do extra tasks")))))
+          (:strong "Note: ") "If you choose extra tasks, then you receive this bonus only if you complete the extra tasks. So if you do not want to do extra tasks, don't choose them.")
+     (:li "If you choose and do the extra task, you will receive the corresponding bonus from that choice.")))))
 
 (define (initialize)
   (define required-tasks (next-balanced-required-tasks-treatment))
   (put 'required-tasks required-tasks)
   (define required-tasks-fee
-    (+ 1.00
-       ; 10 cents for every extra task beyond 10
-       (* (- required-tasks 10) 0.10)
-       ; 0.50 cents with 50% -> equalizes payment between high- and low-required-tasks treatments
-       (random-ref '(0.00 0.50))))
+    (+ (* required-tasks required-matrix-piece-rate)
+       ; equalizes payment between high- and low-required-tasks treatments
+       (random-ref `(0.00 ,(* required-matrix-piece-rate
+                              (- high-workload low-workload))))))
   (put 'required-tasks-fee required-tasks-fee)
   (skip))
 
@@ -68,20 +97,23 @@
   (page
    (haml
     (:div.container.container
-     (:h1 "Study Explanation")
+     (:h1 "Study Instructions")
+
+     (:h2 "Sound Required")
+     (:p (:strong "Note:") " This study requires sound, so you need headphones or be able to listen to sound on your speakers." )
 
      (:h2 "Tutorial")
      (:p "You are starting the tutorial for this study which consists of the following:")
      (:ul
       (:li "a study description (this page)")
       (:li "a page to check that your sound works")
-      (:li "a description of the tasks in this study and doing " (number->string practice-tasks) " practice tasks")
-      (:li "a description of how extra tasks (or lack thereof) are determined by your decisions")
+      (:li "a description of the tasks in this study followed by " (number->string practice-tasks) " practice tasks")
+      (:li "a description of how your decisions determine optional extra tasks")
       (:li "a form asking whether you agree to participate in the study"))
      (:p "You will not receive any payment for completing the tutorial.")
 
      (study-description required-tasks required-tasks-fee participation-fee)
-     (:p (:strong "Note:") " The study requires sound, so you need headphones or be able to listen to sound on your speakers." )
+
 
      (button void "Continue")))))
 
@@ -314,7 +346,7 @@
 
 ;; TREATMENTS
 (define *rest-treatments* '(get-rest-then-elicit elicit-then-get-rest))
-(define *required-tasks-treatments* '(10 15))
+(define *required-tasks-treatments* (list low-workload high-workload))
 
 (define (make-balanced-shuffle original)
   (define ts (shuffle original))
@@ -526,26 +558,6 @@
      (:p "You did not consent to the study, therefore you cannot complete the study.")
      (button void "The End")))))
 
-;;; PRICE-LIST CONFIGURATION
-
-(define stepsize 0.2)
-(define money-levels
-  (build-list 10 (λ (i) (* i stepsize))))
-(define (pl-extra-tasks t name)
-  (make-pl #:name name
-           #:fixed-work 0
-           #:fixed-money 0
-           #:adjustable-work t
-           #:levels-of-money money-levels))
-
-(define (make-price-lists/tasks lot)
-  (for/hash ([n lot])
-    (define pl-name (string->symbol (string-append "pl" (number->string n))))
-    (values pl-name (pl-extra-tasks n pl-name))))
-
-(define PRICE-LISTS
-  (make-price-lists/tasks '(5 8 11 15)))
-
 ;;; MAIN STUDY
 
 (define pjb-pilot-study-no-config
@@ -642,8 +654,8 @@
                      pjb-pilot-study-no-config
                      (lambda () 'show-payments)
                      #:provide-bindings '([rest-treatment rest-treatment])
-                     #:require-bindings `([practice-tasks (const 2)]
-                                          [participation-fee (const 2.00)]
+                     #:require-bindings `([practice-tasks (const ,practice-tasks)]
+                                          [participation-fee (const ,participation-fee)]
                                           [price-lists (const ,(hash-keys PRICE-LISTS))]))
     (make-step 'fail-tutorial-tasks
                (lambda ()
