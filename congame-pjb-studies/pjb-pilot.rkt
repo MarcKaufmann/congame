@@ -275,8 +275,14 @@
             [how-clear (ensure binding/number (required) (input-in-range 1 5))]
             [what-could-be-clearer (ensure binding/text)]
             [how-relaxing (ensure binding/number (required) (input-in-range 1 5))]
-            [restful-activity (ensure binding/text (required))])
-           (list gender how-clear what-could-be-clearer how-relaxing restful-activity)))
+            [restful-activity (ensure binding/text (required))]
+            [comments (ensure binding/text)])
+           (hash 'gender gender
+                 'how-clear-were-instructions how-clear
+                 'what-could-be-clearer what-could-be-clearer
+                 'how-relaxing how-relaxing
+                 'other-restful-activity restful-activity
+                 'comments comments)))
   (haml
    (form
     the-form
@@ -310,6 +316,11 @@
               "What other activity would you find restful between two rounds of tasks? Think of activities you usually do when doing online work."
               ,(rw "restful-activity" (widget-text)))
              ,@(rw "restful-activity" (widget-errors)))
+        (div ((class "group"))
+             (label
+              "If you have any other comments, write them here."
+              ,(rw "comments" (widget-text)))
+             ,@(rw "comments" (widget-errors)))
         (button ((type "submit") (class "button next-button")) "Submit"))))))
 
 (define (debrief-survey/bot)
@@ -436,7 +447,7 @@
   (define continue-text
     (if (> extra-tasks 0)
         (format "Continue to ~a extra tasks for a ~a extra bonus " extra-tasks extra-bonus)
-        "Continue with no extra tasks or extra bonus."))
+        "Continue with no extra tasks and no extra bonus."))
   (page
    (haml
     (:div.container
