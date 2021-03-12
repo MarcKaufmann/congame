@@ -19,12 +19,12 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-    - name: Checkout (+lfs)
+    - name: Checkout (+ fetch lfs)
       uses: actions/checkout@master
       with:
-        lfs: true
-    - name: Pull lfs objects # TODO: checkout might be enough
-      run: git lfs pull
+        lfs: true # Does not checkout the files, only fetches them
+    - name: Checkout lfs objects
+      run: git lfs checkout
 
     - name: Cache npm
       uses: actions/cache@v2
