@@ -139,8 +139,7 @@
      (form
       evaluation-form
       (λ (answer)
-        (displayln (format "Favorite song is ~a" answer))
-        (flush-output))
+        (put 'song-survey answer))
       render-evaluation-form)
      (:h3 "20-second snippets of the songs")
      ,@(for/list ([song-name (in-list (get 'songs-to-play))]
