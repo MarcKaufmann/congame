@@ -39,6 +39,7 @@ RUN apt-get update \
     libcairo2 \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
+    libjpeg62 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
