@@ -6,6 +6,7 @@
          racket/format
          marionette
          koyo/haml
+         (prefix-in config: (only-in congame-web/config support-email))
          congame/components/study
          (prefix-in bot: (submod congame/components/bot actions)))
 
@@ -36,7 +37,7 @@
     (:p "Your answers will be collected confidentially and anonymously -- the researchers will not be able to link decisions and participants' identity, beyond the MTurk/Prolific ID provided).")
 
     (:p "In case the results of the study are published, there will be no references to your identity. Data anonymity is guaranteed.")
-    (:p "If you have any questions or concerns regarding this study, please contact us at kaufmannm@ceu.edu.")
+    (:p "If you have any questions or concerns regarding this study, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us")".")
     (form
      the-form
      ; after successful submit
