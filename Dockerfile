@@ -38,6 +38,7 @@ RUN apt-get update \
     libfontconfig1 \
     libcairo2 \
     libpango-1.0-0 \
+    libpangocairo-1.0-0 \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
