@@ -31,7 +31,7 @@
 (define required-matrix-piece-rate 0.15)
 (define high-workload 15)
 (define low-workload 10)
-(define practice-tasks 1)
+(define practice-tasks 2)
 (define participation-fee 2.00)
 
 ;;; PRICE-LIST CONFIGURATION
@@ -126,8 +126,9 @@
   (page
    (haml
     (:div.container
-     (study-description required-tasks required-tasks-fee participation-fee)
-     (render-consent-form)))))
+     (render-consent-form)
+     (.info
+      (study-description required-tasks required-tasks-fee participation-fee))))))
 
 ;; Comprehension Formm
 
@@ -137,10 +138,11 @@
     (:div.container
      (:h1 "Comprehension Tests")
      (render-comprehension-form)
-     (study-description
-      (get 'required-tasks)
-      (get 'required-tasks-fee)
-      (get 'participation-fee))))))
+     (.info
+      (study-description
+       (get 'required-tasks)
+       (get 'required-tasks-fee)
+       (get 'participation-fee)))))))
 
 (define ((is-equal a #:message [message #f]) v)
   (if (equal? v a)
@@ -172,13 +174,14 @@
      (λ (rw)
        (define n-tasks (number->string (get 'required-tasks)))
        `(div
+         (p "The Study Instructions are repeated below.")
          (div ((class "group"))
               (label ((class "radio-group"))
-                     "Suppose you complete the required tasks and chose extra tasks. What happens if you fail the extra tasks -- either due to getting more than half the tasks wrong or not attempting them?"
+                     "Suppose that after you complete the required tasks and make your choices, you end up with extra tasks. What happens if you fail the extra tasks -- either due to getting too many tasks wrong or not attempting them?"
                      ,(rw "what-if-fail-study?"
                           (widget-radio-group '(("no-payment-at-all" . "You will receive no payment at all")
                                                 ("no-extra-bonus" . "You will not receive the extra bonus payment, but you will receive the participation fee and the payment for the required tasks")
-                                                ("no-extra-no-participation-fee" . "You cannot complete the study and thus receive neither the extra bonus nor the participation fee.")))))
+                                                ("no-extra-no-participation-fee" . "You will receive the payment for the required tasks, but not the participation fee nor the extra bonus, since you cannot complete the study.")))))
               ,@(rw "what-if-fail-study?" (widget-errors)))
          (div ((class "group"))
               (label ((class "radio-group"))
@@ -282,30 +285,31 @@
       (put-payment! 'participation-fee (get 'participation-fee)))
     (λ (rw)
       `(div
-        (label
-         "What is your gender?"
-         ,(rw "gender" (widget-text)))
-        ,@(rw "gender" (widget-errors))
-        (br)
-        (label
-         "How clear were the instructions on a scale from 1 (very unclear) to 5 (very clear)?"
-         ,(rw "how-clear" (widget-number)))
-        ,@(rw "how-clear" (widget-errors))
-        (br)
-        (label
-         "If not, what could have been clearer?"
-         ,(rw "what-could-be-clearer" (widget-text)))
-        ,@(rw "what-could-be-clearer" (widget-errors))
-        (br)
-        (label
-         "How restful did you find the songs after the required tasks, from 1 (very un-relaxing) to 5 (very relaxing)?"
-         ,(rw "how-relaxing" (widget-number)))
-        ,@(rw "how-relaxing" (widget-errors))
-        (br)
-        (label
-         "What activity would you find restful between two rounds of tasks?"
-         ,(rw "restful-activity" (widget-text)))
-        ,@(rw "restful-activity" (widget-errors))
+        (div ((class "group"))
+             (label
+              "What is your gender?"
+              ,(rw "gender" (widget-text)))
+             ,@(rw "gender" (widget-errors)))
+        (div ((class "group"))
+             (label
+              "How clear were the instructions on a scale from 1 (very unclear) to 5 (very clear)?"
+              ,(rw "how-clear" (widget-number)))
+             ,@(rw "how-clear" (widget-errors)))
+        (div ((class "group"))
+             (label
+              "If not, what could have been clearer?"
+              ,(rw "what-could-be-clearer" (widget-text)))
+             ,@(rw "what-could-be-clearer" (widget-errors)))
+        (div ((class "group"))
+             (label
+              "How restful did you find the songs after the required tasks, from 1 (very un-relaxing) to 5 (very relaxing)?"
+              ,(rw "how-relaxing" (widget-number)))
+             ,@(rw "how-relaxing" (widget-errors)))
+        (div ((class "group"))
+             (label
+              "What other activity would you find restful between two rounds of tasks? Think of activities you usually do when doing online work."
+              ,(rw "restful-activity" (widget-text)))
+             ,@(rw "restful-activity" (widget-errors)))
         (button ((type "submit") (class "button next-button")) "Submit"))))))
 
 (define (debrief-survey/bot)
@@ -450,8 +454,13 @@
   (page
    (haml
     (.container
-     (:h1 "Extra Effort Choices")
-     (:p "On the next " (number->string n) " pages, you will make choices about doing extra tasks for bonus payments. After you have made your choices, the computer randomly picks one of the pages, and one of the choices on that page as the choice that counts. If for that choice you picked the extra tasks over no extra tasks, then you have to do the extra tasks and will receive the extra payment. If you do not, you fail the study and will not receive the bonus nor the completion fee.")
+     (:h1 "Choices for Extra Tasks")
+     (:ol
+      (:li "On the next " (number->string n) " pages, you will make choices about doing extra tasks for bonus payments")
+      (:li "Then the computer randomly picks one of the pages as the page-that-counts, and one of the choices on that page as the choice-that-counts")
+      (:li "You will then be asked to do the extra tasks you chose for the choice-that-counts, which may be 0")
+      (:li "Thus every choice may become the choice-that-counts"))
+     (:p (:strong "Remember:") "If you choose extra tasks, but fail to do them, you forfeit both the extra bonus and the participation bonus.")
      (button
       (λ ()
         (put 'remaining-price-lists (shuffle pls))
@@ -474,19 +483,20 @@
   (page
    (haml
     (:div.container
-     (:h1 "Explaining Choice for Extra Tasks")
-     (:p "During the experiment, you will be given several pages of choices for doing extra tasks. Below you see a screenshot of such a page with some choices made. This determines the extra tasks and extra bonus you will receive from this study as follows:")
+     (:h1 "Explaining Choices for Extra Tasks")
+     (:p "You will be given several choice pages for doing extra tasks. Below is a screenshot of one choice page with some choices made. Your choices determine the extra tasks and extra bonus in the study as follows:")
      (:ol
-      (:li "The computer randomly selects one of the decision pages as the page-that-counts")
+      (:li "The computer randomly selects one of the choice pages as the page-that-counts")
       (:li "The computer randomly selects one of the choices on that page as the choice-that-counts")
-      (:li "If you picked the option without extra tasks, then you do not have to do any additional tasks and receive no extra bonus")
-      (:li "If you picked the option with extra tasks, then you have to do that many extra tasks and receive the extra bonus for that option. " (:strong "Note:") " If cannot skip the extra tasks, and thus can only complete the study and receive the participation bonus if you do the extra tasks."))
+      (:li "If you chose the option without extra tasks, then you do not have to do any additional tasks and receive no extra bonus")
+      (:li "If you chose the option with extra tasks, then you have to do that many extra tasks and receive the extra bonus for that option. "))
+     (:p (:strong "Note:") " You cannot skip the extra tasks: you can only complete the study and receive the participation bonus if you do the extra tasks!")
      (.container.screenshot
       (:h2 "Screenshot of an example Decision Page")
-      (:p "Suppose that the computer randomly selected the 7th choice on this page as the choice-that-counts. Then: ")
+      (:p "Suppose that the computer randomly selected the 8th choice on this page as the choice-that-counts. Then: ")
       (:ul
-       (:li "The person would have to do 7 extra tasks and receive $1.20 upon completing the study")
-       (:li "If the person fails to do the 7 extra tasks, they receive neither the completion fee, nor the $1.20 -- they only receive the payment for those tasks they have already done"))
+       (:li "The person would have to do 7 extra tasks and receive an extra bonus of $1.40 in addition to their other payments")
+       (:li "If the person fails to do the 7 extra tasks, they receive neither the completion fee, nor the extra bonus of $1.40 -- only payments for parts of the study they have already completed"))
       (:img ([:src (resource-uri price-list-screenshot)])))
      (button void "Continue")))))
 

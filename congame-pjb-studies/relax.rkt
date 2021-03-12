@@ -9,7 +9,7 @@
  (except-in forms form)
  congame/components/resource
  congame/components/study
- (prefix-in config: (only-in congame-web/config support-email))
+ (prefix-in config: (only-in congame-web/config support-email debug))
  (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide
@@ -43,7 +43,7 @@
    (haml
     (.container
      (:h1 "Three Songs")
-     (:p "You will listen to a different song on each of the next three pages. Each song is between 2 and 4 minutes long. You can continue to the following page only after having listened until the end of the song. After having listened to the songs, you will be asked to rank the songs along several dimensions.")
+     (:p "You will listen to a different song (2-4 minutes) on each of the next three pages. You can continue to the following page only after listening to the song. After having listened to the three songs, you will be asked to rank the songs.")
      (button
       void
       "Continue")))))
@@ -66,14 +66,19 @@
 
      (:ul
       (:li "Press the play button to start the song.")
-      (:li "The 'Continue' button will appear once the song has finished playing."))
+      (:li "The 'Continue' button will appear once the song has finished playing (songs are around 3 minutes long)."))
 
      (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")
      (.hide-audio-button
       (button
        (λ ()
          (put 'songs-played-so-far (add1 songs-played)))
-       "Continue"))))))
+       "Continue"))
+     (when config:debug
+       (haml
+        (.container.debug
+         (:button ((:onclick "document.querySelector('.next-button').click()"))
+                  "Skip Song"))))))))
 
 ; Has to be called in a runtime context with `current-participant-id`
 (define (get-song i)
@@ -84,8 +89,22 @@
   (form* ([preferred-song (ensure binding/text (required)
                                   (one-of '(("first"  . 0)
                                             ("second" . 1)
-                                            ("third"  . 2))))])
-         (get-song preferred-song)))
+                                            ("third"  . 2))))]
+          [second-preferred-song (ensure binding/text (required)
+                                  (one-of '(("first"  . 0)
+                                            ("second" . 1)
+                                            ("third"  . 2))))]
+          [like-classical? (ensure binding/text (required)
+                                   (one-of '(("yes" . yes)
+                                             ("no"  . no))))]
+          [heard-song-before? (ensure binding/text (required)
+                                   (one-of '(("yes" . yes)
+                                             ("no"  . no))))]
+          )
+         (hash 'preferred-song (get-song preferred-song)
+               'second-preferred-song (get-song second-preferred-song)
+               'like-classical? like-classical?
+               'heard-song-before? heard-song-before?)))
 
 (define (render-evaluation-form rw)
   (haml
@@ -96,6 +115,20 @@
                                                   ("second" . "Second song")
                                                   ("third"  . "Third song")))))
     ,@(rw "preferred-song" (widget-errors))
+    (:label.radio-group "Which was your second favorite song?"
+                        (rw "second-preferred-song"
+                            (widget-radio-group '(("first"  . "First song")
+                                                  ("second" . "Second song")
+                                                  ("third"  . "Third song")))))
+    ,@(rw "second-preferred-song" (widget-errors))
+    (:label "Do you like classical music?"
+            (rw "like-classical?" (widget-radio-group '(("yes" . "Yes")
+                                                        ("no"  . "No")))))
+    ,@(rw "like-classical?" (widget-errors))
+    (:label "Do you think that you heard any of the songs before?"
+            (rw "heard-song-before?" (widget-radio-group '(("yes" . "Yes")
+                                                           ("no"  . "No")))))
+    ,@(rw "heard-song-before?" (widget-errors))
     (:button.button.next-button ((:type "submit")) "Submit"))))
 
 (define (evaluate-songs)

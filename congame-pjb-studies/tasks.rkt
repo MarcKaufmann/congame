@@ -56,13 +56,13 @@
     (:p "Each page will look like the screenshot below.")
     (:ul
      (:li "You have to count the number of cells that contain exactly the number 1")
-     (:li "Cells containing the number 11 or 10 do not count")
+     (:li "Cells containing the number 11 or 10 or 01 do not count")
      (:li "If you get more tasks wrong than you have to get right, you fail the tasks and thus the tutorial")
      (:li "If you get a matrix wrong, you will be given a new one."))
     (.container.screenshot
      (:h2 "Screenshot of Toy Matrix")
      (:h3 "Count only cells with exactly \"1\" in it")
-     (:p "In this toy 2 by 2 matrix, only 1 cell contains exactly the number 1. The cells containing 10 and 11 do not count:")
+     (:p "In this toy 2 by 2 matrix, only 1 cell contains exactly the number 1. Cells containing 10 or 11 or 01 do not count:")
      (:img ([:src (resource-uri matrix-dir "matrix-screenshot.png")]))))))
 
 ; TODO: Write down that resource-uri will lead to stub if using a constant computed at compile time...
@@ -91,12 +91,14 @@
   (define n (get 'n))
   (define title (get 'title))
   (define n-string (number->string n))
+  (define task-string
+    (if (= n 1) "task" "tasks"))
   (define hide-description? (get 'hide-description?))
   (page
    (haml
     (.container
      (:h1 title)
-     (:p "You now have to do " n-string " tasks successfully, and you can get at most " n-string " wrong. If you get more wrong, you automatically fail and drop out of the study.")
+     (:p "You now have to do " n-string " " task-string " successfully, and you can get at most " n-string " wrong. If you get more wrong, you automatically fail and drop out of the study.")
      (toggleable-xexpr "Show/Hide Task Description" (task-description) #:hidden? hide-description?)
      (button
       (λ ()

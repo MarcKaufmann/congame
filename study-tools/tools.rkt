@@ -25,19 +25,34 @@
   (haml
    (:div
     (:h2 "Consent Form")
+    (:p "This study is conducted by Marc Kaufmann and financed by Central European University")
+    (:p "You can choose whether to participate or not in this experiment. If you accept to participate, you may still change your mind and leave the study at any time. In that case, you will however forfeit the participation bonus.")
+
+    (:h3 "Study Purpose")
+    (:p "The purpose of the study is to examine how people make work decisions over time under different circumstances and measure changes in these decisions.")
+
+    (:h3 "Further Information")
+    (:p "Participation in this experiment is not associated with any foreseeable risk or benefit.")
+    (:p "Your answers will be collected confidentially and anonymously -- the researchers will not be able to link decisions and participants' identity, beyond the MTurk/Prolific ID provided).")
+
+    (:p "In case the results of the study are published, there will be no references to your identity. Data anonymity is guaranteed.")
+    (:p "If you have any questions or concerns regarding this study, please contact us at kaufmannm@ceu.edu.")
     (form
      the-form
      ; after successful submit
      (λ (consent?) (put 'consent? consent?))
      ; renderer: (-> rw xexpr)
+
      (λ (rw)
-       `(form ((action "")
-               (method "POST"))
-              (label
-               "I agree to participate in the study"
-               ,(rw "consent?" (widget-checkbox))
-               ,@(rw "consent?" (widget-errors))
-               (button ([type "Submit"] [class "button"]) "Submit"))))))))
+       `(div
+         (h3 "Consent")
+         (form ((action "")
+                (method "POST"))
+               (label
+                "I agree to participate in the study"
+                ,(rw "consent?" (widget-checkbox))
+                ,@(rw "consent?" (widget-errors))
+                (button ([type "Submit"] [class "button"]) "Submit")))))))))
 
 (define (consent/bot)
   (define consent-checkbox (bot:find "input[type=checkbox]"))

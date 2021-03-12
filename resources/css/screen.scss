@@ -131,6 +131,7 @@ body {
       margin: 0 0 16px 0;
       display: block;
       font-size: 1rem;
+      // border-top: 1px solid black;
 
       input {
         display: block;
@@ -268,4 +269,17 @@ input {
   border-bottom: 1px solid $cool-grey-7;
   padding: 6px 0;
   text-align: center;
+}
+
+.group {
+  border-top: 1px solid black;
+  padding: 1rem 0rem;
+}
+
+/* Information boxes */
+
+.info {
+    background-color: #FFC;
+    padding: 2rem;
+    margin: 0.5rem;
 }
