@@ -34,6 +34,25 @@
 (define practice-tasks 2)
 (define participation-fee 2.00)
 
+;; TREATMENTS
+
+(define *rest-treatments* '(get-rest-then-elicit elicit-then-get-rest))
+(define *required-tasks-treatments* (list low-workload high-workload))
+
+(define (make-balanced-shuffle original)
+  (define ts (shuffle original))
+  (λ ()
+    (cond [(not (empty? ts))
+           (begin0
+               (first ts)
+             (set! ts (rest ts)))]
+          [else
+           (set! ts (shuffle original))
+           (first ts)])))
+
+(define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
+(define next-balanced-required-tasks-treatment (make-balanced-shuffle *required-tasks-treatments*))
+
 ;;; PRICE-LIST CONFIGURATION
 
 (define pl-length 15)
@@ -83,7 +102,8 @@
   (put 'required-tasks required-tasks)
   (define required-tasks-fee
     (+ (* required-tasks required-matrix-piece-rate)
-       ; equalizes payment between high- and low-required-tasks treatments
+       ; high-required tasks treatment with 0 extra has same payment as low-required-tasks with extra payment
+       ; To identify wealth effects
        (random-ref `(0.00 ,(* required-matrix-piece-rate
                               (- high-workload low-workload))))))
   (put 'required-tasks-fee required-tasks-fee)
@@ -358,24 +378,6 @@
   (bot:click (if (bot-willing-to-work?-yes? bwt)
                  'willing
                  'not-willing)))
-
-;; TREATMENTS
-(define *rest-treatments* '(get-rest-then-elicit elicit-then-get-rest))
-(define *required-tasks-treatments* (list low-workload high-workload))
-
-(define (make-balanced-shuffle original)
-  (define ts (shuffle original))
-  (λ ()
-    (cond [(not (empty? ts))
-           (begin0
-               (first ts)
-             (set! ts (rest ts)))]
-          [else
-           (set! ts (shuffle original))
-           (first ts)])))
-
-(define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
-(define next-balanced-required-tasks-treatment (make-balanced-shuffle *required-tasks-treatments*))
 
 (define (show-payments)
   (page
