@@ -38,8 +38,12 @@
   (lambda (u)
     (define user-with-key
       (cond
-        [(user-api-key u) u]
+        [(and (user-api-key u)
+              (not (sql-null? (user-api-key u))))
+         (displayln "Have an api-key") (flush-output) u]
         [else (set-user-api-key u (generate-api-key u))]))
+    (displayln (format "Api-key: ~a" (user-api-key user-with-key)))
+    (flush-output)
     (set-user-updated-at user-with-key (now/moment))))
 
 (define/contract (user-admin? u)

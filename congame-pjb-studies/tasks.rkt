@@ -10,6 +10,7 @@
          sentry
          koyo/haml
          marionette
+         congame/components/export
          congame/components/study
          congame/components/resource
          "generate-matrices.rkt"
@@ -68,7 +69,14 @@
 ; TODO: Write down that resource-uri will lead to stub if using a constant computed at compile time...
 ;; Load the matrix data
 
-(serializable-struct matrix (id answer file) #:transparent)
+(serializable-struct matrix (id answer file)
+  #:transparent
+  #:methods gen:jsexprable
+  [(define (->jsexpr m)
+     (match-define (matrix id answer file) m)
+     (hash 'type "matrix"
+           'id id
+           'answer answer))])
 
 (define MATRICES
   (call-with-input-file matrix-csv
