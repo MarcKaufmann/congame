@@ -6,3 +6,4 @@ static
 ip-notification.*
 congame-doc/
 dist/
+.Rproj.user
