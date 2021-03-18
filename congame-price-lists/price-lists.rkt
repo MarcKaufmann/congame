@@ -279,6 +279,7 @@
 
 (define pl-study
   (make-study
+   "pl-study"
    #:requires '(pl-title)
    #:provides '()
    (list

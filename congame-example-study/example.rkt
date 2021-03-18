@@ -82,6 +82,7 @@
 
 (define deep-study
   (make-study
+   "deep-study"
    (list
     (make-step 'deep-info deep-info))))
 
@@ -117,6 +118,7 @@
 
 (define simple-study
   (make-study
+   "simple-study"
    (list
     (make-step 'simple-info-1 simple-info-1)
     (make-step 'listen listen-to-some-music)
@@ -125,6 +127,7 @@
 
 (define consent-study
   (make-study
+   "consent-study"
    #:requires '()
    #:provides '(consented?)
    (list

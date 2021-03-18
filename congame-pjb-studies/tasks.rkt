@@ -201,6 +201,7 @@
 
 (define task-study
   (make-study
+   "task-study"
    #:requires '(n title max-wrong-tasks hide-description?)
    #:provides '(success? correct-answers wrong-answers)
    (list

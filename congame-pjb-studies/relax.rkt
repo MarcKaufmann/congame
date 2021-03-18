@@ -163,6 +163,7 @@
 
 (define (relax-study)
   (make-study
+   "relax-study"
    #:requires '()
    #:provides '()
    (list

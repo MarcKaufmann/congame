@@ -515,6 +515,7 @@
 
 (define elicit-WTW-and-work
   (make-study
+   "elicit-WTW-and-work"
    #:requires '(price-lists)
    #:provides '(WTWs)
    (list
@@ -585,6 +586,7 @@
 
 (define pjb-pilot-study-no-config
   (make-study
+   "pjb-pilot-study-no-config"
    #:requires '(participation-fee
                 practice-tasks
                 price-lists)
@@ -665,6 +667,7 @@
 
 (define pjb-pilot-study
   (make-study
+   "pjb-pilot-study"
    #:requires '()
    #:provides '(rest-treatment)
    #:failure-handler (lambda (s reason)

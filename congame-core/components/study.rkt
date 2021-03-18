@@ -317,7 +317,7 @@ QUERY
 (struct step-page (renderer)
   #:transparent)
 
-(struct study (requires provides steps failure-handler)
+(struct study (name requires provides steps failure-handler)
   #:transparent)
 
 (define step-id/c symbol?)
@@ -447,16 +447,16 @@ QUERY
 (define current-resume-stack
   (make-parameter null))
 
-(define/contract (make-study steps
+(define/contract (make-study name steps
                              #:requires [requires null]
                              #:provides [provides null]
                              #:failure-handler [failure-hdl #f])
-  (->* ((non-empty-listof step?))
+  (->* (string? (non-empty-listof step?))
        (#:requires (listof symbol?)
         #:provides (listof symbol?)
         #:failure-handler (or/c #f (-> step? any/c step-id/c)))
        study?)
-  (study requires provides steps failure-hdl))
+  (study name requires provides steps failure-hdl))
 
 (define/contract (run-study s
                             [req (current-request)]
@@ -508,7 +508,7 @@ QUERY
            (study-find-step s
                             (car resume-stack)
                             (lambda ()
-                              (error 'run-study "failed to resume step in study~n  resume stack: ~e" resume-stack))))
+                              (error 'run-study "failed to resume step in study~n  study: ~e~n  resume stack: ~e" (study-name s) resume-stack))))
          (parameterize ([current-resume-stack (cdr resume-stack)])
            (run-step req s the-step))]))))
 
