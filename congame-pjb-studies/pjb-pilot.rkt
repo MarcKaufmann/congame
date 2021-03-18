@@ -380,6 +380,12 @@
                  'not-willing)))
 
 (define (show-payments)
+  (define (payment-display-name n)
+    (case n
+      [(participation-fee) "Completing the study (participation fee)"]
+      [(required-tasks-fee) "Doing the required tasks"]
+      [(extra-tasks-bonus) "Bonus for extra tasks"]
+      [else n]))
   (page
    (haml
     (:div.container
@@ -388,7 +394,7 @@
      (:ul
       ,@(for/list ([(name payment) (in-hash (get-all-payments))])
           (haml
-           (:li (symbol->string name) ": " (pp-money payment)))))
+           (:li (payment-display-name name) ": " (pp-money payment)))))
      (:p "Shortly after finishing the study, you will receive an email from us. " (:a ((:href (string-append "mailto:" config:support-email))) "Email us") " if you have not received the payment by the end of next week." )
      (button
       (λ ()
@@ -473,7 +479,7 @@
       (:li "Then the computer randomly picks one of the pages as the page-that-counts, and one of the choices on that page as the choice-that-counts")
       (:li "You will then be asked to do the extra tasks you chose for the choice-that-counts, which may be 0")
       (:li "Thus every choice may become the choice-that-counts"))
-     (:p (:strong "Remember:") "If you choose extra tasks, but fail to do them, you forfeit both the extra bonus and the participation bonus.")
+     (:p (:strong "Remember: ") "If you choose extra tasks, but fail to do them, you forfeit both the extra bonus and the participation bonus.")
      (button
       (λ ()
         (put 'remaining-price-lists (shuffle pls))
