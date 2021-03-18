@@ -64,7 +64,8 @@
      (:h3 "Instructions")
 
      (:ul
-      (:li "Press the play button to start the song.")
+      (:li "Press the play button to start the song")
+      (:li "Sit back and listen to the song")
       (:li "The 'Continue' button will appear once the song has finished playing (songs are around 3 minutes long)."))
 
      (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")
