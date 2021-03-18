@@ -317,7 +317,7 @@ QUERY
 (struct step-page (renderer)
   #:transparent)
 
-(struct study (requires provides steps failure-handler)
+(struct study (name requires provides steps failure-handler)
   #:transparent)
 
 (define step-id/c symbol?)
@@ -447,16 +447,16 @@ QUERY
 (define current-resume-stack
   (make-parameter null))
 
-(define/contract (make-study steps
+(define/contract (make-study name steps
                              #:requires [requires null]
                              #:provides [provides null]
                              #:failure-handler [failure-hdl #f])
-  (->* ((non-empty-listof step?))
+  (->* (string? (non-empty-listof step?))
        (#:requires (listof symbol?)
         #:provides (listof symbol?)
         #:failure-handler (or/c #f (-> step? any/c step-id/c)))
        study?)
-  (study requires provides steps failure-hdl))
+  (study name requires provides steps failure-hdl))
 
 (define/contract (run-study s
                             [req (current-request)]
@@ -472,7 +472,8 @@ QUERY
         '(*root*)
         (cons (step-id (current-step))
               (current-study-stack))))
-  (log-study-debug "run study~n  steps: ~e~n  resume stack: ~e~n  new study stack: ~e"
+  (log-study-debug "run study~n  name: ~e~n  steps: ~e~n  resume stack: ~e~n  new study stack: ~e"
+                   (study-name s)
                    (map step-id (study-steps s))
                    resume-stack
                    new-study-stack)
@@ -503,14 +504,16 @@ QUERY
          (begin0 (run-step req s (study-next-step s))
            (redirect/get/forget/protect))]
 
+        ;; When we "continue"...
         [else
          (define the-step
            (study-find-step s
                             (car resume-stack)
                             (lambda ()
-                              (error 'run-study "failed to resume step in study~n  resume stack: ~e" resume-stack))))
+                              (error 'run-study "failed to resume step in study~n  study: ~e~n  resume stack: ~e" (study-name s) resume-stack))))
          (parameterize ([current-resume-stack (cdr resume-stack)])
-           (run-step req s the-step))]))))
+           (begin0 (run-step req s the-step)
+             (redirect/get/forget/protect)))]))))
 
 (define (run-step req s the-step)
   (log-study-debug "run step ~e" (step-id the-step))
@@ -532,6 +535,10 @@ QUERY
             (response/step the-step)))))
      servlet-prompt))
 
+  ;; FIXME: Figure out a way to clear the resume stack after
+  ;; returning/continuing from a form. Currently, we only clear the
+  ;; stack for the form's "sub-continuation", but when the form returns
+  ;; we have the same stack and trying to continue then fails.
   (log-study-debug "step ~e returned ~e" (step-id the-step) res)
   (match res
     [(? response?)
@@ -545,7 +552,12 @@ QUERY
      (run-step new-req s next-step)]
 
     [_
-     (define new-req (redirect/get/forget/protect))
+     ;; Forget here to prevent users from going back and re-running the transition.
+     (redirect/get/forget/protect)
+     (log-study-debug "running transition for step~n  id: ~e~n  study: ~e~n  resume stack: ~e"
+                      (step-id the-step)
+                      (study-name s)
+                      (current-resume-stack))
      (define next-step
        (match ((step-transition the-step))
          [(? done?) #f]
@@ -553,6 +565,8 @@ QUERY
          [next-step-id (study-find-step s next-step-id (lambda ()
                                                          (error 'run-step "transitioned to a nonexistent step: ~.s~n  current step: ~.s~n  current study: ~.s" next-step-id (step-id the-step) s)))]))
 
+     ;; Forget here to prevent refreshing from re-running the transition.
+     (define new-req (redirect/get/forget/protect))
      (cond
        [next-step => (lambda (the-next-step)
                        (run-step new-req s the-next-step))]

@@ -34,8 +34,7 @@
      (:button#volume-down ((:type "button")) "Vol-"))
     (:figcaption caption)
     (:script
-     ([:defer "defer"]
-      [:type "text/javascript"]
+     ([:type "text/javascript"]
       [:src (resource-uri audio-player.js)])))))
 
 (define (explain-relaxing)
@@ -163,6 +162,7 @@
 
 (define (relax-study)
   (make-study
+   "relax-study"
    #:requires '()
    #:provides '()
    (list

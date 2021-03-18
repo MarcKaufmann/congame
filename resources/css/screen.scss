@@ -289,3 +289,10 @@ input {
 .hide-audio-button {
   display: none;
 }
+
+.pl-choice-label {
+  display: inline-block;
+  padding: 6px 9px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+}

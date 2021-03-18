@@ -73,6 +73,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     -p "$CONTAINER_PORT":"$CONTAINER_PORT" \
     -d \
     "$IMAGE_NAME"
-  sleep 5
+  sleep 15
+  docker inspect --format '{{.State.Health.Status}}' "$CONTAINER_NAME" # print out whatever the state currently is
   docker inspect --format '{{.State.Health.Status}}' "$CONTAINER_NAME" | grep -w "healthy" || exit 1
 EOF
