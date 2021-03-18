@@ -535,6 +535,10 @@ QUERY
             (response/step the-step)))))
      servlet-prompt))
 
+  ;; FIXME: Figure out a way to clear the resume stack after
+  ;; returning/continuing from a form. Currently, we only clear the
+  ;; stack for the form's "sub-continuation", but when the form returns
+  ;; we have the same stack and trying to continue then fails.
   (log-study-debug "step ~e returned ~e" (step-id the-step) res)
   (match res
     [(? response?)
