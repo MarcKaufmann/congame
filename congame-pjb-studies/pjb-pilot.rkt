@@ -28,7 +28,7 @@
 (provide
  pjb-pilot-study)
 
-(define required-matrix-piece-rate 0.15)
+(define required-matrix-piece-rate 0.20)
 (define high-workload 15)
 (define low-workload 10)
 (define practice-tasks 2)

@@ -59,7 +59,8 @@
              (:div.container
               ([:data-study-done "yes"])
               (:h1 "Thank You!")
-              (:p "You completed the study."))))])]
+              (:p "You completed the study.")
+              (:h3 "Completion code is: 817C6E38"))))])]
 
     [else
      (next-dispatcher)]))
