@@ -171,6 +171,7 @@
                                   (define value (and binding (bytes->string/utf-8 (binding:form-value binding))))
                                   (define field-value (~a t))
                                   `(label
+                                    ([class "pl-choice-label"])
                                     (input
                                      ([name ,name]
                                       [type "radio"]
