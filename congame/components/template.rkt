@@ -55,11 +55,9 @@
      (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
      (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
      (:script
-      ([:defer "defer"]
-       [:src (static-uri "vendor/unpoly.min.js")]))
+      ([:src (static-uri "vendor/unpoly.min.js")]))
      (:script
-      ([:defer "defer"]
-       [:src (static-uri "js/app.js")])))
+      ([:src (static-uri "js/app.js")])))
     (:body
      (when (impostor?)
        (haml
