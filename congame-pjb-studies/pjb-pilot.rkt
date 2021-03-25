@@ -257,22 +257,15 @@
          ,(rw "has-time?" (widget-checkbox)))
         ,@(rw "has-time?" (widget-errors))
         (br)
-        (div ((class "hide-audio-button"))
+        (div ((class ,(if (current-user-bot?)
+                          ""
+                          "hide-audio-button")))
              (button ((type "submit") (class "button")) "Submit")))))))
 
 (define (test-study-requirements-step/bot)
-  (element-click! (bot:find "#play"))
   (for ([checkbox (bot:find-all "input[type=checkbox]")])
-    (displayln (format "checkbox is ~a" checkbox))
-    (flush-output)
     (element-click! checkbox))
-  ;; Use JS to submit the page faster; actually click the play button
-  ;; and wait for the button to appear to simulate the real world.
-  ;; FIXME: JS version to skip wait leads to checkbox clicking being done after the page is submitted,
-  ;; leading to an error.
-  #;(void
-   (page-execute-async! (bot:current-page) "document.querySelector('form').submit()"))
-  (element-click! (page-wait-for! (bot:current-page) "button[type=submit]")))
+  (element-click! (page-query-selector! (bot:current-page) "button[type=submit]")))
 
 (define (test-study-requirements)
   (page
