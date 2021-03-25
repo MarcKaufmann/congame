@@ -2,10 +2,17 @@
 
 (define collection "congame-pjb-studies")
 (define deps '("base"
+               "component-lib"
+               "congame"
                "congame-core"
-               "study-tools"
                "congame-price-lists"
-               "htdp-lib"))
+               "forms-lib"
+               "gregor-lib"
+               "htdp-lib"
+               "koyo-lib"
+               "marionette-lib"
+               "sentry-lib"
+               "study-tools"))
 (define build-deps '())
 (define congame-studies
   '((congame-pjb-studies/pjb-pilot pjb-pilot-study)))

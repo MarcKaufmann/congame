@@ -5,7 +5,9 @@
                "congame-core"
                "study-tools"
                "forms-lib"
-               "koyo-lib"))
+               "koyo-lib"
+               "marionette-lib"
+               "web-server-lib"))
 (define build-deps '())
 (define congame-studies
   '((congame-price-lists/price-lists pl-study)))
