@@ -105,11 +105,12 @@
   (-> database? user-manager?)
   (user-manager db))
 
-(define/contract (user-manager-create! um username password)
-  (-> user-manager? string? string? user?)
+(define/contract (user-manager-create! um username password [role 'user])
+  (->* (user-manager? string? string?) ((or/c 'admin 'user 'bot)) user?)
 
   (define user
-    (~> (make-user #:username username)
+    (~> (make-user #:username username
+                   #:role role)
         (set-user-password password)))
 
   (with-handlers ([exn:fail:sql:constraint-violation?

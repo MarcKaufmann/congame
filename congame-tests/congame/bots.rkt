@@ -33,15 +33,15 @@
                        (system               . debug)
                        (worker               . info))))
      (system-start test-system)
+     (define db (system-ref test-system 'db))
+     (with-database-connection [conn db]
+       (query-exec conn "TRUNCATE users, study_participants, study_instances, studies CASCADE;"))
      (define users (system-ref test-system 'users))
      (define bot-user
-       (or
-        (user-manager-lookup/username users "bot@example.com")
-        (make-test-user! users "bot@example.com" "password")))
-     (define db (system-ref test-system 'db))
+       (make-test-user! users "bot@example.com" "password" #:bot? #t))
+     (user-manager-verify! users (user-id bot-user) (user-verification-code bot-user))
      (define pjb-pilot-instance
        (with-database-transaction [conn db]
-         (query-exec conn "TRUNCATE study_participants, study_instances, studies CASCADE;")
          (define pjb-pilot-study
            (insert-one! conn (make-study-meta
                               #:name "pjb-pilot"
