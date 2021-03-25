@@ -15,6 +15,7 @@
          web-server/servlet
          congame-web/components/auth
          congame-web/components/mail
+         congame-web/components/prolific
          congame-web/components/template
          congame-web/components/user
          ;"../components/auth.rkt"
@@ -35,6 +36,9 @@
   (define return-url
     (bindings-ref (request-bindings/raw req) 'return (reverse-uri 'study-instances-page)))
 
+  (define defaults
+    (hash "username" (get-prolific-email)))
+
   (let loop ([req req])
     (send/suspend/dispatch/protect
      (lambda (embed/url)
@@ -44,7 +48,7 @@
           (container
            (render-login-form (embed/url loop) render-widget error-message))))
 
-       (match (form-run login-form req)
+       (match (form-run login-form req #:defaults defaults)
          [(list 'passed (list username password) render-widget)
           (with-handlers ([exn:fail:auth-manager:unverified?
                            (lambda _
@@ -105,6 +109,9 @@
 
 (define/contract ((signup-page auth mailer users) req)
   (-> auth-manager? mailer? user-manager? (-> request? response?))
+  (define defaults
+    (hash "username" (get-prolific-email)))
+
   (send/suspend/dispatch/protect
    (lambda (embed/url)
      (define (render render-widget [error-message #f])
@@ -113,7 +120,7 @@
         (container
          (render-signup-form (embed/url (signup-page auth mailer users)) render-widget error-message))))
 
-     (match (form-run signup-form req)
+     (match (form-run signup-form req #:defaults defaults)
        [(list 'passed (list username password) render-widget)
         (with-handlers ([exn:fail:user-manager:username-taken?
                          (lambda _

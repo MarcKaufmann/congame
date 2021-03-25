@@ -22,6 +22,7 @@
          "../pages/all.rkt"
          congame-web/components/auth ;"auth.rkt"
          congame-web/components/mail ;"mail.rkt"
+         congame-web/components/prolific
          congame-web/components/sentry ;"sentry.rkt"
          (prefix-in tpl: congame-web/components/template) ;"template.rkt"
          congame-web/components/user) ;"user.rkt")
@@ -149,6 +150,7 @@
                               #:release config:version
                               #:environment config:environment))
         (wrap-current-sentry-user)
+        (wrap-prolific)
         ((wrap-flash flashes))
         ((wrap-session sessions))
         (wrap-protect-continuations)
