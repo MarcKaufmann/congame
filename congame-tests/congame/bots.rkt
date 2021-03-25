@@ -67,6 +67,7 @@
      #:study-url "http://127.0.0.1:8000/study/pjb-pilot"
      #:username "bot@example.com"
      #:password "password"
+     #:headless? #f
      (pjb-pilot-bot pjb-pilot-bot-model)))))
 
 (module+ test
