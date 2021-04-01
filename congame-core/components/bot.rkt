@@ -40,7 +40,7 @@
             (hash-set steppers (list (bot-stepper-id s) '*root*) s)]))))
 
 (define/contract (make-bot-stepper id action)
-  (-> symbol? (-> void?) bot-stepper?)
+  (-> symbol? (-> any) bot-stepper?)
   (bot-stepper id action))
 
 (define/contract (make-bot-stepper/study study-id b)
