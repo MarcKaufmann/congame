@@ -33,14 +33,24 @@ RUN apt-get update \
     curl \
     dumb-init \
     libargon2-1 \
-    libssl-dev \
-    libglib2.0-0 \
-    libfontconfig1 \
+    lbzip2 \
     libcairo2 \
+    libdbus-glib-1-2 \
+    libfontconfig1 \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libjpeg62 \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
-    libjpeg62 \
+    libssl-dev \
+    xvfb \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-CMD ["dumb-init", "/opt/congame/bin/congame"]
+RUN curl -Lk 'https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US' > /tmp/firefox.tar \
+    && (cd /tmp && tar -xvf firefox.tar) \
+    && mv /tmp/firefox /opt/firefox \
+    && ln -s /opt/firefox/firefox /usr/bin/firefox
+
+COPY bin/run-congame.sh /opt/congame/bin/run-congame.sh
+CMD ["dumb-init", "/opt/congame/bin/run-congame.sh"]
