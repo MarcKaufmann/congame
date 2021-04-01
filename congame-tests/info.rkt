@@ -7,13 +7,12 @@
                      "component-lib"
                      "congame-core"
                      "congame-pjb-studies"
+                     "congame-web"
                      "db-lib"
                      "deta-lib"
                      "koyo-lib"
                      "koyo-north"
                      "threading-lib"
-                     "rackunit-lib"
+                     "rackunit-lib"))
 
-                     "congame"))
-
-(define update-implies '("congame"))
+(define update-implies '("congame-web"))
