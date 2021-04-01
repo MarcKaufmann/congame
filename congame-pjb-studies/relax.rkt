@@ -121,13 +121,13 @@
                                                   ("second" . "Second song")
                                                   ("third"  . "Third song")))))
     ,@(rw "second-preferred-song" (widget-errors))
-    (:label "Do you like classical music?"
-            (rw "like-classical?" (widget-radio-group '(("yes" . "Yes")
-                                                        ("no"  . "No")))))
+    (:label.radio-group "Do you like classical music?"
+                        (rw "like-classical?" (widget-radio-group '(("yes" . "Yes")
+                                                                    ("no"  . "No")))))
     ,@(rw "like-classical?" (widget-errors))
-    (:label "Do you think that you heard any of the songs before?"
-            (rw "heard-song-before?" (widget-radio-group '(("yes" . "Yes")
-                                                           ("no"  . "No")))))
+    (:label.radio-group "Do you think that you heard any of the songs before?"
+                        (rw "heard-song-before?" (widget-radio-group '(("yes" . "Yes")
+                                                                       ("no"  . "No")))))
     ,@(rw "heard-song-before?" (widget-errors))
     (:button.button.next-button ((:type "submit")) "Submit"))))
 
@@ -150,9 +150,10 @@
                             [:src (resource-uri songs (string-append "snip-" song-name))])))))))))
 
 (define (evaluate-songs/bot)
-  (define f (bot:find "form"))
-  (define rs (bot:element-find-all f "input[type=radio]"))
-  (element-click! (car rs))
+  (define f (bot:wait-for "form"))
+  (for ([group-el (bot:element-find-all f ".radio-group")])
+    (define first-radio-el (bot:element-find group-el "input[type=radio]"))
+    (element-click! first-radio-el))
   (element-click! (bot:find "button[type=submit]")))
 
 (define (play-songs/bot)
