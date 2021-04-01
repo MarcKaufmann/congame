@@ -257,15 +257,13 @@
          ,(rw "has-time?" (widget-checkbox)))
         ,@(rw "has-time?" (widget-errors))
         (br)
-        (div ((class ,(if (current-user-bot?)
-                          ""
-                          "hide-audio-button")))
+        (div ((class "hide-audio-button"))
              (button ((type "submit") (class "button")) "Submit")))))))
 
 (define (test-study-requirements-step/bot)
   (for ([checkbox (bot:find-all "input[type=checkbox]")])
     (element-click! checkbox))
-  (element-click! (page-query-selector! (bot:current-page) "button[type=submit]")))
+  (page-execute-async! (bot:current-page) "document.querySelector('button[type=submit]').click()"))
 
 (define (test-study-requirements)
   (page
