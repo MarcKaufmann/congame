@@ -90,7 +90,7 @@
                             #:username username
                             #:password password
                             #:headless? [headless? #t]
-                            #:delay [delay 0])
+                            #:delay [delay 0.25])
     (->* (bot?
           #:study-url string?
           #:username string?
