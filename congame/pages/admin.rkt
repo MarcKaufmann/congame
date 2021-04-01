@@ -22,10 +22,10 @@
          threading
          web-server/dispatchers/dispatch
          web-server/http
-         congame-web/components/auth ;"../components/auth.rkt"
-         congame-web/components/bot-set ;"../components/bot-set.rkt"
-         (prefix-in tpl: congame-web/components/template) ;"../components/template.rkt"
-         congame-web/components/user ;"../components/user.rkt"
+         "../components/auth.rkt"
+         "../components/bot-set.rkt"
+         (prefix-in tpl: "../components/template.rkt")
+         "../components/user.rkt"
          "../studies/all.rkt"
          "render.rkt")
 

@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require (for-syntax racket/base)
-         (except-in forms form)
+(require (except-in forms form)
          racket/match
          racket/random
          racket/runtime-path
@@ -14,7 +13,7 @@
          congame/components/study
          congame/components/resource
          "generate-matrices.rkt"
-         (prefix-in config: congame-web/config)
+         (prefix-in config: congame/config)
          congame/components/bot
          (prefix-in bot: (submod congame/components/bot actions)))
 

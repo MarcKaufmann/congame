@@ -6,8 +6,15 @@
          koyo/l10n
          koyo/profiler
          koyo/url
+         congame/config
          racket/runtime-path
          web-server/http/id-cookie)
+
+;; reprovided ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ debug
+ support-email)
 
 ;; locales ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -23,9 +30,6 @@
 (current-option-name-prefix "CONGAME")
 
 (define-option version #:default "dev")
-(define-option debug
-  (equal? debug "x"))
-
 
 (define-option profile
   (begin0 profile
@@ -83,7 +87,6 @@
 (define-option company-name #:default "Total Insight Management")
 (define-option company-address #:default "")
 (define-option support-name #:default "Marc")
-(define-option support-email #:default "admin@totalinsightmanagement.com")
 
 (provide common-mail-variables)
 (define common-mail-variables

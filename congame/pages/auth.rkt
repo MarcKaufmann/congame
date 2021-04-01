@@ -13,15 +13,11 @@
          racket/string
          threading
          web-server/servlet
-         congame-web/components/auth
-         congame-web/components/mail
-         congame-web/components/prolific
-         congame-web/components/template
-         congame-web/components/user
-         ;"../components/auth.rkt"
-         ;"../components/mail.rkt"
-         ;"../components/template.rkt"
-         ;"../components/user.rkt"
+         "../components/auth.rkt"
+         "../components/mail.rkt"
+         "../components/prolific.rkt"
+         "../components/template.rkt"
+         "../components/user.rkt"
          "forms.rkt")
 
 ;; login & logout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

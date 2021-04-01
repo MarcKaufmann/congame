@@ -7,12 +7,9 @@
          racket/match
          web-server/dispatchers/dispatch
          web-server/http
-         congame-web/components/auth
-         (prefix-in tpl: congame-web/components/template)
-         congame-web/components/user)
-         ;"../components/auth.rkt"
-         ;"../components/template.rkt"
-         ;"../components/user.rkt")
+         "../components/auth.rkt"
+         (prefix-in tpl: "../components/template.rkt")
+         "../components/user.rkt")
 
 (provide
  study-instances-page

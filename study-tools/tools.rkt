@@ -6,7 +6,7 @@
          racket/format
          marionette
          koyo/haml
-         (prefix-in config: (only-in congame-web/config support-email))
+         (prefix-in config: congame/config)
          congame/components/study
          (prefix-in bot: (submod congame/components/bot actions)))
 

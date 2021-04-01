@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require (for-syntax racket/base)
-         component
          congame/components/resource
          congame/components/study
          koyo
@@ -18,14 +17,14 @@
          web-server/dispatchers/filesystem-map
          web-server/managers/lru
          web-server/servlet-dispatch
-         (prefix-in config: congame-web/config ) ;"../config.rkt")
+         (prefix-in config: "../config.rkt")
          "../pages/all.rkt"
-         congame-web/components/auth ;"auth.rkt"
-         congame-web/components/mail ;"mail.rkt"
-         congame-web/components/prolific
-         congame-web/components/sentry ;"sentry.rkt"
-         (prefix-in tpl: congame-web/components/template) ;"template.rkt"
-         congame-web/components/user) ;"user.rkt")
+         "auth.rkt"
+         "mail.rkt"
+         "prolific.rkt"
+         "sentry.rkt"
+         (prefix-in tpl: "template.rkt")
+         "user.rkt")
 
 (provide
  make-app
@@ -46,8 +45,7 @@
    #:url->path static-url->path
    #:path->mime-type path->mime-type))
 
-(struct app (dispatcher)
-  #:methods gen:component [])
+(struct app (dispatcher))
 
 (define/contract (make-app auth broker broker-admin db flashes mailer _migrator sessions users)
   (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? session-manager? user-manager? app?)

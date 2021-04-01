@@ -2,7 +2,6 @@
 
 (define collection "congame")
 (define deps '("base"
-               "congame"
                "congame-core"
                "forms-lib"
                "koyo-lib"

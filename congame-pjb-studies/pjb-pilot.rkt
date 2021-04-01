@@ -1,27 +1,26 @@
 #lang racket/base
 
-
 (require component
          (prefix-in forms: (only-in forms form))
          (except-in forms form)
          (for-syntax racket/base) ; Needed to use strings in define-static-resource. Why? Just Cause.
          gregor
+         koyo/haml
+         koyo/job
          marionette
          racket/contract
          racket/list
          racket/match
          racket/random
-         koyo/haml
-         koyo/job
-         (prefix-in config: congame-web/config)
+         sentry
+         (prefix-in config: congame/config)
          congame/components/bot
          congame/components/resource
          congame/components/study
          congame-pjb-studies/relax
          congame-price-lists/price-lists
-         congame-web/components/sentry
-         congame-web/components/mail
          congame/tools
+         "mail.rkt"
          "tasks.rkt"
          (prefix-in bot: (submod congame/components/bot actions)))
 
@@ -393,7 +392,10 @@
       "Finish Study")))))
 
 (define-job (send-study-completion-email p payment)
-  (with-sentry
+  (with-handlers ([exn:fail?
+                   (lambda (e)
+                     (sentry-capture-exception! e)
+                     (raise e))])
     (define mailer (system-ref 'mailer))
     (mailer-send-study-completed-email mailer p payment)))
 

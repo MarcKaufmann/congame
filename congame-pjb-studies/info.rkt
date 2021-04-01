@@ -3,7 +3,6 @@
 (define collection "congame-pjb-studies")
 (define deps '("base"
                "component-lib"
-               "congame"
                "congame-core"
                "congame-price-lists"
                "forms-lib"
