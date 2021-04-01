@@ -68,6 +68,7 @@
    current-page
    continuer
    click
+   wait-for
    find
    find-all
    find-attribute
@@ -152,6 +153,9 @@
 
 
   ;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (define (wait-for selector)
+    (page-wait-for! (current-page) selector))
 
   (define (find selector)
     (page-query-selector! (current-page) selector))
