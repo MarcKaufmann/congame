@@ -17,6 +17,9 @@
   (define action-url
     (make-application-url "verify" (number->string (user-id user)) (user-verification-code user)))
 
+  (define login-url
+    (make-application-url "login"))
+
   (mail-adapter-send-email-with-template
    (mailer-adapter m)
    #:to (user-username user)
@@ -25,6 +28,7 @@
    #:template-model (mailer-merge-common-variables m
                       'action_url action-url
                       'name (user-username user)
+                      'login_url login-url
                       'username (user-username user))))
 
 (define/contract (mailer-send-password-reset-email m user token)
