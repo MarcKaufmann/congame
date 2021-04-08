@@ -21,7 +21,7 @@ CREATE TABLE study_rounds(
 -- }
 
 -- @up {
-ALTER TABLE study_instances
+ALTER TABLE study_participants
   ADD COLUMN current_round_id INTEGER REFERENCES study_rounds(id) ON DELETE SET NULL;
 -- }
 
@@ -51,7 +51,9 @@ CREATE TABLE study_group_data(
   git_sha TEXT NOT NULL,
   last_put_by INTEGER NOT NULL REFERENCES study_participants(id) ON DELETE SET NULL,
   last_put_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  first_put_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  first_put_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT study_group_data_pk PRIMARY KEY (group_id, study_stack, key)
 );
 -- }
 
@@ -68,7 +70,7 @@ DROP TABLE study_groups;
 -- }
 
 -- @down {
-ALTER TABLE study_instances
+ALTER TABLE study_participants
   DROP COLUMN current_round_id;
 -- }
 

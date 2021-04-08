@@ -55,7 +55,9 @@
 (provide
  current-git-sha
  put
- get)
+ put/group
+ get
+ get/group)
 
 (define/contract current-git-sha
   (parameter/c (or/c #f string?))
@@ -97,6 +99,74 @@ QUERY
                                   (select d.value)
                                   (where (and
                                           (= d.participant-id ,(current-participant-id))
+                                          (= d.study-stack ,(current-study-array))
+                                          (= d.key ,(symbol->string k)))))))
+
+    (cond
+      [maybe-value => deserialize*]
+      [(procedure? default) (default)]
+      [else default])))
+
+(define (get-current-group-id conn)
+  (define maybe-group-id
+    (query-value conn #<<QUERY
+SELECT
+  m.group_id
+FROM
+  study_participants p
+JOIN
+  study_rounds r
+ON
+  r.id = p.current_round_id
+JOIN
+  study_groups g
+ON
+  g.round_id = r.id
+JOIN
+  study_group_members m
+ON
+      m.group_id       = g.id
+  AND m.participant_id = p.id
+WHERE
+  p.id = $1
+QUERY
+                 (current-participant-id)))
+  (begin0 maybe-group-id
+    (unless maybe-group-id
+      (error 'get-current-group-id "the participant is not part of the current group~n  participant: ~s"
+             (current-participant-id)))))
+
+(define (put/group k v)
+  (log-study-debug "put/group~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
+  (with-database-transaction [conn (current-database)]
+    #:isolation 'serializable
+    (query-exec conn #<<QUERY
+INSERT INTO study_group_data (
+  group_id, study_stack, key, value, git_sha, last_put_by
+) VALUES (
+  $1, $2, $3, $4, $5, $6
+) ON CONFLICT (group_id, study_stack, key) DO UPDATE SET
+  value = EXCLUDED.value,
+  git_sha = EXCLUDED.git_sha,
+  last_put_by = EXCLUDED.last_put_by,
+  last_put_at = CURRENT_TIMESTAMP
+QUERY
+                (get-current-group-id conn)
+                (current-study-array)
+                (symbol->string k)
+                (serialize* v)
+                (current-git-sha)
+                (current-participant-id))))
+
+(define (get/group k [default (lambda ()
+                                (error 'get/group "value not found for key ~.s" k))])
+  (log-study-debug "get/group~n  stack: ~s~n  key: ~s" (current-study-ids) k)
+  (with-database-transaction [conn (current-database)]
+    (define maybe-value
+      (query-maybe-value conn (~> (from "study_group_data" #:as d)
+                                  (select d.value)
+                                  (where (and
+                                          (= d.group-id ,(get-current-group-id conn))
                                           (= d.study-stack ,(current-study-array))
                                           (= d.key ,(symbol->string k)))))))
 
