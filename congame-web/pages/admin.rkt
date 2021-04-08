@@ -70,9 +70,11 @@
 (define create-study-form
   (form* ([name (ensure binding/text (required))]
           [slug (ensure binding/text)]
+          [type (ensure binding/symbol (required) (one-of '((singleplayer . singleplayer)
+                                                            (multiplayer  . multiplayer))))]
           [study-id (ensure binding/text (required) (one-of (for/list ([id (in-hash-keys (get-registered-studies))])
-                                                                (cons (~a id) id))))])
-    (list name (or slug (slugify name)) study-id)))
+                                                              (cons (~a id) id))))])
+    (list name (or slug (slugify name)) type study-id)))
 
 (define ((field-group label [w (widget-text)]) name value errors)
   (haml
@@ -87,6 +89,9 @@
      [:method "POST"])
     (rw "name" (field-group "Name"))
     (rw "slug" (field-group "Slug"))
+    (rw "type" (field-group "Type" (widget-select '(("" . "Please select a type")
+                                                    ("singleplayer" . "Single-player")
+                                                    ("multiplayer"  . "Multi-player")))))
     (rw "study-id" (field-group "Study ID"
                                 (widget-select (cons
                                                 (cons "" "Please select a study")
@@ -102,17 +107,18 @@
     (send/suspend/dispatch/protect
      (lambda (embed/url)
        (match (form-run create-study-form req)
-         [(list 'passed (list name slug id) _)
+         [`(passed (,name ,slug ,type ,id) ,_)
           (define the-study
             (with-database-connection [conn db]
               (insert-one! conn (make-study-meta
                                  #:name name
                                  #:slug slug
+                                 #:type type
                                  #:racket-id id))))
 
-          (redirect-to (reverse-uri 'admin:studies-page))]
+          (redirect-to (reverse-uri 'admin:view-study-page (study-meta-id the-study)))]
 
-         [(list _ _ rw)
+         [`(,_ ,_ ,rw)
           (tpl:page
            (tpl:container
             (haml
