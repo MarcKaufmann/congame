@@ -21,6 +21,11 @@ CREATE TABLE study_rounds(
 -- }
 
 -- @up {
+ALTER TABLE study_instances
+  ADD COLUMN current_round_id INTEGER REFERENCES study_rounds(id) ON DELETE SET NULL;
+-- }
+
+-- @up {
 CREATE TABLE study_groups(
   id SERIAL NOT NULL PRIMARY KEY,
   round_id INTEGER NOT NULL REFERENCES study_rounds(id) ON DELETE CASCADE
@@ -60,6 +65,11 @@ DROP TABLE study_group_participants;
 
 -- @down {
 DROP TABLE study_groups;
+-- }
+
+-- @down {
+ALTER TABLE study_instances
+  DROP COLUMN current_round_id;
 -- }
 
 -- @down {
