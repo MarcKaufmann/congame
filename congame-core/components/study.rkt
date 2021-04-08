@@ -632,11 +632,15 @@ QUERY
  lookup-study-participant/admin
  lookup-study-vars)
 
+(define study-type/c
+  (or/c 'singleplayer 'multiplayer))
+
 (define-schema study-meta
   #:table "studies"
   ([id integer/f #:primary-key #:auto-increment]
    [name string/f #:contract non-empty-string?]
    [slug string/f #:contract non-empty-string?]
+   [(type 'singleplayer) symbol/f #:contract study-type/c]
    [racket-id symbol/f]
    [(created-at (now/moment)) datetime-tz/f]))
 
