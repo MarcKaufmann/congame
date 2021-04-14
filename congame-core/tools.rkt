@@ -34,7 +34,7 @@
 
     (:h3 "Further Information")
     (:p "Participation in this experiment is not associated with any foreseeable risk or benefit.")
-    (:p "Your answers will be collected confidentially and anonymously -- the researchers will not be able to link decisions and participants' identity, beyond the MTurk/Prolific ID provided).")
+    (:p "Your answers will be collected confidentially and anonymously -- the researchers will not be able to link decisions and participants' identity, beyond the MTurk/Prolific ID provided.")
 
     (:p "In case the results of the study are published, there will be no references to your identity. Data anonymity is guaranteed.")
     (:p "If you have any questions or concerns regarding this study, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us")".")
