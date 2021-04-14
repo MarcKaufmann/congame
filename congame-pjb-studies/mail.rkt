@@ -16,7 +16,7 @@
    (mailer-adapter m)
    #:to recpt
    #:from (mailer-sender m)
-   #:template-alias "study-completed"
+   #:template-alias "study-completed-prolific"
    #:template-model (mailer-merge-common-variables m
                       'action_url action-url
                       'name recpt
