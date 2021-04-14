@@ -285,14 +285,24 @@
             [how-clear (ensure binding/number (required) (input-in-range 1 5))]
             [what-could-be-clearer (ensure binding/text)]
             [how-relaxing (ensure binding/number (required) (input-in-range 1 5))]
+            [how-do-you-decide-on-extra-work (ensure binding/text (required))]
             [restful-activity (ensure binding/text (required))]
-            [comments (ensure binding/text)])
+            [comments (ensure binding/text)]
+            [work-factor-fewer-extra-tasks (ensure binding/boolean)]
+            [work-factor-longer-break (ensure binding/boolean)]
+            [work-factor-have-more-time-to-finish-study (ensure binding/boolean)]
+            [work-factor-smaller-matrices (ensure binding/boolean)])
            (hash 'gender gender
                  'how-clear-were-instructions how-clear
                  'what-could-be-clearer what-could-be-clearer
                  'how-relaxing how-relaxing
+                 'how-do-you-decide-on-extra-work how-do-you-decide-on-extra-work
                  'other-restful-activity restful-activity
-                 'comments comments)))
+                 'comments comments
+                 'work-factors (hash 'fewer-extra-tasks work-factor-fewer-extra-tasks
+                                     'longer-break work-factor-longer-break
+                                     'have-more-time work-factor-have-more-time-to-finish-study
+                                     'smaller-matrices work-factor-smaller-matrices))))
   (haml
    (form
     the-form
@@ -323,9 +333,30 @@
              ,@(rw "how-relaxing" (widget-errors)))
         (div ((class "group"))
              (label
-              "What other activity would you find restful between two rounds of tasks? Think of activities you usually do when doing online work."
+              "What other activity would you find restful between two rounds of tasks? Think of activities you usually do during breaks from online work."
               ,(rw "restful-activity" (widget-text)))
              ,@(rw "restful-activity" (widget-errors)))
+        (div ((class "group"))
+             (label
+              "Which of the following factors makes you more willing to do extra tasks -- i.e. you will accept them for less money?"
+              (table
+               (tr
+                (td ,(rw "work-factor-fewer-extra-tasks" (widget-checkbox)) "Have fewer extra tasks to do")
+                (td ,@(rw "work-factor-fewer-extra-tasks" (widget-errors))))
+               (tr
+                (td ,(rw "work-factor-longer-break" (widget-checkbox)) "Have a longer break")
+                (td ,@(rw "work-factor-longer-break" (widget-errors))))
+               (tr
+                (td ,(rw "work-factor-have-more-time-to-finish-study" (widget-checkbox)) "Have more time to finish the study")
+                (td ,@(rw "work-factor-have-more-time-to-finish-study" (widget-errors))))
+               (tr
+                (td ,(rw "work-factor-smaller-matrices" (widget-checkbox)) "Split each matrix into two smaller matrices")
+                (td ,@(rw "work-factor-smaller-matrices" (widget-errors)))))))
+        (div ((class "group"))
+             (label
+              "Based on what did you choose the level at which you were willing to do additional tasks?"
+              ,(rw "how-do-you-decide-on-extra-work" (widget-text)))
+             ,@(rw "how-do-you-decide-on-extra-work" (widget-errors)))
         (div ((class "group"))
              (label
               "If you have any other comments, write them here."
