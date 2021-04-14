@@ -15,7 +15,7 @@
  render-consent-form
  consent/bot)
 
-(define/contract (pp-money amount #:currency [currency "$"])
+(define/contract (pp-money amount #:currency [currency "£"])
   (-> number? string?)
   (~a currency (~r amount #:precision '(= 2))))
 
