@@ -11,7 +11,6 @@ COPY congame-web /opt/congame/congame-web
 COPY migrations /opt/congame/migrations
 COPY resources /opt/congame/resources
 COPY static /opt/congame/static
-COPY study-tools /opt/congame/study-tools
 
 RUN ci/setup-catalogs.sh
 RUN raco pkg install -D --auto --batch \
@@ -20,7 +19,6 @@ RUN raco pkg install -D --auto --batch \
   congame-pjb-studies/ \
   congame-price-lists/ \
   congame-web/ \
-  study-tools/
 RUN raco koyo dist ++lang north
 
 

@@ -3,7 +3,6 @@
 (define collection "congame-price-lists")
 (define deps '("base"
                "congame-core"
-               "study-tools"
                "forms-lib"
                "koyo-lib"
                "marionette-lib"

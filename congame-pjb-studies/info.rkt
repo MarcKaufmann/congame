@@ -10,8 +10,7 @@
                "htdp-lib"
                "koyo-lib"
                "marionette-lib"
-               "sentry-lib"
-               "study-tools"))
+               "sentry-lib"))
 (define build-deps '())
 (define congame-studies
   '((congame-pjb-studies/pjb-pilot pjb-pilot-study)))
