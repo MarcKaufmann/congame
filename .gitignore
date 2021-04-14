@@ -7,3 +7,4 @@ ip-notification.*
 congame-doc/
 dist/
 .Rproj.user
+app.tmux.conf
