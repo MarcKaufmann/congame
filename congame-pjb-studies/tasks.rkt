@@ -35,9 +35,11 @@
                         (set! matrix-exn e))])
        (unless (file-exists? matrix-csv)
          (list->file
-          (list-of-large-matrices
+          (list-of-matrices
            n-matrices
-           (resource-path matrix-dir))
+           (resource-path matrix-dir)
+           #:rows 8
+           #:cols 12)
           matrix-csv))))))
 
 (define (toggleable-xexpr message xexpr #:hidden? [hidden? #t])
@@ -76,6 +78,9 @@
      (hash 'type "matrix"
            'id id
            'answer answer))])
+
+; FIXME: How best to wait for the thread without blocking?
+(thread-wait matrix-thd)
 
 (define MATRICES
   (call-with-input-file matrix-csv

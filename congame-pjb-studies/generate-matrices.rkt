@@ -9,8 +9,7 @@
 
 (provide
  list->file
- list-of-small-matrices
- list-of-large-matrices)
+ list-of-matrices)
 
 (define (0-or-1 [percentage-ones 50])
   (if (> (random 100) percentage-ones) 0 1))
@@ -66,37 +65,26 @@
                          #:exists 'replace
                          #:mode 'text))
 
-(define (matrix-name i type)
-  (string-append type "_matrix_" (number->string i) ".png"))
+(define/contract (matrix-name i type)
+  (-> integer? string? string?)
+  (string-append type (if (string=? type "") "" "_") "matrix_" (number->string i) ".png"))
 
 (define (save-matrix m-image name img-path)
   (save-image
    m-image
    (build-path img-path name)))
 
-(define small-nrows 7)
-(define small-ncols 12)
-(define large-nrows 10)
-(define large-ncols 15)
-
-(define/contract (list-of-large-matrices n dir)
-  (-> integer? path-string? (listof string?))
+(define/contract (list-of-matrices n dir #:rows (rows 8) #:cols (cols 12) #:type (type ""))
+  (->* (integer? path-string?)
+       (#:rows integer?
+        #:cols integer?
+        #:type string?)
+       (listof string?))
   (for/list ([i (range 0 n)])
     (displayln i)
-    (define m (matrix-table large-nrows large-ncols))
+    (define m (matrix-table rows cols))
     (define ones (count-ones m))
     (define m-image (add-border (matrix->image m)))
-    (define m-name (matrix-name i "large"))
-    (save-matrix m-image m-name dir)
-    (string-join (list (number->string i)  (number->string ones) m-name) ",")))
-
-(define/contract (list-of-small-matrices n dir)
-  (-> integer? path-string? (listof string?))
-  (for/list ([i (range 0 n)])
-    (displayln i)
-    (define m (matrix-table small-nrows small-ncols))
-    (define ones (count-ones m))
-    (define m-image (add-border (matrix->image m)))
-    (define m-name (matrix-name i "small"))
+    (define m-name (matrix-name i type))
     (save-matrix m-image m-name dir)
     (string-join (list (number->string i)  (number->string ones) m-name) ",")))
