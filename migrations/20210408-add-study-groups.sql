@@ -49,11 +49,11 @@ ALTER TABLE study_data
   DROP COLUMN group_name;
 -- }
 
--- @up {
+-- @down {
 ALTER TABLE study_data DROP CONSTRAINT study_data_pkey;
 -- }
 
--- @up {
+-- @down {
 ALTER TABLE study_data ADD PRIMARY KEY (participant_id, study_stack, key);
 -- }
 
