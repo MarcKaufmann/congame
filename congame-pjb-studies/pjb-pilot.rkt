@@ -27,11 +27,12 @@
 (provide
  pjb-pilot-study)
 
-(define required-matrix-piece-rate 0.15)
+(define tutorial-fee 1.00)
+(define required-matrix-piece-rate 0.10)
 (define high-workload 15)
 (define low-workload 10)
 (define practice-tasks 2)
-(define participation-fee 2.00)
+(define participation-fee 1.00)
 
 ;; TREATMENTS
 
@@ -403,6 +404,7 @@
 (define (show-payments)
   (define (payment-display-name n)
     (case n
+      [(tutorial-fee) "Completing the tutorial"]
       [(participation-fee) "Completing the study (participation fee)"]
       [(required-tasks-fee) "Doing the required tasks"]
       [(extra-tasks-bonus) "Bonus for extra tasks"]
@@ -411,7 +413,7 @@
    (haml
     (:div.container
      (:h1 "Payment Page")
-     (:p "Within the next week, you will receive a total payment of " (get-total-payment) " for this study. The detailed breakdown is as follows:")
+     (:p "Within the next week, you will receive a total payment (baseline plus bonuses) of " (get-total-payment) " for this study. The detailed breakdown is as follows:")
      (:ul
       ,@(for/list ([(name payment) (in-hash (get-all-payments))])
           (haml
@@ -608,9 +610,9 @@
   (page
    (haml
     (:div.container
-     (:h1 "You did not consent")
-     (:p "You did not consent to the study, therefore you cannot complete the study.")
-     (button void "The End")))))
+     (:h1 "You did not agree to participate")
+     (:p "You did not consent to the study, therefore you will not continue to the study. We will now show you the payments and then provide you with the completion code for the tutorial.")
+     (button void "Continue to Payments")))))
 
 ;;; MAIN STUDY
 
@@ -619,7 +621,8 @@
    "pjb-pilot-study-no-config"
    #:requires '(participation-fee
                 practice-tasks
-                price-lists)
+                price-lists
+                tutorial-fee)
    #:provides '(rest-treatment)
    (list
     (make-step 'initialize initialize)
@@ -653,8 +656,9 @@
        ; TODO: The fact that I check only once means that, if by chance we jump past this stage
        ; then the study would simply continue. In general it might be good to have this property
        ; enforced from a given stage onwards.
+       (put-payment! 'tutorial-fee (get 'tutorial-fee))
        (cond [(not (get 'consent?))
-              'consent-failure]
+              (fail 'fail-no-consent)]
              [else
               ; TODO: Treatment assignment should also be done at the study, not step, level!!
               ; Can this be done, given the need for `put`?
@@ -692,8 +696,7 @@
                      #:require-bindings '([price-lists price-lists])
                      #:provide-bindings '([WTWs WTWs]))
     (make-step 'debrief-survey debrief-survey (λ () done) #:for-bot debrief-survey/bot)
-    (make-step 'requirements-failure requirements-failure (λ () done) #:for-bot bot:continuer)
-    (make-step 'consent-failure consent-failure (λ () done) #:for-bot bot:continuer))))
+    (make-step 'requirements-failure requirements-failure (λ () done) #:for-bot bot:continuer))))
 
 (define pjb-pilot-study
   (make-study
@@ -712,7 +715,9 @@
                      #:provide-bindings '([rest-treatment rest-treatment])
                      #:require-bindings `([practice-tasks (const ,practice-tasks)]
                                           [participation-fee (const ,participation-fee)]
+                                          [tutorial-fee (const ,tutorial-fee)]
                                           [price-lists (const ,(hash-keys PRICE-LISTS))]))
+    (make-step 'fail-no-consent consent-failure (λ () 'show-payments) #:for-bot bot:continuer)
     (make-step 'fail-tutorial-tasks
                (lambda ()
                  (page

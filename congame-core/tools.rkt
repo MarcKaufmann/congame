@@ -21,7 +21,8 @@
 
 (define (render-consent-form)
   (define the-form
-    (form* ([consent? (ensure binding/boolean (required #:message "You can only continue with the study if you agree to participate."))])
+    (form* ([consent? (ensure binding/text (required) (one-of '(("yes" . #t)
+                                                                ("no"  . #f))))])
            consent?))
   (haml
    (:div
@@ -40,20 +41,19 @@
     (:p "If you have any questions or concerns regarding this study, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us")".")
     (form
      the-form
-     ; after successful submit
      (λ (consent?) (put 'consent? consent?))
-     ; renderer: (-> rw xexpr)
-
      (λ (rw)
        `(div
          (h3 "Consent")
          (form ((action "")
                 (method "POST"))
-               (label
-                "I agree to participate in the study"
-                ,(rw "consent?" (widget-checkbox))
-                ,@(rw "consent?" (widget-errors))
-                (button ([type "Submit"] [class "button"]) "Submit")))))))))
+               (div ((class "group"))
+                    (label ((class "radio-group"))
+                     "I agree to participate in the study"
+                     ,(rw "consent?" (widget-radio-group '(("yes" . "Yes, I agree to participate in the study")
+                                                           ("no"  . "No, I do not want to participate in the study")))))
+                    ,@(rw "consent?" (widget-errors)))
+               (button ([type "Submit"] [class "button"]) "Submit"))))))))
 
 (define (consent/bot)
   (define consent-checkbox (bot:find "input[type=checkbox]"))
