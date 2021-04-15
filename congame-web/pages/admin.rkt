@@ -70,11 +70,9 @@
 (define create-study-form
   (form* ([name (ensure binding/text (required))]
           [slug (ensure binding/text)]
-          [type (ensure binding/symbol (required) (one-of '((singleplayer . singleplayer)
-                                                            (multiplayer  . multiplayer))))]
           [study-id (ensure binding/text (required) (one-of (for/list ([id (in-hash-keys (get-registered-studies))])
                                                               (cons (~a id) id))))])
-    (list name (or slug (slugify name)) type study-id)))
+    (list name (or slug (slugify name)) study-id)))
 
 (define ((field-group label [w (widget-text)]) name value errors)
   (haml
@@ -89,9 +87,6 @@
      [:method "POST"])
     (rw "name" (field-group "Name"))
     (rw "slug" (field-group "Slug"))
-    (rw "type" (field-group "Type" (widget-select '(("" . "Please select a type")
-                                                    ("singleplayer" . "Single-player")
-                                                    ("multiplayer"  . "Multi-player")))))
     (rw "study-id" (field-group "Study ID"
                                 (widget-select (cons
                                                 (cons "" "Please select a study")
@@ -107,13 +102,12 @@
     (send/suspend/dispatch/protect
      (lambda (embed/url)
        (match (form-run create-study-form req)
-         [`(passed (,name ,slug ,type ,id) ,_)
+         [`(passed (,name ,slug ,id) ,_)
           (define the-study
             (with-database-connection [conn db]
               (insert-one! conn (make-study-meta
                                  #:name name
                                  #:slug slug
-                                 #:type type
                                  #:racket-id id))))
 
           (redirect-to (reverse-uri 'admin:view-study-page (study-meta-id the-study)))]
@@ -312,7 +306,9 @@
       (:th "Email")
       (:th "Completed?")
       (:th "Enrolled At")
-      (:th "Progress")))
+      (:th "Progress")
+      (:th "Current Round")
+      (:th "Current Group")))
     (:tbody
      ,@(for/list ([p (in-list participants)])
          (haml
@@ -324,7 +320,9 @@
            (:td (study-participant/admin-email p))
            (:td (if (study-participant/admin-completed? p) "yes" "no"))
            (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))
-           (:td (~a (study-participant/admin-progress p))))))))))
+           (:td (~a (study-participant/admin-progress p)))
+           (:td (study-participant/admin-current-round-name p))
+           (:td (study-participant/admin-current-group-name p)))))))))
 
 ;; TODO: Stop showing e-mail and show participant ID instead.
 (define/contract ((view-study-participant-page auth db) _req study-id study-instance-id participant-id)
@@ -391,6 +389,8 @@
           (:thead
            (:tr
             (:th "Stack")
+            (:th "Round")
+            (:th "Group")
             (:th "ID")
             (:th "First Put At")
             (:th "Last Put At")
@@ -400,6 +400,8 @@
                (haml
                 (:tr
                  (:td (:pre (~a (study-var-stack v))))
+                 (:td (study-var-round-name v))
+                 (:td (study-var-group-name v))
                  (:td (~a (study-var-id v)))
                  (:td (~t (study-var-first-put-at v) "YYYY-MM-dd hh:mm:ss"))
                  (:td (~t (study-var-last-put-at v) "YYYY-MM-dd hh:mm:ss"))

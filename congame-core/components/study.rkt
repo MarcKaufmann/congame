@@ -54,6 +54,10 @@
 
 (provide
  current-git-sha
+ current-round-name
+ current-group-name
+ set-current-round-name!
+ set-current-group-name!
  put
  put/group
  get
@@ -71,21 +75,47 @@
    (lambda (out)
      (s-exp->fasl (serialize v) out))))
 
+(define (current-round-name)
+  (study-participant-current-round-name (current-participant)))
+
+(define (current-group-name)
+  (study-participant-current-group-name (current-participant)))
+
+(define (set-current-round-name! round-name)
+  (define mgr (current-study-manager))
+  (define updated-participant
+    (with-database-connection [conn (current-database)]
+      (~> (current-participant)
+          (set-study-participant-current-round-name _ round-name)
+          (update-one! conn _))))
+  (set-study-manager-participant! mgr updated-participant))
+
+(define (set-current-group-name! group-name)
+  (define mgr (current-study-manager))
+  (define updated-participant
+    (with-database-connection [conn (current-database)]
+      (~> (current-participant)
+          (set-study-participant-current-group-name _ group-name)
+          (update-one! conn _))))
+  (set-study-manager-participant! mgr updated-participant))
+
 (define (put k v)
   (log-study-debug "put~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
   (with-database-connection [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_data (
-  participant_id, study_stack, key, value, git_sha
+  participant_id, study_stack, round_name, group_name, key, value, git_sha
 ) VALUES (
-  $1, $2, $3, $4, $5
-) ON CONFLICT (participant_id, study_stack, key) DO UPDATE SET
+  $1, $2, $3, $4, $5, $6, $7
+) ON CONFLICT ON CONSTRAINT study_data_pkey DO UPDATE SET
   value = EXCLUDED.value,
   git_sha = EXCLUDED.git_sha,
   last_put_at = CURRENT_TIMESTAMP
 QUERY
                 (current-participant-id)
                 (current-study-array)
+                (current-round-name)
+                (current-group-name)
                 (symbol->string k)
                 (serialize* v)
                 (current-git-sha))))
@@ -100,6 +130,8 @@ QUERY
                                   (where (and
                                           (= d.participant-id ,(current-participant-id))
                                           (= d.study-stack ,(current-study-array))
+                                          (= d.round-name ,(current-round-name))
+                                          (= d.group-name ,(current-group-name))
                                           (= d.key ,(symbol->string k)))))))
 
     (cond
@@ -107,51 +139,23 @@ QUERY
       [(procedure? default) (default)]
       [else default])))
 
-(define (get-current-group-id conn)
-  (define maybe-group-id
-    (query-value conn #<<QUERY
-SELECT
-  m.group_id
-FROM
-  study_participants p
-JOIN
-  study_rounds r
-ON
-  r.id = p.current_round_id
-JOIN
-  study_groups g
-ON
-  g.round_id = r.id
-JOIN
-  study_group_members m
-ON
-      m.group_id       = g.id
-  AND m.participant_id = p.id
-WHERE
-  p.id = $1
-QUERY
-                 (current-participant-id)))
-  (begin0 maybe-group-id
-    (unless maybe-group-id
-      (error 'get-current-group-id "the participant is not part of the current group~n  participant: ~s"
-             (current-participant-id)))))
-
 (define (put/group k v)
   (log-study-debug "put/group~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
   (with-database-transaction [conn (current-database)]
     #:isolation 'serializable
     (query-exec conn #<<QUERY
 INSERT INTO study_group_data (
-  group_id, study_stack, key, value, git_sha, last_put_by
+  round_name, group_name, study_stack, key, value, git_sha, last_put_by
 ) VALUES (
-  $1, $2, $3, $4, $5, $6
-) ON CONFLICT (group_id, study_stack, key) DO UPDATE SET
+  $1, $2, $3, $4, $5, $6, $7
+) ON CONFLICT ON CONSTRAINT study_group_data_pkey DO UPDATE SET
   value = EXCLUDED.value,
   git_sha = EXCLUDED.git_sha,
   last_put_by = EXCLUDED.last_put_by,
   last_put_at = CURRENT_TIMESTAMP
 QUERY
-                (get-current-group-id conn)
+                (current-round-name)
+                (current-group-name)
                 (current-study-array)
                 (symbol->string k)
                 (serialize* v)
@@ -166,7 +170,8 @@ QUERY
       (query-maybe-value conn (~> (from "study_group_data" #:as d)
                                   (select d.value)
                                   (where (and
-                                          (= d.group-id ,(get-current-group-id conn))
+                                          (= d.round-name ,(current-round-name))
+                                          (= d.group-name ,(current-group-name))
                                           (= d.study-stack ,(current-study-array))
                                           (= d.key ,(symbol->string k)))))))
 
@@ -702,15 +707,11 @@ QUERY
  lookup-study-participant/admin
  lookup-study-vars)
 
-(define study-type/c
-  (or/c 'singleplayer 'multiplayer))
-
 (define-schema study-meta
   #:table "studies"
   ([id integer/f #:primary-key #:auto-increment]
    [name string/f #:contract non-empty-string?]
    [slug string/f #:contract non-empty-string?]
-   [(type 'singleplayer) symbol/f #:contract study-type/c]
    [racket-id symbol/f]
    [(created-at (now/moment)) datetime-tz/f]))
 
@@ -726,6 +727,8 @@ QUERY
 (define-schema study-participant
   #:table "study_participants"
   ([id integer/f #:primary-key #:auto-increment]
+   [(current-round-name "") string/f]
+   [(current-group-name "") string/f]
    [user-id integer/f]
    [instance-id integer/f]
    [(progress #()) (array/f string/f)]
@@ -739,12 +742,16 @@ QUERY
    [email string/f]
    [role symbol/f]
    [progress (array/f string/f)]
+   [(current-round-name "") string/f]
+   [(current-group-name "") string/f]
    [completed? boolean/f]
    [enrolled-at datetime-tz/f]))
 
 (define-schema study-var
   #:virtual
   ([stack (array/f string/f)]
+   [round-name string/f]
+   [group-name string/f]
    [id symbol/f]
    [value binary/f]
    [first-put-at datetime-tz/f]
@@ -752,8 +759,10 @@ QUERY
   #:methods gen:jsexprable
   [(define/generic ->jsexpr/super ->jsexpr)
    (define (->jsexpr v)
-     (match-define (study-var _ stack id _ first-put-at last-put-at) v)
+     (match-define (study-var _ stack round-name group-name id _ first-put-at last-put-at) v)
      (hash 'stack (vector->list stack)
+           'round round-name
+           'group group-name
            'id (symbol->string id)
            'value (->jsexpr/super (study-var-value/deserialized v))
            'first-put-at (moment->iso8601 first-put-at)
@@ -762,7 +771,7 @@ QUERY
 (define study-var-value/deserialized
   (compose1 deserialize* study-var-value))
 
-(struct study-manager (participant db)
+(struct study-manager ([participant #:mutable] db)
   #:transparent)
 
 (define/contract (make-study-manager #:database db
@@ -780,8 +789,11 @@ QUERY
 (define current-database
   (compose1 study-manager-db current-study-manager))
 
+(define current-participant
+  (compose1 study-manager-participant current-study-manager))
+
 (define current-participant-id
-  (compose1 study-participant-id study-manager-participant current-study-manager))
+  (compose1 study-participant-id current-participant))
 
 (define/contract (list-studies db)
   (-> database? (listof study-meta?))
@@ -821,7 +833,7 @@ QUERY
           (join user #:as u #:on (= u.id p.user-id))
           (where (= p.instance-id ,instance-id))
           (order-by ([p.enrolled-at #:desc]))
-          (select p.id u.id u.username u.role p.progress p.completed? p.enrolled-at)
+          (select p.id u.id u.username u.role p.progress p.current-round-name p.current-group-name p.completed? p.enrolled-at)
           (project-onto study-participant/admin-schema)))
 
     (sequence->list
@@ -914,7 +926,7 @@ QUERY
     (lookup conn (~> (from study-participant #:as p)
                      (join user #:as u #:on (= u.id p.user-id))
                      (where (= p.id ,participant-id))
-                     (select p.id u.id u.username u.role p.progress p.completed? p.enrolled-at)
+                     (select p.id u.id u.username u.role p.progress p.current-round-name p.current-group-name p.completed? p.enrolled-at)
                      (project-onto study-participant/admin-schema)))))
 
 (define/contract (participant-email pid)
@@ -929,7 +941,7 @@ QUERY
   (with-database-connection [conn db]
     (sequence->list
      (in-entities conn (~> (from "study_data" #:as d)
-                           (select d.study-stack d.key d.value d.first-put-at d.last-put-at)
+                           (select d.study-stack d.round-name d.group-name d.key d.value d.first-put-at d.last-put-at)
                            (project-onto study-var-schema)
                            (where (= d.participant-id ,participant-id))
                            (order-by ([d.first-put-at #:asc])))))))
