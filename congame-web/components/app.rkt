@@ -5,6 +5,7 @@
          congame/components/study
          koyo
          koyo/database/migrator
+         koyo/error
          koyo/sentry
          net/url
          racket/contract
@@ -149,6 +150,7 @@
                               #:environment config:environment))
         (wrap-current-sentry-user)
         (wrap-prolific)
+        ((wrap-errors config:debug))
         ((wrap-flash flashes))
         ((wrap-session sessions))
         (wrap-protect-continuations)
@@ -166,6 +168,7 @@
      (if subr
          (reverse-uri 'serve-resource-page (resource-id r) subr)
          (reverse-uri 'serve-resource-page (resource-id r)))))
+  (current-production-error-page production-error-page)
   (current-git-sha config:git-sha)
   (current-xexpr-wrapper tpl:page/xexpr)
 

@@ -20,6 +20,7 @@
  "auth.rkt"
  "common.rkt"
  "dashboard.rkt"
+ "error.rkt"
  "resource.rkt"
  "study.rkt")
 
