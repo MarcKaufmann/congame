@@ -18,7 +18,7 @@ RUN raco pkg install -D --auto --batch \
   congame-example-study/ \
   congame-pjb-studies/ \
   congame-price-lists/ \
-  congame-web/ \
+  congame-web/
 RUN raco koyo dist ++lang north
 
 

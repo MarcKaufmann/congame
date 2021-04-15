@@ -29,5 +29,5 @@ RUN raco pkg install -D --auto --batch \
   congame-pjb-studies/ \
   congame-price-lists/ \
   congame-tests/ \
-  congame-web/ \
+  congame-web/
 CMD ["/opt/congame/bin/run-tests.sh"]
