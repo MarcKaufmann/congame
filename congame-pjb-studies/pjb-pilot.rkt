@@ -614,6 +614,16 @@
      (:p "You did not consent to the study, therefore you will not continue to the study. We will now show you the payments and then provide you with the completion code for the tutorial.")
      (button void "Continue to Payments")))))
 
+(define (tutorial-completion-consent)
+  (page
+   (haml
+    (:div.container
+     (:h1 "You finished the tutorial")
+     (:p "Please provide the following completion code on prolific, then come back to continue with the main study:")
+     ; FIXME: Don't hardcode the completion code
+     (:h3 "Completion code is: 817C6E38")
+     (button void "Continue with Study")))))
+
 ;;; MAIN STUDY
 
 (define pjb-pilot-study-no-config
@@ -663,8 +673,12 @@
               ; TODO: Treatment assignment should also be done at the study, not step, level!!
               ; Can this be done, given the need for `put`?
               (put 'rest-treatment (next-balanced-rest-treatment))
-              'required-tasks]))
+              'tutorial-completion-consent]))
      #:for-bot consent/bot)
+    (make-step
+     'tutorial-completion-consent
+     tutorial-completion-consent
+     (λ () 'required-tasks))
     (make-step/study
      'required-tasks
      task-study

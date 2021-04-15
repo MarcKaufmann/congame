@@ -56,6 +56,7 @@
                (button ([type "Submit"] [class "button"]) "Submit"))))))))
 
 (define (consent/bot)
-  (define consent-checkbox (bot:find "input[type=checkbox]"))
-  (element-click! consent-checkbox)
+  (define consent-radios (bot:find "input[name='consent?']"))
+  ; FIXME: Brittle, relies on "Yes" being the first input
+  (element-click! (car consent-radios))
   (element-click! (bot:find "button[type=submit]")))
