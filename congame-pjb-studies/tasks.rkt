@@ -79,27 +79,28 @@
            'id id
            'answer answer))])
 
-; FIXME: How best to wait for the thread without blocking?
-(thread-wait matrix-thd)
-
-(define MATRICES
-  (call-with-input-file matrix-csv
-    (λ (in)
-      (for/list ([line (in-lines in)])
-        (match-define (list id answer file)
-          (string-split line ","))
-        (matrix (string->number id)
-                (string->number answer)
-                file)))))
+(define MATRICES #f)
 
 (define (random-matrix)
-  (random-ref MATRICES))
+  (unless (sync/timeout 30 matrix-thd)
+    (error "Matrices generation seems to take too long"))
 
-(define (initialize-tasks)
-  (sync matrix-thd)
   (when (exn:fail? matrix-exn)
     (raise matrix-exn))
 
+  (unless MATRICES
+    (set! MATRICES
+          (call-with-input-file matrix-csv
+            (λ (in)
+              (for/list ([line (in-lines in)])
+                (match-define (list id answer file)
+                  (string-split line ","))
+                (matrix (string->number id)
+                        (string->number answer)
+                        file))))))
+  (random-ref MATRICES))
+
+(define (initialize-tasks)
   (define n (get 'n))
   (define title (get 'title))
   (define n-string (number->string n))
