@@ -99,8 +99,12 @@
           (update-one! conn _))))
   (set-study-manager-participant! mgr updated-participant))
 
-(define (put k v)
-  (log-study-debug "put~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
+(define (put k v
+             #:round [round-name (current-round-name)]
+             #:group [group-name (current-group-name)])
+  (log-study-debug
+   "put~n  stack: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  value: ~s"
+   (current-study-ids) round-name group-name k v)
   (with-database-connection [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_data (
@@ -114,15 +118,19 @@ INSERT INTO study_data (
 QUERY
                 (current-participant-id)
                 (current-study-array)
-                (current-round-name)
-                (current-group-name)
+                round-name
+                group-name
                 (symbol->string k)
                 (serialize* v)
                 (current-git-sha))))
 
 (define (get k [default (lambda ()
-                          (error 'get "value not found for key ~.s" k))])
-  (log-study-debug "get~n  stack: ~s~n  key: ~s" (current-study-ids) k)
+                          (error 'get "value not found for key ~.s" k))]
+             #:round [round-name (current-round-name)]
+             #:group [group-name (current-group-name)])
+  (log-study-debug
+   "get~n  stack: ~s~n  round: ~s~n  group: ~s~n  key: ~s"
+   (current-study-ids) round-name group-name k)
   (with-database-connection [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_data" #:as d)
@@ -130,8 +138,8 @@ QUERY
                                   (where (and
                                           (= d.participant-id ,(current-participant-id))
                                           (= d.study-stack ,(current-study-array))
-                                          (= d.round-name ,(current-round-name))
-                                          (= d.group-name ,(current-group-name))
+                                          (= d.round-name ,round-name)
+                                          (= d.group-name ,group-name)
                                           (= d.key ,(symbol->string k)))))))
 
     (cond

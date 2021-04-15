@@ -8,4 +8,5 @@
 (define build-deps '())
 (define congame-studies
   '((congame-example-study/example consent-study)
-    (congame-example-study/example simple-study)))
+    (congame-example-study/example simple-study)
+    (congame-example-study/looping looping-study)))
