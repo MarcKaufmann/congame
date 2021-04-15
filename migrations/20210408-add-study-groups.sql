@@ -2,49 +2,31 @@
 
 -- @revision: a5c65ee510e80802fe496f913efce93d
 -- @parent: f90e848455cf1f648fe4a463f16d398b
--- @description: Adds study groups and related tables.
--- @up {
-ALTER TABLE studies
-  ADD COLUMN type TEXT NOT NULL DEFAULT 'singleplayer',
-  ADD CONSTRAINT type_chk CHECK (type IN ('singleplayer', 'multiplayer'));
--- }
-
--- @up {
-CREATE TABLE study_rounds(
-  id SERIAL NOT NULL PRIMARY KEY,
-  study_id INTEGER NOT NULL REFERENCES studies(id) ON DELETE CASCADE,
-  instance_id INTEGER NOT NULL REFERENCES study_instances(id) ON DELETE CASCADE,
-  grouping_fn TEXT NOT NULL,
-  group_size INTEGER NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
--- }
-
+-- @description: Adds study groups.
 -- @up {
 ALTER TABLE study_participants
-  ADD COLUMN current_round_id INTEGER REFERENCES study_rounds(id) ON DELETE SET NULL;
+  ADD COLUMN current_round_name TEXT NOT NULL DEFAULT '',
+  ADD COLUMN current_group_name TEXT NOT NULL DEFAULT '';
 -- }
 
 -- @up {
-CREATE TABLE study_groups(
-  id SERIAL NOT NULL PRIMARY KEY,
-  round_id INTEGER NOT NULL REFERENCES study_rounds(id) ON DELETE CASCADE
-);
+ALTER TABLE study_data
+  ADD COLUMN round_name TEXT NOT NULL DEFAULT '',
+  ADD COLUMN group_name TEXT NOT NULL DEFAULT '';
 -- }
 
 -- @up {
-CREATE TABLE study_group_participants(
-  group_id INTEGER NOT NULL REFERENCES study_groups(id) ON DELETE CASCADE,
-  participant_id INTEGER NOT NULL REFERENCES study_participants(id) ON DELETE CASCADE,
-  participant_role TEXT NOT NULL,
+ALTER TABLE study_data DROP CONSTRAINT study_data_pkey;
+-- }
 
-  CONSTRAINT study_group_members_pk PRIMARY KEY (group_id, participant_id)
-);
+-- @up {
+ALTER TABLE study_data ADD PRIMARY KEY (participant_id, round_name, group_name, study_stack, key);
 -- }
 
 -- @up {
 CREATE TABLE study_group_data(
-  group_id INTEGER NOT NULL REFERENCES study_groups(id) ON DELETE CASCADE,
+  round_name TEXT NOT NULL,
+  group_name TEXT NOT NULL,
   study_stack TEXT[] NOT NULL,
   key TEXT NOT NULL,
   value BYTEA NOT NULL,
@@ -53,7 +35,7 @@ CREATE TABLE study_group_data(
   last_put_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   first_put_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  CONSTRAINT study_group_data_pk PRIMARY KEY (group_id, study_stack, key)
+  CONSTRAINT study_group_data_pk PRIMARY KEY (round_name, group_name, study_stack, key)
 );
 -- }
 
@@ -62,24 +44,21 @@ DROP TABLE study_group_data;
 -- }
 
 -- @down {
-DROP TABLE study_group_participants;
+ALTER TABLE study_data
+  DROP COLUMN round_name,
+  DROP COLUMN group_name;
 -- }
 
--- @down {
-DROP TABLE study_groups;
+-- @up {
+ALTER TABLE study_data DROP CONSTRAINT study_data_pkey;
+-- }
+
+-- @up {
+ALTER TABLE study_data ADD PRIMARY KEY (participant_id, study_stack, key);
 -- }
 
 -- @down {
 ALTER TABLE study_participants
-  DROP COLUMN current_round_id;
--- }
-
--- @down {
-DROP TABLE study_rounds;
--- }
-
--- @down {
-ALTER TABLE studies
-  DROP CONSTRAINT type_chk,
-  DROP COLUMN type;
+  DROP COLUMN current_group_name,
+  DROP COLUMN current_round_name;
 -- }
