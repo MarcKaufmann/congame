@@ -678,7 +678,8 @@
     (make-step
      'tutorial-completion-consent
      tutorial-completion-consent
-     (λ () 'required-tasks))
+     (λ () 'required-tasks)
+     #:for-bot bot:continuer)
     (make-step/study
      'required-tasks
      task-study
