@@ -726,7 +726,7 @@
                        (put 'fail-status reason)
                        (eprintf "failed at ~e with reason ~e~n" s reason)
                        (put 'rest-treatment 'fail)
-                       (put 'completion-code 'fail)
+                       (put 'completion-code #f)
                        reason)
    (list
     (make-step/study 'the-study
