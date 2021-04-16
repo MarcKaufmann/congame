@@ -55,8 +55,12 @@
                (mark-participant-completed! manager)
                (redirect/get/forget/protect)
                study-return-values))
+           ; FIXME: Bug, since study-return-values is only set the first time we go to final page, but not upon refresh.
+           ; Maybe we should store the final study-return-values on study-participant?
            (define code
-             (hash-ref study-return-values 'completion-code #f))
+             (if (void? study-return-values)
+                 #f
+                 (hash-ref study-return-values 'completion-code #f)))
            (tpl:page
             (haml
              (:div.container
