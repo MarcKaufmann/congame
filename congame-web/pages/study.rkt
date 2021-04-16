@@ -3,6 +3,7 @@
 (require congame/components/study
          koyo/continuation
          koyo/haml
+         koyo/http
          koyo/url
          racket/match
          web-server/dispatchers/dispatch
@@ -41,23 +42,30 @@
     [(lookup-study db slug (user-id (current-user)))
      => (match-lambda
           [(list s participant)
-           (unless (study-participant-completed? participant)
-             (define manager
-               (make-study-manager #:database db
-                                   #:participant participant))
-             (call-with-study-manager
-              manager
-              (lambda ()
-                (run-study s req)))
-             (mark-participant-completed! manager)
-             (redirect/get/forget/protect))
+           (define study-return-values
+             (unless (study-participant-completed? participant)
+               (define manager
+                 (make-study-manager #:database db
+                                     #:participant participant))
+               (define study-return-values
+                 (call-with-study-manager
+                  manager
+                  (lambda ()
+                    (run-study s req))))
+               (mark-participant-completed! manager)
+               (redirect/get/forget/protect)
+               study-return-values))
+           (define code
+             (hash-ref study-return-values 'completion-code #f))
            (tpl:page
             (haml
              (:div.container
               ([:data-study-done "yes"])
               (:h1 "Thank You!")
               (:p "You completed the study.")
-              (:h3 "Completion code is: 817C6E38"))))])]
+              (if code
+                  `(h3 (string-append "Completion code is: " ,code))
+                  `(p "")))))])]
 
     [else
      (next-dispatcher)]))

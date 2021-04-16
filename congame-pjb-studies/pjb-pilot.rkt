@@ -100,6 +100,7 @@
 (define (initialize)
   (define required-tasks (next-balanced-required-tasks-treatment))
   (put 'required-tasks required-tasks)
+  (put 'completion-code (make-completion-code))
   (define required-tasks-fee
     (+ (* required-tasks required-matrix-piece-rate)
        ; high-required tasks treatment with 0 extra has same payment as low-required-tasks with extra payment
@@ -606,7 +607,7 @@
      (:p "You fail some of the requirements for the study, therefore you cannot complete the study.")
      (button void "The End")))))
 
-(define (consent-failure)
+(define (no-consent)
   (page
    (haml
     (:div.container
@@ -615,13 +616,13 @@
      (button void "Continue to Payments")))))
 
 (define (tutorial-completion-consent)
+  (define code (get 'completion-code))
   (page
    (haml
     (:div.container
      (:h1 "You finished the tutorial")
      (:p "Please provide the following completion code on prolific, then come back to continue with the main study:")
-     ; FIXME: Don't hardcode the completion code
-     (:h3 "Completion code is: 817C6E38")
+     (:h3 "Completion code is: " code)
      (button void "Continue with Study")))))
 
 ;;; MAIN STUDY
@@ -633,7 +634,9 @@
                 practice-tasks
                 price-lists
                 tutorial-fee)
-   #:provides '(rest-treatment)
+   #:provides '(rest-treatment
+                completion-code
+                consent?)
    (list
     (make-step 'initialize initialize)
     (make-step 'explain-study study-explanation)
@@ -668,7 +671,8 @@
        ; enforced from a given stage onwards.
        (put-payment! 'tutorial-fee (get 'tutorial-fee))
        (cond [(not (get 'consent?))
-              (fail 'fail-no-consent)]
+              (put 'rest-treatment 'NA:no-consent)
+              done]
              [else
               ; TODO: Treatment assignment should also be done at the study, not step, level!!
               ; Can this be done, given the need for `put`?
@@ -717,22 +721,28 @@
   (make-study
    "pjb-pilot-study"
    #:requires '()
-   #:provides '(rest-treatment)
+   #:provides '(rest-treatment completion-code)
    #:failure-handler (lambda (s reason)
                        (put 'fail-status reason)
                        (eprintf "failed at ~e with reason ~e~n" s reason)
                        (put 'rest-treatment 'fail)
+                       (put 'completion-code 'fail)
                        reason)
    (list
     (make-step/study 'the-study
                      pjb-pilot-study-no-config
-                     (lambda () 'show-payments)
-                     #:provide-bindings '([rest-treatment rest-treatment])
+                     (lambda ()
+                       (if (get 'consent?)
+                           'show-payments
+                           'no-consent))
+                     #:provide-bindings '([rest-treatment rest-treatment]
+                                          [consent? consent?]
+                                          [completion-code completion-code])
                      #:require-bindings `([practice-tasks (const ,practice-tasks)]
                                           [participation-fee (const ,participation-fee)]
                                           [tutorial-fee (const ,tutorial-fee)]
                                           [price-lists (const ,(hash-keys PRICE-LISTS))]))
-    (make-step 'fail-no-consent consent-failure (λ () 'show-payments) #:for-bot bot:continuer)
+    (make-step 'no-consent no-consent (λ () 'show-payments) #:for-bot bot:continuer)
     (make-step 'fail-tutorial-tasks
                (lambda ()
                  (page

@@ -4,6 +4,7 @@
          (prefix-in forms: (only-in forms form))
          racket/contract
          racket/format
+         racket/random
          marionette
          koyo/haml
          (prefix-in config: congame/config)
@@ -11,6 +12,7 @@
          (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide
+ make-completion-code
  pp-money
  render-consent-form
  consent/bot)
@@ -18,6 +20,12 @@
 (define/contract (pp-money amount #:currency [currency "£"])
   (-> number? string?)
   (~a currency (~r amount #:precision '(= 2))))
+
+(define alphabet "abcdefghijklmnopqrstuvwxyz")
+(define numbers "0123456789")
+
+(define (make-completion-code [n 8])
+  (apply string (random-sample (string-append alphabet numbers) n)))
 
 (define (render-consent-form)
   (define the-form
