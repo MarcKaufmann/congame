@@ -103,6 +103,7 @@
 (define (initialize-tasks)
   (define n (get 'n))
   (define title (get 'title))
+  (define n+1-string (number->string (add1 n)))
   (define n-string (number->string n))
   (define task-string
     (if (= n 1) "task" "tasks"))
@@ -111,7 +112,7 @@
    (haml
     (.container
      (:h1 title)
-     (:p "You now have to do " n-string " " task-string " successfully, and you can get at most " n-string " wrong. If you get more wrong, you automatically fail and drop out of the study.")
+     (:p "You now have to do " n-string " successfully, and you can get at most " n-string " answers wrong. If you get " n+1-string " or more wrong, you automatically fail and drop out of the study.")
      (toggleable-xexpr "Show/Hide Task Description" (task-description) #:hidden? hide-description?)
      (button
       (λ ()

@@ -32,26 +32,35 @@
 (define high-workload 15)
 (define low-workload 10)
 (define practice-tasks 2)
-(define participation-fee 1.00)
+(define (participation-fee required-tasks)
+  (+ 1.00
+     (* required-tasks required-matrix-piece-rate)
+     (next-balanced-pay-treatment)))
 
 ;; TREATMENTS
 
 (define *rest-treatments* '(get-rest-then-elicit elicit-then-get-rest))
 (define *required-tasks-treatments* (list low-workload high-workload))
+; high-required tasks treatment with 0 extra has same payment as low-required-tasks with extra payment
+; To identify wealth effects
+(define *pay-treatments* `(0.00 ,(* required-matrix-piece-rate
+                            (- high-workload low-workload))))
 
+; FIXME: How could I have a bug in this without ever testing!?!
 (define (make-balanced-shuffle original)
   (define ts (shuffle original))
   (λ ()
-    (cond [(not (empty? ts))
-           (begin0
-               (first ts)
-             (set! ts (rest ts)))]
-          [else
-           (set! ts (shuffle original))
-           (first ts)])))
+    (when (empty? ts)
+      (set! ts (shuffle original)))
+    (begin0
+      (first ts)
+      (set! ts (rest ts)))))
 
 (define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
 (define next-balanced-required-tasks-treatment (make-balanced-shuffle *required-tasks-treatments*))
+(define next-balanced-pay-treatment (make-balanced-shuffle *pay-treatments*))
+
+
 
 ;;; PRICE-LIST CONFIGURATION
 
@@ -76,8 +85,8 @@
 
 ;; PAGE RENDERERS
 
-(define/contract (study-description required-tasks required-tasks-fee participation-fee)
-  (-> number? number? number? any/c)
+(define/contract (study-description required-tasks participation-fee)
+  (-> number? number? any/c)
   (haml
    (:div
     (:h2 "Main Study Description")
@@ -92,29 +101,20 @@
     (:h3 "Payments")
     (:p "You receive the following payments if you complete a given stage of the main study:")
     (:ul
-     (:li (pp-money required-tasks-fee) " for required tasks")
-     (:li (pp-money participation-fee) " if you complete the whole study. "
-          (:strong "Note: ") "If you choose extra tasks, then you receive this bonus only if you complete the extra tasks. So if you do not want to do extra tasks, don't choose them.")
+     (:li (pp-money participation-fee) " if you complete the whole study, including any extra tasks you choose. ")
      (:li "If you choose and do the extra task, you will receive the corresponding bonus from that choice.")))))
 
 (define (initialize)
   (define required-tasks (next-balanced-required-tasks-treatment))
   (put 'required-tasks required-tasks)
   (put 'completion-code (make-completion-code))
-  (define required-tasks-fee
-    (+ (* required-tasks required-matrix-piece-rate)
-       ; high-required tasks treatment with 0 extra has same payment as low-required-tasks with extra payment
-       ; To identify wealth effects
-       (random-ref `(0.00 ,(* required-matrix-piece-rate
-                              (- high-workload low-workload))))))
-  (put 'required-tasks-fee required-tasks-fee)
+  (put 'participation-fee (participation-fee required-tasks))
   (skip))
 
 (define (study-explanation)
   (define required-tasks (get 'required-tasks))
   (define practice-tasks (get 'practice-tasks))
   (define participation-fee (get 'participation-fee))
-  (define required-tasks-fee (get 'required-tasks-fee))
   (page
    (haml
     (:div.container.container
@@ -131,10 +131,9 @@
       (:li "a description of the tasks in this study followed by " (number->string practice-tasks) " practice tasks")
       (:li "a description of how your decisions determine optional extra tasks")
       (:li "a form asking whether you agree to participate in the study"))
-     (:p "You will not receive any payment for completing the tutorial.")
+     (:p "You will receive " (pp-money (get 'tutorial-fee)) " for completing the tutorial, whether or not you continue with the study.")
 
-     (study-description required-tasks required-tasks-fee participation-fee)
-
+     (study-description required-tasks participation-fee)
 
      (button void "Continue")))))
 
@@ -143,13 +142,12 @@
 (define (consent)
   (define required-tasks (get 'required-tasks))
   (define participation-fee (get 'participation-fee))
-  (define required-tasks-fee (get 'required-tasks-fee))
   (page
    (haml
     (:div.container
      (render-consent-form)
      (.info
-      (study-description required-tasks required-tasks-fee participation-fee))))))
+      (study-description required-tasks participation-fee))))))
 
 ;; Comprehension Formm
 
@@ -162,7 +160,6 @@
      (.info
       (study-description
        (get 'required-tasks)
-       (get 'required-tasks-fee)
        (get 'participation-fee)))))))
 
 (define ((is-equal a #:message [message #f]) v)
@@ -271,7 +268,7 @@
    (haml
     (:div.container
      (:h1 "Requirements for Study")
-     (:p "Please check that you can play the test audio by hitting the play button, otherwise you cannot complete the study. Once the track has finished, a 'Continue' button will appear.")
+     (:p "Check that you can play audio by hitting the play button. Once the track has finished, a 'Continue' button will appear.")
      (render-requirements-form)))))
 
 ;; Debrief Form
@@ -407,7 +404,6 @@
     (case n
       [(tutorial-fee) "Completing the tutorial"]
       [(participation-fee) "Completing the study (participation fee)"]
-      [(required-tasks-fee) "Doing the required tasks"]
       [(extra-tasks-bonus) "Bonus for extra tasks"]
       [else n]))
   (page
@@ -503,7 +499,7 @@
      (:h1 "Choices for Extra Tasks")
      (:ol
       (:li "On the next " (number->string n) " pages, you will make choices about doing extra tasks for bonus payments")
-      (:li "Then the computer randomly picks one of the pages as the page-that-counts, and one of the choices on that page as the choice-that-counts")
+      (:li "Then the computer randomly picks one page as the page-that-counts, and one choice on that page as the choice-that-counts")
       (:li "You will then be asked to do the extra tasks you chose for the choice-that-counts, which may be 0")
       (:li "Thus every choice may become the choice-that-counts"))
      (:p (:strong "Remember: ") "If you choose extra tasks, but fail to do them, you forfeit both the extra bonus and the participation bonus.")
@@ -530,7 +526,8 @@
    (haml
     (:div.container
      (:h1 "Explaining Choices for Extra Tasks")
-     (:p "You will be given several choice pages for doing extra tasks. Below is a screenshot of one choice page with some choices made. Your choices determine the extra tasks and extra bonus in the study as follows:")
+     (:p "You will be given several choice pages for doing extra tasks. We now explain how they determine extra tasks and pay -- but the short story is that for every choice you should choose the option you prefer.")
+     (:p "Below is a screenshot of one choice page with some choices made. Once the choices are made, the extra tasks and extra bonus in the study are determined as follows:")
      (:ol
       (:li "The computer randomly selects one of the choice pages as the page-that-counts")
       (:li "The computer randomly selects one of the choices on that page as the choice-that-counts")
@@ -539,10 +536,10 @@
      (:p (:strong "Note:") " You cannot skip the extra tasks: you can only complete the study and receive the participation bonus if you do the extra tasks!")
      (.container.screenshot
       (:h2 "Screenshot of an example Decision Page")
-      (:p "Suppose that the computer randomly selected the 8th choice on this page as the choice-that-counts. Then: ")
+      (:p "Suppose that the computer randomly selected the 7th choice on this page as the choice-that-counts. Then: ")
       (:ul
-       (:li "The person would have to do 7 extra tasks and receive an extra bonus of $1.40 in addition to their other payments")
-       (:li "If the person fails to do the 7 extra tasks, they receive neither the completion fee, nor the extra bonus of $1.40 -- only payments for parts of the study they have already completed"))
+       (:li "The person would have to do 8 extra tasks and receive an extra bonus of " (pp-money 1.20) " in addition to their other payments")
+       (:li "If the person fails to do the 8 extra tasks, they receive neither the participation bonus, nor the extra bonus of " (pp-money 1.20) " -- only payments for parts of the study they have already completed"))
       (:img ([:src (resource-uri price-list-screenshot)])))
      (button void "Continue")))))
 
@@ -616,6 +613,25 @@
      (button void "Continue to Payments")))))
 
 (define (tutorial-completion-consent)
+  (define (render-check-completion-code)
+    (define the-form
+      (form* ([check-completion-code-entered (ensure binding/boolean (required #:message "Before continuing, enter the completion code on prolific to ensure you finished the tutorial in time."))])
+             check-completion-code-entered))
+
+  (haml
+   (:div.container
+    (form
+     the-form
+     ; after successful submit
+     (λ (answer) (put 'completion-code-entered answer))
+     ; renderer: (-> rw xexpr)
+     (λ (rw)
+       `(div ((class "group"))
+         (label
+          ,(rw "check-completion-code-entered" (widget-checkbox)) "I have entered the completion code on prolific")
+         ,@(rw "check-completion-code-entered" (widget-errors))
+         (button ((type "Submit") (class "button")) "Continue to Study")))))))
+
   (define code (get 'completion-code))
   (page
    (haml
@@ -623,15 +639,14 @@
      (:h1 "You finished the tutorial")
      (:p "Please provide the following completion code on prolific, then come back to continue with the main study:")
      (:h3 "Completion code is: " code)
-     (button void "Continue with Study")))))
+     (render-check-completion-code)))))
 
 ;;; MAIN STUDY
 
 (define pjb-pilot-study-no-config
   (make-study
    "pjb-pilot-study-no-config"
-   #:requires '(participation-fee
-                practice-tasks
+   #:requires '(practice-tasks
                 price-lists
                 tutorial-fee)
    #:provides '(rest-treatment
@@ -691,7 +706,6 @@
        (cond [(not (get 'success?))
               (fail 'fail-required-tasks)]
              [else
-              (put-payment! 'required-tasks-fee (get 'required-tasks-fee))
               (case (get 'rest-treatment)
                 [(get-rest-then-elicit) 'get-rest]
                 [(elicit-then-get-rest) 'elicit-WTW-and-work])]))
@@ -739,7 +753,6 @@
                                           [consent? consent?]
                                           [completion-code completion-code])
                      #:require-bindings `([practice-tasks (const ,practice-tasks)]
-                                          [participation-fee (const ,participation-fee)]
                                           [tutorial-fee (const ,tutorial-fee)]
                                           [price-lists (const ,(hash-keys PRICE-LISTS))]))
     (make-step 'no-consent no-consent (λ () 'show-payments) #:for-bot bot:continuer)

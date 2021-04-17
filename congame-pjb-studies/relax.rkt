@@ -42,7 +42,7 @@
    (haml
     (.container
      (:h1 "Three Songs")
-     (:p "You will listen to a different song (2-4 minutes) on each of the next three pages. You can continue to the following page only after listening to the song. After having listened to the three songs, you will be asked to rank the songs.")
+     (:p "You will listen to a different audio track (2-4 minutes) on each of the next three pages, followed by a question page. You can continue to the following page only after listening to the track.")
      (button
       void
       "Continue")))))
@@ -57,7 +57,7 @@
   (page
    (haml
     (.container
-     (:h1 "Play Song " song-display-name
+     (:h1 "Play " song-display-name
           " out of " (number->string (length song-names)))
      (audio-container next-song-name #:caption song-display-name)
 
