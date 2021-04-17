@@ -29,13 +29,19 @@
 
 (define tutorial-fee 1.00)
 (define required-matrix-piece-rate 0.10)
-(define high-workload 15)
-(define low-workload 10)
+(define high-workload 10)
+(define low-workload 5)
 (define practice-tasks 2)
 (define (participation-fee required-tasks)
-  (+ 1.00
+  (+ 1.25
      (* required-tasks required-matrix-piece-rate)
      (next-balanced-pay-treatment)))
+
+(define tracks
+  (hash
+   'classical-tracks   '("classical1.mp3" "classical2.mp3")
+   'meditation-tracks  '("breathing-meditation.mp3")
+   'wave-tracks        '("waves.mp3")))
 
 ;; TREATMENTS
 
@@ -45,6 +51,8 @@
 ; To identify wealth effects
 (define *pay-treatments* `(0.00 ,(* required-matrix-piece-rate
                             (- high-workload low-workload))))
+(define *relax-treatments*
+  '(classical-tracks meditation-tracks wave-tracks))
 
 ; FIXME: How could I have a bug in this without ever testing!?!
 (define (make-balanced-shuffle original)
@@ -59,8 +67,7 @@
 (define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
 (define next-balanced-required-tasks-treatment (make-balanced-shuffle *required-tasks-treatments*))
 (define next-balanced-pay-treatment (make-balanced-shuffle *pay-treatments*))
-
-
+(define next-balanced-relax-treatment (make-balanced-shuffle *relax-treatments*))
 
 ;;; PRICE-LIST CONFIGURATION
 
@@ -109,6 +116,10 @@
   (put 'required-tasks required-tasks)
   (put 'completion-code (make-completion-code))
   (put 'participation-fee (participation-fee required-tasks))
+  (put 'relax-treatment (next-balanced-relax-treatment))
+  (define (get-tracks-treatment)
+    (shuffle (hash-ref tracks (get 'relax-treatment))))
+  (put 'tracks-to-play (get-tracks-treatment))
   (skip))
 
 (define (study-explanation)
@@ -327,7 +338,7 @@
              ,@(rw "what-could-be-clearer" (widget-errors)))
         (div ((class "group"))
              (label
-              "How restful did you find the songs after the required tasks, from 1 (very un-relaxing) to 5 (very relaxing)?"
+              "How restful did you find the tracks after the required tasks, from 1 (very un-relaxing) to 5 (very relaxing)?"
               ,(rw "how-relaxing" (widget-number)))
              ,@(rw "how-relaxing" (widget-errors)))
         (div ((class "group"))
@@ -720,6 +731,7 @@
      #:provide-bindings '([success? success?]))
     (make-step/study 'get-rest
                      (relax-study)
+                     #:require-bindings `([tracks-to-play tracks-to-play])
                      (λ ()
                        (case (get 'rest-treatment)
                          [(get-rest-then-elicit) 'elicit-WTW-and-work]
