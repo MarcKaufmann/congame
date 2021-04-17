@@ -641,6 +641,10 @@
      (:h3 "Completion code is: " code)
      (render-check-completion-code)))))
 
+(define (tutorial-completion-consent/bot)
+  (element-click! (bot:find "input[type='checkbox']"))
+  (element-click! (bot:find "button[type=submit]")))
+
 ;;; MAIN STUDY
 
 (define pjb-pilot-study-no-config
@@ -698,7 +702,7 @@
      'tutorial-completion-consent
      tutorial-completion-consent
      (λ () 'required-tasks)
-     #:for-bot bot:continuer)
+     #:for-bot tutorial-completion-consent/bot)
     (make-step/study
      'required-tasks
      task-study
