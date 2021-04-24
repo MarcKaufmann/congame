@@ -70,7 +70,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     --health-interval '2s' \
     --link "postgres-13" \
     -v "$RUN_PATH":"$RUN_PATH" \
-    -p "$CONTAINER_PORT":"$CONTAINER_PORT" \
+    -p "127.0.0.1:$CONTAINER_PORT":"$CONTAINER_PORT" \
     -d \
     "$IMAGE_NAME"
   sleep 15
