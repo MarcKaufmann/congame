@@ -297,6 +297,16 @@
                  (:td
                   (~a (bot-set-bot-count bs))))))))
          (:h2 "Instance Data")
+         (:h3
+          (:a
+           ([:href
+             (embed/url
+              (lambda (_req)
+                (clear-study-instance-vars! db study-instance-id)
+                (redirect/get/forget/protect)
+                (redirect-to (reverse-uri 'admin:view-study-instance-page study-id study-instance-id))))]
+            [:onclick "return confirm('Are you sure?')"])
+           "Clear Instance Data"))
          (render-study-instance-vars vars)
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))

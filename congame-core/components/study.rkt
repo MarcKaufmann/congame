@@ -780,6 +780,7 @@ QUERY
  list-study-instance-participants/admin
  list-study-instance-payments/admin
  list-study-instance-vars
+ clear-study-instance-vars!
  current-participant-id
  participant-email
  clear-participant-progress!
@@ -961,6 +962,13 @@ QUERY
                                       (group-by u.username)
                                       (where (= p.instance-id ,instance-id))))])
       (cons username total))))
+
+(define/contract (clear-study-instance-vars! db instance-id)
+  (-> database? id/c void?)
+  (with-database-connection [conn db]
+    (query-exec conn (~> (from study-instance-var #:as v)
+                         (where (= v.instance-id ,instance-id))
+                         (delete)))))
 
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)
