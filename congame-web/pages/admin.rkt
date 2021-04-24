@@ -226,6 +226,8 @@
     (next-dispatcher))
   (define participants
     (list-study-instance-participants/admin db study-instance-id))
+  (define vars
+    (list-study-instance-vars db study-instance-id))
   (define bot-sets
     (list-bot-sets db study-instance-id))
   (send/suspend/dispatch/protect
@@ -294,8 +296,33 @@
                    (~a (bot-set-id bs))))
                  (:td
                   (~a (bot-set-bot-count bs))))))))
+         (:h2 "Instance Data")
+         (render-study-instance-vars vars)
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))
+
+(define (render-study-instance-vars vars)
+  (haml
+   (:table.table
+    (:thead
+     (:tr
+      (:th "Stack")
+      (:th "ID")
+      (:th "First Put At")
+      (:th "Last Put At")
+      (:th "Value")))
+    (:tbody
+     ,@(for/list ([v (in-list vars)])
+         (haml
+          (:tr
+           (:td (:pre (~a (study-instance-var-stack v))))
+           (:td (~a (study-instance-var-id v)))
+           (:td (~t (study-instance-var-first-put-at v) "YYYY-MM-dd hh:mm:ss"))
+           (:td (~t (study-instance-var-last-put-at v) "YYYY-MM-dd hh:mm:ss"))
+           (:td (:pre
+                 (with-output-to-string
+                   (lambda ()
+                     (pretty-print (study-instance-var-value/deserialized v)))))))))))))
 
 (define (render-participant-list study-id study-instance-id participants)
   (haml

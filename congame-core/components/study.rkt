@@ -743,10 +743,12 @@ QUERY
 (provide
  (schema-out study-meta)
  (schema-out study-instance)
+ (schema-out study-instance-var)
  (schema-out study-participant)
  (schema-out study-participant/admin)
  (schema-out study-var)
  (schema-out study-payment)
+ study-instance-var-value/deserialized
  study-var-value/deserialized
  make-study-manager
  call-with-study-manager
@@ -756,6 +758,7 @@ QUERY
  list-active-study-instances
  list-study-instance-participants/admin
  list-study-instance-payments/admin
+ list-study-instance-vars
  current-participant-id
  participant-email
  clear-participant-progress!
@@ -783,6 +786,15 @@ QUERY
    [slug string/f #:contract non-empty-string?]
    [(status 'active) symbol/f #:contract (or/c 'active 'inactive 'archived)]
    [(created-at (now/moment)) datetime-tz/f]))
+
+(define-schema study-instance-var
+  #:table "study_instance_data"
+  ([instance-id integer/f]
+   [stack (array/f string/f) #:name "study_stack"]
+   [id symbol/f #:name "key"]
+   [value binary/f]
+   [first-put-at datetime-tz/f]
+   [last-put-at datetime-tz/f]))
 
 (define-schema study-participant
   #:table "study_participants"
@@ -827,6 +839,9 @@ QUERY
            'value (->jsexpr/super (study-var-value/deserialized v))
            'first-put-at (moment->iso8601 first-put-at)
            'last-put-at (moment->iso8601 last-put-at)))])
+
+(define study-instance-var-value/deserialized
+  (compose1 deserialize* study-instance-var-value))
 
 (define study-var-value/deserialized
   (compose1 deserialize* study-var-value))
@@ -887,6 +902,14 @@ QUERY
      (in-entities conn (~> (from study-instance #:as i)
                            (where (= i.status "active"))
                            (order-by ([i.created-at #:desc])))))))
+
+(define/contract (list-study-instance-vars db instance-id)
+  (-> database? id/c (listof study-instance-var?))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn (~> (from study-instance-var #:as v)
+                           (where (= v.instance-id ,instance-id))
+                           (order-by ([v.first-put-at #:asc])))))))
 
 (define/contract (list-study-instance-participants/admin db instance-id [for-bot-set #f])
   (->* (database? id/c) ((or/c #f id/c)) (listof study-participant/admin?))
