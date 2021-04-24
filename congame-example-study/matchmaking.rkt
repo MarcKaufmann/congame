@@ -8,7 +8,7 @@
  matchmaking-study)
 
 (define (matchmake)
-  (with-instance-transaction
+  (with-study-transaction
     (define participant-id (current-participant-id))
     (define group-id (get/instance 'group-seq 1))
     (define unmatched (remq participant-id (get/instance 'unmatched null)))

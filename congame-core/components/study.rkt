@@ -53,7 +53,7 @@
 ;; storage ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- with-instance-transaction
+ with-study-transaction
  current-git-sha
  current-round-name
  current-group-name
@@ -166,7 +166,7 @@ QUERY
       [(procedure? default) (default)]
       [else default])))
 
-(define (call-with-instance-transaction f)
+(define (call-with-study-transaction f)
   (let loop ()
     (with-handlers ([exn:fail:sql?
                      (lambda (e)
@@ -181,8 +181,8 @@ QUERY
         #:isolation 'serializable
         (f)))))
 
-(define-syntax-rule (with-instance-transaction e0 e ...)
-  (call-with-instance-transaction (λ () e0 e ...)))
+(define-syntax-rule (with-study-transaction e0 e ...)
+  (call-with-study-transaction (λ () e0 e ...)))
 
 (define (put/instance k v)
   (log-study-debug "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
@@ -223,7 +223,6 @@ QUERY
 (define (put/group k v)
   (log-study-debug "put/group~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
   (with-database-transaction [conn (current-database)]
-    #:isolation 'serializable
     (query-exec conn #<<QUERY
 INSERT INTO study_group_data (
   round_name, group_name, study_stack, key, value, git_sha, last_put_by
