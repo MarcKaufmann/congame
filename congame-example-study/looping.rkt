@@ -6,18 +6,6 @@
 (provide
  looping-study)
 
-;; (define (matchmake)
-;;   (with-instance-transaction
-;;     (define unmatched (get/instance 'unmatched))
-;;     (cond
-;;       [(null? unmatched)
-;;        (put/instance 'unmatched (list (current-participant-id)))]
-
-;;       [else
-;;        (set-group-name! (car unmatched) "foo")
-;;        (set-current-group-name! "foo")
-;;        (put/instance 'unmatched (cdr unmatched))])))
-
 (define (start)
   (define round-number
     (cond
