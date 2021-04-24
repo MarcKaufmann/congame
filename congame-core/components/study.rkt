@@ -83,8 +83,13 @@
 (define (current-round-name)
   (study-participant-current-round-name (current-participant)))
 
-(define (current-group-name)
-  (study-participant-current-group-name (current-participant)))
+(define (current-group-name [reload? #f])
+  (if reload?
+      (with-database-connection [conn (current-database)]
+        (query-value conn (~> (from study-participant #:as p)
+                              (where (= p.id ,(current-participant-id)))
+                              (select p.current-group-name))))
+      (study-participant-current-group-name (current-participant))))
 
 (define (set-current-round-name! round-name)
   (define mgr (current-study-manager))
