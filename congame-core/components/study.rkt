@@ -53,14 +53,18 @@
 ;; storage ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ with-instance-transaction
  current-git-sha
  current-round-name
  current-group-name
  set-current-round-name!
  set-current-group-name!
+ set-group-name!
  put
+ put/instance
  put/group
  get
+ get/instance
  get/group)
 
 (define/contract current-git-sha
@@ -98,6 +102,13 @@
           (set-study-participant-current-group-name _ group-name)
           (update-one! conn _))))
   (set-study-manager-participant! mgr updated-participant))
+
+(define (set-group-name! participant-id group-name)
+  (with-database-connection [conn (current-database)]
+    (and~> (lookup conn (~> (from study-participant #:as p)
+                            (where (= p.id ,participant-id))))
+           (set-study-participant-current-group-name _ group-name)
+           (update-one! conn _))))
 
 (define (put k v
              #:round [round-name (current-round-name)]
@@ -140,6 +151,47 @@ QUERY
                                           (= d.study-stack ,(current-study-array))
                                           (= d.round-name ,round-name)
                                           (= d.group-name ,group-name)
+                                          (= d.key ,(symbol->string k)))))))
+
+    (cond
+      [maybe-value => deserialize*]
+      [(procedure? default) (default)]
+      [else default])))
+
+(define-syntax-rule (with-instance-transaction e0 e ...)
+  (with-database-transaction [conn (current-database)]
+    #:isolation 'serializable
+    e0 e ...))
+
+(define (put/instance k v)
+  (log-study-debug "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
+  (with-database-transaction [conn (current-database)]
+    (query-exec conn #<<QUERY
+INSERT INTO study_instance_data(
+  instance_id, study_stack, key, value, git_sha
+) VALUES (
+  $1, $2, $3, $4, $5
+) ON CONFLICT ON CONSTRAINT study_instance_data_pkey DO UPDATE SET
+  value = EXCLUDED.value,
+  git_sha = EXCLUDED.git_sha,
+  last_put_at = CURRENT_TIMESTAMP
+QUERY
+                (current-study-instance-id)
+                (current-study-array)
+                (symbol->string k)
+                (serialize* v)
+                (current-git-sha))))
+
+(define (get/instance k [default (lambda ()
+                                   (error 'get/instance "value not found for key ~.s" k))])
+  (log-study-debug "get/instance~n  stack: ~s~n  key: ~s" (current-study-ids) k)
+  (with-database-transaction [conn (current-database)]
+    (define maybe-value
+      (query-maybe-value conn (~> (from "study_instance_data" #:as d)
+                                  (select d.value)
+                                  (where (and
+                                          (= d.instance-id ,(current-study-instance-id))
+                                          (= d.study-stack ,(current-study-array))
                                           (= d.key ,(symbol->string k)))))))
 
     (cond
@@ -803,6 +855,9 @@ QUERY
 (define current-participant-id
   (compose1 study-participant-id current-participant))
 
+(define current-study-instance-id
+  (compose1 study-participant-instance-id current-participant))
+
 (define/contract (list-studies db)
   (-> database? (listof study-meta?))
   (with-database-connection [conn db]
@@ -961,7 +1016,9 @@ QUERY
                          (where (= p.id ,participant-id))
                          (update
                           [is_completed #f]
-                          [progress ,(list->pg-array null)])))
+                          [progress ,(list->pg-array null)]
+                          [current-round-name ""]
+                          [current-group-name ""])))
     (query-exec conn (~> (from "study_data" #:as d)
                          (where (= d.participant-id ,participant-id))
                          (delete)))

@@ -9,4 +9,5 @@
 (define congame-studies
   '((congame-example-study/example consent-study)
     (congame-example-study/example simple-study)
-    (congame-example-study/looping looping-study)))
+    (congame-example-study/looping looping-study)
+    (congame-example-study/matchmaking matchmaking-study)))
