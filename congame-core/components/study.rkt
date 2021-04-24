@@ -59,6 +59,7 @@
  current-group-name
  set-current-round-name!
  set-current-group-name!
+ set-round-name!
  set-group-name!
  put
  put/instance
@@ -102,6 +103,13 @@
           (set-study-participant-current-group-name _ group-name)
           (update-one! conn _))))
   (set-study-manager-participant! mgr updated-participant))
+
+(define (set-round-name! participant-id round-name)
+  (with-database-connection [conn (current-database)]
+    (and~> (lookup conn (~> (from study-participant #:as p)
+                            (where (= p.id ,participant-id))))
+           (set-study-participant-current-round-name _ round-name)
+           (update-one! conn _))))
 
 (define (set-group-name! participant-id group-name)
   (with-database-connection [conn (current-database)]
