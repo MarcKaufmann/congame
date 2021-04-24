@@ -166,10 +166,23 @@ QUERY
       [(procedure? default) (default)]
       [else default])))
 
+(define (call-with-instance-transaction f)
+  (let loop ()
+    (with-handlers ([exn:fail:sql?
+                     (lambda (e)
+                       (case (exn:fail:sql-sqlstate e)
+                         [("40001")
+                          (log-study-warning "failed to apply instance transaction, retrying...")
+                          (loop)]
+
+                         [else
+                          (raise e)]))])
+      (with-database-transaction [conn (current-database)]
+        #:isolation 'serializable
+        (f)))))
+
 (define-syntax-rule (with-instance-transaction e0 e ...)
-  (with-database-transaction [conn (current-database)]
-    #:isolation 'serializable
-    e0 e ...))
+  (call-with-instance-transaction (λ () e0 e ...)))
 
 (define (put/instance k v)
   (log-study-debug "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
