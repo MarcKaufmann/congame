@@ -55,25 +55,24 @@
              [field-id fld] ...)
          (let ([tbl (make-hasheq
                      (list (cons 'kwd (cons (symbol->string 'field-id) field-id)) ...))])
-           (let ([f (form* ([field-id (field-id 'validator)] ...)
-                      (cons
-                       (list 'kwd ...)
-                       (list field-id ...)))])
-             (study:form
-              f
-              (lambda (res)
-                (define vals-by-kwd
-                  (for/hasheq ([k (in-list (car res))]
-                               [v (in-list (cdr res))])
-                    (values k v)))
-                (define sorted-kwds
-                  (sort (car res) keyword<?))
-                (define sorted-vals
-                  (for/list ([k (in-list sorted-kwds)])
-                    (hash-ref vals-by-kwd k)))
-                (keyword-apply action-fn sorted-kwds sorted-vals null))
-              (lambda (rw)
-                patched-form)))))]))
+           (study:form
+            (form* ([field-id (field-id 'validator)] ...)
+              (cons
+               (list 'kwd ...)
+               (list field-id ...)))
+            (lambda (res)
+              (define vals-by-kwd
+                (for/hasheq ([k (in-list (car res))]
+                             [v (in-list (cdr res))])
+                  (values k v)))
+              (define sorted-kwds
+                (sort (car res) keyword<?))
+              (define sorted-vals
+                (for/list ([k (in-list sorted-kwds)])
+                  (hash-ref vals-by-kwd k)))
+              (keyword-apply action-fn sorted-kwds sorted-vals null))
+            (lambda (rw)
+              patched-form))))]))
 
 (define ((checkbox label) meth)
   (match meth
