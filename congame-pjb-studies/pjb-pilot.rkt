@@ -187,24 +187,24 @@
      (haml
       (:div
        (:p "The Study Instructions are repeated below.")
-       (:: #:what-if-fail?
-           (radios
-            "Suppose that after you complete the required tasks and make your choices, you end up with extra tasks. What happens if you fail the extra tasks -- either due to getting too many tasks wrong or not attempting them?"
-            '(("no-payment-at-all" . "You will receive no payment at all")
-              ("no-extra-bonus" . "You will not receive the extra bonus payment, but you will receive the participation fee and the payment for the required tasks")
-              ("no-extra-no-participation-fee" . "You will receive the payment for the required tasks, but not the participation fee nor the extra bonus, since you cannot complete the study."))
-            #:validators
-            (list (is-equal "no-extra-no-participation-fee"
-                            #:message "No. You receive payment for required tasks, but not for the participation fee."))))
-       (:: #:how-many-required-tasks?
-           (radios
-            "How many required tasks do you have to do?"
-            `(("0" . "0")
-              ("6" . "6")
-              (,n-tasks . ,n-tasks)
-              ("13" . "13"))
-            #:validators
-            (list (is-equal n-tasks #:message "No. Read the study description again."))))
+       (#:what-if-fail?
+        (radios
+         "Suppose that after you complete the required tasks and make your choices, you end up with extra tasks. What happens if you fail the extra tasks -- either due to getting too many tasks wrong or not attempting them?"
+         '(("no-payment-at-all" . "You will receive no payment at all")
+           ("no-extra-bonus" . "You will not receive the extra bonus payment, but you will receive the participation fee and the payment for the required tasks")
+           ("no-extra-no-participation-fee" . "You will receive the payment for the required tasks, but not the participation fee nor the extra bonus, since you cannot complete the study."))
+         #:validators
+         (list (is-equal "no-extra-no-participation-fee"
+                         #:message "No. You receive payment for required tasks, but not for the participation fee."))))
+       (#:how-many-required-tasks?
+        (radios
+         "How many required tasks do you have to do?"
+         `(("0" . "0")
+           ("6" . "6")
+           (,n-tasks . ,n-tasks)
+           ("13" . "13"))
+         #:validators
+         (list (is-equal n-tasks #:message "No. Read the study description again."))))
        (:button.button
         ([:type "submit"])
         "Submit")))
@@ -619,7 +619,8 @@
       (formular
        (haml
         (:div
-         (:: #:checked? (checkbox "I have entered the completion code on prolific"))
+         (#:checked?
+          (checkbox "I have entered the completion code on prolific"))
          (:button.button
           ([:type "submit"])
           "Continue to Study")))

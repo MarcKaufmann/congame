@@ -8,17 +8,12 @@
          racket/match (prefix-in study: "study.rkt"))
 
 (provide
- ::
  formular
  checkbox
  radios)
 
-(define-syntax (:: _stx)
-  (raise-syntax-error ':: "may only be used within a formular"))
-
 (define-syntax (formular stx)
   (syntax-parse stx
-    #:literals (::)
     [(_ form action-e)
      #:with rw (format-id stx "rw")
      #:with tbl (format-id stx "tbl")
@@ -26,11 +21,10 @@
      (let loop ([stx #'form]
                 [pairs null])
        (syntax-parse stx
-         #:literals (::)
-         [(:: kwd:keyword fld)
+         [(kwd:keyword fld)
           (cons #'(kwd fld) pairs)]
 
-         [(_ e ...)
+         [(e ...)
           (apply append (map (λ (stx) (loop stx null))
                              (syntax->list #'(e ...))))]
 
@@ -42,13 +36,12 @@
      #:with patched-form
      (let loop ([stx #'form])
        (syntax-parse stx
-         #:literals (::)
-         [(:: kwd:keyword _)
+         [(kwd:keyword _)
           #'(let ([entry (hash-ref tbl 'kwd)])
               (rw (car entry) ((cdr entry) 'widget)))]
 
-         [(fn e ...)
-          #`(fn #,@(map loop (syntax-e #'(e ...))))]
+         [(e ...)
+          #`(#,@(map loop (syntax-e #'(e ...))))]
 
          [e #'e]))
      #'(let ([action-fn action-e]
