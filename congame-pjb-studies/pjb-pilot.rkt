@@ -15,6 +15,7 @@
          sentry
          (prefix-in config: congame/config)
          congame/components/bot
+         congame/components/formular
          congame/components/resource
          congame/components/study
          congame-pjb-studies/relax
@@ -179,49 +180,37 @@
       (err (or message (format "Should be equal to ~a" a)))))
 
 (define (render-comprehension-form)
-  (define the-form
-    (form* ([what-if-fail-study? (ensure
-                                  binding/text
-                                  (required)
-                                  (is-equal "no-extra-no-participation-fee"
-                                            #:message "No. You receive payment for required tasks, but not for the participation fee."))]
-            [how-many-required-tasks? (ensure
-                                       binding/number
-                                       (required)
-                                       (is-equal (get 'required-tasks)
-                                                 #:message "No. Read the study description again."))])
-           (list what-if-fail-study?
-                 how-many-required-tasks?)))
-
+  (define n-tasks (number->string (get 'required-tasks)))
   (haml
    (:div.container
-    (form
-     the-form
-     ; after successful submit
-     (λ (answer) (put 'comprehension-test answer))
-     ; renderer: (-> rw xexpr)
-     (λ (rw)
-       (define n-tasks (number->string (get 'required-tasks)))
-       `(div
-         (p "The Study Instructions are repeated below.")
-         (div ((class "group"))
-              (label ((class "radio-group"))
-                     "Suppose that after you complete the required tasks and make your choices, you end up with extra tasks. What happens if you fail the extra tasks -- either due to getting too many tasks wrong or not attempting them?"
-                     ,(rw "what-if-fail-study?"
-                          (widget-radio-group '(("no-payment-at-all" . "You will receive no payment at all")
-                                                ("no-extra-bonus" . "You will not receive the extra bonus payment, but you will receive the participation fee and the payment for the required tasks")
-                                                ("no-extra-no-participation-fee" . "You will receive the payment for the required tasks, but not the participation fee nor the extra bonus, since you cannot complete the study.")))))
-              ,@(rw "what-if-fail-study?" (widget-errors)))
-         (div ((class "group"))
-              (label ((class "radio-group"))
-                     "How many required tasks do you have to do?"
-                     ,(rw "how-many-required-tasks?"
-                          (widget-radio-group `(("0" . "0")
-                                                ("6" . "6")
-                                                (,n-tasks . ,n-tasks)
-                                                ("13" . "13")))))
-              ,@(rw "how-many-required-tasks?" (widget-errors)))
-         (button ((type "Submit") (class "button")) "Submit")))))))
+    (formular
+     (haml
+      (:div
+       (:p "The Study Instructions are repeated below.")
+       (:: #:what-if-fail?
+           (radios
+            "Suppose that after you complete the required tasks and make your choices, you end up with extra tasks. What happens if you fail the extra tasks -- either due to getting too many tasks wrong or not attempting them?"
+            '(("no-payment-at-all" . "You will receive no payment at all")
+              ("no-extra-bonus" . "You will not receive the extra bonus payment, but you will receive the participation fee and the payment for the required tasks")
+              ("no-extra-no-participation-fee" . "You will receive the payment for the required tasks, but not the participation fee nor the extra bonus, since you cannot complete the study."))
+            #:validators
+            (list (is-equal "no-extra-no-participation-fee"
+                            #:message "No. You receive payment for required tasks, but not for the participation fee."))))
+       (:: #:how-many-required-tasks?
+           (radios
+            "How many required tasks do you have to do?"
+            `(("0" . "0")
+              ("6" . "6")
+              (,n-tasks . ,n-tasks)
+              ("13" . "13"))
+            #:validators
+            (list (is-equal n-tasks #:message "No. Read the study description again."))))
+       (:button.button
+        ([:type "submit"])
+        "Submit")))
+     (lambda (#:what-if-fail? what-if?
+              #:how-many-required-tasks? how-many?)
+       (put 'comprehension-test (list what-if? how-many?)))))))
 
 (define (test-comprehension/bot)
   (define f (bot:find "form"))
@@ -625,23 +614,17 @@
 
 (define (tutorial-completion-consent)
   (define (render-check-completion-code)
-    (define the-form
-      (form* ([check-completion-code-entered (ensure binding/boolean (required #:message "Before continuing, enter the completion code on prolific to ensure you finished the tutorial in time."))])
-             check-completion-code-entered))
-
-  (haml
-   (:div.container
-    (form
-     the-form
-     ; after successful submit
-     (λ (answer) (put 'completion-code-entered answer))
-     ; renderer: (-> rw xexpr)
-     (λ (rw)
-       `(div ((class "group"))
-         (label
-          ,(rw "check-completion-code-entered" (widget-checkbox)) "I have entered the completion code on prolific")
-         ,@(rw "check-completion-code-entered" (widget-errors))
-         (button ((type "Submit") (class "button")) "Continue to Study")))))))
+    (haml
+     (:div.container
+      (formular
+       (haml
+        (:div
+         (:: #:checked? (checkbox "I have entered the completion code on prolific"))
+         (:button.button
+          ([:type "submit"])
+          "Continue to Study")))
+       (lambda (#:checked? checked?)
+         (put 'completion-code-entered checked?))))))
 
   (define code (get 'completion-code))
   (page
