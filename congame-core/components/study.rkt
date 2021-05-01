@@ -644,9 +644,10 @@ QUERY
                      (define the-reason (exn:fail:study-reason e))
                      (cond
                        [hdl
-                        (define next-step-id (hdl the-step the-reason))
-                        (define next-step (study-find-step s next-step-id))
-                        (run-step req s next-step)]
+                        (parameterize ([current-study-stack new-study-stack])
+                          (define next-step-id (hdl the-step the-reason))
+                          (define next-step (study-find-step s next-step-id))
+                          (run-step req s next-step))]
                        [root?
                         (error 'run-study "fail~n  step: ~e~n  reason: ~a" the-step the-reason)]
                        [else
