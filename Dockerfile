@@ -1,4 +1,4 @@
-FROM ghcr.io/marckaufmann/racket:8.0-full AS build
+FROM ghcr.io/marckaufmann/racket:8.1-full AS build
 
 WORKDIR /opt/congame
 COPY .git /opt/congame/.git

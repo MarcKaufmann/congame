@@ -1,4 +1,4 @@
-FROM ghcr.io/marckaufmann/racket:8.0-full
+FROM ghcr.io/marckaufmann/racket:8.1-full
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends libgtk-3-0 libdbus-glib-1-2 xvfb
