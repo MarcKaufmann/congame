@@ -62,6 +62,7 @@
                                           #:shelf-life config:session-shelf-life
                                           #:secret-key config:session-secret-key
                                           #:store (make-memory-session-store
+                                                   #:ttl (* 1 86400)
                                                    #:file-path config:session-path))]
   [users (db) make-user-manager]
   [worker (broker) (make-worker-factory)])
