@@ -67,7 +67,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     --name "$CONTAINER_NAME" \
     --env-file "$RUN_PATH/env" \
     --health-cmd "curl -f http://127.0.0.1:$CONTAINER_PORT" \
-    --health-interval '2s' \
+    --health-interval '60s' \
     --link "postgres-13" \
     -v "$RUN_PATH":"$RUN_PATH" \
     -p "127.0.0.1:$CONTAINER_PORT":"$CONTAINER_PORT" \
