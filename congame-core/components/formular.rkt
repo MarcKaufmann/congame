@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base
+                     racket/list
                      racket/syntax
                      syntax/parse)
          forms
@@ -54,6 +55,20 @@
           #`(#,@(map loop (syntax-e #'(e ...))))]
 
          [e #'e]))
+
+     (define fld-kwds (sort (map syntax->datum (syntax-e #'(kwd ...))) keyword<?))
+     (for ([bot-id-stx (in-list (syntax-e #'(bot-id ...)))]
+           [bot-kwd-stxs (in-list (syntax-e #'((bot-fld ...) ...)))])
+       (define bot-id (syntax->datum bot-id-stx))
+       (define bot-kwds (map syntax->datum (syntax-e bot-kwd-stxs)))
+       (for ([bot-kwd-stx (in-list (syntax-e bot-kwd-stxs))]
+             [bot-kwd (in-list bot-kwds)])
+         (unless (memq bot-kwd fld-kwds)
+           (raise-syntax-error 'formular (format "bot ~a declares field ~a but there's no matching form field" bot-id bot-kwd) bot-kwd-stx)))
+       (for ([fld-kwd (in-list fld-kwds)])
+         (unless (memq fld-kwd bot-kwds)
+           (raise-syntax-error 'formular (format "bot ~a does not declare field ~a" bot-id fld-kwd) bot-id-stx))))
+
      #'(let ([action-fn action-e]
              [field-id fld] ...)
          (let ([tbl (make-hasheq
