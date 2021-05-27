@@ -184,6 +184,9 @@
   (haml
    (:div.container
     (formular
+     #:bot
+     ([good (#:what-if-fail? "no-extra-no-participation-fee")
+            (#:how-many-required-tasks? n-tasks)])
      (haml
       (:div
        (:p "The Study Instructions are repeated below.")
@@ -213,11 +216,7 @@
        (put 'comprehension-test (list what-if? how-many?)))))))
 
 (define (test-comprehension/bot)
-  (define f (bot:find "form"))
-  (element-click! (bot:find "input[value='no-extra-no-participation-fee']"))
-  ; FIXME: Brittle - relies on the correct answer being the third input.
-  (element-click! (caddr (bot:find-all "input[name='how-many-required-tasks?']")))
-  (element-click! (bot:find "button[type=submit]")))
+  (formular-autofill 'good))
 
 ;; Requirements Form
 
@@ -617,6 +616,9 @@
     (haml
      (:div.container
       (formular
+       #:bot
+       ([good (#:checked? #t)]
+        [bad (#:checked? #f)])
        (haml
         (:div
          (#:checked?
@@ -637,8 +639,7 @@
      (render-check-completion-code)))))
 
 (define (tutorial-completion-consent/bot)
-  (element-click! (bot:find "input[type='checkbox']"))
-  (element-click! (bot:find "button[type=submit]")))
+  (formular-autofill 'good))
 
 ;;; MAIN STUDY
 

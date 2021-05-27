@@ -44,6 +44,6 @@
    #:study-url "http://127.0.0.1:5100/study/pilot1"
    #:username "bot@example.com"
    #:password "password"
-   ;; #:headless? #f
-   ;; #:delay 1
+   #:headless? #f
+   #:delay 1
    (pjb-pilot-bot pjb-pilot-bot-model)))

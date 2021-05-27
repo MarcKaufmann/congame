@@ -339,6 +339,7 @@ QUERY
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ when-bot
  page
  button
  form

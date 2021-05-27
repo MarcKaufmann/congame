@@ -5,16 +5,26 @@
                      syntax/parse)
          forms
          koyo/haml
-         racket/match (prefix-in study: "study.rkt"))
+         (prefix-in m: marionette)
+         racket/match
+         racket/port
+         (prefix-in bot: (submod "bot.rkt" actions))
+         (prefix-in study: "study.rkt"))
 
 (provide
  formular
+ formular-autofill
  checkbox
  radios)
 
+;; Building up an intermediate representation of formualrs would allow
+;; us to compose smaller formulars into larger ones.  We may want to
+;; do this eventually if reusability becomes a concern.
 (define-syntax (formular stx)
   (syntax-parse stx
-    [(_ form action-e)
+    [(_ (~optional
+         (~seq #:bot ([bot-id:id (bot-fld:keyword bot-value:expr) ...] ...)))
+        form action-e)
      #:with rw (format-id stx "rw")
      #:with tbl (format-id stx "tbl")
      #:with ((kwd fld) ...)
@@ -65,7 +75,38 @@
                   (hash-ref vals-by-kwd k)))
               (keyword-apply action-fn sorted-kwds sorted-vals null))
             (lambda (rw)
-              patched-form))))]))
+              (haml
+               (:div
+                (~? (haml
+                     (:meta
+                      ([:name "formular-autofill"]
+                       [:content (study:when-bot
+                                  (call-with-output-string
+                                   (lambda (out)
+                                     (define meta
+                                       (make-hasheq
+                                        (list (cons 'bot-id
+                                                    (make-hasheq
+                                                     (list (cons (car (hash-ref tbl 'bot-fld)) bot-value) ...))) ...)))
+                                     (write meta out))))]))))
+                patched-form))))))]))
+
+(define (formular-autofill bot-id)
+  (define meta-el (bot:find "meta[name=formular-autofill]"))
+  (unless meta-el
+    (error 'formular-autofill "could not find autofill metadata"))
+  (define meta (call-with-input-string (m:element-attribute meta-el "content") read))
+  (for ([(field-id value) (hash-ref meta bot-id)] #:when value)
+    (define field-el (bot:find (format "[name=~a]" field-id)))
+    (unless field-el
+      (error 'formular-autofill (format "could not find field ~a" field-id)))
+    (define field-type (m:element-attribute field-el "type"))
+    (case field-type
+      [("text") (m:element-type! field-el value)]
+      [("checkbox") (m:element-click! field-el)]
+      [("radio") (m:element-click! (bot:find (format "[name=~a][value='~a']" field-id value)))]
+      [else (error 'formular-autofill (format "unhandled field type ~a" field-type))]))
+  (m:element-click! (bot:find "button[type=submit]")))
 
 (define ((checkbox label) meth)
   (match meth
