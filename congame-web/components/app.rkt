@@ -10,12 +10,14 @@
          net/url
          racket/contract
          racket/runtime-path
+         racket/string
          threading
          web-server/dispatch
          (prefix-in files: web-server/dispatchers/dispatch-files)
          (prefix-in filter: web-server/dispatchers/dispatch-filter)
          (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
          web-server/dispatchers/filesystem-map
+         web-server/http
          web-server/managers/lru
          web-server/servlet-dispatch
          (prefix-in config: "../config.rkt")
@@ -47,6 +49,19 @@
    #:path->mime-type path->mime-type))
 
 (struct app (dispatcher))
+
+(define-logger request)
+
+(define ((wrap-logging hdl) req)
+  (log-request-debug
+   "~a /~a [~a] [~a]"
+   (request-method req)
+   (string-join (map path/param-path (url-path (request-uri req))) "/")
+   (request-client-ip req)
+   (and~>
+    (headers-assq* #"user-agent" (request-headers/raw req))
+    (header-value)))
+  (hdl req))
 
 (define/contract (make-app auth broker broker-admin db flashes mailer _migrator sessions users)
   (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? session-manager? user-manager? app?)
@@ -156,7 +171,8 @@
         (wrap-protect-continuations)
         (wrap-preload)
         (wrap-cors)
-        (wrap-profiler)))
+        (wrap-profiler)
+        (wrap-logging)))
 
   (current-broker broker)
   (when config:debug
