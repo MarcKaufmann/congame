@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/contract
+(require net/url
+         racket/contract
          racket/list)
 
 (provide
@@ -119,7 +120,10 @@
       (raise-bot-error "potential infinite loop at path ~s" (car previous-paths)))
     (define study-done? (find-attribute "data-study-done"))
     (unless study-done?
-      (define study-stack (read (open-input-string (find-attribute "data-study-stack"))))
+      (define study-stack-str (find-attribute "data-study-stack"))
+      (unless study-stack-str
+        (raise-bot-error "failed to get study stack at ~a" (url->string (page-url (current-page)))))
+      (define study-stack (read (open-input-string study-stack-str)))
       (define step-id (string->symbol (find-attribute "data-step-id")))
       (define path (cons step-id study-stack))
       ;; TODO: logging
