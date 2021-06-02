@@ -647,6 +647,20 @@
 (define pjb-pilot-study-no-config
   (make-study
    "pjb-pilot-study-no-config"
+   #:transitions `([initialize . explain-study]
+                   [explain-study . test-study-requirements]
+                   #;[test-study-requirements . ,(λ () ...)]
+                   )
+
+   #;(#:transitions ([initialize ->
+                                 explain-study ->
+                                 test-study-requirements ->
+                                 (λ ()
+                                   (if (get 'satisfies-requirements?)
+                                       'tutorial-tasks
+                                       'requirements-failure))]
+                     [requirements-failure -> ...]
+                     [tutorial-tasks -> ...]))
    #:requires '(practice-tasks
                 price-lists
                 tutorial-fee)

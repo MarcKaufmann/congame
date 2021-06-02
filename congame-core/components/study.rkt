@@ -611,13 +611,52 @@ QUERY
 (define/contract (make-study name steps
                              #:requires [requires null]
                              #:provides [provides null]
+                             #:transitions [transitions #f]
                              #:failure-handler [failure-hdl #f])
   (->* (string? (non-empty-listof step?))
        (#:requires (listof symbol?)
         #:provides (listof symbol?)
+        #:transitions (or/c #f (listof (cons/c symbol? (or/c symbol? transition/c))))
         #:failure-handler (or/c #f (-> step? any/c step-id/c)))
        study?)
-  (study name requires provides steps failure-hdl))
+  (define steps-with-transitions
+    (cond
+      [transitions
+       (define steps*
+         (for/list ([s (in-list steps)])
+           (define sid (step-id s))
+           (cond
+             [(assoc sid transitions)
+              => (lambda (p)
+                   (define fn-or-id (cdr p))
+                   (define transition
+                     (cond
+                       [(symbol? fn-or-id) (λ () fn-or-id)]
+                       [else fn-or-id]))
+                   (cond
+                     [(step/study? s)
+                      (struct-copy step/study s [transition #:parent step transition])]
+                     [(step? s)
+                      (struct-copy step s [transition transition])]
+                     [else
+                      (raise-argument-error 'make-study "step?" s)]))]
+
+             [else
+              (raise-user-error 'make-study "no transition specified for step ~a in study ~a" sid name)])))
+
+       ;; Ensure the first step in the study lines up with the first
+       ;; specified transition.
+       (define first-step-id (car (car transitions)))
+       (define first-step
+         (findf (λ (s)
+                  (eq? (step-id s) first-step-id))
+                steps*))
+       (cons first-step (remq first-step steps*))]
+
+      [else
+       steps]))
+
+  (study name requires provides steps-with-transitions failure-hdl))
 
 (define/contract (run-study s
                             [req (current-request)]
