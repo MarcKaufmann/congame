@@ -1,0 +1,3 @@
+FROM congame-source:latest
+
+CMD ["/src/congame/bin/run-tests.sh"]

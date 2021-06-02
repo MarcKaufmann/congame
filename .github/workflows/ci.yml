@@ -51,6 +51,10 @@ jobs:
       env:
         PAT: ${{ secrets.PAT }}
 
+    - name: Build "source" docker image
+      run: |
+        docker build -t congame-source -f Dockerfile.source .
+
     - name: Build docker image
       run: |
         docker build -t "ghcr.io/marckaufmann/congame:$GITHUB_SHA" .
@@ -58,7 +62,7 @@ jobs:
 
     - name: Test the application
       run: |
-        docker build -t congame-tests:latest -f Dockerfile-tests .
+        docker build -t congame-tests:latest -f Dockerfile.test .
         docker run --network=host --rm congame-tests raco north migrate -fu "postgres://congame:congame@127.0.0.1:${{ job.services.postgres.ports[5432] }}/congame"
         docker run \
           --network=host \

@@ -4,4 +4,4 @@ set -euo pipefail
 
 Xvfb :5 -ac &
 export DISPLAY=:5
-raco test /opt/congame/congame-tests
+raco test /src/congame/congame-tests

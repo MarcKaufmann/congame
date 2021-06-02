@@ -1,0 +1,24 @@
+FROM ghcr.io/marckaufmann/congame-base:latest
+
+WORKDIR /src/congame
+COPY .git /src/congame/.git
+COPY bin /src/congame/bin
+COPY ci /src/congame/ci
+COPY congame-core /src/congame/congame-core
+COPY congame-example-study /src/congame/congame-example-study
+COPY congame-pjb-studies /src/congame/congame-pjb-studies
+COPY congame-price-lists /src/congame/congame-price-lists
+COPY congame-tests /src/congame/congame-tests
+COPY congame-web /src/congame/congame-web
+COPY migrations /src/congame/migrations
+COPY resources /src/congame/resources
+COPY static /src/congame/static
+
+RUN ci/setup-catalogs.sh
+RUN raco pkg install -D --auto --batch \
+  congame-core/ \
+  congame-example-study/ \
+  congame-pjb-studies/ \
+  congame-price-lists/ \
+  congame-tests/ \
+  congame-web/

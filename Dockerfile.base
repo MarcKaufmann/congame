@@ -1,4 +1,4 @@
-FROM ghcr.io/marckaufmann/debian:bullseye-slim
+FROM racket/racket:8.1-full AS build
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
