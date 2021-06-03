@@ -1,4 +1,4 @@
-#+TITLE: Design
+#+TITLE: Design and Features
 
 Questions and features about congame's design. The first category is about improving the current version of congame -- without major data structure changes or major syntactic sugar. The second category is about improvements that require major changes, or at least appear to require them.
 
