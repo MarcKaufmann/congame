@@ -3,7 +3,7 @@ compiled
 coverage
 node_modules
 static
-ip-notification.*
+ip-notification*
 congame-doc/
 dist/
 .Rproj.user
