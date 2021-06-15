@@ -40,9 +40,10 @@
 
 (define tracks
   (hash
-   'classical-tracks   '("classical1.mp3" "classical2.mp3")
-   'meditation-tracks  '("breathing-meditation.mp3")
-   'wave-tracks        '("waves.mp3")))
+   'classical-piano '("classical1.mp3" "classical2.mp3")
+   'guided-meditation'("breathing-meditation.mp3")
+   'wave-sounds '("wave-sounds.mp3")
+   'edm '("edm.mp3")))
 
 ;; TREATMENTS
 
@@ -53,9 +54,9 @@
 (define *pay-treatments* `(0.00 ,(* required-matrix-piece-rate
                             (- high-workload low-workload))))
 (define *relax-treatments*
-  '(classical-tracks meditation-tracks wave-tracks))
+  '(classical-piano guided-meditation wave-sounds))
 
-; FIXME: How could I have a bug in this without ever testing!?!
+; FIXME: How did I never test this? No wonder I had a (bad) bug.
 (define (make-balanced-shuffle original)
   (define ts (shuffle original))
   (λ ()
@@ -716,7 +717,8 @@
      #:provide-bindings '([success? success?]))
     (make-step/study 'get-rest
                      (relax-study)
-                     #:require-bindings `([tracks-to-play tracks-to-play])
+                     #:require-bindings `([tracks-to-play tracks-to-play]
+                                          [tracks-to-evaluate (const ,tracks)])
                      (λ ()
                        (case (get 'rest-treatment)
                          [(get-rest-then-elicit) 'elicit-WTW-and-work]

@@ -42,10 +42,10 @@
   (page
    (haml
     (.container
-     (:h1 (format "~a Audio Track~a (5-7 minutes total)"
+     (:h1 (format "~a Audio/Meditation Track~a (5-7 minutes total)"
                   n
                   (if (> n 1) "s" "")))
-     (:p (format "You will listen to a different audio track on ~a, followed by a question page. The continue button appears once the track has finished playing."
+     (:p (format "You will listen to a different audio track on ~a, followed by a question page. On each page, the continue button appears once the track has finished playing."
                  (if (> n 1)
                      (string-append "each of the next " (number->string n) " pages")
                      "the next page")))
@@ -73,7 +73,7 @@
      (:ul
       (:li "Press the play button to start the track")
       (:li "Sit back and listen to the track")
-      (:li "The 'Continue' button will appear once the track has finished playing (tracks are around 3 minutes long)."))
+      (:li "The 'Continue' button will appear once the track has finished playing (all tracks together are around 5-7 minutes long)."))
 
      (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")
      (.hide-audio-button
@@ -92,71 +92,95 @@
   ;; FIXME: Add a special error message to get for better error handling.
   (list-ref (get 'tracks-to-play) i))
 
+(define ((lift f) v)
+  (if v
+      (f v)
+      (ok v)))
+
+(define (inclusive-between low high #:message [message #f])
+  (lift (lambda (v)
+          (if (<= low v high)
+              (ok v)
+              (err (or message (format "value ~a is not between low ~a and high ~a" v low high)))))))
+
 (define evaluation-form
-  (form* ([preferred-track (ensure binding/text (required)
-                                  (one-of '(("first"  . 0)
-                                            ("second" . 1)
-                                            ("third"  . 2))))]
-          [second-preferred-track (ensure binding/text (required)
-                                  (one-of '(("first"  . 0)
-                                            ("second" . 1)
-                                            ("third"  . 2))))]
-          [like-classical? (ensure binding/text (required)
-                                   (one-of '(("yes" . yes)
-                                             ("no"  . no))))]
-          [heard-track-before? (ensure binding/text (required)
-                                   (one-of '(("yes" . yes)
-                                             ("no"  . no))))]
-          )
-         (hash 'preferred-track (get-track preferred-track)
-               'second-preferred-track (get-track second-preferred-track)
-               'like-classical? like-classical?
-               'heard-track-before? heard-track-before?)))
+  (form* ([own-track (ensure binding/text (required)
+                             (one-of '(("wave-sounds" 'wave-sounds)
+                                       ("guided-meditation" 'guided-meditation)
+                                       ("classical-piano" 'classical-piano)
+                                       ("edm" 'edm))))]
+          [wave-sounds-relaxation-score (ensure binding/number (required) (inclusive-between 1 10))]
+          [guided-meditation-relaxation-score (ensure binding/number (required) (inclusive-between 1 10))]
+          [classical-piano-relaxation-score (ensure binding/number (required) (inclusive-between 1 10))]
+          [edm-relaxation-score (ensure binding/number (required) (inclusive-between 1 10))])
+         (hash 'own-track own-track
+               'wave-sounds-relaxation-score wave-sounds-relaxation-score
+               'guided-meditation-relaxation-score guided-meditation-relaxation-score
+               'classical-piano-relaxation-score classical-piano-relaxation-score
+               'edm-relaxation-score edm-relaxation-score)))
+
+(define (widget-10-scale)
+  (widget-number #:attributes '((min "1") (max "10"))))
+
+(define (figure-with-snippet-track track-treatment)
+  (define track-path
+    (car (hash-ref (get 'tracks-to-evaluate) track-treatment)))
+  (define track-name
+    (case track-treatment
+      [(classical-piano) "Classical Piano"]
+      [(guided-meditation) "Guided Meditation"]
+      [(wave-sounds) "Wave Sounds"]
+      [(edm) "Electronic Dance Music (EDM)"]))
+  (haml
+   (:figure (:figcaption track-name)
+            (:audio ([:controls ""]
+                     [:src (resource-uri tracks
+                                         (string-append "snip-" track-path))])))))
 
 (define (render-evaluation-form rw)
   (haml
    (:div
-    (:label.radio-group "Which was your favorite track?"
-                        (rw "preferred-track"
-                            (widget-radio-group '(("first"  . "First track")
-                                                  ("second" . "Second track")
-                                                  ("third"  . "Third track")))))
-    ,@(rw "preferred-track" (widget-errors))
-    (:label.radio-group "Which was your second favorite track?"
-                        (rw "second-preferred-track"
-                            (widget-radio-group '(("first"  . "First track")
-                                                  ("second" . "Second track")
-                                                  ("third"  . "Third track")))))
-    ,@(rw "second-preferred-track" (widget-errors))
-    (:label.radio-group "Do you like classical music?"
-                        (rw "like-classical?" (widget-radio-group '(("yes" . "Yes")
-                                                                    ("no"  . "No")))))
-    ,@(rw "like-classical?" (widget-errors))
-    (:label.radio-group "Do you think that you heard any of the tracks before?"
-                        (rw "heard-track-before?" (widget-radio-group '(("yes" . "Yes")
-                                                                       ("no"  . "No")))))
-    ,@(rw "heard-track-before?" (widget-errors))
+    (:div
+     (:label.radio-group "Below are several types of tracks for you to rate with a 20-second snippet. Which did you listen to?"
+                         (rw "own-track" (widget-radio-group '(("wave-sounds" . "Wave Sounds")
+                                                               ("guided-meditation" . "Guided Meditation")
+                                                               ("classical-piano" . "Classical Piano")
+                                                               ("edm" . "Electronic Dance Music (EDM)")))))
+     ,@(rw "own-track" (widget-errors)))
+    (:div ([:class "group"])
+          (:label "Rate each type of track below On a scale from 1 to 10, where 1 means 'ennervating', 5 means 'neutral/no effect', and 10 means 'deeply relaxing'. You can play a 20-second snippet below.")
+          (:div
+           (:label "Wave Sounds" (rw "wave-sounds-relaxation-score" (widget-10-scale)))
+           ,@(rw "wave-sounds-relaxation-score" (widget-errors)))
+          (:div
+           (:label "Guided Meditation" (rw "guided-meditation-relaxation-score" (widget-10-scale)))
+           ,@(rw "guided-meditation-relaxation-score" (widget-errors)))
+          (:div
+           (:label "Classical Piano" (rw "classical-piano-relaxation-score" (widget-10-scale)))
+           ,@(rw "classical-piano-relaxation-score" (widget-errors)))
+          (:div
+           (:label "Electronic Dance Music (EDM)" (rw "edm-relaxation-score" (widget-10-scale)))
+           ,@(rw "edm-relaxation-score" (widget-errors))))
+    (:div ([:class "group"])
+     (:h4 "Sound Snippets")
+     (figure-with-snippet-track 'wave-sounds)
+     (figure-with-snippet-track 'guided-meditation)
+     (figure-with-snippet-track 'classical-piano)
+     (figure-with-snippet-track 'edm))
     (:button.button.next-button ((:type "submit")) "Submit"))))
 
-(define (evaluate-tracks)
+(define (track-survey)
   (page
    (haml
     (.container
-     (:h1 "Track Evaluation")
+     (:h1 "Track Survey")
      (form
       evaluation-form
       (λ (answer)
         (put 'track-survey answer))
-      render-evaluation-form)
-     (:h3 "20-second snippets of the tracks")
-     ,@(for/list ([track-name (in-list (get 'tracks-to-play))]
-                  [rank      (in-list '("First" "Second" "Third" "Fourth" "Fifth"))])
-         (haml
-          (:figure (:figcaption (string-append rank " track"))
-                   (:audio ([:controls ""]
-                            [:src (resource-uri tracks (string-append "snip-" track-name))])))))))))
+      render-evaluation-form)))))
 
-(define (evaluate-tracks/bot)
+(define (track-survey/bot)
   (define f (bot:wait-for "form"))
   (for ([group-el (bot:element-find-all f ".radio-group")])
     (define first-radio-el (bot:element-find group-el "input[type=radio]"))
@@ -172,7 +196,7 @@
 (define (relax-study)
   (make-study
    "relax-study"
-   #:requires '(tracks-to-play)
+   #:requires '(tracks-to-play tracks-to-evaluate)
    #:provides '()
    (list
     (make-step 'explain-relax
@@ -186,8 +210,8 @@
                (λ ()
                  (if (> (length (get 'tracks-to-play)) (get 'tracks-played-so-far))
                      'play-tracks
-                     'evaluate-tracks))
+                     'track-survey))
                #:for-bot play-tracks/bot)
-    (make-step 'evaluate-tracks
-               evaluate-tracks
-               #:for-bot evaluate-tracks/bot))))
+    (make-step 'track-survey
+               track-survey
+               #:for-bot track-survey/bot))))
