@@ -76,7 +76,7 @@ application is started.
 
     $ raco pkg install congame-example-study/  # install and build the study package and its deps
 
-Make sure to `touch` or otherwise modify `congame/studies/all.rkt`
+Make sure to `touch` or otherwise modify `congame-web/studies/all.rkt`
 every time you install a new study package to ensure that package is
 visible to the web app.
 
