@@ -150,15 +150,17 @@
           ((widget-radio-group options) name value errors))
          ,@((widget-errors) name value errors))))]))
 
-(define ((input-number label #:min [min ""] #:max [max ""] #:validators [validators null]) meth)
+(define ((input-number label #:min [min -inf.0] #:max [max +inf.0] #:validators [validators null]) meth)
   (match meth
     ['validator
-     (apply ensure binding/number (required) validators)]
+     (apply ensure binding/number (required) (to-real) (cons (range/inclusive min max) validators))]
     ['widget
      (lambda (name value errors)
        (haml
         (.group
          (:label
-          ((widget-number #:attributes `((min ,min) (max ,max))) name value errors)
+          ((widget-number #:attributes `((min ,(if (= min -inf.0) "" (number->string min)))
+                                         (max ,(if (= max +inf.0) "" (number->string max)))))
+           name value errors)
           label)
          ,@((widget-errors) name value errors))))]))

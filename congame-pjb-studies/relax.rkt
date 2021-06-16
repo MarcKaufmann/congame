@@ -7,6 +7,7 @@
  koyo/haml
  marionette
  (except-in forms form)
+ congame/components/formular
  congame/components/resource
  congame/components/study
  (prefix-in config: congame/config)
@@ -92,33 +93,6 @@
   ;; FIXME: Add a special error message to get for better error handling.
   (list-ref (get 'tracks-to-play) i))
 
-(define ((lift f) v)
-  (if v
-      (f v)
-      (ok v)))
-
-(define (inclusive-between low high #:message [message #f])
-  (lift (lambda (v)
-          (if (<= low v high)
-              (ok v)
-              (err (or message (format "value ~a is not between low ~a and high ~a" v low high)))))))
-
-(define evaluation-form
-  (form* ([own-track (ensure binding/text (required)
-                             (one-of '(("wave-sounds" 'wave-sounds)
-                                       ("guided-meditation" 'guided-meditation)
-                                       ("classical-piano" 'classical-piano)
-                                       ("edm" 'edm))))]
-          [wave-sounds-relaxation-score (ensure binding/number (required) (inclusive-between 1 10))]
-          [guided-meditation-relaxation-score (ensure binding/number (required) (inclusive-between 1 10))]
-          [classical-piano-relaxation-score (ensure binding/number (required) (inclusive-between 1 10))]
-          [edm-relaxation-score (ensure binding/number (required) (inclusive-between 1 10))])
-         (hash 'own-track own-track
-               'wave-sounds-relaxation-score wave-sounds-relaxation-score
-               'guided-meditation-relaxation-score guided-meditation-relaxation-score
-               'classical-piano-relaxation-score classical-piano-relaxation-score
-               'edm-relaxation-score edm-relaxation-score)))
-
 (define (widget-10-scale)
   (widget-number #:attributes '((min "1") (max "10"))))
 
@@ -137,55 +111,63 @@
                      [:src (resource-uri tracks
                                          (string-append "snip-" track-path))])))))
 
-(define (render-evaluation-form rw)
-  (haml
-   (:div
-    (:div
-     (:label.radio-group "Below are several types of tracks for you to rate with a 20-second snippet. Which did you listen to?"
-                         (rw "own-track" (widget-radio-group '(("wave-sounds" . "Wave Sounds")
-                                                               ("guided-meditation" . "Guided Meditation")
-                                                               ("classical-piano" . "Classical Piano")
-                                                               ("edm" . "Electronic Dance Music (EDM)")))))
-     ,@(rw "own-track" (widget-errors)))
-    (:div ([:class "group"])
-          (:label "Rate each type of track below On a scale from 1 to 10, where 1 means 'ennervating', 5 means 'neutral/no effect', and 10 means 'deeply relaxing'. You can play a 20-second snippet below.")
-          (:div
-           (:label "Wave Sounds" (rw "wave-sounds-relaxation-score" (widget-10-scale)))
-           ,@(rw "wave-sounds-relaxation-score" (widget-errors)))
-          (:div
-           (:label "Guided Meditation" (rw "guided-meditation-relaxation-score" (widget-10-scale)))
-           ,@(rw "guided-meditation-relaxation-score" (widget-errors)))
-          (:div
-           (:label "Classical Piano" (rw "classical-piano-relaxation-score" (widget-10-scale)))
-           ,@(rw "classical-piano-relaxation-score" (widget-errors)))
-          (:div
-           (:label "Electronic Dance Music (EDM)" (rw "edm-relaxation-score" (widget-10-scale)))
-           ,@(rw "edm-relaxation-score" (widget-errors))))
-    (:div ([:class "group"])
-     (:h4 "Sound Snippets")
-     (figure-with-snippet-track 'wave-sounds)
-     (figure-with-snippet-track 'guided-meditation)
-     (figure-with-snippet-track 'classical-piano)
-     (figure-with-snippet-track 'edm))
-    (:button.button.next-button ((:type "submit")) "Submit"))))
-
 (define (track-survey)
   (page
    (haml
     (.container
      (:h1 "Track Survey")
-     (form
-      evaluation-form
-      (λ (answer)
-        (put 'track-survey answer))
-      render-evaluation-form)))))
+     (formular
+      #:bot
+      ([good (#:own-track "wave-sounds")
+             (#:wave-sounds "3")
+             (#:guided-meditation "5")
+             (#:classical-piano "5")
+             (#:edm "10")])
+      (haml
+       (:div
+        (#:own-track
+         (radios
+          "Below are several types of tracks for you to rate with a 20-second snippet. Which did you listen to?"
+          '(("wave-sounds" . "Wave Sounds")
+            ("guided-meditation" . "Guided Meditation")
+            ("classical-piano" . "Classical Piano")
+            ("edm" . "Electronic Dance Music (EDM)"))
+          ))
+        (:div.group
+         (:label  "Rate each type of track below On a scale from 1 to 10, where 1 means 'ennervating', 5 means 'neutral/no effect', and 10 means 'deeply relaxing'. You can play a 20-second snippet below.")
+         (:div
+          (#:wave-sounds
+           (input-number "Wave Sounds" #:min 1 #:max 10)))
+         (:div
+          (#:guided-meditation
+           (input-number "Guided Meditation" #:min 1 #:max 10)))
+         (:div
+          (#:classical-piano
+           (input-number "Classical Piano" #:min 1 #:max 10 )))
+         (:div
+          (#:edm
+           (input-number "Electronic Dance Music (EDM)" #:min 1 #:max 10))))
+        (:div ([:class "group"])
+              (:h4 "Sound Snippets")
+              (figure-with-snippet-track 'wave-sounds)
+              (figure-with-snippet-track 'guided-meditation)
+              (figure-with-snippet-track 'classical-piano)
+              (figure-with-snippet-track 'edm))
+        (:button.button.next-button ((:type "submit")) "Submit")))
+      (lambda (#:own-track own-track
+               #:wave-sounds wave-sounds
+               #:guided-meditation guided-meditation
+               #:classical-piano classical-piano
+               #:edm edm)
+        (put 'relaxation-survey
+             (hash 'own-track own-track
+                   'wave-sounds-relaxation-score wave-sounds
+                   'guided-meditation-relaxation-score guided-meditation
+                   'classical-piano-relaxation-score classical-piano
+                   'edm-relaxation-score edm))))))))
 
 (define (track-survey/bot)
-  (define f (bot:wait-for "form"))
-  (for ([group-el (bot:element-find-all f ".radio-group")])
-    (define first-radio-el (bot:element-find group-el "input[type=radio]"))
-    (element-click! first-radio-el))
-  (element-click! (bot:find "button[type=submit]")))
+  (formular-autofill 'good))
 
 (define (play-tracks/bot)
   (void
