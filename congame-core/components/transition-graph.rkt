@@ -26,4 +26,4 @@
   (syntax-parse stx
     #:literals (-->)
     [(_ [arrows:arrow] ...+)
-     #'(append (list arrows.c ...) ...)]))
+     #'(list arrows.c ... ...)]))
