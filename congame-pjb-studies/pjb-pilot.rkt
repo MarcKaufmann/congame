@@ -18,6 +18,7 @@
          congame/components/formular
          congame/components/resource
          congame/components/study
+         congame/components/transition-graph
          congame-pjb-studies/relax
          congame-price-lists/price-lists
          congame/tools
@@ -647,59 +648,55 @@
 (define pjb-pilot-study-no-config
   (make-study
    "pjb-pilot-study-no-config"
-   #:transitions `([initialize . explain-study]
-                   [explain-study . test-study-requirements]
-                   [test-study-requirements . ,(λ ()
-                                                 (if (not (get 'satisfies-requirements?))
-                                                     'requirements-failure
-                                                     'tutorial-tasks))]
-                   [tutorial-tasks . ,(λ ()
-                                        (if (not (get 'tutorial-success?))
-                                            (fail 'fail-tutorial-tasks)
-                                            'tutorial-illustrate-elicitation))]
-                   [tutorial-illustrate-elicitation . test-comprehension]
-                   [test-comprehension . consent]
-                   [consent . ,(λ ()
-                                 ; TODO: The fact that I check only once means that, if by chance we jump past this stage
-                                 ; then the study would simply continue. In general it might be good to have this property
-                                 ; enforced from a given stage onwards.
-                                 (put-payment! 'tutorial-fee (get 'tutorial-fee))
-                                 (cond [(not (get 'consent?))
-                                        (put 'rest-treatment 'NA:no-consent)
-                                        done]
-                                       [else
-                                        ; TODO: Treatment assignment should also be done at the study, not step, level!!
-                                        ; Can this be done, given the need for `put`?
-                                        (put 'rest-treatment (next-balanced-rest-treatment))
-                                        'tutorial-completion-consent]))]
-                   [tutorial-completion-consent . required-tasks]
-                   [required-tasks . ,(λ ()
-                                        (cond [(not (get 'success?))
-                                               (fail 'fail-required-tasks)]
-                                              [else
-                                               (case (get 'rest-treatment)
-                                                 [(get-rest-then-elicit) 'get-rest]
-                                                 [(elicit-then-get-rest) 'elicit-WTW-and-work])]))]
-                   [get-rest . ,(λ ()
-                                  (case (get 'rest-treatment)
-                                    [(get-rest-then-elicit) 'elicit-WTW-and-work]
-                                    [(elicit-then-get-rest) 'debrief-survey]))]
-                   [elicit-WTW-and-work . ,(λ ()
-                                             (case (get 'rest-treatment)
-                                               [(get-rest-then-elicit) 'debrief-survey]
-                                               [(elicit-then-get-rest) 'get-rest]))]
-                   [debrief-survey . ,(λ () done)]
-                   [requirements-failure . ,(λ () done)])
+   #:transitions (transition-graph
+                  [initialize
+                   --> explain-study
+                   --> test-study-requirements
+                   --> ,(λ ()
+                          (if (not (get 'satisfies-requirements?))
+                              'requirements-failure
+                              'tutorial-tasks))]
+                  [tutorial-tasks
+                   --> ,(λ ()
+                          (if (not (get 'tutorial-success?))
+                              (fail 'fail-tutorial-tasks)
+                              'tutorial-illustrate-elicitation))]
+                  [tutorial-illustrate-elicitation
+                   --> test-comprehension
+                   --> consent
+                   --> ,(λ ()
+                          ; TODO: The fact that I check only once means that, if by chance we jump past this stage
+                          ; then the study would simply continue. In general it might be good to have this property
+                          ; enforced from a given stage onwards.
+                          (put-payment! 'tutorial-fee (get 'tutorial-fee))
+                          (cond [(not (get 'consent?))
+                                 (put 'rest-treatment 'NA:no-consent)
+                                 done]
+                                [else
+                                 ; TODO: Treatment assignment should also be done at the study, not step, level!!
+                                 ; Can this be done, given the need for `put`?
+                                 (put 'rest-treatment (next-balanced-rest-treatment))
+                                 'tutorial-completion-consent]))]
+                  [tutorial-completion-consent
+                   --> required-tasks
+                   --> ,(λ ()
+                          (cond [(not (get 'success?))
+                                 (fail 'fail-required-tasks)]
+                                [else
+                                 (case (get 'rest-treatment)
+                                   [(get-rest-then-elicit) 'get-rest]
+                                   [(elicit-then-get-rest) 'elicit-WTW-and-work])]))]
+                  [get-rest --> ,(λ ()
+                                   (case (get 'rest-treatment)
+                                     [(get-rest-then-elicit) 'elicit-WTW-and-work]
+                                     [(elicit-then-get-rest) 'debrief-survey]))]
+                  [elicit-WTW-and-work --> ,(λ ()
+                                              (case (get 'rest-treatment)
+                                                [(get-rest-then-elicit) 'debrief-survey]
+                                                [(elicit-then-get-rest) 'get-rest]))]
+                  [debrief-survey --> ,(λ () done)]
+                  [requirements-failure --> ,(λ () done)])
 
-   #;(#:transitions ([initialize ->
-                                 explain-study ->
-                                 test-study-requirements ->
-                                 (λ ()
-                                   (if (get 'satisfies-requirements?)
-                                       'tutorial-tasks
-                                       'requirements-failure))]
-                     [requirements-failure -> ...]
-                     [tutorial-tasks -> ...]))
    #:requires '(practice-tasks
                 price-lists
                 tutorial-fee)
