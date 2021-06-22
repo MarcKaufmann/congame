@@ -119,10 +119,10 @@
      (formular
       #:bot
       ([good (#:own-track "wave-sounds")
-             (#:wave-sounds "3")
-             (#:guided-meditation "5")
-             (#:classical-piano "5")
-             (#:edm "10")])
+             (#:wave-sounds 3)
+             (#:guided-meditation 5)
+             (#:classical-piano 5)
+             (#:edm 10)])
       (haml
        (:div
         (#:own-track

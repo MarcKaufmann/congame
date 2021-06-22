@@ -119,6 +119,9 @@
     (define field-type (m:element-attribute field-el "type"))
     (case field-type
       [("text") (m:element-type! field-el value)]
+      [("number") (if (number? value)
+                      (m:element-type! field-el (number->string value))
+                      (error "number field has to contain a number, but received ~a" value))]
       [("checkbox") (m:element-click! field-el)]
       [("radio") (m:element-click! (bot:find (format "[name=~a][value='~a']" field-id value)))]
       [else (error 'formular-autofill (format "unhandled field type ~a" field-type))]))
