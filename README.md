@@ -46,7 +46,7 @@ The features that will get implemented will however be determined by the priorit
     $ raco pkg install congame-core/   # install and build the core library and its deps
     $ raco pkg install congame-web/    # install and build the application and its deps
     $ raco pkg install congame-doc/    # install and build the docs and their deps
-    # To install a package or study that tests depend on (e.g. congame-pjb-studies), 
+    # To install a package or study that tests depend on (e.g. congame-pjb-studies),
     # uncomment the following line and replace by appropriate package.
     # raco pkg install congame-pjb-studies/
     $ raco pkg install congame-tests/  # install and build the tests and their deps
@@ -76,9 +76,16 @@ application is started.
 
     $ raco pkg install congame-example-study/  # install and build the study package and its deps
 
-Make sure to `touch` or otherwise modify `congame-web/studies/all.rkt`
-every time you install a new study package to ensure that package is
-visible to the web app.
+To get congame to pick up the new package, run
+
+    rm -r congame-web/studies/compiled/
+
+then
+
+    touch congame-web/studies/all.rkt
+
+This will cause the "all.rkt" module to be re-compiled, and that will
+in turn make the new study available in the web app.
 
 ## Updating study caches
 
