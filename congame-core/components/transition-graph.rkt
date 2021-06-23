@@ -22,8 +22,11 @@
              #:with e #''id
              #:with (c ...) #'([cons 'id a2.e] a2.c ...)))
 
-  ;; TODO: Error on single entry.
   (syntax-parse stx
     #:literals (-->)
     [(_ [arrows:arrow] ...+)
+     (for ([edge-stx (in-list (syntax-e #'((arrows.c ...) ...)))]
+           [arrow-stx (in-list (syntax-e #'(arrows ...)))])
+       (when (null? (syntax-e edge-stx))
+         (raise-syntax-error 'transition-graph "nodes in a graph must point to other nodes" stx arrow-stx)))
      #'(list arrows.c ... ...)]))
