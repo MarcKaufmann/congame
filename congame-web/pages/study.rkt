@@ -3,7 +3,6 @@
 (require congame/components/study
          koyo/continuation
          koyo/haml
-         koyo/http
          koyo/url
          racket/match
          web-server/dispatchers/dispatch
@@ -38,38 +37,18 @@
   (redirect-to (reverse-uri 'study-page (study-instance-slug i))))
 
 (define ((study-page db) req slug)
+  (define uid (user-id (current-user)))
   (cond
-    [(lookup-study db slug (user-id (current-user)))
+    [(lookup-study db slug uid)
      => (match-lambda
           [(list s participant)
-           (define study-return-values
-             (unless (study-participant-completed? participant)
-               (define manager
-                 (make-study-manager #:database db
-                                     #:participant participant))
-               (define study-return-values
-                 (call-with-study-manager
-                  manager
-                  (lambda ()
-                    (run-study s req))))
-               (mark-participant-completed! manager)
-               (redirect/get/forget/protect)
-               study-return-values))
-           ; FIXME: Bug, since study-return-values is only set the first time we go to final page, but not upon refresh.
-           ; Maybe we should store the final study-return-values on study-participant?
-           (define code
-             (if (void? study-return-values)
-                 #f
-                 (hash-ref study-return-values 'completion-code #f)))
-           (tpl:page
-            (haml
-             (:div.container
-              ([:data-study-done "yes"])
-              (:h1 "Thank You!")
-              (:p "You completed the study.")
-              (if code
-                  `(h3 (string-append "Completion code is: " ,code))
-                  `(p "")))))])]
+           (call-with-study-manager
+            (make-study-manager
+             #:database db
+             #:participant participant)
+            (lambda ()
+              (run-study s req)))
+           (raise-user-error 'study-page "reached past the end of the study~n  user-id: ~a~n  slug: ~a" uid slug)])]
 
     [else
      (next-dispatcher)]))

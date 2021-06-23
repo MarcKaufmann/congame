@@ -544,6 +544,12 @@
       (:img ([:src (resource-uri price-list-screenshot)])))
      (button void "Continue")))))
 
+(define (show-done)
+  (page
+   (haml
+    (.container
+     (:h1 "Thank you for participating.")))))
+
 (define elicit-WTW-and-work
   (make-study
    "elicit-WTW-and-work"
@@ -557,8 +563,8 @@
                    (car (get 'remaining-price-lists)))
                  (define n (add1 (length (get 'answered-price-lists))))
                  ((price-list-step (hash-ref PRICE-LISTS next-pl-name)
-                                  #:title (format "Extra Work Choice Number ~a" n)
-                                  #:pl-name next-pl-name)))
+                                   #:title (format "Extra Work Choice Number ~a" n)
+                                   #:pl-name next-pl-name)))
                (λ ()
                  (define pls (get 'remaining-price-lists))
                  (define previously-answered-pls
@@ -784,4 +790,5 @@
                     (:p "The study ends here, since you failed too many tasks.")
                     (button void "See payments")))))
                (λ () 'show-payments))
-    (make-step 'show-payments show-payments (λ () done) #:for-bot bot:continuer))))
+    (make-step 'show-payments show-payments #:for-bot bot:continuer)
+    (make-step 'done show-done #:for-bot bot:done))))

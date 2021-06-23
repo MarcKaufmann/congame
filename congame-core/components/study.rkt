@@ -830,7 +830,6 @@ QUERY
  participant-email
  clear-participant-progress!
  enroll-participant!
- mark-participant-completed!
  lookup-study
  lookup-study-meta
  lookup-study-instance
@@ -871,7 +870,6 @@ QUERY
    [user-id integer/f]
    [instance-id integer/f]
    [(progress #()) (array/f string/f)]
-   [(completed? #f) boolean/f]
    [(enrolled-at (now/moment)) datetime-tz/f]))
 
 (define-schema study-participant/admin
@@ -883,7 +881,6 @@ QUERY
    [progress (array/f string/f)]
    [(current-round-name "") string/f]
    [(current-group-name "") string/f]
-   [completed? boolean/f]
    [enrolled-at datetime-tz/f]))
 
 (define-schema study-var
@@ -986,7 +983,7 @@ QUERY
           (join user #:as u #:on (= u.id p.user-id))
           (where (= p.instance-id ,instance-id))
           (order-by ([p.enrolled-at #:desc]))
-          (select p.id u.id u.username u.role p.progress p.current-round-name p.current-group-name p.completed? p.enrolled-at)
+          (select p.id u.id u.username u.role p.progress p.current-round-name p.current-group-name p.enrolled-at)
           (project-onto study-participant/admin-schema)))
 
     (sequence->list
@@ -1086,7 +1083,7 @@ QUERY
     (lookup conn (~> (from study-participant #:as p)
                      (join user #:as u #:on (= u.id p.user-id))
                      (where (= p.id ,participant-id))
-                     (select p.id u.id u.username u.role p.progress p.current-round-name p.current-group-name p.completed? p.enrolled-at)
+                     (select p.id u.id u.username u.role p.progress p.current-round-name p.current-group-name p.enrolled-at)
                      (project-onto study-participant/admin-schema)))))
 
 (define/contract (participant-email pid)
@@ -1112,7 +1109,6 @@ QUERY
     (query-exec conn (~> (from "study_participants" #:as p)
                          (where (= p.id ,participant-id))
                          (update
-                          [is_completed #f]
                           [progress ,(list->pg-array null)]
                           [current-round-name ""]
                           [current-group-name ""])))
@@ -1133,11 +1129,6 @@ QUERY
         (map symbol->string (current-study-ids))
         (list (symbol->string step-id)))))
     (update! conn (set-study-participant-progress p progress))))
-
-(define (mark-participant-completed! m)
-  (define p (study-manager-participant m))
-  (with-database-connection [conn (study-manager-db m)]
-    (update! conn (set-study-participant-completed? p #t))))
 
 (define (current-participant-progress m)
   (define p (study-manager-participant m))

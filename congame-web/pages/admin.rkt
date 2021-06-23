@@ -341,7 +341,6 @@
      (:tr
       (:th "Participant ID")
       (:th "Email")
-      (:th "Completed?")
       (:th "Enrolled At")
       (:th "Progress")
       (:th "Current Round")
@@ -355,7 +354,6 @@
              ([:href (reverse-uri 'admin:view-study-participant-page study-id study-instance-id (study-participant/admin-id p))])
              (~a (study-participant/admin-id p))))
            (:td (study-participant/admin-email p))
-           (:td (if (study-participant/admin-completed? p) "yes" "no"))
            (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))
            (:td (~a (study-participant/admin-progress p)))
            (:td (study-participant/admin-current-round-name p))

@@ -67,6 +67,7 @@
   (provide
    run-bot
    current-page
+   done
    continuer
    click
    wait-for
@@ -79,6 +80,8 @@
   (define INFINITE-LOOP-THRESHOLD 25)
 
   ;; runner ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (struct exn:bot:done exn ())
 
   (define current-page
     (make-parameter #f))
@@ -118,8 +121,7 @@
   (define (execute! b [previous-paths null])
     (when (>= (count-path-run previous-paths) INFINITE-LOOP-THRESHOLD)
       (raise-bot-error "potential infinite loop at path ~s" (car previous-paths)))
-    (define study-done? (find-attribute "data-study-done"))
-    (unless study-done?
+    (with-handlers ([exn:bot:done? void])
       (define study-stack-str (find-attribute "data-study-stack"))
       (unless study-stack-str
         (raise-bot-error "failed to get study stack at ~a" (url->string (page-url (current-page)))))
@@ -146,6 +148,10 @@
 
 
   ;; actions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+  (define/contract (done)
+    (-> void?)
+    (raise (exn:bot:done "done" (current-continuation-marks))))
 
   (define/contract (continuer)
     (-> void?)
@@ -185,5 +191,5 @@
     (define maybe-element
       (page-wait-for! (current-page) selector #:timeout 5))
     (unless maybe-element
-      (raise-bot-error "could not find widget with id ~s" id))
+      (raise-bot-error "could not find widget with selector ~s" selector))
     maybe-element))
