@@ -791,4 +791,4 @@
                     (button void "See payments")))))
                (λ () 'show-payments))
     (make-step 'show-payments show-payments #:for-bot bot:continuer)
-    (make-step 'done show-done #:for-bot bot:done))))
+    (make-step 'done show-done #:for-bot bot:completer))))

@@ -67,7 +67,7 @@
   (provide
    run-bot
    current-page
-   done
+   completer
    continuer
    click
    wait-for
@@ -149,7 +149,7 @@
 
   ;; actions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-  (define/contract (done)
+  (define/contract (completer)
     (-> void?)
     (raise (exn:bot:done "done" (current-continuation-marks))))
 
