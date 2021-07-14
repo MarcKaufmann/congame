@@ -25,10 +25,10 @@ RUN raco pkg install -D --auto --skip-installed \
   congame-price-lists/ \
   congame-tests/ \
   congame-web/
-RUN raco pkg update -D --auto \
-  congame-core/ \
-  congame-example-study/ \
-  congame-pjb-studies/ \
-  congame-price-lists/ \
-  congame-tests/ \
-  congame-web/
+RUN raco setup --pkgs \
+  congame-core \
+  congame-example-study \
+  congame-pjb-studies \
+  congame-price-lists \
+  congame-tests \
+  congame-web
