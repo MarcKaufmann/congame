@@ -78,8 +78,8 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     if curl -f "http://127.0.0.1:$CONTAINER_PORT" >/dev/null 2>&1; then
       break
     fi
-    attempts=$((attempts + 1))
-    if [ "$attempts" -gt 15 ]; then
+    attempts=\$((attempts + 1))
+    if [ "\$attempts" -gt 15 ]; then
       echo "No successful health checks after 15 seconds."
       exit 1
     fi
