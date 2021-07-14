@@ -14,8 +14,19 @@ COPY migrations /src/congame/migrations
 COPY resources /src/congame/resources
 COPY static /src/congame/static
 
+RUN rm -r /root/.local/share/racket
+COPY .racket-cache/.local/share/racket /root/.local/share/racket
+COPY .racket-cache/.cache /root/.cache
+
 RUN ci/setup-catalogs.sh
-RUN raco pkg install -D --auto --batch \
+RUN raco pkg install -D --auto --skip-installed \
+  congame-core/ \
+  congame-example-study/ \
+  congame-pjb-studies/ \
+  congame-price-lists/ \
+  congame-tests/ \
+  congame-web/
+RUN raco pkg update -D --auto \
   congame-core/ \
   congame-example-study/ \
   congame-pjb-studies/ \

@@ -34,6 +34,13 @@ jobs:
           node_modules
         key: ${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
+    - name: Cache Racket deps
+      uses: actions/cache@v2
+      with:
+        path: |
+          .racket-cache
+        key: ${{ runner.os }}-${{ hashFiles('**/info.rkt') }}-${{ hashFiles('ci/setup-catalogs.sh') }}
+
     - name: Install Node
       uses: actions/setup-node@v1
       with:
@@ -53,6 +60,12 @@ jobs:
 
     - name: Build "source" docker image
       run: |
+        if [ ! -d ".racket-cache" ]; then
+          mkdir -p .racket-cache/.cache
+          mkdir -p .racket-cache/.local/share
+          docker run --rm -v"$(pwd)":/workspace ghcr.io/marckaufmann/congame-base \
+            cp -r /root/.local/share/racket /workspace/.racket-cache/.local/share/racket
+        fi
         docker build -t congame-source -f Dockerfile.source .
 
     - name: Build docker image
@@ -104,3 +117,12 @@ jobs:
         SENTRY_DSN : ${{ secrets.SENTRY_DSN }}
       if: >-
         startsWith(github.ref, 'refs/tags/v')
+
+    - name: Cache Racket dependencies
+      run: |
+        sudo rm -rf .racket-cache
+        mkdir -p .racket-cache/.local/share
+        docker run --rm -v"$(pwd)":/workspace congame-source \
+          cp -r /root/.cache /workspace/.racket-cache/.cache
+        docker run --rm -v"$(pwd)":/workspace congame-source \
+          cp -r /root/.local/share/racket /workspace/.racket-cache/.local/share/racket
