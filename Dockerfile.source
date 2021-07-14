@@ -14,7 +14,6 @@ COPY migrations /src/congame/migrations
 COPY resources /src/congame/resources
 COPY static /src/congame/static
 
-RUN rm -r /root/.local/share/racket
 COPY .racket-cache/.local/share/racket /root/.local/share/racket
 COPY .racket-cache/.cache /root/.cache
 
