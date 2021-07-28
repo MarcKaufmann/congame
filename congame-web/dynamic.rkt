@@ -6,6 +6,7 @@
          koyo/database
          koyo/database/migrator
          koyo/flash
+         koyo/hasher
          koyo/job
          koyo/logging
          koyo/mail/postmark
@@ -48,6 +49,7 @@
                              #:server   config:db-host
                              #:port     config:db-port)))]
   [flashes (sessions) make-flash-manager]
+  [hasher (make-argon2id-hasher-factory)]
   [mailer (make-mailer-factory #:adapter mail-adapter
                                #:sender config:support-email
                                #:common-variables config:common-mail-variables)]
@@ -64,7 +66,7 @@
                                           #:store (make-memory-session-store
                                                    #:ttl (* 1 86400)
                                                    #:file-path config:session-path))]
-  [users (db) make-user-manager]
+  [users (db hasher) make-user-manager]
   [worker (broker) (make-worker-factory)])
 
 

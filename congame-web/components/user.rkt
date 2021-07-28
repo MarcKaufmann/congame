@@ -6,6 +6,7 @@
          file/sha1
          gregor
          koyo/database
+         koyo/hasher
          koyo/profiler
          koyo/random
          racket/contract
@@ -57,13 +58,13 @@
     (bytes-append (string->bytes/utf-8 (user-username u))
                   (crypto-random-bytes 32)))))
 
-(define/contract (set-user-password u p)
-  (-> user? string? user?)
-  (set-user-password-hash u (make-password-hash p)))
+(define/contract (set-user-password u h p)
+  (-> user? hasher? string? user?)
+  (set-user-password-hash u (hasher-make-hash h p)))
 
-(define/contract (user-password-valid? u p)
-  (-> user? string? boolean?)
-  (hash-matches? (user-password-hash u) p))
+(define/contract (user-password-valid? u h p)
+  (-> user? hasher? string? boolean?)
+  (hasher-hash-matches? h (user-password-hash u) p))
 
 
 ;; password reset ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -97,13 +98,13 @@
 (struct exn:fail:user-manager exn:fail ())
 (struct exn:fail:user-manager:username-taken exn:fail:user-manager ())
 
-(struct user-manager (db)
+(struct user-manager (db hasher)
   #:transparent
   #:methods gen:component [])
 
-(define/contract (make-user-manager db)
-  (-> database? user-manager?)
-  (user-manager db))
+(define/contract (make-user-manager db hasher)
+  (-> database? hasher? user-manager?)
+  (user-manager db hasher))
 
 (define/contract (user-manager-create! um username password [role 'user])
   (->* (user-manager? string? string?) ((or/c 'admin 'user 'bot)) user?)
@@ -111,7 +112,7 @@
   (define user
     (~> (make-user #:username username
                    #:role role)
-        (set-user-password password)))
+        (set-user-password (user-manager-hasher um) password)))
 
   (with-handlers ([exn:fail:sql:constraint-violation?
                    (lambda _
@@ -174,8 +175,9 @@
 (define/contract (user-manager-login um username password)
   (-> user-manager? string? string? (or/c false/c user?))
   (with-timing 'user-manager "user-manager-login"
-    (define user (user-manager-lookup/username um username))
-    (and user (user-password-valid? user password) user)))
+    (define u (user-manager-lookup/username um username))
+    (define h (user-manager-hasher um))
+    (and u (user-password-valid? u h password) u)))
 
 (define/contract (user-manager-verify! um id verification-code)
   (-> user-manager? exact-positive-integer? string? void?)
@@ -206,7 +208,7 @@
                 (and~> (lookup conn
                                (~> (from user #:as u)
                                    (where (= u.id ,user-id))))
-                       (set-user-password password)
+                       (set-user-password (user-manager-hasher um) password)
                        (update! conn _))))]
 
 

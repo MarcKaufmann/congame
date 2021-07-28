@@ -5,6 +5,7 @@
          deta
          gregor
          koyo/database
+         koyo/hasher
          koyo/random
          racket/contract
          threading
@@ -66,6 +67,8 @@
 (define/contract (prepare-bot-set! db the-set)
   (-> database? bot-set? (values string? (listof user?)))
   (with-database-transaction [conn db]
+    (define um
+      (make-user-manager db ((make-argon2id-hasher-factory))))
     (define password
       (generate-random-string 64))
     (define updated-users
@@ -76,5 +79,5 @@
                                 (select id)
                                 (where (= p.user-id ,(user-id u))))))
         (clear-participant-progress! db participant-id)
-        (set-user-password u password)))
+        (set-user-password um u password)))
     (values password (apply update! conn updated-users))))
