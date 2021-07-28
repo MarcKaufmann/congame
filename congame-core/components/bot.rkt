@@ -122,6 +122,11 @@
     (when (>= (count-path-run previous-paths) INFINITE-LOOP-THRESHOLD)
       (raise-bot-error "potential infinite loop at path ~s" (car previous-paths)))
     (with-handlers ([exn:bot:done? void])
+      (let loop ()
+        (unless (page-loaded? (current-page))
+          (displayln "not loaded")
+          (sleep 0.1)
+          (loop)))
       (define study-stack-str (find-attribute "data-study-stack"))
       (unless study-stack-str
         (raise-bot-error "failed to get study stack at ~a" (url->string (page-url (current-page)))))
