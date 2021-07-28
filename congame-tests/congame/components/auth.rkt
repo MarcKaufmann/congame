@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require component/testing
+         koyo/hasher
          koyo/session
          koyo/testing
          rackunit
@@ -16,9 +17,10 @@
 (define auth-tests
   (system-test-suite auth ([auth (sessions users) make-auth-manager]
                            [db make-test-database]
+                           [hasher (make-argon2id-hasher-factory)]
                            [migrator (db) make-test-migrator]
                            [sessions make-test-session-manager]
-                           [users (db) make-user-manager])
+                           [users (db hasher) make-user-manager])
     #:before
     (lambda _
       (truncate-tables! db 'users)

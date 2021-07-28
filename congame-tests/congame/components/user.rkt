@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require component/testing
+         koyo/hasher
          koyo/testing
          racket/match
          rackunit
@@ -14,7 +15,8 @@
 (define the-user #f)
 (define user-tests
   (system-test-suite user ([db make-test-database]
-                           [users (db) make-user-manager]
+                           [hasher (make-argon2id-hasher-factory)]
+                           [users (db hasher) make-user-manager]
                            [migrator (db) make-test-migrator])
     #:before
     (lambda _

@@ -2,8 +2,9 @@
 
 (require component
          component/testing
-         koyo/url
+         koyo/hasher
          koyo/testing
+         koyo/url
          rackunit
          threading
 
@@ -19,9 +20,10 @@
 
 (define mail-tests
   (system-test-suite mail ([db make-test-database]
+                           [hasher (make-argon2id-hasher-factory)]
                            [mailer make-test-mailer]
-                           [users (db mailer) (lambda (db _)
-                                                (make-user-manager db))])
+                           [users (db hasher mailer) (lambda (db hasher _)
+                                                       (make-user-manager db hasher))])
 
    #:before
    (lambda _
