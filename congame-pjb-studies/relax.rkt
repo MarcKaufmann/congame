@@ -170,10 +170,9 @@
   (formular-autofill 'good))
 
 (define (play-tracks/bot)
-  (void
-   (element-click! (bot:find "#play"))
-   (page-execute-async! (bot:current-page) "document.querySelector('.next-button').click()"))
-  #;(element-click! (page-wait-for! (bot:current-page) "a.next-button")))
+  (element-click! (bot:find "#play"))
+  (page-execute-async! (bot:current-page) "document.querySelector('.hide-audio-button').style.display = 'block'")
+  (element-click! (page-wait-for! (bot:current-page) "a.next-button")))
 
 (define (relax-study)
   (make-study

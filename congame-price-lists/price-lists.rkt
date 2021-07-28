@@ -255,13 +255,18 @@
      (render-pl pl #:pl-name pl-name)))))
 
 (define (price-list-step/bot n-fixed)
-  (for ([elt (in-list (bot:find-all "tr"))]
-        [n (in-naturals 1)])
-    (define radios (bot:element-find-all elt "input"))
-    (unless (null? radios)
-      (if (<= n n-fixed)
-          (element-click! (car radios))
-          (element-click! (cadr radios)))))
+  (define elts-to-click
+    (filter values (for/list ([elt (in-list (bot:find-all "tr"))]
+                              [n (in-naturals 1)])
+                     (define radios (bot:element-find-all elt "input"))
+                     (cond
+                       [(null? radios) #f]
+                       [(<= n n-fixed) (car radios)]
+                       [else (cadr radios)]))))
+  (page-execute-async!
+   (bot:current-page)
+   "args[0].forEach((el) => el.click());"
+   (map element-handle elts-to-click))
   (element-click! (bot:find "button[type=submit]")))
 
 (define price-lists
