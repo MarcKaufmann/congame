@@ -4,6 +4,8 @@
  racket/contract)
 
 (provide
+ study-registry-allow-conflicts?
+
  register-study!
  get-registered-studies
  get-registered-bots
@@ -23,9 +25,14 @@
 (define *bot-registry*
   (make-hasheq))
 
+(define/contract study-registry-allow-conflicts?
+  (parameter/c boolean?)
+  (make-parameter #f))
+
 (define/contract (register-study! id s)
   (-> symbol? any/c void?)
-  (when (hash-has-key? *study-registry* id)
+  (when (and (hash-has-key? *study-registry* id)
+             (not (study-registry-allow-conflicts?)))
     (raise-user-error 'register-study! "a study with id ~s is already registered" id))
   (hash-set! *study-registry* id s))
 
@@ -34,7 +41,8 @@
   (hash-update! *bot-registry*
                 for-study
                 (lambda (bots-for-study)
-                  (when (hash-has-key? bots-for-study id)
+                  (when (and (hash-has-key? bots-for-study id)
+                             (not (study-registry-allow-conflicts?)))
                     (raise-user-error 'register-bot! "a bot with id ~s is already registered with study ~s" id for-study))
                   (hash-set bots-for-study id (bot-info id bot (for/hash ([m (in-list models)])
                                                                  (values (object-name m) m)))))

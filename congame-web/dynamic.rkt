@@ -2,7 +2,9 @@
 
 (require (for-syntax racket/base)
          component
+         congame/components/registry
          db
+         deta/reflect
          koyo/database
          koyo/database/migrator
          koyo/flash
@@ -74,7 +76,8 @@
 
 (provide
  prod-system
- start)
+ start
+ before-reload)
 
 (define/contract (start)
   (-> (-> void?))
@@ -103,6 +106,10 @@
   (lambda ()
     (system-stop prod-system)
     (stop-logger)))
+
+(define (before-reload)
+  (study-registry-allow-conflicts? #t)
+  (schema-registry-allow-conflicts? #t))
 
 
 (module+ main
