@@ -12,8 +12,7 @@
          racket/contract
          racket/random
          racket/string
-         threading
-         "hash.rkt")
+         threading)
 
 ;; user ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
