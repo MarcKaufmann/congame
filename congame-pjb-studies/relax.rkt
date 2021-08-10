@@ -134,7 +134,7 @@
             ("edm" . "Electronic Dance Music (EDM)"))
           ))
         (:div.group
-         (:label  "Rate each type of track below On a scale from 1 to 10, where 1 means 'ennervating', 5 means 'neutral/no effect', and 10 means 'deeply relaxing'. You can play a 20-second snippet below.")
+         (:label  "Rate each type of track below how relaxing they are on a scale from 1 to 10, where 1 means 'ennervating', 5 means 'neutral/no effect', and 10 means 'deeply relaxing'. Play the 20-second snippets below to decide.")
          (:div
           (#:wave-sounds
            (input-number "Wave Sounds" #:min 1 #:max 10)))

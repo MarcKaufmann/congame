@@ -105,14 +105,16 @@
      (:li "complete " (number->string required-tasks) " required tasks")
      (:li "choose whether to do extra tasks for bonus payments")
      (:li "do the extra tasks chosen (if applicable)")
-     (:li "do a different 10-minute task involving sound/audio")
+     (:li "do a different ~7-minute task involving sound/audio")
      (:li "fill in a brief survey"))
+
 
     (:h3 "Payments")
     (:p "You receive the following payments if you complete a given stage of the main study:")
     (:ul
-     (:li (pp-money participation-fee) " if you complete the whole study, including any extra tasks you choose. ")
-     (:li "If you choose and do the extra task, you will receive the corresponding bonus from that choice.")))))
+     (:li (pp-money tutorial-fee) " if you complete the tutorial")
+     (:li (pp-money participation-fee) " if you complete the whole study, which requires completing all extra tasks you choose")
+     (:li "If you choose and do the extra tasks, you will receive the corresponding extra bonus")))))
 
 (define (initialize)
   (define required-tasks (next-balanced-required-tasks-treatment))
@@ -196,8 +198,8 @@
         (radios
          "Suppose that after you complete the required tasks and make your choices, you end up with extra tasks. What happens if you fail the extra tasks -- either due to getting too many tasks wrong or not attempting them?"
          '(("no-payment-at-all" . "You will receive no payment at all")
-           ("no-extra-bonus" . "You will not receive the extra bonus payment, but you will receive the participation fee and the payment for the required tasks")
-           ("no-extra-no-participation-fee" . "You will receive the payment for the required tasks, but not the participation fee nor the extra bonus, since you cannot complete the study."))
+           ("no-extra-bonus" . "You will not receive the extra bonus payment, but you will receive the participation and tutorial fees")
+           ("no-extra-no-participation-fee" . "You will receive the payment for the tutorial, but not the participation fee nor the extra bonus, since you do not complete the study."))
          #:validators
          (list (is-equal "no-extra-no-participation-fee"
                          #:message "No. You receive payment for required tasks, but not for the participation fee."))))
@@ -338,7 +340,7 @@
              ,@(rw "restful-activity" (widget-errors)))
         (div ((class "group"))
              (label
-              "Which of the following factors makes you more willing to do extra tasks -- i.e. you will accept them for less money?"
+              "Which of the following factors makes you more willing to do extra tasks -- i.e. you will accept them for less money? Pick all that apply."
               (table
                (tr
                 (td ,(rw "work-factor-fewer-extra-tasks" (widget-checkbox)) "Have fewer extra tasks to do")
@@ -354,7 +356,7 @@
                 (td ,@(rw "work-factor-smaller-matrices" (widget-errors)))))))
         (div ((class "group"))
              (label
-              "Based on what did you choose the level at which you were willing to do additional tasks?"
+              "If you had to tell someone else how you decided on the payment at which you were willing to do additional tasks, how would you describe it?"
               ,(rw "how-do-you-decide-on-extra-work" (widget-text)))
              ,@(rw "how-do-you-decide-on-extra-work" (widget-errors)))
         (div ((class "group"))
@@ -527,20 +529,15 @@
    (haml
     (:div.container
      (:h1 "Explaining Choices for Extra Tasks")
-     (:p "You will be given several choice pages for doing extra tasks. We now explain how they determine extra tasks and pay -- but the short story is that for every choice you should choose the option you prefer.")
-     (:p "Below is a screenshot of one choice page with some choices made. Once the choices are made, the extra tasks and extra bonus in the study are determined as follows:")
+     (:p "You will face several choice pages for extra tasks. In short, for every choice you should choose the option you prefer. What follows is the detailed explanation how your choices determine extra tasks and payments.")
+     (:p "Below is a screenshot of one example choice page, with choices already made. After making the choices, the extra tasks and extra bonus in the study are determined as follows:")
      (:ol
       (:li "The computer randomly selects one of the choice pages as the page-that-counts")
-      (:li "The computer randomly selects one of the choices on that page as the choice-that-counts")
-      (:li "If you chose the option without extra tasks, then you do not have to do any additional tasks and receive no extra bonus")
-      (:li "If you chose the option with extra tasks, then you have to do that many extra tasks and receive the extra bonus for that option. "))
-     (:p (:strong "Note:") " You cannot skip the extra tasks: you can only complete the study and receive the participation bonus if you do the extra tasks!")
+      (:li "The computer randomly selects one of the choices on the page-that-counts as the choice-that-counts")
+      (:li "The option that was picked from the choice-that-counts determines the extra work and extra bonus"))
+      (:p "Suppose that the 7th choice from the screenshot turns out as the choice-that-counts. Then the person would have to do 8 extra tasks to receive the extra bonus of " (pp-money 1.20) " in addition to their other payments. Failing the tasks means that they will neither receive this extra bonus nor the participation bonus. " (:strong "Note:") " You cannot skip the extra tasks: you can only complete the study and receive the participation bonus if you do the extra tasks!")
      (.container.screenshot
       (:h2 "Screenshot of an example Decision Page")
-      (:p "Suppose that the computer randomly selected the 7th choice on this page as the choice-that-counts. Then: ")
-      (:ul
-       (:li "The person would have to do 8 extra tasks and receive an extra bonus of " (pp-money 1.20) " in addition to their other payments")
-       (:li "If the person fails to do the 8 extra tasks, they receive neither the participation bonus, nor the extra bonus of " (pp-money 1.20) " -- only payments for parts of the study they have already completed"))
       (:img ([:src (resource-uri price-list-screenshot)])))
      (button void "Continue")))))
 

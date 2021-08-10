@@ -112,7 +112,7 @@
    (haml
     (.container
      (:h1 title)
-     (:p "You now have to do " n-string " successfully, and you can get at most " n-string " answers wrong. If you get " n+1-string " or more wrong, you automatically fail and drop out of the study.")
+     (:p "You now have to do " n-string " successfully, and you can get at most " n-string " answers wrong. Whenever you get a task wrong, you will be given a new task to try. If you get " n+1-string " or more wrong, you automatically fail and drop out of the study.")
      (toggleable-xexpr "Show/Hide Task Description" (task-description) #:hidden? hide-description?)
      (button
       (λ ()
