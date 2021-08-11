@@ -62,9 +62,7 @@ jobs:
       run: |
         if [ ! -d ".racket-cache" ]; then
           mkdir -p .racket-cache/.cache
-          mkdir -p .racket-cache/.local/share
-          docker run --rm -v"$(pwd)":/workspace ghcr.io/marckaufmann/congame-base \
-            cp -r /root/.local/share/racket /workspace/.racket-cache/.local/share/racket
+          mkdir -p .racket-cache/.local/share/racket
         fi
         docker build -t congame-source -f Dockerfile.source .
 

@@ -14,6 +14,8 @@ COPY migrations /src/congame/migrations
 COPY resources /src/congame/resources
 COPY static /src/congame/static
 
+# ~/.local/share/racket and ~/.cache is where Racket installs packages
+# and caches downloaded packages, respectively.
 COPY .racket-cache/.local/share/racket /root/.local/share/racket
 COPY .racket-cache/.cache /root/.cache
 
