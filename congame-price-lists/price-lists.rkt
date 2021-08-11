@@ -263,10 +263,7 @@
                        [(null? radios) #f]
                        [(<= n n-fixed) (car radios)]
                        [else (cadr radios)]))))
-  (page-execute-async!
-   (bot:current-page)
-   "args[0].forEach((el) => el.click());"
-   (map element-handle elts-to-click))
+  (bot:click-all elts-to-click)
   (element-click! (bot:find "button[type=submit]")))
 
 (define price-lists

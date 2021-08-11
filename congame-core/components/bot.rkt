@@ -70,7 +70,10 @@
    completer
    continuer
    click
+   click-all
+   type-all
    wait-for
+   show
    find
    find-all
    find-attribute
@@ -122,24 +125,24 @@
     (when (>= (count-path-run previous-paths) INFINITE-LOOP-THRESHOLD)
       (raise-bot-error "potential infinite loop at path ~s" (car previous-paths)))
     (with-handlers ([exn:bot:done? void])
-      (let loop ()
-        (unless (page-loaded? (current-page))
-          (displayln "not loaded")
-          (sleep 0.1)
-          (loop)))
-      (define study-stack-str (find-attribute "data-study-stack"))
-      (unless study-stack-str
-        (raise-bot-error "failed to get study stack at ~a" (url->string (page-url (current-page)))))
-      (define study-stack (read (open-input-string study-stack-str)))
-      (define step-id (string->symbol (find-attribute "data-step-id")))
-      (define path (cons step-id study-stack))
-      ;; TODO: logging
-      (displayln path)
-      (define stepper
-        (hash-ref (bot-steppers b) path (lambda ()
-                                          (raise-bot-error "no stepper for path ~s" path))))
-      ((bot-stepper-action stepper))
-      (sleep (current-delay))
+      (define path
+        ;; TODO: Take out these timings once we're done improving perf.
+        (time
+         (let ()
+           (define study-stack-str (find-attribute "data-study-stack"))
+           (unless study-stack-str
+             (raise-bot-error "failed to get study stack at ~a" (url->string (page-url (current-page)))))
+           (define study-stack (read (open-input-string study-stack-str)))
+           (define step-id (string->symbol (find-attribute "data-step-id")))
+           (define path (cons step-id study-stack))
+           ;; TODO: logging
+           (displayln path)
+           (define stepper
+             (hash-ref (bot-steppers b) path (lambda ()
+                                               (raise-bot-error "no stepper for path ~s" path))))
+           ((bot-stepper-action stepper))
+           (sleep (current-delay))
+           path)))
       (execute! b (cons path previous-paths))))
 
   (define (count-path-run paths)
@@ -169,8 +172,28 @@
 
   ;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+  (define (click-all elts)
+    (page-execute-async!
+     (current-page)
+     "args[0].forEach((el) => el.click());"
+     (map element-handle elts)))
+
+  (define (type-all elts&text)
+    (page-execute-async!
+     (current-page)
+     "args[0].forEach(({el, text}) => el.value = text)"
+     (for/list ([(elt text) (in-hash elts&text)])
+       (hash 'el (element-handle elt)
+             'text text))))
+
   (define (wait-for selector)
     (page-wait-for! (current-page) selector))
+
+  (define (show selector)
+    (page-execute-async!
+     (current-page)
+     "args[0].style.display = 'block'"
+     (element-handle (find selector))))
 
   (define (find selector)
     (page-query-selector! (current-page) selector))

@@ -112,19 +112,38 @@
   (unless meta-el
     (error 'formular-autofill "could not find autofill metadata"))
   (define meta (call-with-input-string (m:element-attribute meta-el "content") read))
-  (for ([(field-id value) (hash-ref meta bot-id)] #:when value)
-    (define field-el (bot:find (format "[name=~a]" field-id)))
-    (unless field-el
-      (error 'formular-autofill (format "could not find field ~a" field-id)))
-    (define field-type (m:element-attribute field-el "type"))
-    (case field-type
-      [("text") (m:element-type! field-el value)]
-      [("number") (if (number? value)
-                      (m:element-type! field-el (number->string value))
-                      (error "number field has to contain a number, but received ~a" value))]
-      [("checkbox") (m:element-click! field-el)]
-      [("radio") (m:element-click! (bot:find (format "[name=~a][value='~a']" field-id value)))]
-      [else (error 'formular-autofill (format "unhandled field type ~a" field-type))]))
+  ;; Collect elts-to-click and elts-to-type as an optimization since
+  ;; interacting with them all at once is much faster than interacting
+  ;; with each one individually and waiting on their animations.
+  (define-values (elts-to-click elts-to-type)
+    (for/fold ([elts-to-click null]
+               [elts-to-type  (hash)]
+               #:result (values (reverse elts-to-click) elts-to-type))
+              ([(field-id value) (hash-ref meta bot-id)] #:when value)
+      (define field-el (bot:find (format "[name=~a]" field-id)))
+      (unless field-el
+        (error 'formular-autofill (format "could not find field ~a" field-id)))
+      (define field-type (m:element-attribute field-el "type"))
+      (case field-type
+        [("text")
+         (values elts-to-click (hash-set elts-to-type field-el value))]
+
+        [("number")
+         (if (number? value)
+             (values elts-to-click (hash-set elts-to-type field-el (number->string value)))
+             (error "number field has to contain a number, but received ~a" value))]
+
+        [("checkbox")
+         (values (cons field-el elts-to-click) elts-to-type)]
+
+        [("radio")
+         (define the-radio (bot:find (format "[name=~a][value='~a']" field-id value)))
+         (values (cons the-radio elts-to-click) elts-to-type)]
+
+        [else
+         (error 'formular-autofill (format "unhandled field type ~a" field-type))])))
+  (bot:click-all elts-to-click)
+  (bot:type-all elts-to-type)
   (m:element-click! (bot:find "button[type=submit]")))
 
 (define ((checkbox label) meth)

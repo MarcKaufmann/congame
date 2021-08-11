@@ -111,7 +111,7 @@
                      [:src (resource-uri tracks
                                          (string-append "snip-" track-path))])))))
 
-(define (track-survey)
+(define (survey-of-tracks)
   (page
    (haml
     (.container
@@ -166,12 +166,11 @@
                    'classical-piano-relaxation-score classical-piano
                    'edm-relaxation-score edm))))))))
 
-(define (track-survey/bot)
+(define (survey-of-tracks/bot)
   (formular-autofill 'good))
 
 (define (play-tracks/bot)
-  (element-click! (bot:find "#play"))
-  (page-execute-async! (bot:current-page) "document.querySelector('.hide-audio-button').style.display = 'block'")
+  (bot:show ".hide-audio-button")
   (element-click! (page-wait-for! (bot:current-page) "a.next-button")))
 
 (define (relax-study)
@@ -191,8 +190,8 @@
                (λ ()
                  (if (> (length (get 'tracks-to-play)) (get 'tracks-played-so-far))
                      'play-tracks
-                     'track-survey))
+                     'survey-of-tracks))
                #:for-bot play-tracks/bot)
-    (make-step 'track-survey
-               track-survey
-               #:for-bot track-survey/bot))))
+    (make-step 'survey-of-tracks
+               survey-of-tracks
+               #:for-bot survey-of-tracks/bot))))

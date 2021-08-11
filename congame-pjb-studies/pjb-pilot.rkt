@@ -262,8 +262,7 @@
              (button ((type "submit") (class "button")) "Submit")))))))
 
 (define (test-study-requirements-step/bot)
-  (for ([checkbox (bot:find-all "input[type=checkbox]")])
-    (element-click! checkbox))
+  (bot:click-all (bot:find-all "input[type=checkbox]"))
   (page-execute-async! (bot:current-page) "document.querySelector('.hide-audio-button').style.display = 'block'")
   (element-click! (bot:find "button[type=submit]")))
 
