@@ -61,6 +61,8 @@
 
 ;; actions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define-logger congame-bots)
+
 (module+ actions
   (require marionette)
 
@@ -125,24 +127,18 @@
     (when (>= (count-path-run previous-paths) INFINITE-LOOP-THRESHOLD)
       (raise-bot-error "potential infinite loop at path ~s" (car previous-paths)))
     (with-handlers ([exn:bot:done? void])
-      (define path
-        ;; TODO: Take out these timings once we're done improving perf.
-        (time
-         (let ()
-           (define study-stack-str (find-attribute "data-study-stack"))
-           (unless study-stack-str
-             (raise-bot-error "failed to get study stack at ~a" (url->string (page-url (current-page)))))
-           (define study-stack (read (open-input-string study-stack-str)))
-           (define step-id (string->symbol (find-attribute "data-step-id")))
-           (define path (cons step-id study-stack))
-           ;; TODO: logging
-           (displayln path)
-           (define stepper
-             (hash-ref (bot-steppers b) path (lambda ()
-                                               (raise-bot-error "no stepper for path ~s" path))))
-           ((bot-stepper-action stepper))
-           (sleep (current-delay))
-           path)))
+      (define study-stack-str (find-attribute "data-study-stack"))
+      (unless study-stack-str
+        (raise-bot-error "failed to get study stack at ~a" (url->string (page-url (current-page)))))
+      (define study-stack (read (open-input-string study-stack-str)))
+      (define step-id (string->symbol (find-attribute "data-step-id")))
+      (define path (cons step-id study-stack))
+      (log-congame-bots-debug "found path ~s" path)
+      (define stepper
+        (hash-ref (bot-steppers b) path (lambda ()
+                                          (raise-bot-error "no stepper for path ~s" path))))
+      ((bot-stepper-action stepper))
+      (sleep (current-delay))
       (execute! b (cons path previous-paths))))
 
   (define (count-path-run paths)
