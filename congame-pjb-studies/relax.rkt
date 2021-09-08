@@ -106,7 +106,8 @@
       [(wave-sounds) "Wave Sounds"]
       [(edm) "Electronic Dance Music (EDM)"]))
   (haml
-   (:figure (:figcaption track-name)
+   (:figure ((:class "audio-box"))
+            (:figcaption track-name)
             (:audio ([:controls ""]
                      [:src (resource-uri tracks
                                          (string-append "snip-" track-path))])))))
