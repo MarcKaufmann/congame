@@ -286,7 +286,7 @@
     (form* ([gender (ensure binding/text (required))]
             [how-clear (ensure binding/number (required) (input-in-range 1 5))]
             [what-could-be-clearer (ensure binding/text)]
-            [how-relaxing (ensure binding/number (required) (input-in-range 1 5))]
+            [how-relaxing (ensure binding/number (required) (input-in-range 1 10))]
             [how-do-you-decide-on-extra-work (ensure binding/text (required))]
             [restful-activity (ensure binding/text (required))]
             [comments (ensure binding/text)]
@@ -330,7 +330,7 @@
              ,@(rw "what-could-be-clearer" (widget-errors)))
         (div ((class "group"))
              (label
-              "How restful did you find the tracks after the required tasks, from 1 (very un-relaxing) to 5 (very relaxing)?"
+              "How restful did you find the tracks after the required tasks, from 1 (ennervating) over 5 (neutral) to 10 (deeply relaxing)?"
               ,(rw "how-relaxing" (widget-number)))
              ,@(rw "how-relaxing" (widget-errors)))
         (div ((class "group"))
@@ -356,8 +356,9 @@
                 (td ,@(rw "work-factor-smaller-matrices" (widget-errors)))))))
         (div ((class "group"))
              (label
-              "If you had to tell someone else how you decided on the payment at which you were willing to do additional tasks, how would you describe it?"
-              ,(rw "how-do-you-decide-on-extra-work" (widget-text)))
+              "If you had to tell someone else how you decided on the payment at which you were willing to do additional tasks, how would you describe it?")
+             (div
+              ,(rw "how-do-you-decide-on-extra-work" (widget-textarea)))
              ,@(rw "how-do-you-decide-on-extra-work" (widget-errors)))
         (div ((class "group"))
              (label
@@ -616,7 +617,7 @@
      (:p "You did not consent to the study, therefore you will not continue to the study. We will now show you the payments and then provide you with the completion code for the tutorial.")
      (button void "Continue to Payments")))))
 
-(define (tutorial-completion-consent)
+(define (tutorial-completion-enter-code)
   (define (render-check-completion-code)
     (haml
      (:div.container
@@ -653,20 +654,45 @@
    "pjb-pilot-study-no-config"
    #:transitions (transition-graph
                   [initialize
+                   ; Should I rename `study->participant` to `event`? And `participant->study` to `participant-action`?
+                   ; study->participant:
+                   ; 1. required-tasks ~ Binomial({high, low}, p = 0.5) --affects-> participation-fee
+                   ; 2. relax-treatment ~ Binomial(..., p = 1/n)
+                   ; participant->study: continue? (Yes, No)
                    --> explain-study
+                   ; study->participant: reveal/send required-tasks, participation-fee, practice-tasks, study-structure
+                   ; participant->study: continue? (Yes, No)
                    --> test-study-requirements
+                   ; study->participant:
+                   ; participant->study: (send
+                   ; 'satisfies-requirement?), with requirements: all of
+                   ; 'play-audio? 'has-audio? 'has-time?; continue? (Yes if
+                   ; 'satisfies-requirement?, No otherwise)
                    --> ,(λ ()
                           (if (not (get 'satisfies-requirements?))
                               'requirements-failure
                               'tutorial-tasks))]
                   [tutorial-tasks
+                   ; study->participant: ??
+                   ; participant->study: doing n tasks -- hence this requires a state variable regarding the amount of work done, and some utility function or similar that maps it (for later)
+                   ; really though it is a draw from work performance on this task, given that we require n tasks.
+                   ; study->participant: n max-wrong-tasks
+                   ; participant->study: returns number of correct and number of incorrect matrices, possibly returns time taken to answer?
+                   ; First pass: number of right, number of wrong
                    --> ,(λ ()
                           (if (not (get 'tutorial-success?))
                               (fail 'fail-tutorial-tasks)
                               'tutorial-illustrate-elicitation))]
                   [tutorial-illustrate-elicitation
+                   ; study->participant: information about elicitation method
+                   ; participant->study: continue?
                    --> test-comprehension
+                   ; participant->study:
+                   ; - intent: ensure understand study
+                   ; - model/abstract: ?? information set
+                   ; - implementation/concrete: check required-tasks and participation-fee payment if failing required tasks
                    --> consent
+                   ; participant->study: consent?
                    --> ,(λ ()
                           ; TODO: The fact that I check only once means that, if by chance we jump past this stage
                           ; then the study would simply continue. In general it might be good to have this property
@@ -679,9 +705,14 @@
                                  ; TODO: Treatment assignment should also be done at the study, not step, level!!
                                  ; Can this be done, given the need for `put`?
                                  (put 'rest-treatment (next-balanced-rest-treatment))
-                                 'tutorial-completion-consent]))]
-                  [tutorial-completion-consent
+                                 'tutorial-completion-enter-code]))]
+                  ; study->participant: set payment 'tutorial-fee, if consent? then rest-treatment ~ Binomial({elicit-WTW-before, elicit-WTW-after})
+                  [tutorial-completion-enter-code
+                   ; study->participant: display completion code
+                   ; participant->study: entered-code? and continue
                    --> required-tasks
+                   ; study->participant: n max-wrong
+                   ; participant->study: tasks-right, tasks-wrong, success?
                    --> ,(λ ()
                           (cond [(not (get 'success?))
                                  (fail 'fail-required-tasks)]
@@ -689,16 +720,29 @@
                                  (case (get 'rest-treatment)
                                    [(get-rest-then-elicit) 'get-rest]
                                    [(elicit-then-get-rest) 'elicit-WTW-and-work])]))]
-                  [get-rest --> ,(λ ()
-                                   (case (get 'rest-treatment)
-                                     [(get-rest-then-elicit) 'elicit-WTW-and-work]
-                                     [(elicit-then-get-rest) 'debrief-survey]))]
-                  [elicit-WTW-and-work --> ,(λ ()
-                                              (case (get 'rest-treatment)
-                                                [(get-rest-then-elicit) 'debrief-survey]
+                  [get-rest
+                   ; study->participant:
+                   ; Intent: have a break to change level of tiredness and WTW
+                   ; Implementation: listen to tracks, depending on relax-treatment
+                   ; Model: change the tiredness state
+                   ; Followed by questions on how restful they found their own soundtracks, and how they would perceive others based on 20-second snippets
+                   --> ,(λ ()
+                          (case (get 'rest-treatment)
+                            [(get-rest-then-elicit) 'elicit-WTW-and-work]
+                            [(elicit-then-get-rest) 'debrief-survey]))]
+                  [elicit-WTW-and-work
+                   ; Model: get d(5|s), d(8|s), d(11|s), d(15|s), levels determined by PRICE-LISTS
+                   ; In addition, pick one of these choices and random and make them implement it, i.e.
+                   ; choice-that-counts ~ random ... --> Affects the state of the participant
+                   --> ,(λ ()
+                          (case (get 'rest-treatment)
+                            [(get-rest-then-elicit) 'debrief-survey]
                                                 [(elicit-then-get-rest) 'get-rest]))]
-                  [debrief-survey --> ,(λ () done)]
-                  [requirements-failure --> ,(λ () done)])
+                  [debrief-survey
+                   ; Get control variables, get feedback, get how restful activity is perceived
+                   --> ,(λ () done)]
+                  [requirements-failure
+                   --> ,(λ () done)])
 
    #:requires '(practice-tasks
                 price-lists
@@ -722,8 +766,8 @@
     (make-step 'test-comprehension test-comprehension #:for-bot test-comprehension/bot)
     (make-step 'consent consent #:for-bot consent/bot)
     (make-step
-     'tutorial-completion-consent
-     tutorial-completion-consent
+     'tutorial-completion-enter-code
+     tutorial-completion-enter-code
      #:for-bot tutorial-completion-consent/bot)
     (make-step/study
      'required-tasks
