@@ -12,15 +12,16 @@
                        (put 'completion-code #f)
                        reason)
    #:transitions (transition-graph
-                  [the-study <-- abstract-pjb-ilot-study-no-config(#:required-tasks {low,high} #:relax-treatment {types-of-relaxing-music} #:participationparticipation-fee, tutorial-tasks) ; abstract-study ; takes parameters practice-tasks, tutorial-fee, and price-lists
+                  [the-study <-- abstract-pjb-pilot-study-no-config(#:required-tasks {low,high} #:relax-treatment {types-of-relaxing-music} #:participationparticipation-fee ... #:tutorial-tasks ...) ; abstract-study ; takes parameters practice-tasks, tutorial-fee, and price-lists
                    ; starts and runs the-study
                    --> (λ ()
                          (if (get 'consent?)
                              'show-payments
                              'no-consent))]
-                  [show-payments
-                   ; display information regarding payments
-                   ; require action `continue`
+                  [{show-payments : "none"}
+                   ; Abstract/Model: information/parameters needed for running abstract study (simulation for data only)
+                   ; Human: display information regarding payments
+                   ; Bot: stuff needed for running the implementation: `continue`
                    --> done] ; How is `--> done` different from `--> ,(λ () done)`? Ah, I actually implemented the `done` in `--> done` as a named-step, so both are steps. `,(λ () done)` uses the widget `done`, I believe, and hence stops the study and passes control to the parent. But the parent study should not relinquish control, or we'll error out.
                   [no-consent
                    ; display information
@@ -42,11 +43,22 @@
 ; some random number (such as completion code) that just doesn't matter. Of
 ; course for some purposes we might care about different treatments.
 ; Distinguish between info about model-relevant parameters (tasks, treatment, etc) denoted by Signal() and info about the study that is needed for humans to make sense of it all (called Info())
-(define abstract-pjb-pilot-study-no-config
+(define-impl (init/impl sample signal)
+  ...
+  (put/expected 'd5))
+
+(check/implements init/impl abstract-pjb... initialize)
+
+(define-impl abstract-pjb-pilot-study-no-config
   (make-abstract-study
    "pjb-pilot-study-no-config"
    #:transitions (transition-graph
-                  [initialize
+                  [initialize : (Sample required-tasks (list ...)) (Signal ...) (report d(5|s) ...)
+                              (define (initialize/implemented )
+                                (-> sampled-required-task provided-signal (hash disutility/c)))
+
+                              (put/expected 'd5)
+                              (put/expected 'd8)
                    ; IMPORTANT: Since I introduce a state variable, I have to initialize it somewhere for the abstract model
                    ; Sample(T/required-tasks) ~ Binomial({high, low})
                    ; Sample(T/relax-treatment) ~ Multinomial({types of relaxing music})
@@ -68,7 +80,7 @@
                    ; n max-wrong-tasks -- where is n and max-wrong-tasks determined? Important for treatments and mapping the flow of data through the study.
                    ; this step changes the state of the participant
                    ; s = tiredness, determines the disutility from work later
-                   ; s_t --> s_{t + 1} = f(s_t, n, max-wrong-tasks), where n is the number of tasks needed, and max-wrong-tasks the maximum number of tasks the person can get wrong. Might be stochastic in reality, might want to model at the individual-task level. For now overkill.
+                   ; s_{before_tutorial} --> s_{after_tutorial} = f(s_t, n, max-wrong-tasks), where n is the number of tasks needed, and max-wrong-tasks the maximum number of tasks the person can get wrong. Might be stochastic in reality, might want to model at the individual-task level. For now overkill.
                    ; Action/Outcome: tutorial-success? -- if want more fine-grained (e.g. how many tasks wrong/right, whether stop before finishing), need more state variables. Ideally define at this level what we really need for later steps.
                    --> ,(λ ()
                           (if (not (get 'tutorial-success?))
@@ -124,7 +136,8 @@
                   [elicit-WTW-and-work
                    ; Abstract:
                    ; This is the place where we actually want to get some numbers from the model! Here it depends how I parameterize the original model, and how I want to model the changes in tiredness: do I want to track *tiredness* via s, and have amodel of d(s), or do I want to sample, model, and track d(s) itself? Pick one and try it out, then play around with it once that works.
-                   ; Get d(5|s), d(8|s), d(11|s), d(15|s), levels determined by PRICE-LISTS
+                   ; Get d(5|s = {s_before_rest, s_after_rest}), d(8|s), d(11|s), d(15|s), levels determined by PRICE-LISTS
+                   ; Compare d(5 | s_before)  to d(5 | s_after)
                    ; where s = s_{before} or s_{after} depending on treatment
                    ; Sample(choice-that-counts) as per instructions
                    ; Have them do work, obtain s_{final} from s
