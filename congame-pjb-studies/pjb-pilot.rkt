@@ -358,7 +358,7 @@
              (label
               "If you had to tell someone else how you decided on the payment at which you were willing to do additional tasks, how would you describe it?")
              (div
-              ,(rw "how-do-you-decide-on-extra-work" (widget-textarea)))
+              ,(rw "how-do-you-decide-on-extra-work" (widget-text)))
              ,@(rw "how-do-you-decide-on-extra-work" (widget-errors)))
         (div ((class "group"))
              (label
@@ -371,6 +371,8 @@
   (define f (bot:find "form"))
   (for ([input (bot:element-find-all f "input[type=text]")])
     (element-type! input "Bot, James Bot"))
+  (for ([input (bot:element-find-all f "textarea")])
+    (element-type! input "Bot, James Bot. At your service."))
   (for ([input (bot:element-find-all f "input[type=number]")])
     (element-type! input "5"))
   (element-click! (bot:find "button[type=submit]")))
