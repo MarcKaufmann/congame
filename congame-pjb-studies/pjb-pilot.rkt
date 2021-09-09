@@ -670,8 +670,8 @@
                    ; 'satisfies-requirement?, No otherwise)
                    --> ,(λ ()
                           (if (not (get 'satisfies-requirements?))
-                              'requirements-failure
-                              'tutorial-tasks))]
+                              (goto requirements-failure)
+                              (goto tutorial-tasks)))]
                   [tutorial-tasks
                    ; study->participant: ??
                    ; participant->study: doing n tasks -- hence this requires a state variable regarding the amount of work done, and some utility function or similar that maps it (for later)
@@ -682,7 +682,7 @@
                    --> ,(λ ()
                           (if (not (get 'tutorial-success?))
                               (fail 'fail-tutorial-tasks)
-                              'tutorial-illustrate-elicitation))]
+                              (goto tutorial-illustrate-elicitation)))]
                   [tutorial-illustrate-elicitation
                    ; study->participant: information about elicitation method
                    ; participant->study: continue?
@@ -705,7 +705,7 @@
                                  ; TODO: Treatment assignment should also be done at the study, not step, level!!
                                  ; Can this be done, given the need for `put`?
                                  (put 'rest-treatment (next-balanced-rest-treatment))
-                                 'tutorial-completion-enter-code]))]
+                                 (goto tutorial-completion-enter-code)]))]
                   ; study->participant: set payment 'tutorial-fee, if consent? then rest-treatment ~ Binomial({elicit-WTW-before, elicit-WTW-after})
                   [tutorial-completion-enter-code
                    ; study->participant: display completion code
@@ -714,12 +714,13 @@
                    ; study->participant: n max-wrong
                    ; participant->study: tasks-right, tasks-wrong, success?
                    --> ,(λ ()
-                          (cond [(not (get 'success?))
-                                 (fail 'fail-required-tasks)]
-                                [else
-                                 (case (get 'rest-treatment)
-                                   [(get-rest-then-elicit) 'get-rest]
-                                   [(elicit-then-get-rest) 'elicit-WTW-and-work])]))]
+                          (cond
+                            [(not (get 'success?))
+                             (fail 'fail-required-tasks)]
+                            [else
+                             (case (get 'rest-treatment)
+                               [(get-rest-then-elicit) (goto get-rest)]
+                               [(elicit-then-get-rest) (goto elicit-WTW-and-work)])]))]
                   [get-rest
                    ; study->participant:
                    ; Intent: have a break to change level of tiredness and WTW
@@ -728,16 +729,16 @@
                    ; Followed by questions on how restful they found their own soundtracks, and how they would perceive others based on 20-second snippets
                    --> ,(λ ()
                           (case (get 'rest-treatment)
-                            [(get-rest-then-elicit) 'elicit-WTW-and-work]
-                            [(elicit-then-get-rest) 'debrief-survey]))]
+                            [(get-rest-then-elicit) (goto elicit-WTW-and-work)]
+                            [(elicit-then-get-rest) (goto debrief-survey)]))]
                   [elicit-WTW-and-work
                    ; Model: get d(5|s), d(8|s), d(11|s), d(15|s), levels determined by PRICE-LISTS
                    ; In addition, pick one of these choices and random and make them implement it, i.e.
                    ; choice-that-counts ~ random ... --> Affects the state of the participant
                    --> ,(λ ()
                           (case (get 'rest-treatment)
-                            [(get-rest-then-elicit) 'debrief-survey]
-                                                [(elicit-then-get-rest) 'get-rest]))]
+                            [(get-rest-then-elicit) (goto debrief-survey)]
+                            [(elicit-then-get-rest) (goto get-rest)]))]
                   [debrief-survey
                    ; Get control variables, get feedback, get how restful activity is perceived
                    --> ,(λ () done)]
@@ -821,7 +822,7 @@
                     (:h1 "You failed the tasks")
                     (:p "The study ends here, since you failed too many tasks.")
                     (button void "Finish Study")))))
-               (λ () done))
+               (λ () 'done))
     (make-step 'fail-required-tasks
                (lambda ()
                  (page

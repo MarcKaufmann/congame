@@ -461,7 +461,8 @@ QUERY
  current-xexpr-wrapper
  make-step
  make-step/study
- step-page?)
+ step-page?
+ study-transitions)
 
 (module+ private
   (provide
@@ -478,7 +479,7 @@ QUERY
 (struct step-page (renderer)
   #:transparent)
 
-(struct study (name requires provides steps failure-handler)
+(struct study (name requires provides transitions steps failure-handler)
   #:transparent)
 
 (define step-id/c symbol?)
@@ -616,47 +617,50 @@ QUERY
   (->* (string? (non-empty-listof step?))
        (#:requires (listof symbol?)
         #:provides (listof symbol?)
-        #:transitions (or/c #f (listof (cons/c symbol? (or/c symbol? transition/c))))
+        #:transitions (or/c #f (hash/c symbol? any/c))
         #:failure-handler (or/c #f (-> step? any/c step-id/c)))
        study?)
+  (define comptime-transitions (and transitions (hash-ref transitions 'comptime)))
+  (define runtime-transitions (and transitions (hash-ref transitions 'runtime)))
   (define steps-with-transitions
     (cond
-      [transitions
-       (define steps*
-         (for/list ([s (in-list steps)])
-           (define sid (step-id s))
-           (cond
-             [(assoc sid transitions)
-              => (lambda (p)
-                   (define fn-or-id (cdr p))
-                   (define transition
+      [runtime-transitions
+       (let ([transitions runtime-transitions])
+         (define steps*
+           (for/list ([s (in-list steps)])
+             (define sid (step-id s))
+             (cond
+               [(assoc sid transitions)
+                => (lambda (p)
+                     (define fn-or-id (cdr p))
+                     (define transition
+                       (cond
+                         [(symbol? fn-or-id) (λ () fn-or-id)]
+                         [else fn-or-id]))
                      (cond
-                       [(symbol? fn-or-id) (λ () fn-or-id)]
-                       [else fn-or-id]))
-                   (cond
-                     [(step/study? s)
-                      (struct-copy step/study s [transition #:parent step transition])]
-                     [(step? s)
-                      (struct-copy step s [transition transition])]
-                     [else
-                      (raise-argument-error 'make-study "step?" s)]))]
+                       [(step/study? s)
+                        (struct-copy step/study s [transition #:parent step transition])]
+                       [(step? s)
+                        (struct-copy step s [transition transition])]
+                       [else
+                        (raise-argument-error 'make-study "step?" s)]))]
 
-             [else
-              (raise-user-error 'make-study "no transition specified for step ~a in study ~a" sid name)])))
+               [else
+                (raise-user-error 'make-study "no transition specified for step ~a in study ~a" sid name)])))
 
-       ;; Ensure the first step in the study lines up with the first
-       ;; specified transition.
-       (define first-step-id (car (car transitions)))
-       (define first-step
-         (findf (λ (s)
-                  (eq? (step-id s) first-step-id))
-                steps*))
-       (cons first-step (remq first-step steps*))]
+         ;; Ensure the first step in the study lines up with the first
+         ;; specified transition.
+         (define first-step-id (car (car transitions)))
+         (define first-step
+           (findf (λ (s)
+                    (eq? (step-id s) first-step-id))
+                  steps*))
+         (cons first-step (remq first-step steps*)))]
 
       [else
        steps]))
 
-  (study name requires provides steps-with-transitions failure-hdl))
+  (study name requires provides comptime-transitions steps-with-transitions failure-hdl))
 
 (define/contract (run-study s
                             [req (current-request)]
