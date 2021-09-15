@@ -35,7 +35,7 @@
 (define low-workload 5)
 (define practice-tasks 2)
 (define (participation-fee required-tasks)
-  (+ 1.25
+  (+ 1.75
      (* required-tasks required-matrix-piece-rate)
      (next-balanced-pay-treatment)))
 
@@ -113,7 +113,7 @@
     (:p "You receive the following payments if you complete a given stage of the main study:")
     (:ul
      (:li (pp-money tutorial-fee) " if you complete the tutorial")
-     (:li (pp-money participation-fee) " if you complete the whole study, which requires completing all extra tasks you choose")
+     (:li "An additional " (pp-money participation-fee) " if you complete the whole study, which requires completing all extra tasks you choose")
      (:li "If you choose and do the extra tasks, you will receive the corresponding extra bonus")))))
 
 (define (initialize)
@@ -196,7 +196,7 @@
        (:p "The Study Instructions are repeated below.")
        (#:what-if-fail?
         (radios
-         "Suppose that after you complete the required tasks and make your choices, you end up with extra tasks. What happens if you fail the extra tasks -- either due to getting too many tasks wrong or not attempting them?"
+         "For example, suppose that after you complete the required tasks and make your choices, you end up with extra tasks. What happens if you fail the extra tasks -- either due to getting too many tasks wrong or not attempting them?"
          '(("no-payment-at-all" . "You will receive no payment at all")
            ("no-extra-bonus" . "You will not receive the extra bonus payment, but you will receive the participation and tutorial fees")
            ("no-extra-no-participation-fee" . "You will receive the payment for the tutorial, but not the participation fee nor the extra bonus, since you do not complete the study."))
@@ -321,7 +321,7 @@
         (div ((class "group"))
              (label
               "How clear were the instructions on a scale from 1 (very unclear) to 5 (very clear)?"
-              ,(rw "how-clear" (widget-number)))
+              ,(rw "how-clear" (widget-number #:attributes '((min "1") (max "5")))))
              ,@(rw "how-clear" (widget-errors)))
         (div ((class "group"))
              (label
@@ -330,8 +330,8 @@
              ,@(rw "what-could-be-clearer" (widget-errors)))
         (div ((class "group"))
              (label
-              "How restful did you find the tracks after the required tasks, from 1 (ennervating) over 5 (neutral) to 10 (deeply relaxing)?"
-              ,(rw "how-relaxing" (widget-number)))
+              "How restful did you find the track(s) after the required tasks, from 1 (ennervating) over 4 (neutral) to 7 (deeply relaxing)?"
+              ,(rw "how-relaxing" (widget-number #:attributes '((min "1") (max "7")))))
              ,@(rw "how-relaxing" (widget-errors)))
         (div ((class "group"))
              (label
@@ -489,9 +489,9 @@
    (haml
     (:div.container
      (:h1 "Extra Tasks")
-     (:p "The choice that was randomly selected was between the following two options, from which you chose the one listed first:")
+     (:p "The choice that was randomly selected was between the following two options, from which you chose the bold one listed first:")
      (:ol
-      (:li (describe chosen))
+      (:li (:strong (describe chosen)))
       (:li (describe alternative)))
      (:p continue-text)
      (button void continue-text)))))
@@ -538,7 +538,7 @@
       (:li "The computer randomly selects one of the choice pages as the page-that-counts")
       (:li "The computer randomly selects one of the choices on the page-that-counts as the choice-that-counts")
       (:li "The option that was picked from the choice-that-counts determines the extra work and extra bonus"))
-      (:p "Suppose that the 7th choice from the screenshot turns out as the choice-that-counts. Then the person would have to do 8 extra tasks to receive the extra bonus of " (pp-money 1.20) " in addition to their other payments. Failing the tasks means that they will neither receive this extra bonus nor the participation bonus. " (:strong "Note:") " You cannot skip the extra tasks: you can only complete the study and receive the participation bonus if you do the extra tasks!")
+      (:p "Suppose that the 7th choice from the screenshot turns out as the choice-that-counts. Then the person would have to do 8 extra tasks to receive the extra bonus of " (pp-money 1.20) " in addition to their other payments. Failing the tasks means that they will neither receive this extra bonus nor the participation bonus. " (:strong "Note:") " You cannot skip the extra tasks: you can only complete the study and receive the participation bonus if you do the extra tasks! If you do not want to be asked to do the extra tasks for the given bonus, simply choose the option of 0 extra tasks.")
      (.container.screenshot
       (:h2 "Screenshot of an example Decision Page")
       (:img ([:src (resource-uri price-list-screenshot)])))

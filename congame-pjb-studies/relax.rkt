@@ -93,9 +93,6 @@
   ;; FIXME: Add a special error message to get for better error handling.
   (list-ref (get 'tracks-to-play) i))
 
-(define (widget-10-scale)
-  (widget-number #:attributes '((min "1") (max "10"))))
-
 (define (figure-with-snippet-track track-treatment)
   (define track-path
     (car (hash-ref (get 'tracks-to-evaluate) track-treatment)))
@@ -120,10 +117,14 @@
      (formular
       #:bot
       ([good (#:own-track "wave-sounds")
-             (#:wave-sounds 3)
-             (#:guided-meditation 5)
-             (#:classical-piano 5)
-             (#:edm 10)])
+             (#:relaxing-wave-sounds 8)
+             (#:relaxing-guided-meditation 2)
+             (#:relaxing-classical-piano 2)
+             (#:relaxing-edm 10)
+             (#:motivating-wave-sounds 5)
+             (#:motivating-guided-meditation 5)
+             (#:motivating-classical-piano 5)
+             (#:motivating-edm 10)])
       (haml
        (:div
         (#:own-track
@@ -134,20 +135,37 @@
             ("classical-piano" . "Classical Piano")
             ("edm" . "Electronic Dance Music (EDM)"))
           ))
+
         (:div.group
-         (:label  "Rate each type of track below how relaxing they are on a scale from 1 to 10, where 1 means 'ennervating', 5 means 'neutral/no effect', and 10 means 'deeply relaxing'. Play the 20-second snippets below to decide.")
+         (:label  "Rate each type of track below how relaxing they are on a scale from 1 to 7, where 1 means 'ennervating', 4 means 'neutral/no effect', and 7 means 'deeply relaxing'. Play the 20-second snippets below to decide.")
          (:div
-          (#:wave-sounds
-           (input-number "Wave Sounds" #:min 1 #:max 10)))
+          (#:relaxing-wave-sounds
+           (input-number "Wave Sounds" #:min 1 #:max 7)))
          (:div
-          (#:guided-meditation
-           (input-number "Guided Meditation" #:min 1 #:max 10)))
+          (#:relaxing-guided-meditation
+           (input-number "Guided Meditation" #:min 1 #:max 7)))
          (:div
-          (#:classical-piano
-           (input-number "Classical Piano" #:min 1 #:max 10 )))
+          (#:relaxing-classical-piano
+           (input-number "Classical Piano" #:min 1 #:max 7)))
          (:div
-          (#:edm
-           (input-number "Electronic Dance Music (EDM)" #:min 1 #:max 10))))
+          (#:relaxing-edm
+           (input-number "Electronic Dance Music (EDM)" #:min 1 #:max 7))))
+
+        (:div.group
+         (:label  "Rate each type of track below how motivating they are on a scale from 1 to 7, where 1 means 'very demotivating', 4 means 'neutral/no effect', and 7 means 'deeply motivating'. Play the 20-second snippets below to decide.")
+         (:div
+          (#:motivating-wave-sounds
+           (input-number "Wave Sounds" #:min 1 #:max 7)))
+         (:div
+          (#:motivating-guided-meditation
+           (input-number "Guided Meditation" #:min 1 #:max 7)))
+         (:div
+          (#:motivating-classical-piano
+           (input-number "Classical Piano" #:min 1 #:max 7)))
+         (:div
+          (#:motivating-edm
+           (input-number "Electronic Dance Music (EDM)" #:min 1 #:max 7))))
+
         (:div ([:class "group"])
               (:h4 "Sound Snippets")
               (figure-with-snippet-track 'wave-sounds)
@@ -156,16 +174,26 @@
               (figure-with-snippet-track 'edm))
         (:button.button.next-button ((:type "submit")) "Submit")))
       (lambda (#:own-track own-track
-               #:wave-sounds wave-sounds
-               #:guided-meditation guided-meditation
-               #:classical-piano classical-piano
-               #:edm edm)
+               #:relaxing-wave-sounds relaxing-wave-sounds
+               #:relaxing-guided-meditation relaxing-guided-meditation
+               #:relaxing-classical-piano relaxing-classical-piano
+               #:relaxing-edm relaxing-edm
+               #:motivating-wave-sounds motivating-wave-sounds
+               #:motivating-guided-meditation motivating-guided-meditation
+               #:motivating-classical-piano motivating-classical-piano
+               #:motivating-edm motivating-edm)
+
         (put 'relaxation-survey
              (hash 'own-track own-track
-                   'wave-sounds-relaxation-score wave-sounds
-                   'guided-meditation-relaxation-score guided-meditation
-                   'classical-piano-relaxation-score classical-piano
-                   'edm-relaxation-score edm))))))))
+                   'wave-sounds-relaxing-score relaxing-wave-sounds
+                   'guided-meditation-relaxing-score relaxing-guided-meditation
+                   'classical-piano-relaxing-score relaxing-classical-piano
+                   'edm-relaxing-score relaxing-edm
+                   'wave-sounds-motivating-score motivating-wave-sounds
+                   'guided-meditation-motivating-score motivating-guided-meditation
+                   'classical-piano-motivating-score motivating-classical-piano
+                   'edm-motivating-score motivating-edm
+                   ))))))))
 
 (define (survey-of-tracks/bot)
   (formular-autofill 'good))
