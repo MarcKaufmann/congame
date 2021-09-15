@@ -117,14 +117,14 @@
      (formular
       #:bot
       ([good (#:own-track "wave-sounds")
-             (#:relaxing-wave-sounds 8)
+             (#:relaxing-wave-sounds 6)
              (#:relaxing-guided-meditation 2)
              (#:relaxing-classical-piano 2)
-             (#:relaxing-edm 10)
+             (#:relaxing-edm 7)
              (#:motivating-wave-sounds 5)
              (#:motivating-guided-meditation 5)
              (#:motivating-classical-piano 5)
-             (#:motivating-edm 10)])
+             (#:motivating-edm 7)])
       (haml
        (:div
         (#:own-track
