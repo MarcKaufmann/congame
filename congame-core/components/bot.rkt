@@ -99,16 +99,19 @@
                             #:username username
                             #:password password
                             #:headless? [headless? #t]
-                            #:delay [delay 0])
+                            #:delay [delay 0]
+                            #:port [port #f])
     (->* (bot?
           #:study-url string?
           #:username string?
           #:password string?)
          (#:headless? boolean?
-          #:delay real?)
+          #:delay real?
+          #:port (or/c #f (integer-in 0 65535)))
          void?)
     (call-with-marionette/browser/page!
      #:headless? headless?
+     #:port port
      (lambda (p)
        (parameterize ([current-page p]
                       [current-delay delay])

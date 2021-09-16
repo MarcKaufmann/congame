@@ -604,18 +604,25 @@
     (hash-ref bot-infos (bot-set-bot-id the-set)))
   (define bot (bot-info-bot bot-info))
   (define model (hash-ref (bot-info-models bot-info) (bot-set-model-id the-set)))
-  (for ([u (in-list users)])
-    ;; FIXME: Rename study-page to study-instance-page.
-    (run-bot
-     #:study-url (apply
-                  make-application-url
-                  (string-split
-                   (reverse-uri 'study-page (study-instance-slug the-instance))
-                   "/"))
-     #:username (user-username u)
-     #:password password
-     #:headless? headless?
-     (bot model)))
+  ;; TODO: Bubble up exns from within the threads.
+  (define thds
+    (for/list ([u (in-list users)]
+               [p (in-naturals 60100)])
+      (thread
+       (lambda ()
+         ;; FIXME: Rename study-page to study-instance-page.
+         (run-bot
+          #:study-url (apply
+                       make-application-url
+                       (string-split
+                        (reverse-uri 'study-page (study-instance-slug the-instance))
+                        "/"))
+          #:username (user-username u)
+          #:password password
+          #:headless? headless?
+          #:port p
+          (bot model))))))
+  (for-each thread-wait thds)
   (redirect-to
    (reverse-uri 'admin:view-study-instance-page
                 (study-meta-id the-study)
