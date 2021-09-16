@@ -69,6 +69,7 @@
     (dispatch-rules+roles
      [("")
       #:roles (user)
+      #:method (or "get" "post")
       (study-instances-page db)]
 
      [("admin")

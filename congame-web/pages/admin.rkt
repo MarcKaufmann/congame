@@ -11,6 +11,7 @@
          koyo/database
          koyo/haml
          koyo/json
+         koyo/random
          koyo/url
          (except-in forms form)
          racket/contract
@@ -146,10 +147,15 @@
 (define study-instance-form
   (form* ([name (ensure binding/text (required))]
           [slug (ensure binding/text)]
+          [enrollment-code (ensure binding/text)]
+          [no-enrollment-code? (ensure binding/boolean)]
           [status (ensure binding/text (required) (one-of '(("active" . active)
                                                             ("inactive" . inactive)
                                                             ("archived" . archived))))])
-    (list name (or slug (slugify name)) status)))
+    (list name
+          (or slug (slugify name))
+          (if no-enrollment-code? "" (or enrollment-code (generate-random-string 16)))
+          status)))
 
 (define (render-study-instance-form target rw [submit-label "Create"])
   (haml
@@ -158,6 +164,8 @@
      [:method "POST"])
     (rw "name" (field-group "Name"))
     (rw "slug" (field-group "Slug"))
+    (rw "enrollment-code" (field-group "Enrollment Code"))
+    (rw "no-enrollment-code?" (field-group "No enrollment code?" (widget-checkbox)))
     (rw "status" (field-group "Status" (widget-select '(("active"   . "Active")
                                                         ("inactive" . "Inactive")
                                                         ("archived" . "Archived")))))
@@ -171,13 +179,14 @@
     (send/suspend/dispatch/protect
      (lambda (embed/url)
        (match (form-run study-instance-form req)
-         [(list 'passed (list name slug status) _)
+         [(list 'passed (list name slug enrollment-code status) _)
           (define the-study-instance
             (with-database-connection [conn db]
               (insert-one! conn (make-study-instance
                                  #:study-id study-id
                                  #:name name
                                  #:slug slug
+                                 #:enrollment-code enrollment-code
                                  #:status status))))
 
           (redirect-to (reverse-uri 'admin:view-study-page study-id))]
@@ -201,23 +210,31 @@
        (define defaults
          (hash "name" (study-instance-name the-instance)
                "slug" (study-instance-slug the-instance)
+               "enrollment-code" (study-instance-enrollment-code the-instance)
                "status" (~a (study-instance-status the-instance))))
-       (match (form-run study-instance-form req #:defaults defaults)
-         [(list 'passed (list name slug status) _)
-          (with-database-connection [conn db]
-            (update-one! conn (~> the-instance
-                                  (set-study-instance-name name)
-                                  (set-study-instance-slug slug)
-                                  (set-study-instance-status status))))
-          (redirect-to (reverse-uri 'admin:view-study-instance-page study-id study-instance-id))]
+       ;; Only add the no-enrollment-code? key if we want the checkbox
+       ;; to be checked.  It will be checked regardless of the value
+       ;; at that key in the hash when present.
+       (let ([defaults (if (equal? "" (study-instance-enrollment-code the-instance))
+                           (hash-set defaults "no-enrollment-code?" "1")
+                           defaults)])
+         (match (form-run study-instance-form req #:defaults defaults)
+           [`(passed (,name ,slug ,enrollment-code ,status) ,_)
+            (with-database-connection [conn db]
+              (update-one! conn (~> the-instance
+                                    (set-study-instance-name name)
+                                    (set-study-instance-slug slug)
+                                    (set-study-instance-enrollment-code enrollment-code)
+                                    (set-study-instance-status status))))
+            (redirect-to (reverse-uri 'admin:view-study-instance-page study-id study-instance-id))]
 
-         [(list _ _ rw)
-          (tpl:page
-           (tpl:container
-            (haml
-             (:section.edit-study-instance
-              (:h1 "Edit Instance")
-              (render-study-instance-form (embed/url loop) rw "Update")))))])))))
+           [`(,(or 'pending 'failed) ,_ ,rw)
+            (tpl:page
+             (tpl:container
+              (haml
+               (:section.edit-study-instance
+                (:h1 "Edit Instance")
+                (render-study-instance-form (embed/url loop) rw "Update")))))]))))))
 
 (define/contract ((view-study-instance-page db) _req study-id study-instance-id)
   (-> database? (-> request? id/c id/c response?))
@@ -248,6 +265,9 @@
           (:tr
            (:th "Slug")
            (:td (study-instance-slug the-instance)))
+          (:tr
+           (:th "Enrollment Code")
+           (:td (study-instance-enrollment-code the-instance)))
           (:tr
            (:th "Status")
            (:td (~a (study-instance-status the-instance)))))

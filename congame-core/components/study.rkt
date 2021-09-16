@@ -10,6 +10,7 @@
          koyo/continuation
          koyo/database
          koyo/haml
+         koyo/random
          (except-in forms form)
          racket/contract
          racket/fasl
@@ -833,6 +834,7 @@ QUERY
  current-participant-id
  participant-email
  clear-participant-progress!
+ participant-enrolled?
  enroll-participant!
  lookup-study
  lookup-study-meta
@@ -854,6 +856,7 @@ QUERY
    [study-id integer/f]
    [name string/f #:contract non-empty-string?]
    [slug string/f #:contract non-empty-string?]
+   [(enrollment-code (generate-random-string 16)) string/f]
    [(status 'active) symbol/f #:contract (or/c 'active 'inactive 'archived)]
    [(created-at (now/moment)) datetime-tz/f]))
 
@@ -1015,6 +1018,14 @@ QUERY
     (query-exec conn (~> (from study-instance-var #:as v)
                          (where (= v.instance-id ,instance-id))
                          (delete)))))
+
+(define/contract (participant-enrolled? db user-id instance-id)
+  (-> database? id/c id/c boolean?)
+  (with-database-connection [conn db]
+    (query-maybe-value conn (~> (from study-participant #:as p)
+                                (select #t)
+                                (where (and (= p.user-id ,user-id)
+                                            (= p.instance-id ,instance-id)))))))
 
 (define/contract (enroll-participant! db user-id instance-id)
   (-> database? id/c id/c study-participant?)

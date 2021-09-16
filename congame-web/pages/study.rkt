@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require congame/components/study
+         (except-in forms form)
          koyo/continuation
          koyo/haml
          koyo/url
@@ -31,10 +32,49 @@
                 ([:href (embed/url (enroll db i))])
                 "Enroll")))))))))))
 
-(define ((enroll db i) _req)
-  (enroll-participant! db (user-id (current-user)) (study-instance-id i))
-  (redirect/get/forget/protect)
-  (redirect-to (reverse-uri 'study-page (study-instance-slug i))))
+(define enroll-form
+  (form* ([enrollment-code (ensure binding/text (required))])
+    enrollment-code))
+
+(define (render-enrollment-form rw [error-message #f])
+  (tpl:page
+   (haml
+    (.container
+     (:form
+      ([:action ""]
+       [:method "POST"])
+      (when error-message
+        (haml (:p error-message)))
+      (:label
+       "Enrollment code:"
+       (rw "enrollment-code" (widget-text))
+       ,@(rw "enrollment-code" (widget-errors)))
+      (:button
+       ([:type "submit"])
+       "Enroll"))))))
+
+;; TODO: Add error
+(define ((enroll db i) req)
+  (define uid (user-id (current-user)))
+  (define iid (study-instance-id i))
+  (define (do-enroll)
+    (enroll-participant! db uid iid)
+    (redirect/get/forget/protect)
+    (redirect-to (reverse-uri 'study-page (study-instance-slug i))))
+  (cond
+    [(or (participant-enrolled? db uid iid)
+         (eq? 'bot (user-role (current-user)))
+         (equal? "" (study-instance-enrollment-code i)))
+     (do-enroll)]
+    [else
+     (match (form-run enroll-form req)
+       [`(passed ,enrollment-code ,rw)
+        (if (string=? enrollment-code (study-instance-enrollment-code i))
+            (do-enroll)
+            (render-enrollment-form rw "Invalid enrollment code."))]
+
+       [`(,_ ,_ ,rw)
+        (render-enrollment-form rw)])]))
 
 (define ((study-page db) req slug)
   (define uid (user-id (current-user)))
