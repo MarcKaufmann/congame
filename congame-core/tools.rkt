@@ -25,7 +25,8 @@
 (define numbers "0123456789")
 
 (define (make-completion-code [n 8])
-  (apply string (random-sample (string-append alphabet numbers) n)))
+  #;(apply string (random-sample (string-append alphabet numbers) n))
+  "817C6E38")
 
 (define (render-consent-form)
   (define the-form
