@@ -64,11 +64,9 @@
                                          (order-by ([s.created-at]))))])
       bs)))
 
-(define/contract (prepare-bot-set! db the-set)
-  (-> database? bot-set? (values string? (listof user?)))
+(define/contract (prepare-bot-set! db um the-set)
+  (-> database? user-manager? bot-set? (values string? (listof user?)))
   (with-database-transaction [conn db]
-    (define um
-      (make-user-manager db ((make-argon2id-hasher-factory))))
     (define password
       (generate-random-string 64))
     (define updated-users
@@ -79,5 +77,5 @@
                                 (select id)
                                 (where (= p.user-id ,(user-id u))))))
         (clear-participant-progress! db participant-id)
-        (set-user-password um u password)))
+        (set-user-password u (user-manager-hasher um) password)))
     (values password (apply update! conn updated-users))))

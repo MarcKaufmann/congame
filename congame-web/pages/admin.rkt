@@ -543,8 +543,8 @@
                                                       (cons id model))))])
     model))
 
-(define/contract ((view-study-instance-bot-set-page db) _req study-id study-instance-id bot-set-id)
-  (-> database? (-> request? id/c id/c id/c response?))
+(define/contract ((view-study-instance-bot-set-page db um) _req study-id study-instance-id bot-set-id)
+  (-> database? user-manager? (-> request? id/c id/c id/c response?))
   (define the-study
     (lookup-study-meta db study-id))
   (define the-instance
@@ -568,14 +568,14 @@
            (study-instance-name the-instance)))
          (:h3 "Model " (~a (bot-set-model-id the-bot-set)))
          (:a
-          ([:href (embed/url (make-bot-runner db the-study the-instance the-bot-set))])
+          ([:href (embed/url (make-bot-runner db um the-study the-instance the-bot-set))])
           "Run bots!")
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))
 
-(define ((make-bot-runner db the-study the-instance the-set) _req)
+(define ((make-bot-runner db um the-study the-instance the-set) _req)
   (define-values (password users)
-    (prepare-bot-set! db the-set))
+    (prepare-bot-set! db um the-set))
   (define study-racket-id
     (study-meta-racket-id the-study))
   (define bot-infos

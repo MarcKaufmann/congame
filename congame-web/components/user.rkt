@@ -85,6 +85,7 @@
 
  make-user-manager
  user-manager?
+ user-manager-hasher
  user-manager-lookup/id
  user-manager-lookup/api-key
  user-manager-lookup/username

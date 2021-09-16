@@ -105,7 +105,7 @@
 
      [("admin" "studies" (integer-arg) "instances" (integer-arg) "bot-sets" (integer-arg))
       #:roles (admin)
-      (admin:view-study-instance-bot-set-page db)]
+      (admin:view-study-instance-bot-set-page db users)]
 
      [("admin" "jobs" (string-arg) ...)
       #:roles (admin)
