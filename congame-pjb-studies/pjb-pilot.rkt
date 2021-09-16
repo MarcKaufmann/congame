@@ -358,7 +358,7 @@
              (label
               "If you had to tell someone else how you decided on the payment at which you were willing to do additional tasks, how would you describe it?")
              (div
-              ,(rw "how-do-you-decide-on-extra-work" (widget-text)))
+              ,(rw "how-do-you-decide-on-extra-work" (widget-textarea)))
              ,@(rw "how-do-you-decide-on-extra-work" (widget-errors)))
         (div ((class "group"))
              (label
