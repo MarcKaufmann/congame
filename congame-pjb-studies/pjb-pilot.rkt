@@ -68,6 +68,33 @@
       (first ts)
       (set! ts (rest ts)))))
 
+(module+ test
+  (require rackunit)
+
+  (test-case
+    "Ensure balanced shuffle works as expected"
+    (define treatments '(0 1))
+    (let ([s (make-balanced-shuffle treatments)])
+      (define l1 (list (s) (s)))
+      (check-equal? (sort l1 <) (sort treatments <) "List has all treatment values")
+
+      (define n 5)
+      (define l2 (for/list ([i (* n (length treatments))])
+                   (s)))
+
+      (check-true (andmap (λ (i) (not (not (member i treatments)))) l2) "List has only values from treatment")
+
+      ; Check no sublist of (length treatments) elements has duplicates
+      (define (get-sublists l n)
+        (cond [(< (length l) n) l]
+              [(cons (take l n)
+                     (get-sublists (drop l n) n))]))
+      (define subls (get-sublists l2 (length treatments)))
+
+      (check-true (andmap (λ (subl) (equal? subl (remove-duplicates subl)))
+                          subls)
+                  "No sublist has duplicate values"))))
+
 (define next-balanced-rest-treatment (make-balanced-shuffle *rest-treatments*))
 (define next-balanced-required-tasks-treatment (make-balanced-shuffle *required-tasks-treatments*))
 (define next-balanced-pay-treatment (make-balanced-shuffle *pay-treatments*))
