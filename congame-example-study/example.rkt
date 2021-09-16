@@ -117,6 +117,11 @@
      (:h1 "You are still in the simple study")
      (button void "Continue")))))
 
+(define (done-step)
+  (page
+   (haml
+    (:h1 "Yer done."))))
+
 (define ((echo-wrapper s))
   (printf "echo-wrapper: ~.s~n" s)
   (flush-output)
@@ -130,12 +135,7 @@
     (make-step 'listen listen-to-some-music)
     (make-step 'simple-info-2 simple-info-2)
     (make-step/study 'deep (wrap-sub-study deep-study echo-wrapper))
-    (make-step 'doen done-step))))
-
-(define (done-step)
-  (page
-   (haml
-    (:h1 "Yer done."))))
+    (make-step 'done done-step))))
 
 (define consent-study
   (make-study
