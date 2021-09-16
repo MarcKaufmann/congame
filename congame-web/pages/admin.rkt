@@ -587,13 +587,13 @@
            ([:href (reverse-uri 'admin:view-study-instance-page study-id study-instance-id)])
            (study-instance-name the-instance)))
          (:h3 "Model " (~a (bot-set-model-id the-bot-set)))
-         (:a
-          ([:href (embed/url (make-bot-runner db um the-study the-instance the-bot-set))])
-          "Run bots!")
+         (:a ([:href (embed/url (make-bot-runner db um the-study the-instance the-bot-set))]) "Run bots!")
+         " "
+         (:a ([:href (embed/url (make-bot-runner db um the-study the-instance the-bot-set #:headless? #f))]) "Run bots (headful)!")
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))
 
-(define ((make-bot-runner db um the-study the-instance the-set) _req)
+(define ((make-bot-runner db um the-study the-instance the-set #:headless? [headless? #t]) _req)
   (define-values (password users)
     (prepare-bot-set! db um the-set))
   (define study-racket-id
@@ -614,6 +614,7 @@
                    "/"))
      #:username (user-username u)
      #:password password
+     #:headless? headless?
      (bot model)))
   (redirect-to
    (reverse-uri 'admin:view-study-instance-page
