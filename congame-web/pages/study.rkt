@@ -14,7 +14,8 @@
 
 (provide
  study-instances-page
- study-page)
+ study-page
+ home-page)
 
 (define ((study-instances-page db) _req)
   (send/suspend/dispatch/protect
@@ -31,6 +32,13 @@
                (:a
                 ([:href (embed/url (enroll db i))])
                 "Enroll")))))))))))
+
+(define (home-page _req)
+  (tpl:page
+   (haml
+    (.container
+     (:h1 "Total Insight Management")
+     (:p "A place for online research studies")))))
 
 (define enroll-form
   (form* ([enrollment-code (ensure binding/text (required))])

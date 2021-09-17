@@ -68,6 +68,9 @@
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
+      home-page]
+
+     [("dashboard")
       #:roles (user)
       #:method (or "get" "post")
       (study-instances-page db)]
