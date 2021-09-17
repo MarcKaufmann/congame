@@ -12,6 +12,7 @@
          racket/list
          racket/match
          racket/random
+         racket/string
          sentry
          (prefix-in config: congame/config)
          congame/components/bot
@@ -433,6 +434,15 @@
                  'willing
                  'not-willing)))
 
+(define (check-prolific-user)
+  (cond [(string-contains? (participant-email (current-participant-id)) "email.prolific.co") (skip)]
+        [else
+         (page
+          (haml
+           (.container
+            (:h1 "This study is only for Prolific Users")
+            (:p "You have signed up for this study with a non-prolific email. If you came here from prolific, please log out and sign up with your prolific email, which is in the format 'your-prolific-ID@email.prolific.co'. Then you can enroll in this study and complete it. If you did not come here from prolific, you cannot participate in this study."))))]))
+
 (define (show-payments)
   (define (payment-display-name n)
     (case n
@@ -683,7 +693,8 @@
   (make-study
    "pjb-pilot-study-no-config"
    #:transitions (transition-graph
-                  [initialize
+                  [check-prolific-user
+                   --> initialize
                    ; Should I rename `study->participant` to `event`? And `participant->study` to `participant-action`?
                    ; study->participant:
                    ; 1. required-tasks ~ Binomial({high, low}, p = 0.5) --affects-> participation-fee
@@ -782,6 +793,7 @@
                 completion-code
                 consent?)
    (list
+    (make-step 'check-prolific-user check-prolific-user)
     (make-step 'initialize initialize)
     (make-step 'explain-study study-explanation)
     (make-step 'test-study-requirements test-study-requirements #:for-bot test-study-requirements-step/bot)
