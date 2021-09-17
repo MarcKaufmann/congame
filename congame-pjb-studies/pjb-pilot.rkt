@@ -129,7 +129,7 @@
   (haml
    (:div
     (:h2 "Main Study Description")
-    (:p "If you decide to participate in the study, you will do the following:")
+    (:p "The main study should be started right after the tutorial. If you decide to participate in the study, you will do the following:")
     (:ul
      (:li "complete " (number->string required-tasks) " required tasks")
      (:li "choose whether to do extra tasks for bonus payments")
@@ -435,7 +435,7 @@
                  'not-willing)))
 
 (define (check-prolific-user)
-  (cond [(string-contains? (participant-email (current-participant-id)) "email.prolific.co") (skip)]
+  (cond [(or (current-user-bot?) (string-contains? (participant-email (current-participant-id)) "email.prolific.co")) (skip)]
         [else
          (page
           (haml
@@ -444,6 +444,7 @@
             (:p "You have signed up for this study with a non-prolific email. If you came here from prolific, please log out and sign up with your prolific email, which is in the format 'your-prolific-ID@email.prolific.co'. Then you can enroll in this study and complete it. If you did not come here from prolific, you cannot participate in this study."))))]))
 
 (define (show-payments)
+  (define completion-code (get 'completion-code))
   (define (payment-display-name n)
     (case n
       [(tutorial-fee) "Completing the tutorial"]
@@ -460,10 +461,8 @@
           (haml
            (:li (payment-display-name name) ": " (pp-money payment)))))
      (:p "Shortly after finishing the study, you will receive an email from us. " (:a ((:href (string-append "mailto:" config:support-email))) "Email us") " if you have not received the payment by the end of next week." )
-     (button
-      (λ ()
-        (send-completion-email (current-participant-id)))
-      "Finish Study")))))
+     (:h3 "Reminder: Your completion code is " completion-code)
+     (:p "Should you have forgotten earlier to enter your completion code, please enter it now on prolific.")))))
 
 (define-job (send-study-completion-email p payment)
   (with-handlers ([exn:fail?
@@ -649,14 +648,6 @@
      (:p "You fail some of the requirements for the study, therefore you cannot complete the study.")
      (button void "The End")))))
 
-(define (no-consent)
-  (page
-   (haml
-    (:div.container
-     (:h1 "You did not agree to participate")
-     (:p "You did not consent to the study, therefore you will not continue to the study. We will now show you the payments and then provide you with the completion code for the tutorial.")
-     (button void "Continue to Payments")))))
-
 (define (tutorial-completion-enter-code)
   (define (render-check-completion-code)
     (haml
@@ -679,9 +670,9 @@
   (page
    (haml
     (:div.container
-     (:h1 "You finished the tutorial")
-     (:p "Please provide the following completion code on prolific, then come back to continue with the main study:")
-     (:h3 "Completion code is: " code)
+     (:h1 "Completion code for tutorial payment: " code)
+     (:p "Please provide the above completion code on prolific, or we cannot pay you. Then come back " (:strong "right away")" to decide whether you want to continue with the main study:")
+
      (render-check-completion-code)))))
 
 (define (tutorial-completion-consent/bot)
@@ -732,6 +723,7 @@
                    ; - intent: ensure understand study
                    ; - model/abstract: ?? information set
                    ; - implementation/concrete: check required-tasks and participation-fee payment if failing required tasks
+                   --> tutorial-completion-enter-code
                    --> consent
                    ; participant->study: consent?
                    --> ,(λ ()
@@ -746,12 +738,9 @@
                                  ; TODO: Treatment assignment should also be done at the study, not step, level!!
                                  ; Can this be done, given the need for `put`?
                                  (put 'rest-treatment (next-balanced-rest-treatment))
-                                 (goto tutorial-completion-enter-code)]))]
+                                 (goto required-tasks)]))]
                   ; study->participant: set payment 'tutorial-fee, if consent? then rest-treatment ~ Binomial({elicit-WTW-before, elicit-WTW-after})
-                  [tutorial-completion-enter-code
-                   ; study->participant: display completion code
-                   ; participant->study: entered-code? and continue
-                   --> required-tasks
+                  [required-tasks
                    ; study->participant: n max-wrong
                    ; participant->study: tasks-right, tasks-wrong, success?
                    --> ,(λ ()
@@ -845,17 +834,15 @@
    (list
     (make-step/study 'the-study
                      pjb-pilot-study-no-config
-                     (lambda ()
-                       (if (get 'consent?)
-                           'show-payments
-                           'no-consent))
+                     (λ ()
+                       (send-completion-email (current-participant-id))
+                       'done)
                      #:provide-bindings '([rest-treatment rest-treatment]
                                           [consent? consent?]
                                           [completion-code completion-code])
                      #:require-bindings `([practice-tasks (const ,practice-tasks)]
                                           [tutorial-fee (const ,tutorial-fee)]
                                           [price-lists (const ,(hash-keys PRICE-LISTS))]))
-    (make-step 'no-consent no-consent (λ () 'show-payments) #:for-bot bot:continuer)
     (make-step 'fail-tutorial-tasks
                (lambda ()
                  (page
@@ -873,6 +860,5 @@
                     (:h1 "You failed the tasks")
                     (:p "The study ends here, since you failed too many tasks.")
                     (button void "See payments")))))
-               (λ () 'show-payments))
-    (make-step 'show-payments show-payments #:for-bot bot:continuer)
-    (make-step 'done show-done #:for-bot bot:completer))))
+               (λ () 'done))
+    (make-step 'done show-payments #:for-bot bot:completer))))
