@@ -30,7 +30,7 @@
 (provide
  pjb-pilot-study)
 
-(define tutorial-fee 1.00)
+(define tutorial-fee 1.50)
 (define required-matrix-piece-rate 0.10)
 (define high-workload 10)
 (define low-workload 5)
