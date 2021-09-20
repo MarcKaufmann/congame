@@ -27,13 +27,14 @@
          congame/tools
          "mail.rkt"
          "tasks.rkt"
+         (prefix-in config: congame/config)
          (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide
  pjb-pilot-study)
 
 ; FIXME: Update to correct url once tested that it works
-(define prolific-url "https://trichotomy.xyz")
+(define prolific-redirection-url "https://trichotomy.xyz")
 (define tutorial-fee 1.50)
 (define required-matrix-piece-rate 0.10)
 (define high-workload 10)
@@ -129,8 +130,8 @@
 
 ;; PAGE RENDERERS
 
-(define/contract (study-description required-tasks participation-fee)
-  (-> number? number? any/c)
+(define/contract (study-description required-tasks participation-fee tutorial-fee)
+  (-> number? number? number? any/c)
   (haml
    (:div
     (:h2 "Main Study Description")
@@ -165,6 +166,7 @@
   (define required-tasks (get 'required-tasks))
   (define practice-tasks (get 'practice-tasks))
   (define participation-fee (get 'participation-fee))
+  (define tutorial-fee (get 'tutorial-fee))
   (page
    (haml
     (:div.container.container
@@ -183,7 +185,7 @@
       (:li "a form asking whether you agree to participate in the study"))
      (:p "You will receive " (pp-money (get 'tutorial-fee)) " for completing the tutorial, whether or not you continue with the study.")
 
-     (study-description required-tasks participation-fee)
+     (study-description required-tasks participation-fee tutorial-fee)
 
      (button void "Continue")))))
 
@@ -191,13 +193,14 @@
 
 (define (consent)
   (define required-tasks (get 'required-tasks))
+  (define tutorial-fee (get 'required-tasks))
   (define participation-fee (get 'participation-fee))
   (page
    (haml
     (:div.container
      (render-consent-form)
      (.info
-      (study-description required-tasks participation-fee))))))
+      (study-description required-tasks participation-fee tutorial-fee))))))
 
 ;; Comprehension Formm
 
@@ -210,7 +213,8 @@
      (.info
       (study-description
        (get 'required-tasks)
-       (get 'participation-fee)))))))
+       (get 'participation-fee)
+       (get 'tutorial-fee)))))))
 
 (define ((is-equal a #:message [message #f]) v)
   (if (equal? v a)
@@ -267,7 +271,7 @@
      (:h1 "Redirecting you to Prolific")
      (:p "You will be redirected to Prolific on the next page to complete the prolific study.")
      (if consent?
-         (haml (:p "Since you agreed to continue, come back to the study by going to the "
+         (haml (:p "Since you agreed to continue, after you are done on prolific, come back to the study by going to the "
                    (:a ((:href (reverse-uri 'study-instances-page))) "dashboard page") " and clicking 'Resume the Study'.") )
          (haml (:p "Since you did not want to continue with the main study, you are done with this study. Thanks for participating.")))
      (button
@@ -280,19 +284,19 @@
   ;; FIXME: We should be able to do some testing here for different types of bots
   (when (current-user-bot?)
     (skip))
-  (define prolific-url (get 'prolific-redirection-url))
+  (define prolific-redirection-url (get 'prolific-redirection-url))
   (put 'attempted-to-redirect-to-prolific? #t)
-  (redirect-to prolific-url))
+  (page (redirect-to prolific-redirection-url)))
 
 (define (prolific-redirect-then-continue)
   ;; FIXME: We should be able to do some testing here for different types of bots
   (when (current-user-bot?)
     (skip))
-  (define prolific-url (get 'prolific-redirection-url))
+  (define prolific-redirection-url (get 'prolific-redirection-url))
   (cond [(get 'attempted-to-redirect-to-prolific?) (skip)]
         [else
-         (put 'attempted-to-redirect-to-prolific? #t)
-         (redirect-to prolific-url)]))
+         (put 'attempted-to-redirect-to-prolific? #f)
+         (page (redirect-to prolific-redirection-url))]))
 
 ;; Requirements Form
 
@@ -484,7 +488,10 @@
           (haml
            (.container
             (:h1 "This study is only for Prolific Users")
-            (:p "You have signed up for this study with a non-prolific email. If you came here from prolific, please log out and sign up with your prolific email, which is in the format 'your-prolific-ID@email.prolific.co'. Then you can enroll in this study and complete it. If you did not come here from prolific, you cannot participate in this study."))))]))
+            (:p "You have signed up for this study with a non-prolific email. If you came here from prolific, please log out and sign up with your prolific email, which is in the format 'your-prolific-ID@email.prolific.co'. Then you can enroll in this study and complete it. If you did not come here from prolific, you cannot participate in this study.")
+            (when config:debug
+              `(div
+                ,(button void "Next (Debug Mode)"))))))]))
 
 (define (show-payments)
   (define completion-code (get 'completion-code))
@@ -823,7 +830,8 @@
 
    #:requires '(practice-tasks
                 price-lists
-                tutorial-fee)
+                tutorial-fee
+                prolific-redirection-url)
    #:provides '(rest-treatment
                 completion-code
                 consent?)
@@ -893,7 +901,7 @@
                      #:require-bindings `([practice-tasks (const ,practice-tasks)]
                                           [tutorial-fee (const ,tutorial-fee)]
                                           [price-lists (const ,(hash-keys PRICE-LISTS))]
-                                          [prolific-url (const ,prolific-url)]))
+                                          [prolific-redirection-url (const ,prolific-redirection-url)]))
     (make-step 'fail-tutorial-tasks
                (lambda ()
                  (page
