@@ -5,8 +5,10 @@
          (except-in forms form)
          (for-syntax racket/base) ; Needed to use strings in define-static-resource. Why? Just Cause.
          gregor
+         web-server/http
          koyo/haml
          koyo/job
+         koyo/url
          marionette
          racket/contract
          racket/list
@@ -30,6 +32,8 @@
 (provide
  pjb-pilot-study)
 
+; FIXME: Update to correct url once tested that it works
+(define prolific-url "https://trichotomy.xyz")
 (define tutorial-fee 1.50)
 (define required-matrix-piece-rate 0.10)
 (define high-workload 10)
@@ -251,6 +255,44 @@
 
 (define (test-comprehension/bot)
   (formular-autofill 'good))
+
+;; Explain prolific redirect
+
+(define (explain-redirect)
+  (define consent? (get 'consent?))
+  (put 'attempted-to-redirect-to-prolific? #f)
+  (page
+   (haml
+    (.container
+     (:h1 "Redirecting you to Prolific")
+     (:p "You will be redirected to Prolific on the next page to complete the prolific study.")
+     (if consent?
+         (haml (:p "Since you agreed to continue, come back to the study by going to the "
+                   (:a ((:href (reverse-uri 'study-instances-page))) "dashboard page") " and clicking 'Resume the Study'.") )
+         (haml (:p "Since you did not want to continue with the main study, you are done with this study. Thanks for participating.")))
+     (button
+      void
+      "Redirect to Prolific")))))
+
+; FIXME: How to handle this with bots? Should there be a widget for the step? Should redirections be done in the transitions rather than in steps?
+; FIXME: Should I merge the two functions?
+(define (prolific-redirect)
+  ;; FIXME: We should be able to do some testing here for different types of bots
+  (when (current-user-bot?)
+    (skip))
+  (define prolific-url (get 'prolific-redirection-url))
+  (put 'attempted-to-redirect-to-prolific? #t)
+  (redirect-to prolific-url))
+
+(define (prolific-redirect-then-continue)
+  ;; FIXME: We should be able to do some testing here for different types of bots
+  (when (current-user-bot?)
+    (skip))
+  (define prolific-url (get 'prolific-redirection-url))
+  (cond [(get 'attempted-to-redirect-to-prolific?) (skip)]
+        [else
+         (put 'attempted-to-redirect-to-prolific? #t)
+         (redirect-to prolific-url)]))
 
 ;; Requirements Form
 
@@ -724,8 +766,9 @@
                    ; - intent: ensure understand study
                    ; - model/abstract: ?? information set
                    ; - implementation/concrete: check required-tasks and participation-fee payment if failing required tasks
-                   --> tutorial-completion-enter-code
+                   ; --> tutorial-completion-enter-code
                    --> consent
+                   --> explain-redirect
                    ; participant->study: consent?
                    --> ,(λ ()
                           ; TODO: The fact that I check only once means that, if by chance we jump past this stage
@@ -734,14 +777,16 @@
                           (put-payment! 'tutorial-fee (get 'tutorial-fee))
                           (cond [(not (get 'consent?))
                                  (put 'rest-treatment 'NA:no-consent)
-                                 done]
+                                 (goto prolific-redirect)]
                                 [else
                                  ; TODO: Treatment assignment should also be done at the study, not step, level!!
                                  ; Can this be done, given the need for `put`?
                                  (put 'rest-treatment (next-balanced-rest-treatment))
-                                 (goto required-tasks)]))]
+                                 (goto prolific-redirect-then-continue)]))]
                   ; study->participant: set payment 'tutorial-fee, if consent? then rest-treatment ~ Binomial({elicit-WTW-before, elicit-WTW-after})
-                  [required-tasks
+                  [prolific-redirect --> done]
+                  [prolific-redirect-then-continue
+                   --> required-tasks
                    ; study->participant: n max-wrong
                    ; participant->study: tasks-right, tasks-wrong, success?
                    --> ,(λ ()
@@ -798,7 +843,10 @@
     (make-step 'tutorial-illustrate-elicitation tutorial-illustrate-elicitation)
     (make-step 'test-comprehension test-comprehension #:for-bot test-comprehension/bot)
     (make-step 'consent consent #:for-bot consent/bot)
-    (make-step
+    (make-step 'explain-redirect explain-redirect)
+    (make-step 'prolific-redirect prolific-redirect)
+    (make-step 'prolific-redirect-then-continue prolific-redirect-then-continue)
+    #;(make-step
      'tutorial-completion-enter-code
      tutorial-completion-enter-code
      #:for-bot tutorial-completion-consent/bot)
@@ -840,10 +888,12 @@
                        'done)
                      #:provide-bindings '([rest-treatment rest-treatment]
                                           [consent? consent?]
+                                          ; FIXME: Delete completion code once redirection works
                                           [completion-code completion-code])
                      #:require-bindings `([practice-tasks (const ,practice-tasks)]
                                           [tutorial-fee (const ,tutorial-fee)]
-                                          [price-lists (const ,(hash-keys PRICE-LISTS))]))
+                                          [price-lists (const ,(hash-keys PRICE-LISTS))]
+                                          [prolific-url (const ,prolific-url)]))
     (make-step 'fail-tutorial-tasks
                (lambda ()
                  (page
