@@ -31,7 +31,7 @@
                " " 'mdash " "
                (:a
                 ([:href (embed/url (enroll db i))])
-                "Enroll")))))))))))
+                (enroll/resume-message db i))))))))))))
 
 (define (home-page _req)
   (tpl:page
@@ -83,6 +83,13 @@
 
        [`(,_ ,_ ,rw)
         (render-enrollment-form rw)])]))
+
+(define (enroll/resume-message db i)
+  (define uid (user-id (current-user)))
+  (define iid (study-instance-id i))
+  (if (participant-enrolled? db uid iid)
+      "Resume"
+      "Enroll"))
 
 (define ((study-page db) req slug)
   (define uid (user-id (current-user)))
