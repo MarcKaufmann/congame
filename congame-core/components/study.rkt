@@ -829,6 +829,7 @@ QUERY
  list-active-study-instances
  list-study-instance-participants/admin
  list-study-instance-payments/admin
+ list-study-instance-total-payments/admin
  list-study-instance-vars
  clear-study-instance-vars!
  current-participant-id
@@ -1000,7 +1001,7 @@ QUERY
                                         (and (= u.role "bot")
                                              (is u.bot-set-id null)))))))))
 
-(define/contract (list-study-instance-payments/admin db instance-id)
+(define/contract (list-study-instance-total-payments/admin db instance-id)
   (-> database? id/c (listof (cons/c string? number?)))
   (with-database-connection [conn db]
     (for/list ([(username total)
@@ -1011,6 +1012,16 @@ QUERY
                                       (group-by u.username)
                                       (where (= p.instance-id ,instance-id))))])
       (cons username total))))
+
+(define/contract (list-study-instance-payments/admin db instance-id)
+  (-> database? id/c (listof (list/c number? string? number?)))
+  (with-database-connection [conn db]
+    (for/list ([(pid payment-name amount)
+                (in-entities conn (~> (from study-participant #:as p)
+                                      (join study-payment #:as sp #:on (= p.id sp.participant-id))
+                                      (select p.id sp.payment-name sp.payment)
+                                      (where (= p.instance-id ,instance-id))))])
+      `(,pid ,payment-name ,amount))))
 
 (define/contract (clear-study-instance-vars! db instance-id)
   (-> database? id/c void?)

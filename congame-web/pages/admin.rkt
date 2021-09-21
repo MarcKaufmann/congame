@@ -16,6 +16,7 @@
          (except-in forms form)
          racket/contract
          racket/format
+         (except-in racket/list group-by)
          racket/match
          racket/port
          racket/pretty
@@ -284,18 +285,36 @@
            ([:href
              (embed/url
               (lambda (_req)
-                (define payments (list-study-instance-payments/admin db study-instance-id))
+                (define total-payments (list-study-instance-total-payments/admin db study-instance-id))
                 (response/output
-                 #:headers (list (make-header #"content-disposition" #"attachment; filename=\"payments.csv\""))
+                 #:headers (list (make-header #"content-disposition" #"attachment; filename=\"total-payments.csv\""))
                  (lambda (out)
-                   (for ([p (in-list payments)])
+                   (for ([p (in-list total-payments)])
                      (fprintf out
                               "~a,~a~n"
                               (car p)
                               (~r
                                #:precision '(= 2)
                                (cdr p))))))))])
-           "Export Payments CSV"))
+           "Export Total Payments CSV"))
+         (:h4
+          (:a
+           ([:href
+             (embed/url
+              (lambda (_req)
+                (define individual-payments (list-study-instance-payments/admin db study-instance-id))
+                (response/output
+                 #:headers (list (make-header #"content-disposition" #"attachment; filename=\"individual-payments.csv\""))
+                 (lambda (out)
+                   (for ([p (in-list individual-payments)])
+                     (fprintf out
+                              "~a,~a,~a~n"
+                              (first p)
+                              (second p)
+                              (~r
+                               #:precision '(= 2)
+                               (third p))))))))])
+           "Export Individual Payments CSV"))
          (:h2 "Bot Sets")
          (:h3
           (:a
