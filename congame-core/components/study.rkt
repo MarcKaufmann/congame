@@ -278,6 +278,7 @@ QUERY
 (provide
  amount/c
  get-payment
+ lookup-payments
  put-payment!
  get-all-payments)
 
@@ -328,14 +329,17 @@ QUERY
         [else
          (error "no payment ~a found for participant ~a" k (current-participant-id))]))
 
-(define (get-all-payments)
-  (with-database-connection [conn (current-database)]
-    (for/hash ([p (in-entities conn
+(define/contract (lookup-payments db pid)
+  (-> database? id/c (hash/c string? number?))
+  (with-database-connection (conn db)
+    (for/hash ([(name amount) (in-entities conn
                                (~> (from study-payment #:as p)
-                                   (where (= ,(current-participant-id) p.participant-id))))])
-      (values (string->symbol (study-payment-payment-name p))
-              (study-payment-payment p)))))
+                                   (where (= p.participant-id ,pid))
+                                   (select p.payment-name p.payment)))])
+      (values name amount))))
 
+(define (get-all-payments)
+  (lookup-payments (current-database) (current-participant-id)))
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

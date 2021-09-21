@@ -462,6 +462,17 @@
          (:table.table
           (:thead
            (:tr
+            (:th "Payment Name")
+            (:th "Payment Amount")))
+          (:tbody
+           ,@(for/list ([(name amount) (in-hash (lookup-payments db participant-id))])
+               (haml
+                (:tr
+                 (:td name)
+                 (:td (~r #:precision '(= 2) amount)))))))
+         (:table.table
+          (:thead
+           (:tr
             (:th "Stack")
             (:th "Round")
             (:th "Group")
