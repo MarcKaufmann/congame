@@ -9,3 +9,6 @@ dist/
 .Rproj.user
 app.tmux.conf
 study-administration/
+data-tools/*.rds
+data-tools/*.RDS
+data-tools/*.csv
