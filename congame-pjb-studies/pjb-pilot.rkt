@@ -35,7 +35,7 @@
  pjb-pilot-study)
 
 ; FIXME: Update to correct url once tested that it works
-(define prolific-redirection-url "https://trichotomy.xyz")
+(define prolific-redirection-url "https://app.prolific.co/submissions/complete?cc=817C6E38")
 (define tutorial-fee 1.50)
 (define required-matrix-piece-rate 0.10)
 (define high-workload 10)
@@ -286,8 +286,10 @@
   (when (current-user-bot?)
     (skip))
   (define prolific-redirection-url (get 'prolific-redirection-url))
-  (put 'attempted-to-redirect-to-prolific? #t)
-  (page (redirect-to prolific-redirection-url)))
+  (cond [(get 'attempted-to-redirect-to-prolific?) (skip)]
+        [else
+         (put 'attempted-to-redirect-to-prolific? #t)
+         (send/back (redirect-to prolific-redirection-url))]))
 
 (define (prolific-redirect-then-continue)
   ;; FIXME: We should be able to do some testing here for different types of bots
@@ -792,7 +794,7 @@
                                  (put 'rest-treatment (next-balanced-rest-treatment))
                                  (goto prolific-redirect-then-continue)]))]
                   ; study->participant: set payment 'tutorial-fee, if consent? then rest-treatment ~ Binomial({elicit-WTW-before, elicit-WTW-after})
-                  [prolific-redirect --> done]
+                  [prolific-redirect --> ,(λ () done)]
                   [prolific-redirect-then-continue
                    --> required-tasks
                    ; study->participant: n max-wrong
