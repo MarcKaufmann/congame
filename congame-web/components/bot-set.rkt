@@ -5,7 +5,6 @@
          deta
          gregor
          koyo/database
-         koyo/hasher
          koyo/random
          racket/contract
          threading
@@ -16,7 +15,8 @@
  create-bot-set!
  lookup-bot-set
  list-bot-sets
- prepare-bot-set!)
+ prepare-bot-set!
+ delete-bot-set!)
 
 (define-schema bot-set
   #:table "bot_sets"
@@ -79,3 +79,10 @@
         (clear-participant-progress! db participant-id)
         (set-user-password u (user-manager-hasher um) password)))
     (values password (apply update! conn updated-users))))
+
+(define/contract (delete-bot-set! db the-set)
+  (-> database? bot-set? void?)
+  (with-database-connection [conn db]
+    (query-exec conn (~> (from "bot_sets" #:as bs)
+                         (where (= bs.id ,(bot-set-id the-set)))
+                         (delete)))))

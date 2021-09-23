@@ -645,6 +645,14 @@
 
              [`(,(or 'pending 'failed) ,_ ,rw)
               (render-bot-set-run-form (embed/url loop) rw)]))
+         (:a
+          ([:onclick "confirm('Are you sure?')"]
+           [:href (embed/url
+                   (λ (_req)
+                     (delete-bot-set! db the-bot-set)
+                     (redirect/get/forget/protect)
+                     (redirect-to (reverse-uri 'admin:view-study-instance-page study-id study-instance-id))))])
+          "Delete")
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))
 
@@ -662,7 +670,6 @@
   (define bot (bot-info-bot bot-info))
   (define model (hash-ref (bot-info-models bot-info) (bot-set-model-id the-set)))
   ;; TODO: Bubble up exns from within the threads.
-  ;; TODO: Maybe make the concurrency configurable?
   (define sema (make-semaphore concurrency))
   (define thds
     (for/list ([u (in-list users)]
