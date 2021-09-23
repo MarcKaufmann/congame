@@ -16,6 +16,7 @@
          racket/random
          racket/string
          sentry
+         web-server/servlet
          (prefix-in config: congame/config)
          congame/components/bot
          congame/components/formular
@@ -295,8 +296,8 @@
   (define prolific-redirection-url (get 'prolific-redirection-url))
   (cond [(get 'attempted-to-redirect-to-prolific?) (skip)]
         [else
-         (put 'attempted-to-redirect-to-prolific? #f)
-         (page (redirect-to prolific-redirection-url))]))
+         (put 'attempted-to-redirect-to-prolific? #t)
+         (send/back (redirect-to prolific-redirection-url))]))
 
 ;; Requirements Form
 
