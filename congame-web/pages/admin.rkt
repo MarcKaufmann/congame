@@ -593,7 +593,21 @@
                                                       (cons id model))))])
     model))
 
-(define/contract ((view-study-instance-bot-set-page db um) _req study-id study-instance-id bot-set-id)
+(define bot-set-run-form
+  (form* ([concurrency (ensure binding/number)]
+          [headless? (ensure binding/boolean)])
+    (list (or concurrency 3) headless?)))
+
+(define (render-bot-set-run-form target rw)
+  (haml
+   (:form
+    ([:action target]
+     [:method "POST"])
+    (rw "concurrency" (field-group "Concurrency"))
+    (rw "headless?" (field-group "Headless?" (widget-checkbox)))
+    (:button ([:type "sumbit"]) "Run"))))
+
+(define/contract ((view-study-instance-bot-set-page db um) req study-id study-instance-id bot-set-id)
   (-> database? user-manager? (-> request? id/c id/c id/c response?))
   (define the-study
     (lookup-study-meta db study-id))
@@ -617,13 +631,26 @@
            ([:href (reverse-uri 'admin:view-study-instance-page study-id study-instance-id)])
            (study-instance-name the-instance)))
          (:h3 "Model " (~a (bot-set-model-id the-bot-set)))
-         (:a ([:href (embed/url (make-bot-runner db um the-study the-instance the-bot-set))]) "Clear progress & run bots!")
-         " "
-         (:a ([:href (embed/url (make-bot-runner db um the-study the-instance the-bot-set #:headless? #f))]) "Clear progress & run bots (headful)!")
+         (let loop ([req req])
+           (define defaults
+             (hash "concurrency" "3"
+                   "headless?" "1"))
+           (match (form-run bot-set-run-form req #:defaults defaults)
+             [`(passed (,concurrency ,headless?) ,_)
+              (define runner
+                (make-bot-runner db um the-study the-instance the-bot-set
+                                 #:concurrency concurrency
+                                 #:headless? headless?))
+              (runner req)]
+
+             [`(,(or 'pending 'failed) ,_ ,rw)
+              (render-bot-set-run-form (embed/url loop) rw)]))
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))
 
-(define ((make-bot-runner db um the-study the-instance the-set #:headless? [headless? #t]) _req)
+(define ((make-bot-runner db um the-study the-instance the-set
+                          #:concurrency [concurrency 3]
+                          #:headless? [headless? #t]) _req)
   (define-values (password users)
     (prepare-bot-set! db um the-set))
   (define study-racket-id
@@ -636,7 +663,7 @@
   (define model (hash-ref (bot-info-models bot-info) (bot-set-model-id the-set)))
   ;; TODO: Bubble up exns from within the threads.
   ;; TODO: Maybe make the concurrency configurable?
-  (define sema (make-semaphore 3))
+  (define sema (make-semaphore concurrency))
   (define thds
     (for/list ([u (in-list users)]
                [p (in-naturals 60100)])
