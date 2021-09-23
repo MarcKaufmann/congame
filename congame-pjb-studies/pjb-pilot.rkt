@@ -127,7 +127,7 @@
     (values pl-name (pl-extra-tasks n pl-name))))
 
 (define PRICE-LISTS
-  (make-price-lists/tasks '(5 8 11 15)))
+  (make-price-lists/tasks '(5 8 11 15 25)))
 
 ;; PAGE RENDERERS
 
