@@ -635,23 +635,27 @@
   (define bot (bot-info-bot bot-info))
   (define model (hash-ref (bot-info-models bot-info) (bot-set-model-id the-set)))
   ;; TODO: Bubble up exns from within the threads.
+  ;; TODO: Maybe make the concurrency configurable?
+  (define sema (make-semaphore 3))
   (define thds
     (for/list ([u (in-list users)]
                [p (in-naturals 60100)])
       (thread
        (lambda ()
-         ;; FIXME: Rename study-page to study-instance-page.
-         (run-bot
-          #:study-url (apply
-                       make-application-url
-                       (string-split
-                        (reverse-uri 'study-page (study-instance-slug the-instance))
-                        "/"))
-          #:username (user-username u)
-          #:password password
-          #:headless? headless?
-          #:port p
-          (bot model))))))
+         (call-with-semaphore sema
+           (lambda ()
+             ;; FIXME: Rename study-page to study-instance-page.
+             (run-bot
+              #:study-url (apply
+                           make-application-url
+                           (string-split
+                            (reverse-uri 'study-page (study-instance-slug the-instance))
+                            "/"))
+              #:username (user-username u)
+              #:password password
+              #:headless? headless?
+              #:port p
+              (bot model))))))))
   (for-each thread-wait thds)
   (redirect-to
    (reverse-uri 'admin:view-study-instance-page

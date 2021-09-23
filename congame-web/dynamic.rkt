@@ -85,6 +85,7 @@
   (define stop-logger
     (start-logger
      #:levels `((app                  . ,config:log-level)
+                (marionette           . ,config:log-level)
                 (mail-adapter         . ,config:log-level)
                 (memory-session-store . ,config:log-level)
                 (north-adapter        . ,config:log-level)
