@@ -96,7 +96,6 @@
     (fprintf out "  \"~a\" -> \"~a\";~n" a b))
 
   (fprintf out "digraph {~n")
-  (fprintf out "  \"<fail>\"[style=\"filled\", color=\"red\", fillcolor=\"red\", fontcolor=\"white\"];")
   (for ([t (in-list ts)])
     (match t
       [`(,a (<goto> ,p-name) ,targets ...)

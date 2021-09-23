@@ -600,7 +600,10 @@ QUERY
  wrap-sub-study
  make-study
  run-study
- fail)
+ fail
+ study-steps
+ step/study?
+ step/study-study)
 
 (define-logger study)
 

@@ -889,12 +889,16 @@
                        (put 'rest-treatment 'fail)
                        (put 'completion-code #f)
                        reason)
+   #:transitions (transition-graph
+                  [the-study --> ,(λ send-completion-email ()
+                                   (send-completion-email (current-participant-id))
+                                   (goto done))]
+                  [fail-tutorial-tasks --> done]
+                  [fail-required-tasks --> done]
+                  [done --> done])
    (list
     (make-step/study 'the-study
                      pjb-pilot-study-no-config
-                     (λ ()
-                       (send-completion-email (current-participant-id))
-                       'done)
                      #:provide-bindings '([rest-treatment rest-treatment]
                                           [consent? consent?]
                                           ; FIXME: Delete completion code once redirection works
@@ -910,8 +914,7 @@
                    (.container
                     (:h1 "You failed the tasks")
                     (:p "The study ends here, since you failed too many tasks.")
-                    (button void "Finish Study")))))
-               (λ () 'done))
+                    (button void "Finish Study"))))))
     (make-step 'fail-required-tasks
                (lambda ()
                  (page
@@ -919,6 +922,5 @@
                    (.container
                     (:h1 "You failed the tasks")
                     (:p "The study ends here, since you failed too many tasks.")
-                    (button void "See payments")))))
-               (λ () 'done))
+                    (button void "See payments"))))))
     (make-step 'done show-payments #:for-bot bot:completer))))

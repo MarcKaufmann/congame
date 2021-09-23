@@ -5,7 +5,9 @@
          congame/components/export
          congame/components/registry
          congame/components/study
+         congame/components/transition-graph
          deta
+         file/zip
          gregor
          koyo/continuation
          koyo/database
@@ -124,26 +126,53 @@
 
 (define/contract ((view-study-page db) _req study-id)
   (-> database? (-> request? id/c response?))
-  (unless (lookup-study-meta db study-id)
+  (define meta
+    (lookup-study-meta db study-id))
+  (unless meta
     (next-dispatcher))
   (define instances
     (list-study-instances db study-id))
-  (tpl:page
-   (tpl:container
-    (haml
-     (:section.studies
-      (:h1 "Instances")
-      (:h4
-       (:a
-        ([:href (reverse-uri 'admin:create-study-instance-page study-id)])
-        "New Instance"))
-      (:ul.study-list
-       ,@(for/list ([s (in-list instances)])
-           (haml
-            (:li
-             (:a
-              ([:href (reverse-uri 'admin:view-study-instance-page study-id (study-instance-id s))])
-              (study-instance-name s)))))))))))
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (tpl:page
+      (tpl:container
+       (haml
+        (:section.studies
+         (:h1 "Instances")
+         (:h4
+          (:a
+           ([:href (reverse-uri 'admin:create-study-instance-page study-id)])
+           "New Instance"))
+         (:ul.study-list
+          ,@(for/list ([s (in-list instances)])
+              (haml
+               (:li
+                (:a
+                 ([:href (reverse-uri 'admin:view-study-instance-page study-id (study-instance-id s))])
+                 (study-instance-name s))))))
+         (:br)
+         (:a
+          ([:href (embed/url
+                   (λ (_req)
+                     ;; TODO: move this into study.rkt and stop exporting internals
+                     (define the-study
+                       (lookup-registered-study
+                        (study-meta-racket-id meta)))
+                     (define filenames
+                       (list*
+                        (comptime-transitions->pdf (study-transitions the-study))
+                        (for/list ([sub (in-list (study-steps the-study))]
+                                   #:when (step/study? sub))
+                          (comptime-transitions->pdf (study-transitions (step/study-study sub))))))
+                     (response/output
+                      #:headers (list
+                                 (header #"Content-type"
+                                         #"application/zip")
+                                 (header #"Content-disposition"
+                                         #"attachment; filename=\"transition-graphs.zip\""))
+                      (lambda (out)
+                        (zip->output filenames out)))))])
+          "Generate transition graph"))))))))
 
 (define study-instance-form
   (form* ([name (ensure binding/text (required))]
