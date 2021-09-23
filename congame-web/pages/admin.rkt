@@ -617,9 +617,9 @@
            ([:href (reverse-uri 'admin:view-study-instance-page study-id study-instance-id)])
            (study-instance-name the-instance)))
          (:h3 "Model " (~a (bot-set-model-id the-bot-set)))
-         (:a ([:href (embed/url (make-bot-runner db um the-study the-instance the-bot-set))]) "Run bots!")
+         (:a ([:href (embed/url (make-bot-runner db um the-study the-instance the-bot-set))]) "Clear progress & run bots!")
          " "
-         (:a ([:href (embed/url (make-bot-runner db um the-study the-instance the-bot-set #:headless? #f))]) "Run bots (headful)!")
+         (:a ([:href (embed/url (make-bot-runner db um the-study the-instance the-bot-set #:headless? #f))]) "Clear progress & run bots (headful)!")
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))
 
