@@ -58,16 +58,17 @@
 (define *relax-treatments*
   '(classical-piano guided-meditation wave-sounds))
 
-; FIXME: How did I never test this? No wonder I had a (bad) bug.
-; FIXME: If two parts of the code access ts at the same time, then they can get the same treatment...
 (define (make-balanced-shuffle original)
+  (define mu (make-semaphore 1))
   (define ts (shuffle original))
   (λ ()
-    (when (empty? ts)
-      (set! ts (shuffle original)))
-    (begin0
-      (first ts)
-      (set! ts (rest ts)))))
+    (call-with-semaphore mu
+      (lambda ()
+        (when (empty? ts)
+          (set! ts (shuffle original)))
+        (begin0
+            (first ts)
+          (set! ts (rest ts)))))))
 
 (module+ test
   (require rackunit)
