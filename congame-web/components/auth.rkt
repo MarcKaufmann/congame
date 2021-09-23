@@ -88,44 +88,45 @@
   (with-timing 'auth "wrap-auth-required"
     (let/ec return
       (define roles (req-roles req))
-      (define-values (u ok?)
+      (define maybe-user
+        (if (memq 'api roles)
+            (lookup-api-user am req)
+            (lookup-session-user am req)))
+      (define ok?
         (cond
-          [(null? roles)
-           (values #f #t)]
-
-          [(and (equal? roles '(api))
-                (and~> (request-headers/raw req)
-                       (headers-assq* #"authorization" _)
-                       (header-value)
-                       (bytes->string/utf-8)
-                       (user-manager-lookup/api-key (auth-manager-users am) _)))
-           => (lambda (u)
-                (values u #t))]
-
-          [(equal? roles '(api))
-           (return
-            (response/json
-             #:code 401
-             (hasheq 'error "authorization failed")))]
-
-          [(and~>> (session-ref session-key #f)
-                   (string->number)
-                   (user-manager-lookup/id (auth-manager-users am)))
-           => (lambda (u)
-                (values u (case (user-role u)
-                            [(admin) #t]
-                            [(api)   #f]
-                            [(bot)   (equal? roles '(user))]
-                            [else    (equal? roles '(user))])))]
-
+          [(null? roles) #t]
+          [(memq 'api roles)
+           (cond
+             [maybe-user #t]
+             [else
+              (return
+               (response/json
+                #:code 401
+                (hasheq 'error "authorization failed")))])]
           [else
-           (values #f #f)]))
-
+           (and maybe-user
+                (case (user-role maybe-user)
+                  [(admin) #t]
+                  [(api)   #f]
+                  [(bot)   (equal? roles '(user))]
+                  [else    (equal? roles '(user))]))]))
       (cond
         [ok?
-         (parameterize ([current-user u]
-                        [current-user-bot? (and u (eq? 'bot (user-role u)))])
+         (parameterize ([current-user maybe-user]
+                        [current-user-bot? (and maybe-user (eq? 'bot (user-role maybe-user)))])
            (handler req))]
 
         [else
          (redirect-to (make-application-url "login" #:query `((return . ,(url->string (request-uri req))))))]))))
+
+(define (lookup-session-user am _req)
+  (and~>> (session-ref session-key #f)
+          (string->number)
+          (user-manager-lookup/id (auth-manager-users am))))
+
+(define (lookup-api-user am req)
+  (and~> (request-headers/raw req)
+         (headers-assq* #"authorization" _)
+         (header-value)
+         (bytes->string/utf-8)
+         (user-manager-lookup/api-key (auth-manager-users am) _)))
