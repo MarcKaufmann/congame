@@ -751,7 +751,7 @@
                    ; 'satisfies-requirement?), with requirements: all of
                    ; 'play-audio? 'has-audio? 'has-time?; continue? (Yes if
                    ; 'satisfies-requirement?, No otherwise)
-                   --> ,(λ ()
+                   --> ,(λ check-requirements ()
                           (if (not (get 'satisfies-requirements?))
                               (goto requirements-failure)
                               (goto tutorial-tasks)))]
@@ -762,7 +762,7 @@
                    ; study->participant: n max-wrong-tasks
                    ; participant->study: returns number of correct and number of incorrect matrices, possibly returns time taken to answer?
                    ; First pass: number of right, number of wrong
-                   --> ,(λ ()
+                   --> ,(λ check-tutorial-tasks ()
                           (if (not (get 'tutorial-success?))
                               (fail 'fail-tutorial-tasks)
                               (goto tutorial-illustrate-elicitation)))]

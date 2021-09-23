@@ -645,6 +645,7 @@
 
              [`(,(or 'pending 'failed) ,_ ,rw)
               (render-bot-set-run-form (embed/url loop) rw)]))
+         (:br)
          (:a
           ([:onclick "return confirm('Are you sure?')"]
            [:href (embed/url

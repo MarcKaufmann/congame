@@ -21,6 +21,13 @@
 (define-syntax (transition-graph stx)
   (define-syntax-class transition-expr
     #:literals (goto)
+    #:datum-literals (done fail)
+    (pattern (done)
+             #:with e #''<end>
+             #:with (transition ...) #'('<end>))
+    (pattern (fail _)
+             #:with e #''<fail>
+             #:with (transition ...) #'('<fail>))
     (pattern (goto id:id)
              #:with e #''id
              #:with (transition ...) #'('id))
@@ -33,6 +40,10 @@
   (define-syntax-class transition-lambda
     #:literals (λ lambda)
     (pattern ({~or λ lambda} () body-e:transition-expr ...+)
+             #:with e #'(λ () body-e.e ...)
+             #:with name (datum->syntax this-syntax (gensym 'anon))
+             #:with (transition ...) #'(body-e.transition ... ...))
+    (pattern ({~or λ lambda} name:id () body-e:transition-expr ...+)
              #:with e #'(λ () body-e.e ...)
              #:with (transition ...) #'(body-e.transition ... ...)))
 
@@ -48,7 +59,7 @@
              #:with e #'tl.e
              #:with (child ...) #'()
 
-             #:with transition-e #'(list '<goto> tl.transition ...)
+             #:with transition-e #'(list '(<goto> tl.name) tl.transition ...)
              #:with (transition ...) #'())
     (pattern (unquote e:expr)
              #:with (child ...) #'()
@@ -85,11 +96,10 @@
     (fprintf out "  \"~a\" -> \"~a\";~n" a b))
 
   (fprintf out "digraph {~n")
-  (for ([t (in-list ts)]
-        [pid (in-naturals 1)])
+  (fprintf out "  \"<fail>\"[style=\"filled\", color=\"red\", fillcolor=\"red\", fontcolor=\"white\"];")
+  (for ([t (in-list ts)])
     (match t
-      [`(,a <goto> ,targets ...)
-       (define p-name (format "procedure-~a" pid))
+      [`(,a (<goto> ,p-name) ,targets ...)
        (fprintf out "  \"~a\"[shape=\"diamond\"];" p-name)
        (edge a p-name)
        (for ([target (in-list targets)])
