@@ -38,11 +38,11 @@
 (define prolific-redirection-url "https://app.prolific.co/submissions/complete?cc=817C6E38")
 (define tutorial-fee 1.50)
 (define required-matrix-piece-rate 0.10)
-(define high-workload 10)
+(define high-workload 15)
 (define low-workload 5)
 (define practice-tasks 2)
 (define (participation-fee required-tasks)
-  (+ 1.75
+  (+ 1.25
      (* required-tasks required-matrix-piece-rate)
      (next-balanced-pay-treatment)))
 
@@ -715,7 +715,7 @@
           (checkbox "I have entered the completion code on prolific"))
          (:button.button
           ([:type "submit"])
-          "Continue to Study")))
+          "Finish Tutorial")))
        (lambda (#:checked? checked?)
          (put 'completion-code-entered checked?))))))
 
@@ -776,9 +776,8 @@
                    ; - intent: ensure understand study
                    ; - model/abstract: ?? information set
                    ; - implementation/concrete: check required-tasks and participation-fee payment if failing required tasks
-                   ; --> tutorial-completion-enter-code
                    --> consent
-                   --> explain-redirect
+                   ;--> explain-redirect
                    ; participant->study: consent?
                    --> ,(λ ()
                           ; TODO: The fact that I check only once means that, if by chance we jump past this stage
@@ -787,16 +786,18 @@
                           (put-payment! 'tutorial-fee (get 'tutorial-fee))
                           (cond [(not (get 'consent?))
                                  (put 'rest-treatment 'NA:no-consent)
-                                 (goto prolific-redirect)]
+                                 (goto tutorial-completion-enter-code)]
                                 [else
                                  ; TODO: Treatment assignment should also be done at the study, not step, level!!
                                  ; Can this be done, given the need for `put`?
                                  (put 'rest-treatment (next-balanced-rest-treatment))
-                                 (goto prolific-redirect-then-continue)]))]
+                                 (goto tutorial-completion-enter-code)]))]
                   ; study->participant: set payment 'tutorial-fee, if consent? then rest-treatment ~ Binomial({elicit-WTW-before, elicit-WTW-after})
-                  [prolific-redirect --> ,(λ () done)]
-                  [prolific-redirect-then-continue
-                   --> required-tasks
+                  [tutorial-completion-enter-code
+                   --> ,(λ ()
+                          (cond [(get 'consent?) (goto required-tasks)]
+                                [else done]))]
+                  [required-tasks
                    ; study->participant: n max-wrong
                    ; participant->study: tasks-right, tasks-wrong, success?
                    --> ,(λ ()
@@ -854,10 +855,10 @@
     (make-step 'tutorial-illustrate-elicitation tutorial-illustrate-elicitation)
     (make-step 'test-comprehension test-comprehension #:for-bot test-comprehension/bot)
     (make-step 'consent consent #:for-bot consent/bot)
-    (make-step 'explain-redirect explain-redirect)
-    (make-step 'prolific-redirect prolific-redirect)
-    (make-step 'prolific-redirect-then-continue prolific-redirect-then-continue)
-    #;(make-step
+    ;(make-step 'explain-redirect explain-redirect)
+    ;(make-step 'prolific-redirect prolific-redirect)
+    ;(make-step 'prolific-redirect-then-continue prolific-redirect-then-continue)
+    (make-step
      'tutorial-completion-enter-code
      tutorial-completion-enter-code
      #:for-bot tutorial-completion-consent/bot)
