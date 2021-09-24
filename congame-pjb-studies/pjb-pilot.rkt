@@ -36,7 +36,7 @@
 
 ; FIXME: Update to correct url once tested that it works
 (define prolific-redirection-url "https://app.prolific.co/submissions/complete?cc=817C6E38")
-(define tutorial-fee 1.50)
+(define tutorial-fee 2.00)
 (define required-matrix-piece-rate 0.10)
 (define high-workload 15)
 (define low-workload 5)
