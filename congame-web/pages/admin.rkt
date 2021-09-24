@@ -320,11 +320,12 @@
                  (lambda (out)
                    (for ([p (in-list total-payments)])
                      (fprintf out
-                              "~a,~a~n"
-                              (car p)
+                              "~a,~a,~a~n"
+                              (first p)
+                              (second p)
                               (~r
                                #:precision '(= 2)
-                               (cdr p))))))))])
+                               (third p))))))))])
            "Export Total Payments CSV"))
          (:h4
           (:a

@@ -1009,16 +1009,16 @@ QUERY
                                              (is u.bot-set-id null)))))))))
 
 (define/contract (list-study-instance-total-payments/admin db instance-id)
-  (-> database? id/c (listof (cons/c string? number?)))
+  (-> database? id/c (listof (list/c id/c string? number?)))
   (with-database-connection [conn db]
-    (for/list ([(username total)
+    (for/list ([(pid username total)
                 (in-entities conn (~> (from study-participant #:as p)
                                       (join study-payment #:as sp #:on (= sp.participant-id p.id))
                                       (join "users" #:as u #:on (= u.id p.user-id))
-                                      (select u.username (sum sp.payment))
-                                      (group-by u.username)
+                                      (select p.id u.username (sum sp.payment))
+                                      (group-by u.username p.id)
                                       (where (= p.instance-id ,instance-id))))])
-      (cons username total))))
+      (list pid username total))))
 
 (define/contract (list-study-instance-payments/admin db instance-id)
   (-> database? id/c (listof (list/c number? string? number?)))
