@@ -123,18 +123,26 @@
                            (render render-widget (translate 'error-username-taken)))])
           (define user (user-manager-create! users username password))
           (mailer-send-welcome-email mailer user)
-          (post-signup-page (redirect/get/forget)))]
+          (post-signup-page (redirect/get/forget) username))]
 
        [(list _ _ render-widget)
         (render render-widget)]))))
 
-(define (post-signup-page req)
+(define (post-signup-page req username)
   (page
    #:subtitle (translate 'subtitle-signed-up)
    (haml
     (.container
      (:h1 (translate 'subtitle-signed-up))
-     (:p (translate 'message-post-sign-up))))))
+     (:p (translate
+          (if (prolific-username? username)
+              'message-post-sign-up-prolific
+              'message-post-sign-up)))
+     (:p (if (prolific-username? username)
+             (haml
+              (:a ((:href "https://app.prolific.co/messages/inbox"))
+                 "Message inbox on prolific"))
+             ""))))))
 
 (define/contract ((verify-page flashes users) req user-id verification-code)
   (-> flash-manager? user-manager? (-> request? integer? string? response?))

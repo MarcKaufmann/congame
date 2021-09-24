@@ -4,11 +4,13 @@
          koyo/session
          racket/contract
          racket/format
+         racket/string
          web-server/http)
 
 (provide
  wrap-prolific
- get-prolific-email)
+ get-prolific-email
+ prolific-username?)
 
 (define pid-session-key
   'prolific:pid)
@@ -29,3 +31,7 @@
           (~a pid "@email.prolific.co"))]
 
     [else ""]))
+
+(define/contract (prolific-username? username)
+  (-> string? boolean?)
+  (string-contains? username "@email.prolific.co"))

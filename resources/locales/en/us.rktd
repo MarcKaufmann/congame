@@ -29,6 +29,7 @@
  (message-session-expired          . "Sorry! Your session expired. Please try again.")
  (message-not-found                . "The page you are looking for could not be found.")
  (message-post-sign-up             . "You need to confirm your e-mail address before you can log in.")
+ (message-post-sign-up-prolific    . "You need to confirm your prolific e-mail address before you can log in - check your messages in your prolific account for a message with the verification link.")
  (message-email-verified           . "You have successfully verified your e-mail address.")
  (message-password-reset-requested . "If the e-mail address is valid, you will receive an e-mail with further instructions on how to reset your password within the next few minutes.")
  (message-password-reset-success   . "Your password has been updated successfully.")
