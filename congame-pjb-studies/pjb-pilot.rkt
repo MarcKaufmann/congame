@@ -136,7 +136,7 @@
   (haml
    (:div
     (:h2 "Main Study Description")
-    (:p "The main study should be started right after the tutorial. If you decide to participate in the study, you will do the following:")
+    (:p "The main study has to be completed within one hour after finishing the tutorial, so should be started right after the tutorial. If you decide to participate in the study, you will do the following:")
     (:ul
      (:li "complete " (number->string required-tasks) " required tasks")
      (:li "choose whether to do extra tasks for bonus payments")
