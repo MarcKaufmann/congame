@@ -28,6 +28,7 @@
          web-server/http
          "../components/auth.rkt"
          "../components/bot-set.rkt"
+         "../components/prolific.rkt"
          (prefix-in tpl: "../components/template.rkt")
          "../components/user.rkt"
          "../studies/all.rkt"
@@ -322,7 +323,9 @@
                      (fprintf out
                               "~a,~a,~a~n"
                               (first p)
-                              (second p)
+                              (cond [(prolific-username? (second p))
+                                     (first (string-split (second p) "@"))]
+                                    [else (second p)])
                               (~r
                                #:precision '(= 2)
                                (third p))))))))])
