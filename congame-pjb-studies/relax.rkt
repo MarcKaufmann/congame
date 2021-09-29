@@ -38,13 +38,14 @@
      ([:type "text/javascript"]
       [:src (resource-uri audio-player.js)])))))
 
-(define (explain-relaxing)
+(define (explain-relaxing #:duration [duration "5-7 minutes in total"])
   (define n (length (get 'tracks-to-play)))
   (page
    (haml
     (.container
-     (:h1 (format "~a Audio/Meditation Track~a (5-7 minutes total)"
+     (:h1 (format "~a Audio/Meditation Track~a (~a)"
                   n
+                  duration
                   (if (> n 1) "s" "")))
      (:p (format "You will listen to a different audio track on ~a, followed by a question page. On each page, the continue button appears once the track has finished playing."
                  (if (> n 1)
@@ -52,18 +53,18 @@
                      "the next page")))
 
      (.info
-      (:h2 "Refresh if 'Submit' button does not appear after audio played (~2-3 minutes if you have 2 tracks, 5-7 minutes if you have 1 track)")
-      (:p "If the 'Submit' button does not appear after you played the sound, or if the sound test repeats again and again (it should last less than 10 seconds) then try the following ")
+      (:h2 (format "Refresh if 'Submit' button does not appear after audio played (~a)" duration))
+      (:p "If the 'Submit' button does not appear after you played the track, or if the track repeats over and over then try the following:")
       (:ol
        (:li "Refresh the page and try again")
        (:li "Try a different and up-to-date browser (we suggest Firefox)"))
-      (:p "If it does not work, send us a message via prolific with information on the second browser (Firefox, Chrome, Edge...) and browser version that you used."))
+      (:p "If it does not work, send us a message via prolific with information on the second browser (Firefox, Chrome, Edge...) and browser version that you tried."))
     (button
 
       void
       "Continue")))))
 
-(define (play-tracks)
+(define (play-tracks #:duration [duration "5-7 minuts"])
   (define track-names (get 'tracks-to-play))
   (define tracks-played (get 'tracks-played-so-far))
   (define next-track-name
@@ -82,7 +83,7 @@
      (:ul
       (:li "Press the play button to start the track")
       (:li "Sit back and listen to the track")
-      (:li "The 'Continue' button will appear once the track has finished playing (all tracks together are around 5-7 minutes long)."))
+      (:li "The 'Continue' button will appear once the track has finished playing (all tracks together are around " duration " minutes long)."))
 
 
 
@@ -93,7 +94,7 @@
        "Continue"))
      (:div.info
       (:h3 "If you do not see 'Continue' button after track, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")
-      (:p "For some browsers, the track repeats again and again, and the 'Continue' button does not appear. If this happens to you, please send us a quick message via prolific with the browser and browser version you are using, as well as operating system (Mac, Windows, Linux, iOS, Android,...) and try again in a different browser once. You will receive an additional bonus for the time lost. If it still doesn't work, send us another message with browser/operating system information you used and we will treat your participation as complete."))
+      (:p "For some browsers, the track repeats over and over or the 'Continue' button does not appear. If this happens to you, please follow the instructions on that page to try to solve it or, if all fails, send us a quick message via prolific."))
      (when config:debug
        (haml
         (.container.debug
@@ -221,13 +222,13 @@
    #:provides '()
    (list
     (make-step 'explain-relax
-               explain-relaxing
+               (λ () (explain-relaxing #:duration "~20 seconds"))
                (λ ()
                  (put 'tracks-played-so-far 0)
                  'play-tracks)
                #:for-bot bot:continuer)
     (make-step 'play-tracks
-               play-tracks
+               (λ () (play-tracks #:duration "~20 seconds"))
                (λ ()
                  (if (> (length (get 'tracks-to-play)) (get 'tracks-played-so-far))
                      'play-tracks

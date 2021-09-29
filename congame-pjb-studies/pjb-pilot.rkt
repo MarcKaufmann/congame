@@ -35,7 +35,7 @@
  pjb-pilot-study
  relax-test-study)
 
-(define relax-test-fee 2.00)
+(define relax-test-fee 2.50)
 ; FIXME: Update to correct url once tested that it works
 (define prolific-redirection-url "https://app.prolific.co/submissions/complete?cc=817C6E38")
 (define tutorial-fee 1.50)
@@ -47,6 +47,13 @@
   (+ 1.25
      (* required-tasks required-matrix-piece-rate)
      (next-balanced-pay-treatment)))
+
+(define test-tracks
+  (hash
+   'classical-piano '("snip-classical1.mp3" "snip-classical2.mp3")
+   'guided-meditation'("snip-breathing-meditation.mp3")
+   'wave-sounds '("snip-wave-sounds.mp3")
+   'edm '("snip-edm.mp3")))
 
 (define tracks
   (hash
@@ -161,6 +168,7 @@
   (put 'participation-fee (participation-fee required-tasks))
   (put 'relax-treatment (next-balanced-relax-treatment))
   (define (get-tracks-treatment)
+    ; FIXME: I should pass them in, all these global variables are stupid!!!
     (shuffle (hash-ref tracks (get 'relax-treatment))))
   (put 'tracks-to-play (get-tracks-treatment))
   (skip))
@@ -169,9 +177,9 @@
   (put 'completion-code (make-completion-code))
   (put 'relax-test-fee relax-test-fee)
   (put 'relax-treatment (next-balanced-relax-treatment))
-  (define (get-tracks-treatment)
-    (shuffle (hash-ref tracks (get 'relax-treatment))))
-  (put 'tracks-to-play (get-tracks-treatment))
+  (define (get-test-tracks-treatment)
+    (shuffle (hash-ref test-tracks (get 'relax-treatment))))
+  (put 'tracks-to-play (get-test-tracks-treatment))
   (skip))
 
 (define (study-explanation)
@@ -353,12 +361,11 @@
              (button ((type "submit") (class "button")) "Submit"))
         (div ((class "info"))
          (h2 "Refresh if 'Submit' button does not appear after audio played (~10 seconds)")
-         (p "If the 'Submit' button does not appear after you played the sound, or if the sound test repeats again and again (it should last less than 10 seconds) then try the following ")
+         (p "If the 'Submit' button does not appear after you played the track, or if the track repeats over and over then try the following:")
          (ol
           (li "Refresh the page and try again")
           (li "Try a different and up-to-date browser (we suggest Firefox)"))
-         (p "If it does not work, send us a message via prolific with information on the second browser (Firefox, Chrome, Edge...) and browser version that you tried."))
-        )))))
+         (p "If it does not work, send us a message via prolific with information on the second browser (Firefox, Chrome, Edge...) and browser version that you tried.")))))))
 
 (define (test-study-requirements-step/bot)
   (bot:click-all (bot:find-all "input[type=checkbox]"))
@@ -755,7 +762,7 @@
 (define (browser-OS-survey/bot)
   (formular-autofill 'firefox-ubuntu))
 
-(define (browser-OS-survey)
+(define ((browser-OS-survey survey-name))
   (page
    (haml
     (.container
@@ -780,7 +787,7 @@
       (lambda (#:browser browser
                #:browser-version browser-version
                #:OS OS)
-        (put 'browser-OS-survey
+        (put (string->symbol (string-append survey-name "browser-OS-survey"))
              (hash 'browser browser
                    'browser-version browser-version
                    'OS OS))))))))
@@ -988,13 +995,14 @@
    #:transitions (transition-graph
                   [check-prolific-user
                    --> initialize
-                   --> browser-OS-survey
+                   --> start-browser-OS-survey
                    --> test-study-requirements
                    --> ,(λ check-requirements ()
                           (if (not (get 'satisfies-requirements?))
                               (goto requirements-failure)
                               (goto relax-study)))]
                   [relax-study
+                   --> final-browser-OS-survey
                    --> ,(λ ()
                           (put-payment! 'participation-fee relax-test-fee)
                           done)]
@@ -1006,12 +1014,13 @@
    (list
     (make-step 'check-prolific-user check-prolific-user)
     (make-step 'initialize initialize-relax-test)
-    (make-step 'browser-OS-survey browser-OS-survey #:for-bot browser-OS-survey/bot)
+    (make-step 'start-browser-OS-survey (browser-OS-survey "initial-") #:for-bot browser-OS-survey/bot)
     (make-step 'test-study-requirements test-study-requirements #:for-bot test-study-requirements-step/bot)
     (make-step/study 'relax-study
                      (relax-study)
                      #:require-bindings `([tracks-to-play tracks-to-play]
                                           [tracks-to-evaluate (const ,tracks)]))
+    (make-step 'final-browser-OS-survey (browser-OS-survey "final-") #:for-bot browser-OS-survey/bot)
     (make-step 'requirements-failure requirements-failure #:for-bot bot:continuer))))
 
 (define relax-test-study
