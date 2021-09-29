@@ -332,7 +332,6 @@
     (λ (rw)
       `(div
 
-
         (div
          ,(audio-container "test-audio.mp3" #:caption "Audio Test"))
         (label
@@ -753,6 +752,9 @@
 (define (tutorial-completion-consent/bot)
   (formular-autofill 'good))
 
+(define (browser-OS-survey/bot)
+  (formular-autofill 'firefox-ubuntu))
+
 (define (browser-OS-survey)
   (page
    (haml
@@ -1000,15 +1002,14 @@
                    --> ,(λ () done)])
 
    #:requires '(prolific-redirection-url)
-   #:provides '(completion-code)
+   #:provides '(completion-code relax-treatment)
    (list
     (make-step 'check-prolific-user check-prolific-user)
     (make-step 'initialize initialize-relax-test)
-    (make-step 'browser-OS-survey browser-OS-survey)
+    (make-step 'browser-OS-survey browser-OS-survey #:for-bot browser-OS-survey/bot)
     (make-step 'test-study-requirements test-study-requirements #:for-bot test-study-requirements-step/bot)
     (make-step/study 'relax-study
                      (relax-study)
-                     #:provide-bindings `([rest-treatment rest-treatment])
                      #:require-bindings `([tracks-to-play tracks-to-play]
                                           [tracks-to-evaluate (const ,tracks)]))
     (make-step 'requirements-failure requirements-failure #:for-bot bot:continuer))))
@@ -1017,11 +1018,11 @@
   (make-study
    "relax-test-study"
    #:requires '()
-   #:provides '(rest-treatment completion-code)
+   #:provides '(relax-treatment completion-code)
    #:failure-handler (lambda (s reason)
                        (put 'fail-status reason)
                        (eprintf "failed at ~e with reason ~e~n" s reason)
-                       (put 'rest-treatment 'fail)
+                       (put 'relax-treatment 'fail)
                        (put 'completion-code #f)
                        reason)
    #:transitions (transition-graph
@@ -1032,7 +1033,7 @@
    (list
     (make-step/study 'the-study
                      relax-test-study-no-config
-                     #:provide-bindings '([rest-treatment rest-treatment]
+                     #:provide-bindings '([relax-treatment relax-treatment]
                                           [completion-code completion-code])
                      #:require-bindings `([prolific-redirection-url (const ,prolific-redirection-url)]))
     (make-step 'done show-payments #:for-bot bot:completer))))
