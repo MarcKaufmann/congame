@@ -7,10 +7,19 @@
 
 (provide
  pjb-pilot-bot
- pjb-pilot-bot-model)
+ pjb-pilot-bot-model
+ relax-test-bot
+ relax-test-bot-model)
 
 (define pjb-pilot-bot
   (study->bot pjb-pilot-study))
+
+(define relax-test-bot
+  (study->bot relax-test-study))
+
+(define (relax-test-bot-model id)
+  (match id
+    [_ (values)]))
 
 (define (pjb-pilot-bot-model id)
   (match id

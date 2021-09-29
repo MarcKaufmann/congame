@@ -50,7 +50,15 @@
                  (if (> n 1)
                      (string-append "each of the next " (number->string n) " pages")
                      "the next page")))
-     (button
+
+     (.info
+      (:h2 "Refresh if 'Submit' button does not appear after audio played (~2-3 minutes if you have 2 tracks, 5-7 minutes if you have 1 track)")
+      (:p "If the 'Submit' button does not appear after you played the sound, or if the sound test repeats again and again (it should last less than 10 seconds) then try the following ")
+      (:ol
+       (:li "Refresh the page and try again")
+       (:li "Try a different and up-to-date browser (we suggest Firefox)"))
+      (:p "If it does not work, send us a message via prolific with information on the second browser (Firefox, Chrome, Edge...) and browser version that you used."))
+    (button
 
       void
       "Continue")))))
@@ -76,12 +84,16 @@
       (:li "Sit back and listen to the track")
       (:li "The 'Continue' button will appear once the track has finished playing (all tracks together are around 5-7 minutes long)."))
 
-     (:p "If you do not see the 'Continue' button, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")
+
+
      (.hide-audio-button
       (button
        (λ ()
          (put 'tracks-played-so-far (add1 tracks-played)))
        "Continue"))
+     (:div.info
+      (:h3 "If you do not see 'Continue' button after track, please " (:a ((:href (string-append "mailto:" config:support-email))) "email us") ".")
+      (:p "For some browsers, the track repeats again and again, and the 'Continue' button does not appear. If this happens to you, please send us a quick message via prolific with the browser and browser version you are using, as well as operating system (Mac, Windows, Linux, iOS, Android,...) and try again in a different browser once. You will receive an additional bonus for the time lost. If it still doesn't work, send us another message with browser/operating system information you used and we will treat your participation as complete."))
      (when config:debug
        (haml
         (.container.debug

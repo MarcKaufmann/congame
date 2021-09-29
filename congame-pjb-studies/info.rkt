@@ -13,6 +13,9 @@
                "sentry-lib"))
 (define build-deps '())
 (define congame-studies
-  '((congame-pjb-studies/pjb-pilot pjb-pilot-study)))
+  '((congame-pjb-studies/pjb-pilot pjb-pilot-study)
+    (congame-pjb-studies/pjb-pilot relax-test-study)))
 (define congame-bots
-  '((congame-pjb-studies/pjb-pilot-bot pjb-pilot-bot #:for pjb-pilot-study #:models (pjb-pilot-bot-model))))
+  '((congame-pjb-studies/pjb-pilot-bot pjb-pilot-bot #:for pjb-pilot-study #:models (pjb-pilot-bot-model))
+    (congame-pjb-studies/pjb-pilot-bot relax-test-bot #:for relax-test-study #:models (relax-test-bot-model))
+    ))

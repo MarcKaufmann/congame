@@ -16,7 +16,8 @@
  formular-autofill
  checkbox
  radios
- input-number)
+ input-number
+ input-text)
 
 ;; Building up an intermediate representation of formualrs would allow
 ;; us to compose smaller formulars into larger ones.  We may want to
@@ -185,4 +186,16 @@
                                          (max ,(if (= max +inf.0) "" (number->string max)))))
            name value errors)
           label)
+         ,@((widget-errors) name value errors))))]))
+
+(define ((input-text label #:validators [validators null]) meth)
+  (match meth
+    ['validator
+     (apply ensure binding/text (required) validators)]
+    ['widget
+     (lambda (name value errors)
+       (haml
+        (.group
+         (:label
+          ((widget-text) name value errors) label)
          ,@((widget-errors) name value errors))))]))

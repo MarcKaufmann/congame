@@ -32,8 +32,10 @@
          (prefix-in bot: (submod congame/components/bot actions)))
 
 (provide
- pjb-pilot-study)
+ pjb-pilot-study
+ relax-test-study)
 
+(define relax-test-fee 2.00)
 ; FIXME: Update to correct url once tested that it works
 (define prolific-redirection-url "https://app.prolific.co/submissions/complete?cc=817C6E38")
 (define tutorial-fee 1.50)
@@ -157,6 +159,15 @@
   (put 'required-tasks required-tasks)
   (put 'completion-code (make-completion-code))
   (put 'participation-fee (participation-fee required-tasks))
+  (put 'relax-treatment (next-balanced-relax-treatment))
+  (define (get-tracks-treatment)
+    (shuffle (hash-ref tracks (get 'relax-treatment))))
+  (put 'tracks-to-play (get-tracks-treatment))
+  (skip))
+
+(define (initialize-relax-test)
+  (put 'completion-code (make-completion-code))
+  (put 'relax-test-fee relax-test-fee)
   (put 'relax-treatment (next-balanced-relax-treatment))
   (define (get-tracks-treatment)
     (shuffle (hash-ref tracks (get 'relax-treatment))))
@@ -320,6 +331,8 @@
       (put 'satisfies-requirements? (hash-ref answer 'satisfies-requirements?)))
     (λ (rw)
       `(div
+
+
         (div
          ,(audio-container "test-audio.mp3" #:caption "Audio Test"))
         (label
@@ -338,7 +351,15 @@
         ,@(rw "has-time?" (widget-errors))
         (br)
         (div ((class "hide-audio-button"))
-             (button ((type "submit") (class "button")) "Submit")))))))
+             (button ((type "submit") (class "button")) "Submit"))
+        (div ((class "info"))
+         (h2 "Refresh if 'Submit' button does not appear after audio played (~10 seconds)")
+         (p "If the 'Submit' button does not appear after you played the sound, or if the sound test repeats again and again (it should last less than 10 seconds) then try the following ")
+         (ol
+          (li "Refresh the page and try again")
+          (li "Try a different and up-to-date browser (we suggest Firefox)"))
+         (p "If it does not work, send us a message via prolific with information on the second browser (Firefox, Chrome, Edge...) and browser version that you tried."))
+        )))))
 
 (define (test-study-requirements-step/bot)
   (bot:click-all (bot:find-all "input[type=checkbox]"))
@@ -502,6 +523,7 @@
     (case n
       [(tutorial-fee) "Completing the tutorial"]
       [(participation-fee) "Completing the study (participation fee)"]
+      [(relax-test-fee) "Completing the study (participation fee)"]
       [(extra-tasks-bonus) "Bonus for extra tasks"]
       [else n]))
   (page
@@ -514,8 +536,8 @@
           (haml
            (:li (payment-display-name name) ": " (pp-money payment)))))
      (:p "Shortly after finishing the study, you will receive an email from us. " (:a ((:href (string-append "mailto:" config:support-email))) "Email us") " if you have not received the payment by the end of next week." )
-     (:h3 "Reminder: Your completion code is " completion-code)
-     (:p "Should you have forgotten earlier to enter your completion code, please enter it now on prolific.")))))
+     (:h3 "Your completion code is " completion-code)
+     (:p "If you have not yet entered your completion code on prolific, please enter it now.")))))
 
 (define-job (send-study-completion-email p payment)
   (with-handlers ([exn:fail?
@@ -731,6 +753,36 @@
 (define (tutorial-completion-consent/bot)
   (formular-autofill 'good))
 
+(define (browser-OS-survey)
+  (page
+   (haml
+    (.container
+     (:h1 "Broswer and Operating System survey")
+     (formular
+      #:bot
+      ([firefox-ubuntu (#:browser "Firefox")
+                       (#:browser-version "92")
+                       (#:OS "Ubuntu 20.04")])
+      (haml
+       (:div
+        (:div
+         (#:browser
+          (input-text "What browser are you using? (Firefox, Edge, Safari,...)")))
+        (:div
+         (#:browser-version
+          (input-text "What version is your browser? (See the 'Help/About' section in settings or similar -- if you can't find it, state 'Could not find')")))
+        (:div
+         (#:OS
+          (input-text "What operating system and version are you using? (Mac, Windows, Linux (what flavor), Android)")))
+        (:button.button.next-button ((:type "submit")) "Submit")))
+      (lambda (#:browser browser
+               #:browser-version browser-version
+               #:OS OS)
+        (put 'browser-OS-survey
+             (hash 'browser browser
+                   'browser-version browser-version
+                   'OS OS))))))))
+
 ;;; MAIN STUDY
 
 (define pjb-pilot-study-no-config
@@ -926,4 +978,61 @@
                     (:h1 "You failed the tasks")
                     (:p "The study ends here, since you failed too many tasks.")
                     (button void "See payments"))))))
+    (make-step 'done show-payments #:for-bot bot:completer))))
+
+(define relax-test-study-no-config
+  (make-study
+   "relax-test-study-no-config"
+   #:transitions (transition-graph
+                  [check-prolific-user
+                   --> initialize
+                   --> browser-OS-survey
+                   --> test-study-requirements
+                   --> ,(λ check-requirements ()
+                          (if (not (get 'satisfies-requirements?))
+                              (goto requirements-failure)
+                              (goto relax-study)))]
+                  [relax-study
+                   --> ,(λ ()
+                          (put-payment! 'participation-fee relax-test-fee)
+                          done)]
+                  [requirements-failure
+                   --> ,(λ () done)])
+
+   #:requires '(prolific-redirection-url)
+   #:provides '(completion-code)
+   (list
+    (make-step 'check-prolific-user check-prolific-user)
+    (make-step 'initialize initialize-relax-test)
+    (make-step 'browser-OS-survey browser-OS-survey)
+    (make-step 'test-study-requirements test-study-requirements #:for-bot test-study-requirements-step/bot)
+    (make-step/study 'relax-study
+                     (relax-study)
+                     #:provide-bindings `([rest-treatment rest-treatment])
+                     #:require-bindings `([tracks-to-play tracks-to-play]
+                                          [tracks-to-evaluate (const ,tracks)]))
+    (make-step 'requirements-failure requirements-failure #:for-bot bot:continuer))))
+
+(define relax-test-study
+  (make-study
+   "relax-test-study"
+   #:requires '()
+   #:provides '(rest-treatment completion-code)
+   #:failure-handler (lambda (s reason)
+                       (put 'fail-status reason)
+                       (eprintf "failed at ~e with reason ~e~n" s reason)
+                       (put 'rest-treatment 'fail)
+                       (put 'completion-code #f)
+                       reason)
+   #:transitions (transition-graph
+                  [the-study --> ,(λ send-completion-email ()
+                                   (send-completion-email (current-participant-id))
+                                   (goto done))]
+                  [done --> done])
+   (list
+    (make-step/study 'the-study
+                     relax-test-study-no-config
+                     #:provide-bindings '([rest-treatment rest-treatment]
+                                          [completion-code completion-code])
+                     #:require-bindings `([prolific-redirection-url (const ,prolific-redirection-url)]))
     (make-step 'done show-payments #:for-bot bot:completer))))
