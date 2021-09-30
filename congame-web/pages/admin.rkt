@@ -17,6 +17,7 @@
          koyo/url
          (except-in forms form)
          racket/contract
+         racket/file
          racket/format
          (except-in racket/list group-by)
          racket/match
@@ -159,12 +160,25 @@
                      (define the-study
                        (lookup-registered-study
                         (study-meta-racket-id meta)))
-                     (define filenames
+                     (define temp-dir
+                       (make-temporary-file (~a (study-meta-name meta) "~a") 'directory))
+                     (define pdfs
                        (list*
-                        (comptime-transitions->pdf (study-transitions the-study))
+                        (cons (study-meta-name meta)
+                              (comptime-transitions->pdf (study-transitions the-study)))
                         (for/list ([sub (in-list (study-steps the-study))]
                                    #:when (step/study? sub))
-                          (comptime-transitions->pdf (study-transitions (step/study-study sub))))))
+                          (cons (step-id sub)
+                                (comptime-transitions->pdf (study-transitions (step/study-study sub)))))))
+                     (define filenames
+                       (for/list ([p (in-list pdfs)])
+                         (define id (car p))
+                         (define src-path (cdr p))
+                         (define dst-path (build-path temp-dir (~a id ".pdf")))
+                         (define-values (_dst-dir dst-filename _dst-ext)
+                           (split-path dst-path))
+                         (begin0 dst-filename
+                           (copy-file src-path dst-path))))
                      (response/output
                       #:headers (list
                                  (header #"Content-type"
@@ -172,7 +186,10 @@
                                  (header #"Content-disposition"
                                          #"attachment; filename=\"transition-graphs.zip\""))
                       (lambda (out)
-                        (zip->output filenames out)))))])
+                        (parameterize ([current-directory temp-dir])
+                          (zip->output
+                           #:path-prefix "transition-graphs"
+                           filenames out))))))])
           "Generate transition graph"))))))))
 
 (define study-instance-form

@@ -466,6 +466,7 @@ QUERY
  current-xexpr-wrapper
  make-step
  make-step/study
+ step-id
  step-page?
  study-transitions)
 
