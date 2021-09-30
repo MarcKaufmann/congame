@@ -702,29 +702,40 @@
   (define bot-info
     (hash-ref bot-infos (bot-set-bot-id the-set)))
   (define bot (bot-info-bot bot-info))
-  (define model (hash-ref (bot-info-models bot-info) (bot-set-model-id the-set)))
-  ;; TODO: Bubble up exns from within the threads.
-  (define sema (make-semaphore concurrency))
-  (define thds
+  (define model
+    (hash-ref (bot-info-models bot-info)
+              (bot-set-model-id the-set)))
+  (define sema
+    (make-semaphore concurrency))
+  (define chs
     (for/list ([u (in-list users)]
                [p (in-naturals 60100)])
-      (thread
-       (lambda ()
-         (call-with-semaphore sema
-           (lambda ()
-             ;; FIXME: Rename study-page to study-instance-page.
-             (run-bot
-              #:study-url (apply
-                           make-application-url
-                           (string-split
-                            (reverse-uri 'study-page (study-instance-slug the-instance))
-                            "/"))
-              #:username (user-username u)
-              #:password password
-              #:headless? headless?
-              #:port p
-              (bot model))))))))
-  (for-each thread-wait thds)
+      (define res-ch (make-channel))
+      (begin0 res-ch
+        (thread
+         (lambda ()
+           (define res
+             (with-handlers ([exn:fail? values])
+               (begin0 'ok
+                 (call-with-semaphore sema
+                   (lambda ()
+                     ;; FIXME: Rename study-page to study-instance-page.
+                     (run-bot
+                      #:study-url (apply
+                                   make-application-url
+                                   (string-split
+                                    (reverse-uri 'study-page (study-instance-slug the-instance))
+                                    "/"))
+                      #:username (user-username u)
+                      #:password password
+                      #:headless? headless?
+                      #:port p
+                      (bot model)))))))
+           (channel-put res-ch res))))))
+  (for ([ch (in-list chs)])
+    (define res (channel-get ch))
+    (when (exn:fail? res)
+      (raise res)))
   (redirect-to
    (reverse-uri 'admin:view-study-instance-page
                 (study-meta-id the-study)
