@@ -110,6 +110,8 @@
 (define dot (find-executable-path "dot"))
 
 (define (comptime-transitions->pdf ts)
+  (unless dot
+    (error 'comptime-transitions->pdf "dot executable not found"))
   (define filename (make-temporary-file "comptime-transitions-~a.pdf"))
   (define-values (p-in p-out) (make-pipe))
   (thread (λ ()
