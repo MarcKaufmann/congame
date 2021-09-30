@@ -156,7 +156,6 @@
          (:a
           ([:href (embed/url
                    (λ (_req)
-                     ;; TODO: move this into study.rkt and stop exporting internals
                      (define the-study
                        (lookup-registered-study
                         (study-meta-racket-id meta)))
