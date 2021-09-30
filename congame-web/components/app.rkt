@@ -162,12 +162,12 @@
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)
     (~> handler
+        (wrap-current-sentry-user)
         ((wrap-auth-required auth req-roles))
         ((wrap-browser-locale sessions))
         ((make-sentry-wrapper config:sentry-dsn
                               #:release config:version
                               #:environment config:environment))
-        (wrap-current-sentry-user)
         (wrap-prolific)
         ((wrap-errors config:debug))
         ((wrap-flash flashes))
