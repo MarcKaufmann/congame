@@ -5,6 +5,7 @@ RUN apt-get update \
     ca-certificates \
     curl \
     dumb-init \
+    graphviz \
     libargon2-1 \
     lbzip2 \
     libcairo2 \
