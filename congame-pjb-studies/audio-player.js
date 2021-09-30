@@ -1,3 +1,4 @@
+/* globals up */
 (function() {
   function audioControlsHideButton(hideAudioButton) {
     hideAudioButton.style.display = "none";
@@ -39,19 +40,27 @@
     });
   }
 
-  // Does the browser actually support the audio element?
-  var supportsAudio = !!document.createElement("audio").canPlayType;
+  up.compiler("#audio-container", function() {
+    document
+      .querySelectorAll(".hide-audio-button")
+      .forEach(el => (el.style.display = "none"));
+    document
+      .querySelectorAll(".escape-button")
+      .forEach(el => (el.style.display = "none"));
 
-  if (supportsAudio) {
-    // Check that document is loaded before running.
-    up.compiler("#audio-container", function() {
-      var hideAudioButtons = document.getElementsByClassName(
-        "hide-audio-button"
-      );
+    // Does the browser actually support the audio element?
+    var supportsAudio = !!document.createElement("audio").canPlayType;
+    if (supportsAudio) {
+      // Check that document is loaded before running.
+      var hideAudioButtons = document.querySelectorAll(".hide-audio-button");
 
       if (hideAudioButtons.length > 0) {
         audioControlsHideButton(hideAudioButtons[0]);
       }
-    });
-  }
+    } else {
+      document
+        .querySelectorAll(".escape-button")
+        .forEach(el => (el.style.display = "block"));
+    }
+  });
 })();

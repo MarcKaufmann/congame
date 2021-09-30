@@ -357,6 +357,12 @@
          ,(rw "has-time?" (widget-checkbox)))
         ,@(rw "has-time?" (widget-errors))
         (br)
+        ;; TODO(marc): Make this nicer.
+        (div ((class "escape-button"))
+             ,(button
+               (λ ()
+                 (put 'fail-no-audio #t))
+               "Fail"))
         (div ((class "hide-audio-button"))
              (button ((type "submit") (class "button")) "Submit"))
         (div ((class "info"))
@@ -815,9 +821,13 @@
                    ; 'play-audio? 'has-audio? 'has-time?; continue? (Yes if
                    ; 'satisfies-requirement?, No otherwise)
                    --> ,(λ check-requirements ()
-                          (if (not (get 'satisfies-requirements?))
-                              (goto requirements-failure)
-                              (goto tutorial-tasks)))]
+                          (cond
+                            [(get 'fail-no-audio #f)
+                             (fail 'fail-tutorial-tasks)]
+                            [(get 'satisfies-requirements?)
+                             (goto tutorial-tasks)]
+                            [else
+                             (goto requirements-failure)]))]
                   [tutorial-tasks
                    ; study->participant: ??
                    ; participant->study: doing n tasks -- hence this requires a state variable regarding the amount of work done, and some utility function or similar that maps it (for later)

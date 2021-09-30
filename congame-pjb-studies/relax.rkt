@@ -85,8 +85,6 @@
       (:li "Sit back and listen to the track")
       (:li "The 'Continue' button will appear once the track has finished playing (all tracks together are around " duration " minutes long)."))
 
-
-
      (.hide-audio-button
       (button
        (λ ()
