@@ -581,7 +581,8 @@ QUERY
    ((current-xexpr-wrapper)
     (haml
      (:div.step
-      ([:data-study-stack (when-bot (call-with-output-string
+      ([:data-participant-id (~a (current-participant-id))]
+       [:data-study-stack (when-bot (call-with-output-string
                                      (lambda (out)
                                        (write (current-study-stack) out))))]
        [:data-step-id (when-bot (step-id s))])

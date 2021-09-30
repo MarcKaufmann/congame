@@ -55,6 +55,9 @@
      (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
      (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
      (:script
+      ([:crossorigin "anonymous"]
+       [:src "https://js.sentry-cdn.com/fb877e2559424bf292eeb8331b8479b9.min.js"]))
+     (:script
       ([:src (static-uri "vendor/unpoly.min.js")]))
      (:script
       ([:src (static-uri "js/app.js")])))
