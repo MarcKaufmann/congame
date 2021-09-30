@@ -23,10 +23,10 @@
     #:literals (goto)
     #:datum-literals (done fail)
     (pattern (done)
-             #:with e #''<end>
+             #:with e this-syntax
              #:with (transition ...) #'('<end>))
     (pattern (fail _)
-             #:with e #''<fail>
+             #:with e this-syntax
              #:with (transition ...) #'('<fail>))
     (pattern (goto id:id)
              #:with e #''id
