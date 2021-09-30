@@ -357,15 +357,16 @@
          ,(rw "has-time?" (widget-checkbox)))
         ,@(rw "has-time?" (widget-errors))
         (br)
-        ;; TODO(marc): Make this nicer.
-        (div ((class "escape-button"))
+        (div ((class "escape-button alert"))
+             (h3 "Your browser does not appear to support audio")
+             (p "Your browser does not appear to support audio, so you cannot participate in the study. You can help us by providing us with information on your browser.")
              ,(button
                (λ ()
                  (put 'fail-no-audio #t))
-               "Fail"))
+               "Provide browser information"))
         (div ((class "hide-audio-button"))
              (button ((type "submit") (class "button")) "Submit"))
-        (div ((class "info"))
+        #;(div ((class "info"))
          (h2 "Refresh if 'Submit' button does not appear after audio played (~10 seconds)")
          (p "If the 'Submit' button does not appear after you played the track, or if the track repeats over and over then try the following:")
          (ol
@@ -550,6 +551,13 @@
      (:p "Shortly after finishing the study, you will receive an email from us. " (:a ((:href (string-append "mailto:" config:support-email))) "Email us") " if you have not received the payment by the end of next week." )
      (:h3 "Your completion code is " completion-code)
      (:p "If you have not yet entered your completion code on prolific, please enter it now.")))))
+
+(define (no-payments-final-page)
+  (page
+   (haml
+    (.container
+     (:h1 "Thank you")
+     (:p "Thank you for participating.")))))
 
 (define-job (send-study-completion-email p payment)
   (with-handlers ([exn:fail?
@@ -823,7 +831,7 @@
                    --> ,(λ check-requirements ()
                           (cond
                             [(get 'fail-no-audio #f)
-                             (fail 'fail-tutorial-tasks)]
+                             (fail 'fail-tutorial-audio)]
                             [(get 'satisfies-requirements?)
                              (goto tutorial-tasks)]
                             [else
@@ -969,6 +977,7 @@
                                    (goto done))]
                   [fail-tutorial-tasks --> done]
                   [fail-required-tasks --> done]
+                  [fail-tutorial-audio --> done-no-payments --> done-no-payments]
                   [done --> done])
    (list
     (make-step/study 'the-study
@@ -981,6 +990,9 @@
                                           [tutorial-fee (const ,tutorial-fee)]
                                           [price-lists (const ,(hash-keys PRICE-LISTS))]
                                           [prolific-redirection-url (const ,prolific-redirection-url)]))
+    (make-step 'fail-tutorial-audio
+               (browser-OS-survey "audio-fail-")
+               #:for-bot browser-OS-survey/bot)
     (make-step 'fail-tutorial-tasks
                (lambda ()
                  (page
@@ -997,6 +1009,7 @@
                     (:h1 "You failed the tasks")
                     (:p "The study ends here, since you failed too many tasks.")
                     (button void "See payments"))))))
+    (make-step 'done-no-payments no-payments-final-page #:for-bot bot:completer)
     (make-step 'done show-payments #:for-bot bot:completer))))
 
 (define relax-test-study-no-config

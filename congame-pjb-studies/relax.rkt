@@ -52,7 +52,7 @@
                      (string-append "each of the next " (number->string n) " pages")
                      "the next page")))
 
-     (.info
+     #;(.info
       (:h2 (format "Refresh if 'Submit' button does not appear after audio played (~a)" duration))
       (:p "If the 'Submit' button does not appear after you played the track, or if the track repeats over and over then try the following:")
       (:ol
@@ -64,7 +64,7 @@
       void
       "Continue")))))
 
-(define (play-tracks #:duration [duration "5-7 minuts"])
+(define (play-tracks #:duration [duration "5-7 minutes"])
   (define track-names (get 'tracks-to-play))
   (define tracks-played (get 'tracks-played-so-far))
   (define next-track-name
@@ -127,7 +127,8 @@
      (:h1 "Track Survey")
      (formular
       #:bot
-      ([good (#:own-track "wave-sounds")
+      ([good (#:heard-track? "yes")
+             (#:own-track "wave-sounds")
              (#:relaxing-wave-sounds 6)
              (#:relaxing-guided-meditation 2)
              (#:relaxing-classical-piano 2)
@@ -138,6 +139,12 @@
              (#:motivating-edm 7)])
       (haml
        (:div
+        (#:heard-track?
+         (radios
+          "Did you hear the track, or was there no sound yet the continue button appeared?"
+          '(("yes" . "Yes")
+            ("no"  . "No"))))
+
         (#:own-track
          (radios
           "Below are several types of tracks for you to rate with a 20-second snippet. Which did you listen to?"
@@ -184,7 +191,8 @@
               (figure-with-snippet-track 'classical-piano)
               (figure-with-snippet-track 'edm))
         (:button.button.next-button ((:type "submit")) "Submit")))
-      (lambda (#:own-track own-track
+      (lambda (#:heard-track? heard-track?
+               #:own-track own-track
                #:relaxing-wave-sounds relaxing-wave-sounds
                #:relaxing-guided-meditation relaxing-guided-meditation
                #:relaxing-classical-piano relaxing-classical-piano
@@ -195,7 +203,8 @@
                #:motivating-edm motivating-edm)
 
         (put 'relaxation-survey
-             (hash 'own-track own-track
+             (hash 'heard-track? (string=? heard-track? "yes")
+                   'own-track own-track
                    'wave-sounds-relaxing-score relaxing-wave-sounds
                    'guided-meditation-relaxing-score relaxing-guided-meditation
                    'classical-piano-relaxing-score relaxing-classical-piano
@@ -220,13 +229,13 @@
    #:provides '()
    (list
     (make-step 'explain-relax
-               (λ () (explain-relaxing #:duration "~20 seconds"))
+               (λ () (explain-relaxing))
                (λ ()
                  (put 'tracks-played-so-far 0)
                  'play-tracks)
                #:for-bot bot:continuer)
     (make-step 'play-tracks
-               (λ () (play-tracks #:duration "~20 seconds"))
+               (λ () (play-tracks))
                (λ ()
                  (if (> (length (get 'tracks-to-play)) (get 'tracks-played-so-far))
                      'play-tracks
