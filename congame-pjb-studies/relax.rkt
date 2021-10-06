@@ -127,7 +127,9 @@
      (:h1 "Track Survey")
      (formular
       #:bot
-      ([good (#:heard-track? "yes")
+      ([good (#:refresh-page-for-sound? "no")
+             (#:refresh-page-for-button? "no")
+             (#:heard-track? "yes")
              (#:own-track "wave-sounds")
              (#:relaxing-wave-sounds 6)
              (#:relaxing-guided-meditation 2)
@@ -139,6 +141,18 @@
              (#:motivating-edm 7)])
       (haml
        (:div
+        (#:refresh-page-for-sound?
+         (radios
+          "Did you have to refresh the page to either hear the audio?"
+          '(("yes" . "Yes")
+            ("no"  . "No"))))
+
+        (#:refresh-page-for-button?
+         (radios
+          "Did you have to refresh the previous page because the sound kept repeating?"
+          '(("yes" . "Yes")
+            ("no"  . "No"))))
+
         (#:heard-track?
          (radios
           "Did you hear the track, or was there no sound yet the continue button appeared?"
@@ -191,7 +205,9 @@
               (figure-with-snippet-track 'classical-piano)
               (figure-with-snippet-track 'edm))
         (:button.button.next-button ((:type "submit")) "Submit")))
-      (lambda (#:heard-track? heard-track?
+      (lambda (#:refresh-page-for-sound? refresh-page-for-sound?
+               #:refresh-page-for-button? refresh-page-for-button?
+               #:heard-track? heard-track?
                #:own-track own-track
                #:relaxing-wave-sounds relaxing-wave-sounds
                #:relaxing-guided-meditation relaxing-guided-meditation
@@ -203,7 +219,9 @@
                #:motivating-edm motivating-edm)
 
         (put 'relaxation-survey
-             (hash 'heard-track? (string=? heard-track? "yes")
+             (hash 'refresh-page-for-button? (string=? refresh-page-for-button? "yes")
+                   'refresh-page-for-sound? (string=? refresh-page-for-sound? "yes")
+                   'heard-track? (string=? heard-track? "yes")
                    'own-track own-track
                    'wave-sounds-relaxing-score relaxing-wave-sounds
                    'guided-meditation-relaxing-score relaxing-guided-meditation
