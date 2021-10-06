@@ -19,24 +19,24 @@
     var volumeUp = document.getElementById("volume-up");
     var volumeDown = document.getElementById("volume-down");
 
-    playAudio.addEventListener("click", function(e) {
+    playAudio.addEventListener("click", event => {
       audioTrack.play();
     });
 
-    pauseAudio.addEventListener("click", function(e) {
+    pauseAudio.addEventListener("click", event => {
       audioTrack.pause();
     });
 
-    volumeUp.addEventListener("click", function(e) {
+    volumeUp.addEventListener("click", event => {
       var currentVolume = Math.floor(audioTrack.volume * 10) / 10;
-      audioTrack.volume += 0.05;
+      audioTrack.volume = Math.min(currentVolume + 0.1, 1.00);
       audioTrack.muted = false;
     });
 
     volumeDown.addEventListener("click", event => {
       var currentVolume = Math.floor(audioTrack.volume * 10) / 10;
-      if (currentVolume > 0) audioTrack.volume -= 0.05;
-      else audioTrack.muted = true;
+      audioTrack.volume = Math.max(0.00, currentVolume - 0.1)
+      if (audioTrack.volume < 0.05) audioTrack.muted = true;
     });
   }
 
