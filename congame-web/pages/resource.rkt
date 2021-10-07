@@ -17,8 +17,11 @@
     (if subresource
         (build-path (resource-path r) subresource)
         (resource-path r)))
+  (define size-in-bytes
+    (file-size full-path))
   (response/output
    #:mime-type (path->mime-type full-path)
+   #:headers (list (header #"content-length" (string->bytes/utf-8 (number->string size-in-bytes))))
    (lambda (out)
      (call-with-input-file full-path
        (lambda (in)
