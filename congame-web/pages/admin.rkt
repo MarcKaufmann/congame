@@ -47,6 +47,9 @@
  view-study-instance-bot-set-page
  stop-impersonation-page)
 
+(define datetime-format
+  "YYYY-MM-dd HH:mm:ss")
+
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
   (define studies (list-studies db))
@@ -415,8 +418,8 @@
           (:tr
            (:td (:pre (~a (study-instance-var-stack v))))
            (:td (~a (study-instance-var-id v)))
-           (:td (~t (study-instance-var-first-put-at v) "YYYY-MM-dd hh:mm:ss"))
-           (:td (~t (study-instance-var-last-put-at v) "YYYY-MM-dd hh:mm:ss"))
+           (:td (~t (study-instance-var-first-put-at v) datetime-format))
+           (:td (~t (study-instance-var-last-put-at v) datetime-format))
            (:td (:pre
                  (with-output-to-string
                    (lambda ()
@@ -442,7 +445,7 @@
              ([:href (reverse-uri 'admin:view-study-participant-page study-id study-instance-id (study-participant/admin-id p))])
              (~a (study-participant/admin-id p))))
            (:td (study-participant/admin-email p))
-           (:td (~t (study-participant/admin-enrolled-at p) "YYYY-MM-dd hh:mm:ss"))
+           (:td (~t (study-participant/admin-enrolled-at p) datetime-format))
            (:td (~a (study-participant/admin-progress p)))
            (:td (study-participant/admin-current-round-name p))
            (:td (study-participant/admin-current-group-name p)))))))))
@@ -537,8 +540,8 @@
                  (:td (study-var-round-name v))
                  (:td (study-var-group-name v))
                  (:td (~a (study-var-id v)))
-                 (:td (~t (study-var-first-put-at v) "YYYY-MM-dd hh:mm:ss"))
-                 (:td (~t (study-var-last-put-at v) "YYYY-MM-dd hh:mm:ss"))
+                 (:td (~t (study-var-first-put-at v) datetime-format))
+                 (:td (~t (study-var-last-put-at v) datetime-format))
                  (:td (:pre
                        (with-output-to-string
                          (lambda ()
