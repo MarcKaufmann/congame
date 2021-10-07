@@ -82,7 +82,7 @@
    element-find
    element-find-all)
 
-  (define INFINITE-LOOP-THRESHOLD 25)
+  (define INFINITE-LOOP-THRESHOLD 42)
 
   ;; runner ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
