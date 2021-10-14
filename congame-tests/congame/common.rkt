@@ -21,7 +21,7 @@
  run-db-tests)
 
 (define-runtime-path migrations-path
-  (build-path 'up 'up "migrations"))
+  (build-path 'up 'up "congame-web-migrations"))
 
 (define (make-test-database-connection)
   (postgresql-connect

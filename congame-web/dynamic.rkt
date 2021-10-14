@@ -26,7 +26,7 @@
 ;; System ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define-runtime-path migrations-path
-  (build-path 'up "migrations"))
+  (build-path 'up "congame-web-migrations"))
 
 (define mail-adapter
   (if config:postmark-token
