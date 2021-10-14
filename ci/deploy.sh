@@ -8,7 +8,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 BASEPATH="$(dirname "$0")"
-IDENTITY_IMAGE_NAME="ghcr.io/marckaufmann/congame-web:$GITHUB_SHA"
+IDENTITY_IMAGE_NAME="ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA"
 WEB_IMAGE_NAME="ghcr.io/marckaufmann/congame-web:$GITHUB_SHA"
 TARGET_HOST="deepploy@$DEPLOY_HOST"
 
