@@ -22,11 +22,11 @@
 (struct app (dispatcher)
   #:transparent)
 
-(define/contract (make-app auth broker flashes mailer _migrator sessions users
+(define/contract (make-app auth broker db flashes mailer _migrator sessions users
                            #:debug? [debug? #f]
                            #:memory-threshold [memory-threshold (* 1 1024 1024 1024)]
                            #:static-path [static-path #f])
-  (->* (auth-manager? broker? flash-manager? mailer? migrator? session-manager? user-manager?)
+  (->* (auth-manager? broker? database? flash-manager? mailer? migrator? session-manager? user-manager?)
        (#:debug? boolean?
         #:memory-threshold exact-positive-integer?
         #:static-path (or/c #f path-string?))
@@ -35,7 +35,11 @@
     (dispatch-rules+roles
      [("")
       #:roles (user)
-      dashboard-page]
+      (dashboard-page db)]
+
+     [("enroll" (integer-arg) (integer-arg))
+      #:roles (user)
+      (enroll-or-resume-page db)]
 
      [("login")
       (login-page auth)]

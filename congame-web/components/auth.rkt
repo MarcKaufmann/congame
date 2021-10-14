@@ -26,6 +26,7 @@
  impostor?
  auth-manager-impersonate!
  auth-manager-stop-impersonation!
+ auth-manager-login!/nopass
  auth-manager-login!
  auth-manager-logout!
  wrap-auth-required
@@ -63,6 +64,10 @@
   (-> auth-manager? void?)
   (session-set! session-key (session-ref session-impersonator-key))
   (session-remove! session-impersonator-key))
+
+(define/contract (auth-manager-login!/nopass am u)
+  (-> auth-manager? user? void?)
+  (session-set! session-key (number->string (user-id u))))
 
 (define/contract (auth-manager-login! am username password)
   (-> auth-manager? non-empty-string? non-empty-string? (or/c false/c user?))

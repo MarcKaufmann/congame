@@ -8,6 +8,7 @@
                ("deta-lib" #:version "0.9")
                "forms-lib"
                "gregor-lib"
+               "http-easy-lib"
                "koyo-lib"
                "koyo-north"
                "koyo-postmark"

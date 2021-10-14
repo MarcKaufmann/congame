@@ -66,7 +66,7 @@
 (define-option test-db-port #:default "5432"
   (string->number test-db-port))
 
-(define-option session-cookie-name #:default "_sid")
+(define-option session-cookie-name #:default "_sid_id")
 (define-option session-shelf-life #:default "86400"
   (string->number session-shelf-life))
 (define-option session-secret-key-path #:default "/tmp/congame-identity-secret-key")

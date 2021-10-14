@@ -35,7 +35,7 @@
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth broker flashes mailer migrator sessions users)
+  [app (auth broker db flashes mailer migrator sessions users)
        (lambda deps
          (apply make-app deps
                 #:debug? config:debug

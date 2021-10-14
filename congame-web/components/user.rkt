@@ -10,6 +10,7 @@
          koyo/profiler
          koyo/random
          racket/contract
+         racket/format
          racket/random
          racket/string
          threading)
@@ -90,6 +91,7 @@
  user-manager-lookup/api-key
  user-manager-lookup/username
  user-manager-create!
+ user-manager-create-from-identity!
  user-manager-create-reset-token!
  user-manager-login
  user-manager-verify!
@@ -121,6 +123,23 @@
                              (current-continuation-marks))))])
     (with-database-transaction [conn (user-manager-db um)]
       (insert-one! conn user))))
+
+(define/contract (user-manager-create-from-identity! um u display-name)
+  (-> user-manager? user? string? user?)
+  (define username
+    (format "id.~a.~a" (user-id u) display-name))
+  (define the-user
+    (~> (make-user #:username username)
+        (set-user-verified? #t)
+        (set-user-password (user-manager-hasher um)
+                           (generate-random-string))))
+
+  (with-database-connection [conn (user-manager-db um)]
+    (with-handlers ([exn:fail:sql:constraint-violation?
+                     (lambda (_)
+                       (lookup conn (~> (from user #:as u)
+                                        (where (= u.username ,username)))))])
+      (insert-one! conn the-user))))
 
 (define/contract (user-manager-create-reset-token! um
                                                    #:username username

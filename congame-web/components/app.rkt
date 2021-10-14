@@ -131,6 +131,11 @@
       #:roles (api)
       (api:study-participants db)]
 
+     [("api" "v1" "study-participants-with-identity")
+      #:roles (api)
+      #:method "post"
+      (api:enroll-participant-from-identity db auth users)]
+
      [("study" (string-arg))
       #:roles (user)
       (study-page db)]
