@@ -76,7 +76,7 @@ jobs:
     - name: Test the application
       run: |
         docker build -t congame-tests:latest -f Dockerfile.test .
-        docker run --network=host --rm congame-tests raco north migrate -fu "postgres://congame:congame@127.0.0.1:${{ job.services.postgres.ports[5432] }}/congame"
+        docker run --network=host --rm congame-tests raco north migrate -p congame-web-migrations -fu "postgres://congame:congame@127.0.0.1:${{ job.services.postgres.ports[5432] }}/congame"
         docker run \
           --network=host \
           -e CONGAME_TEST_DB_HOST \
