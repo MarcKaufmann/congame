@@ -2,6 +2,7 @@
 
 (define collection "congame-identity")
 (define deps '("base"
+               "buid"
                "component-lib"
                "db-lib"
                ("deta-lib" #:version "0.9")

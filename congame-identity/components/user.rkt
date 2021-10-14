@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require component
+(require buid
+         component
          db
          deta
          gregor
@@ -17,8 +18,13 @@
 (provide
  (schema-out user))
 
+(define role/c
+  (or/c 'user 'admin))
+
 (define-schema user
   ([id id/f #:primary-key #:auto-increment]
+   [(role 'user) symbol/f #:contract role/c]
+   [(display-name (generate-random-display-name)) string/f #:contract non-empty-string? #:wrapper string-downcase]
    [username string/f #:contract non-empty-string? #:wrapper string-downcase]
    [(password-hash "") string/f]
    [(verified? #f) boolean/f]
@@ -35,6 +41,9 @@
 
 (define (password-valid? um u p)
   (hasher-hash-matches? (user-manager-hasher um) (user-password-hash u) p))
+
+(define (generate-random-display-name)
+  (format "u.~a" (buid)))
 
 
 ;; password reset ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
