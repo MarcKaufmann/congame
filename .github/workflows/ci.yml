@@ -66,10 +66,12 @@ jobs:
         fi
         docker build -t congame-source -f Dockerfile.source .
 
-    - name: Build docker image
+    - name: Build docker images
       run: |
-        docker build -t "ghcr.io/marckaufmann/congame:$GITHUB_SHA" .
-        docker tag "ghcr.io/marckaufmann/congame:$GITHUB_SHA" "congame:latest"
+        docker build -t "ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA" -f Dockerfile.identity .
+        docker build -t "ghcr.io/marckaufmann/congame-web:$GITHUB_SHA" -f Dockerfile.web .
+        docker tag "ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA" "congame-identity:latest"
+        docker tag "ghcr.io/marckaufmann/congame-web:$GITHUB_SHA" "congame-web:latest"
 
     - name: Test the application
       run: |
@@ -91,8 +93,10 @@ jobs:
         CONGAME_TEST_DB_USERNAME: congame
         CONGAME_TEST_DB_PASSWORD: congame
 
-    - name: Push docker image
-      run: docker push "ghcr.io/marckaufmann/congame:$GITHUB_SHA"
+    - name: Push docker images
+      run: |
+        docker push "ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA"
+        docker push "ghcr.io/marckaufmann/congame-web:$GITHUB_SHA"
 
     - name: Deploy staging
       run: ./ci/deploy.sh STAGING

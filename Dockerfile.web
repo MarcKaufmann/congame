@@ -1,7 +1,7 @@
 FROM congame-source:latest AS build
 
 WORKDIR /src/congame
-RUN raco koyo dist ++lang north
+RUN raco koyo dist ++lang north congame-web/dynamic.rkt
 
 
 FROM ghcr.io/marckaufmann/congame-deploy:latest AS deploy

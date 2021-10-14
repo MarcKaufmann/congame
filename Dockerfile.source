@@ -6,11 +6,13 @@ COPY bin /src/congame/bin
 COPY ci /src/congame/ci
 COPY congame-core /src/congame/congame-core
 COPY congame-example-study /src/congame/congame-example-study
+COPY congame-identity /src/congame/congame-identity
+COPY congame-identity-migrations /src/congame/congame-identity-migrations
 COPY congame-pjb-studies /src/congame/congame-pjb-studies
 COPY congame-price-lists /src/congame/congame-price-lists
 COPY congame-tests /src/congame/congame-tests
 COPY congame-web /src/congame/congame-web
-COPY migrations /src/congame/migrations
+COPY congame-web-migrations /src/congame/congame-web-migrations
 COPY resources /src/congame/resources
 COPY static /src/congame/static
 
@@ -23,6 +25,7 @@ RUN ci/setup-catalogs.sh
 RUN raco pkg install -D --auto --skip-installed \
   congame-core/ \
   congame-example-study/ \
+  congame-identity/ \
   congame-pjb-studies/ \
   congame-price-lists/ \
   congame-tests/ \
@@ -30,6 +33,7 @@ RUN raco pkg install -D --auto --skip-installed \
 RUN raco setup --pkgs \
   congame-core \
   congame-example-study \
+  congame-identity \
   congame-pjb-studies \
   congame-price-lists \
   congame-tests \
