@@ -102,7 +102,7 @@
           [(null? roles) #t]
           [(memq 'api roles)
            (cond
-             [maybe-user #t]
+             [(and maybe-user (apply user-has-roles? maybe-user roles))]
              [else
               (return
                (response/json
@@ -110,15 +110,16 @@
                 (hasheq 'error "authorization failed")))])]
           [else
            (and maybe-user
-                (case (user-role maybe-user)
-                  [(admin) #t]
-                  [(api)   #f]
-                  [(bot)   (equal? roles '(user))]
-                  [else    (equal? roles '(user))]))]))
+                (user-roles-case
+                 maybe-user
+                 [(admin) #t]
+                 [(api)   #f]
+                 [(bot)   (equal? roles '(user))]
+                 [else    (apply user-has-roles? maybe-user roles)]))]))
       (cond
         [ok?
          (parameterize ([current-user maybe-user]
-                        [current-user-bot? (and maybe-user (eq? 'bot (user-role maybe-user)))])
+                        [current-user-bot? (and maybe-user (user-has-role? maybe-user 'bot))])
            (handler req))]
 
         [else

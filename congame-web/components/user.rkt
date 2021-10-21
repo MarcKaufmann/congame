@@ -13,6 +13,8 @@
          racket/format
          racket/random
          racket/string
+         racket/vector
+         syntax/parse/define
          threading)
 
 ;; user ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -20,15 +22,25 @@
 (provide
  (schema-out user)
  set-user-password
+ user-roles-case
+ user-has-roles?
+ user-has-role?
  user-admin?
  generate-api-key)
+
+(define (non-empty-vectorof c)
+  (and/c
+   (vectorof c)
+   (flat-named-contract
+    `(non-empty-vectorof ,(contract-name c))
+    (λ (v) (> (vector-length v) 0)))))
 
 (define-schema user
   ([id id/f #:primary-key #:auto-increment]
    [username string/f #:contract non-empty-string? #:wrapper string-downcase]
    [(password-hash "") string/f]
    [api-key string/f #:nullable]
-   [(role 'user) symbol/f #:contract (or/c 'user 'bot 'api 'admin)]
+   [(roles #(user)) (array/f symbol/f) #:contract (non-empty-vectorof (or/c 'user 'bot 'api 'admin))]
    [(verified? #f) boolean/f]
    [(verification-code (generate-random-string)) string/f #:contract non-empty-string?]
    [bot-set-id integer/f #:nullable]
@@ -39,17 +51,32 @@
   (lambda (u)
     (define user-with-key
       (cond
-        [(and (user-api-key u)
-              (not (sql-null? (user-api-key u))))
-         (displayln "Have an api-key") (flush-output) u]
+        [(and (user-api-key u) (not (sql-null? (user-api-key u)))) u]
         [else (set-user-api-key u (generate-api-key u))]))
-    (displayln (format "Api-key: ~a" (user-api-key user-with-key)))
-    (flush-output)
     (set-user-updated-at user-with-key (now/moment))))
+
+(define-syntax-parse-rule
+  (user-roles-case u
+   [(role ...) e ...] ...
+   [{~literal else} else-e ...])
+  (cond
+    [(user-has-roles? u 'role ...) e ...] ...
+    [else else-e ...]))
+
+(define/contract (user-has-roles? u . roles)
+  (-> user? symbol? ... boolean?)
+  (null?
+   (for/fold ([roles roles])
+             ([r (in-vector (user-roles u))])
+     (remq r roles))))
+
+(define/contract (user-has-role? u r)
+  (-> user? symbol? boolean?)
+  (and (vector-member r (user-roles u)) #t))
 
 (define/contract (user-admin? u)
   (-> user? boolean?)
-  (eq? (user-role u) 'admin))
+  (user-has-role? u 'admin))
 
 (define/contract (generate-api-key u)
   (-> user? string?)
@@ -108,12 +135,12 @@
   (-> database? hasher? user-manager?)
   (user-manager db hasher))
 
-(define/contract (user-manager-create! um username password [role 'user])
-  (->* (user-manager? string? string?) ((or/c 'admin 'user 'bot)) user?)
+(define/contract (user-manager-create! um username password [roles #(user)])
+  (->* (user-manager? string? string?) ((non-empty-vectorof (or/c 'admin 'user 'bot))) user?)
 
   (define user
     (~> (make-user #:username username
-                   #:role role)
+                   #:roles roles)
         (set-user-password (user-manager-hasher um) password)))
 
   (with-handlers ([exn:fail:sql:constraint-violation?
@@ -181,7 +208,7 @@
   (with-timing 'user-manager (format "(user-manager/lookup/api-key ~v)" key)
     (with-database-connection [conn (user-manager-db um)]
       (lookup conn (~> (from user #:as u)
-                       (where (and (= u.role "api")
+                       (where (and (array-contains? u.roles (array "api"))
                                    (= u.api-key ,key))))))))
 
 (define/contract (user-manager-lookup/username um username)

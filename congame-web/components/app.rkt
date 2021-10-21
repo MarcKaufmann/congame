@@ -128,7 +128,7 @@
       (api:study-instances db)]
 
      [("api" "v1" "studies" (integer-arg) "instances" (integer-arg) "participants.json")
-      #:roles (api)
+      #:roles (api admin)
       (api:study-participants db)]
 
      [("api" "v1" "study-participants-with-identity")

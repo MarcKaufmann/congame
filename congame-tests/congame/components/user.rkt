@@ -14,83 +14,98 @@
 
 (define the-user #f)
 (define user-tests
-  (system-test-suite user ([db make-test-database]
-                           [hasher (make-argon2id-hasher-factory)]
-                           [users (db hasher) make-user-manager]
-                           [migrator (db) make-test-migrator])
-    #:before
-    (lambda _
-      (truncate-tables! db 'users)
-      (set! the-user (make-test-user! users)))
+  (test-suite
+   "user"
+
+   (test-suite
+    "roles"
 
     (test-suite
-     "user-manager-create!"
+     "user-has-roles?"
+     (let ([u (make-user #:username "test" #:roles #(api admin))])
+       (check-false (user-has-roles? u 'api 'user))
+       (check-false (user-has-roles? u 'api 'admin 'user))
+       (check-true (user-has-roles? u 'api))
+       (check-true (user-has-roles? u 'api 'admin))
+       (check-true (user-has-roles? u 'admin 'api)))))
 
-     (test-case "creates users"
-       (check-match
-        the-user
-        (struct* user ([id (? exact-positive-integer?)]
-                       [username "bogdan@example.com"]
-                       [verified? #f])))))
+   (system-test-suite user ([db make-test-database]
+                            [hasher (make-argon2id-hasher-factory)]
+                            [users (db hasher) make-user-manager]
+                            [migrator (db) make-test-migrator])
+     #:before
+     (lambda _
+       (truncate-tables! db 'users)
+       (set! the-user (make-test-user! users)))
 
-    (test-suite
-     "user-manager-create-reset-token!"
+     (test-suite
+      "user-manager-create!"
 
-     (test-case "returns #f given an invalid username"
-       (define-values (_ token)
-         (user-manager-create-reset-token! users
-                                           #:username "idontexist"
-                                           #:ip-address "127.0.0.1"
-                                           #:user-agent "Mozilla"))
-       (check-false token))
+      (test-case "creates users"
+        (check-match
+         the-user
+         (struct* user ([id (? exact-positive-integer?)]
+                        [username "bogdan@example.com"]
+                        [verified? #f])))))
 
-     (test-case "returns a token given a valid user"
-       (define-values (_ token)
-         (user-manager-create-reset-token! users
-                                           #:username (user-username the-user)
-                                           #:ip-address "127.0.0.1"
-                                           #:user-agent "Mozilla"))
+     (test-suite
+      "user-manager-create-reset-token!"
 
-       (check-not-false token)
+      (test-case "returns #f given an invalid username"
+        (define-values (_ token)
+          (user-manager-create-reset-token! users
+                                            #:username "idontexist"
+                                            #:ip-address "127.0.0.1"
+                                            #:user-agent "Mozilla"))
+        (check-false token))
 
-       (test-case "invalidates old tokens"
-         (define-values (_ token*)
-           (user-manager-create-reset-token! users
-                                             #:username (user-username the-user)
-                                             #:ip-address "127.0.0.1"
-                                             #:user-agent "Mozilla"))
+      (test-case "returns a token given a valid user"
+        (define-values (_ token)
+          (user-manager-create-reset-token! users
+                                            #:username (user-username the-user)
+                                            #:ip-address "127.0.0.1"
+                                            #:user-agent "Mozilla"))
 
-         (check-false
-          (user-manager-reset-password! users
-                                        #:user-id (user-id the-user)
-                                        #:token token
-                                        #:password "new-password"))
+        (check-not-false token)
 
-         (check-true
-          (user-manager-reset-password! users
-                                        #:user-id (user-id the-user)
-                                        #:token token*
-                                        #:password "hunter2"))
+        (test-case "invalidates old tokens"
+          (define-values (_ token*)
+            (user-manager-create-reset-token! users
+                                              #:username (user-username the-user)
+                                              #:ip-address "127.0.0.1"
+                                              #:user-agent "Mozilla"))
 
-         (test-case "tokens cannot be reused"
-           (check-false
-            (user-manager-reset-password! users
-                                          #:user-id (user-id the-user)
-                                          #:token token*
-                                          #:password "hunter2"))))))
+          (check-false
+           (user-manager-reset-password! users
+                                         #:user-id (user-id the-user)
+                                         #:token token
+                                         #:password "new-password"))
 
-    (test-suite
-     "user-manager-login"
+          (check-true
+           (user-manager-reset-password! users
+                                         #:user-id (user-id the-user)
+                                         #:token token*
+                                         #:password "hunter2"))
 
-     (test-case "returns #f when given invalid login data"
-       (check-false (user-manager-login users "invalid" "invalid"))
-       (check-false (user-manager-login users "bogdan@example.com" "invalid")))
+          (test-case "tokens cannot be reused"
+            (check-false
+             (user-manager-reset-password! users
+                                           #:user-id (user-id the-user)
+                                           #:token token*
+                                           #:password "hunter2"))))))
 
-     (test-case "returns a user upon successful login"
-       (check-match
-        (user-manager-login users "bogdan@example.com" "hunter2")
-        (struct* user ([id (? exact-positive-integer?)]
-                       [username "bogdan@example.com"])))))))
+     (test-suite
+      "user-manager-login"
+
+      (test-case "returns #f when given invalid login data"
+        (check-false (user-manager-login users "invalid" "invalid"))
+        (check-false (user-manager-login users "bogdan@example.com" "invalid")))
+
+      (test-case "returns a user upon successful login"
+        (check-match
+         (user-manager-login users "bogdan@example.com" "hunter2")
+         (struct* user ([id (? exact-positive-integer?)]
+                        [username "bogdan@example.com"]))))))))
 
 (module+ test
   (run-db-tests user-tests))

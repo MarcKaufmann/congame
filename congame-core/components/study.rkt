@@ -894,7 +894,7 @@ QUERY
   ([id integer/f]
    [user-id integer/f]
    [email string/f]
-   [role symbol/f]
+   [roles (array/f symbol/f)]
    [progress (array/f string/f)]
    [(current-round-name "") string/f]
    [(current-group-name "") string/f]
@@ -1000,14 +1000,14 @@ QUERY
           (join user #:as u #:on (= u.id p.user-id))
           (where (= p.instance-id ,instance-id))
           (order-by ([p.enrolled-at #:desc]))
-          (select p.id u.id u.username u.role p.progress p.current-round-name p.current-group-name p.enrolled-at)
+          (select p.id u.id u.username u.roles p.progress p.current-round-name p.current-group-name p.enrolled-at)
           (project-onto study-participant/admin-schema)))
 
     (sequence->list
      (in-entities conn (if for-bot-set
                            (where q (= u.bot-set-id ,for-bot-set))
-                           (where q (or (not (= u.role "bot"))
-                                        (and (= u.role "bot")
+                           (where q (or (not (array-contains? u.roles (array "bot")))
+                                        (and (array-contains? u.roles (array "bot"))
                                              (is u.bot-set-id null)))))))))
 
 (define/contract (list-study-instance-total-payments/admin db instance-id)
@@ -1118,7 +1118,7 @@ QUERY
     (lookup conn (~> (from study-participant #:as p)
                      (join user #:as u #:on (= u.id p.user-id))
                      (where (= p.id ,participant-id))
-                     (select p.id u.id u.username u.role p.progress p.current-round-name p.current-group-name p.enrolled-at)
+                     (select p.id u.id u.username u.roles p.progress p.current-round-name p.current-group-name p.enrolled-at)
                      (project-onto study-participant/admin-schema)))))
 
 (define/contract (participant-email pid)

@@ -24,6 +24,7 @@
          racket/port
          racket/pretty
          racket/string
+         racket/vector
          threading
          web-server/dispatchers/dispatch
          web-server/http
@@ -502,7 +503,7 @@
                         'study-id study-id
                         'vars (map ->jsexpr vars)))))])
            "Export JSON"))
-         (unless (eq? (study-participant/admin-role the-participant) 'admin)
+         (unless (vector-member 'admin (study-participant/admin-roles the-participant))
            (haml
             (:h4
              (:a

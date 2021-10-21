@@ -78,4 +78,4 @@
                          [username "bogdan@example.com"]
                          [password "hunter2"]
                          #:bot? [bot? #f])
-  (user-manager-create! users username password (if bot? 'bot 'user)))
+  (user-manager-create! users username password (if bot? #(bot) #(user))))

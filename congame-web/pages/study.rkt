@@ -71,7 +71,7 @@
     (redirect-to (reverse-uri 'study-page (study-instance-slug i))))
   (cond
     [(or (participant-enrolled? db uid iid)
-         (eq? 'bot (user-role (current-user)))
+         (user-has-role? (current-user) 'bot)
          (equal? "" (study-instance-enrollment-code i)))
      (do-enroll)]
     [else
