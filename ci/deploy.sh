@@ -104,7 +104,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     -d \
     "$WEB_IMAGE_NAME"
 
-  for port in "$IDENTITY_CONTAINER_PORT $WEB_CONTAINER_PORT"; do
+  for port in $IDENTITY_CONTAINER_PORT $WEB_CONTAINER_PORT; do
     attempts=0
     while true; do
       echo "Running health check..."
