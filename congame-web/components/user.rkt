@@ -43,7 +43,10 @@
    [(roles #(user)) (array/f symbol/f) #:contract (non-empty-vectorof (or/c 'user 'bot 'api 'admin))]
    [(verified? #f) boolean/f]
    [(verification-code (generate-random-string)) string/f #:contract non-empty-string?]
+   [parent-id integer/f #:nullable]
    [bot-set-id integer/f #:nullable]
+   [identity-service-url string/f #:nullable]
+   [identity-service-key string/f #:nullable]
    [(created-at (now/moment)) datetime-tz/f]
    [(updated-at (now/moment)) datetime-tz/f])
 
@@ -144,7 +147,7 @@
         (set-user-password (user-manager-hasher um) password)))
 
   (with-handlers ([exn:fail:sql:constraint-violation?
-                   (lambda _
+                   (lambda (_e)
                      (raise (exn:fail:user-manager:username-taken
                              (format "username '~a' is taken" username)
                              (current-continuation-marks))))])
@@ -158,12 +161,13 @@
   (define the-user
     (~> (make-user #:username username)
         (set-user-verified? #t)
+        (set-user-parent-id (user-id u))
         (set-user-password (user-manager-hasher um)
                            (generate-random-string))))
 
   (with-database-connection [conn (user-manager-db um)]
     (with-handlers ([exn:fail:sql:constraint-violation?
-                     (lambda (_)
+                     (lambda (_e)
                        (lookup conn (~> (from user #:as u)
                                         (where (= u.username ,username)))))])
       (insert-one! conn the-user))))
