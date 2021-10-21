@@ -228,7 +228,9 @@
   (let loop ([req req])
     (send/suspend/dispatch/protect
      (lambda (embed/url)
-       (match (form-run study-instance-form req)
+       (define defaults
+         (hash "no-enrollment-code?" "1"))
+       (match (form-run study-instance-form req #:defaults defaults)
          [(list 'passed (list name slug enrollment-code status) _)
           (define the-study-instance
             (with-database-connection [conn db]
