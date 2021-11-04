@@ -13,6 +13,7 @@
                "koyo-north"
                "koyo-postmark"
                "libargon2"
+               "smtp-server"
                "threading-lib"
                "web-server-lib"))
 (define build-deps '())

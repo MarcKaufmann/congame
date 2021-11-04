@@ -18,6 +18,7 @@
          "components/app.rkt"
          "components/auth.rkt"
          "components/mail.rkt"
+         "components/message.rkt"
          "components/user.rkt"
          (prefix-in config: "config.rkt"))
 
@@ -56,6 +57,7 @@
            #:parallelism 2
            #:iterations 256
            #:memory 2048)]
+  [mail-server (db) make-mail-server]
   [mailer (make-mailer-factory
            #:adapter mail-adapter
            #:sender config:support-email
@@ -95,6 +97,7 @@
                 (north-adapter        . ,config:log-level)
                 (server               . ,config:log-level)
                 (session              . ,config:log-level)
+                (smtp-server          . ,config:log-level)
                 (system               . ,config:log-level)
                 (worker               . info))))
 
