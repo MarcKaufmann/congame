@@ -26,15 +26,19 @@
       ,@(for/list ([m (in-list (list-user-messages db (user-id (current-user))))])
           (haml
            (:li
+            ([:class (if (message-unread? m) "message--unread" "")])
             (:a
              ([:href (reverse-uri 'message-page (message-id m))])
              (message-subject m))
-            " (from: " (message-sender m) ")"))))))))
+            " (from: " (message-sender m) ")"
+            (when (message-unread? m)
+              " (unread)")))))))))
 
 (define/contract ((message-page db) _req id)
   (-> database? (-> request? id/c response?))
   (define msg (lookup-user-message db (user-id (current-user)) id))
   (unless msg (next-dispatcher))
+  (mark-message-read! db id)
   (define text-part
     (extract-text-part (m:mime-analyze (message-data msg))))
   (page

@@ -16,7 +16,8 @@
 (provide
  (schema-out message)
  list-user-messages
- lookup-user-message)
+ lookup-user-message
+ mark-message-read!)
 
 (define (insert-user-message! db user-id sender subject data)
   (with-database-connection [conn db]
@@ -40,6 +41,13 @@
     (lookup conn (~> (from message #:as m)
                      (where (and (= m.id ,msg-id)
                                  (= m.user-id ,user-id)))))))
+
+(define/contract (mark-message-read! db msg-id)
+  (-> database? id/c void?)
+  (with-database-connection [conn db]
+    (query-exec conn (~> (from message #:as m)
+                         (where (= m.id ,msg-id))
+                         (update [unread? #f])))))
 
 
 ;; mail-server ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

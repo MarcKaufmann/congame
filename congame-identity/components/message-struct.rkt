@@ -13,4 +13,5 @@
    [sender string/f]
    [subject string/f]
    [data binary/f]
+   [(unread? #t) boolean/f]
    [(received-at (now/moment)) datetime-tz/f]))
