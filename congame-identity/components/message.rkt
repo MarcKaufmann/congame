@@ -12,7 +12,9 @@
          threading)
 
 (provide
- (schema-out message))
+ (schema-out message)
+ list-user-messages
+ lookup-user-message)
 
 (define-schema message
   #:table "messages"
@@ -34,6 +36,21 @@
                                     #:sender sender
                                     #:subject subject
                                     #:data data)))))
+
+(define/contract (list-user-messages db user-id)
+  (-> database? id/c (listof message?))
+  (with-database-connection [conn db]
+    (for/list ([m (in-entities conn (~> (from message #:as m)
+                                        (where (= m.user-id ,user-id))
+                                        (order-by ([m.received-at #:desc]))))])
+      m)))
+
+(define/contract (lookup-user-message db user-id msg-id)
+  (-> database? id/c id/c (or/c #f message?))
+  (with-database-connection [conn db]
+    (lookup conn (~> (from message #:as m)
+                     (where (and (= m.id ,msg-id)
+                                 (= m.user-id ,user-id)))))))
 
 
 ;; mail-server ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -57,7 +57,15 @@
       (signup-page auth mailer users)]
 
      [("verify" (integer-arg) (string-arg))
-      (verify-page flashes users)]))
+      (verify-page flashes users)]
+
+     [("messages")
+      #:roles (user)
+      (messages-page db)]
+
+     [("messages" (integer-arg))
+      #:roles (user)
+      (message-page db)]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)

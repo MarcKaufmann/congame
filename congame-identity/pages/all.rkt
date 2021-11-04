@@ -8,4 +8,5 @@
 (reprovide
  "auth.rkt"
  "common.rkt"
- "dashboard.rkt")
+ "dashboard.rkt"
+ "message.rkt")
