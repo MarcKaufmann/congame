@@ -1,6 +1,7 @@
 ((nav-dashboard             . "Panou")
  (nav-log-in                . "Conectare")
  (nav-log-out               . "Deconectare")
+ (nav-messages              . "Mesaje")
  (nav-sign-up               . "Înregistrare")
  (nav-admin                 . "Administrare")
  (nav-jobs                  . "Sarcini")

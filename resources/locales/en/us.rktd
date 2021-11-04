@@ -1,6 +1,7 @@
 ((nav-dashboard             . "Dashboard")
  (nav-log-in                . "Log in")
  (nav-log-out               . "Log out")
+ (nav-messages              . "Messages")
  (nav-sign-up               . "Sign up")
  (nav-admin                 . "Admin")
  (nav-jobs                  . "Jobs")
