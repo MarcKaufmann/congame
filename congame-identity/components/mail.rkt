@@ -4,12 +4,14 @@
          koyo/url
          racket/contract
          racket/string
+         "message-struct.rkt"
          "user.rkt")
 
 (provide
  (all-from-out koyo/mail)
  mailer-send-welcome-email
- mailer-send-password-reset-email)
+ mailer-send-password-reset-email
+ mailer-send-message-notification-email)
 
 (define/contract (mailer-send-welcome-email m user)
   (-> mailer? user? void?)
@@ -40,6 +42,20 @@
    #:template-alias "password-reset"
    #:template-model (mailer-merge-common-variables m
                       'action_url action-url
+                      'name (user-username user)
+                      'username (user-username user))))
+
+(define/contract (mailer-send-message-notification-email m user msg)
+  (-> mailer? user? message? void?)
+  (mail-adapter-send-email-with-template
+   (mailer-adapter m)
+   #:to (user-username user)
+   #:from (mailer-sender m)
+   #:template-alias "message-notification"
+   #:template-model (mailer-merge-common-variables m
+                      'sender (message-sender msg)
+                      'subject (message-subject msg)
+                      'action_url (make-application-url "messages" (number->string (message-id msg)))
                       'name (user-username user)
                       'username (user-username user))))
 

@@ -57,7 +57,7 @@
            #:parallelism 2
            #:iterations 256
            #:memory 2048)]
-  [mail-server (db) make-mail-server]
+  [mail-server (db mailer users) make-mail-server]
   [mailer (make-mailer-factory
            #:adapter mail-adapter
            #:sender config:support-email
