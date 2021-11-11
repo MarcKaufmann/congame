@@ -24,9 +24,9 @@ case "$1" in
         IDENTITY_CONTAINER_PORT="8100"
         IDENTITY_ENVIRONMENT_PATH="$BASEPATH/identity-production.env"
         IDENTITY_RUN_PATH="/opt/congame/identity-production"
+        IDENTITY_CONTAINER_SMTP_PORT="8675"
         WEB_CONTAINER_NAME="congame"
         WEB_CONTAINER_PORT="8000"
-        WEB_CONTAINER_SMTP_PORT="8675"
         WEB_ENVIRONMENT_PATH="$BASEPATH/production.env"
         WEB_RUN_PATH="/opt/congame/production"
     ;;
@@ -35,9 +35,9 @@ case "$1" in
         IDENTITY_CONTAINER_PORT="9100"
         IDENTITY_ENVIRONMENT_PATH="$BASEPATH/identity-staging.env"
         IDENTITY_RUN_PATH="/opt/congame/identity-staging"
+        IDENTITY_CONTAINER_SMTP_PORT="9675"
         WEB_CONTAINER_NAME="congame-staging"
         WEB_CONTAINER_PORT="9000"
-        WEB_CONTAINER_SMTP_PORT="9675"
         WEB_ENVIRONMENT_PATH="$BASEPATH/staging.env"
         WEB_RUN_PATH="/opt/congame/staging"
     ;;
@@ -98,6 +98,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     --env-file "$IDENTITY_RUN_PATH/env" \
     --link "postgres-13" \
     -v "$IDENTITY_RUN_PATH":"$IDENTITY_RUN_PATH" \
+    -p "127.0.0.1:$IDENTITY_CONTAINER_SMTP_PORT":"8675" \
     -p "127.0.0.1:$IDENTITY_CONTAINER_PORT":"$IDENTITY_CONTAINER_PORT" \
     -d \
     "$IDENTITY_IMAGE_NAME"
@@ -121,7 +122,6 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     --env-file "$WEB_RUN_PATH/env" \
     --link "postgres-13" \
     -v "$WEB_RUN_PATH":"$WEB_RUN_PATH" \
-    -p "127.0.0.1:$WEB_CONTAINER_SMTP_PORT":"8675" \
     -p "127.0.0.1:$WEB_CONTAINER_PORT":"$WEB_CONTAINER_PORT" \
     -d \
     "$WEB_IMAGE_NAME"
