@@ -9,12 +9,12 @@ fi
 
 BASEPATH="$(dirname "$0")"
 IDENTITY_IMAGE_NAME="ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA"
-SMTP_IMAGE_NAME="ghcr.io/marckaufmann/congame-smtp-server:$GITHUB_SHA"
+SMTP_IMAGE_NAME="ghcr.io/marckaufmann/congame-smtp-proxy:$GITHUB_SHA"
 WEB_IMAGE_NAME="ghcr.io/marckaufmann/congame-web:$GITHUB_SHA"
 TARGET_HOST="deepploy@$DEPLOY_HOST"
 
 # NOTE: This gets deployed for both staging & production.
-SMTP_CONTAINER_NAME="congame-smtp-server"
+SMTP_CONTAINER_NAME="congame-smtp-proxy"
 SMTP_CONTAINER_PORT_1="25"
 SMTP_CONTAINER_PORT_2="675"
 

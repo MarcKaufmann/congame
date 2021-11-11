@@ -55,7 +55,7 @@
           [port 675]
           [mapping (make-hash)])
       (command-line
-       #:program "smtp-server"
+       #:program "smtp-proxy"
        #:once-each
        [("--ssl-key") KEY "the SSL key to use for encryption" (set! key KEY)]
        [("--ssl-cert") CERT "the SSL cert to use for encryption" (set! cert CERT)]
