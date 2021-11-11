@@ -7,4 +7,4 @@ raco pkg config \
      --user \
      --set catalogs \
      https://download.racket-lang.org/releases/8.1/catalog/ \
-     https://racksnaps.defn.io/snapshots/2021/09/23/catalog/
+     https://racksnaps.defn.io/snapshots/2021/11/11/catalog/

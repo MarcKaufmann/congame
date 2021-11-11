@@ -69,8 +69,10 @@ jobs:
     - name: Build docker images
       run: |
         docker build -t "ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA" -f Dockerfile.identity .
+        docker build -t "ghcr.io/marckaufmann/congame-smtp-server:$GITHUB_SHA" -f Dockerfile.smtp-server .
         docker build -t "ghcr.io/marckaufmann/congame-web:$GITHUB_SHA" -f Dockerfile.web .
         docker tag "ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA" "congame-identity:latest"
+        docker tag "ghcr.io/marckaufmann/congame-smtp-server:$GITHUB_SHA" "congame-smtp-server:latest"
         docker tag "ghcr.io/marckaufmann/congame-web:$GITHUB_SHA" "congame-web:latest"
 
     - name: Test the application
@@ -96,6 +98,7 @@ jobs:
     - name: Push docker images
       run: |
         docker push "ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA"
+        docker push "ghcr.io/marckaufmann/congame-smtp-server:$GITHUB_SHA"
         docker push "ghcr.io/marckaufmann/congame-web:$GITHUB_SHA"
 
     - name: Deploy staging

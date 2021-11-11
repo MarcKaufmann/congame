@@ -9,8 +9,14 @@ fi
 
 BASEPATH="$(dirname "$0")"
 IDENTITY_IMAGE_NAME="ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA"
+SMTP_IMAGE_NAME="ghcr.io/marckaufmann/congame-smtp-server:$GITHUB_SHA"
 WEB_IMAGE_NAME="ghcr.io/marckaufmann/congame-web:$GITHUB_SHA"
 TARGET_HOST="deepploy@$DEPLOY_HOST"
+
+# NOTE: This gets deployed for both staging & production.
+SMTP_CONTAINER_NAME="congame-smtp-server"
+SMTP_CONTAINER_PORT_1="25"
+SMTP_CONTAINER_PORT_2="675"
 
 case "$1" in
     PRODUCTION)
@@ -20,6 +26,7 @@ case "$1" in
         IDENTITY_RUN_PATH="/opt/congame/identity-production"
         WEB_CONTAINER_NAME="congame"
         WEB_CONTAINER_PORT="8000"
+        WEB_CONTAINER_SMTP_PORT="8765"
         WEB_ENVIRONMENT_PATH="$BASEPATH/production.env"
         WEB_RUN_PATH="/opt/congame/production"
     ;;
@@ -30,6 +37,7 @@ case "$1" in
         IDENTITY_RUN_PATH="/opt/congame/identity-staging"
         WEB_CONTAINER_NAME="congame-staging"
         WEB_CONTAINER_PORT="9000"
+        WEB_CONTAINER_SMTP_PORT="9765"
         WEB_ENVIRONMENT_PATH="$BASEPATH/staging.env"
         WEB_RUN_PATH="/opt/congame/staging"
     ;;
@@ -93,6 +101,15 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     -d \
     "$IDENTITY_IMAGE_NAME"
 
+  docker stop "$SMTP_CONTAINER_NAME" || true
+  docker rm "$SMTP_CONTAINER_NAME" || true
+  docker run \
+    --name "$SMTP_CONTAINER_NAME" \
+    -p "0.0.0.0:$SMTP_CONTAINER_PORT_1":"$SMTP_CONTAINER_PORT_2" \
+    -p "0.0.0.0:$SMTP_CONTAINER_PORT_2":"$SMTP_CONTAINER_PORT_2" \
+    -d \
+    "$SMTP_IMAGE_NAME"
+
   docker stop "$WEB_CONTAINER_NAME" || true
   docker rm "$WEB_CONTAINER_NAME" || true
   docker run \
@@ -100,6 +117,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     --env-file "$WEB_RUN_PATH/env" \
     --link "postgres-13" \
     -v "$WEB_RUN_PATH":"$WEB_RUN_PATH" \
+    -p "127.0.0.1:$WEB_CONTAINER_SMTP_PORT":"$WEB_CONTAINER_SMTP_PORT" \
     -p "127.0.0.1:$WEB_CONTAINER_PORT":"$WEB_CONTAINER_PORT" \
     -d \
     "$WEB_IMAGE_NAME"

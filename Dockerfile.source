@@ -10,6 +10,7 @@ COPY congame-identity /src/congame/congame-identity
 COPY congame-identity-migrations /src/congame/congame-identity-migrations
 COPY congame-pjb-studies /src/congame/congame-pjb-studies
 COPY congame-price-lists /src/congame/congame-price-lists
+COPY congame-smtp-proxy /src/congame/congame-smtp-proxy
 COPY congame-tests /src/congame/congame-tests
 COPY congame-web /src/congame/congame-web
 COPY congame-web-migrations /src/congame/congame-web-migrations
@@ -28,6 +29,7 @@ RUN raco pkg install -D --auto --skip-installed \
   congame-identity/ \
   congame-pjb-studies/ \
   congame-price-lists/ \
+  congame-smtp-proxy/ \
   congame-tests/ \
   congame-web/
 RUN raco setup --pkgs \
@@ -36,5 +38,6 @@ RUN raco setup --pkgs \
   congame-identity \
   congame-pjb-studies \
   congame-price-lists \
+  congame-smtp-proxy \
   congame-tests \
   congame-web
