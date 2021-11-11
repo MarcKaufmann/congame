@@ -66,6 +66,7 @@
   [(define (component-start ms)
      (define stop
        (start-smtp-server
+        #:host "0.0.0.0"
         #:port 8675
         (handle-envelope ms)))
      (struct-copy mail-server ms [stop stop]))

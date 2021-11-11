@@ -121,7 +121,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     --env-file "$WEB_RUN_PATH/env" \
     --link "postgres-13" \
     -v "$WEB_RUN_PATH":"$WEB_RUN_PATH" \
-    -p "127.0.0.1:$WEB_CONTAINER_SMTP_PORT":"$WEB_CONTAINER_SMTP_PORT" \
+    -p "127.0.0.1:$WEB_CONTAINER_SMTP_PORT":"8675" \
     -p "127.0.0.1:$WEB_CONTAINER_PORT":"$WEB_CONTAINER_PORT" \
     -d \
     "$WEB_IMAGE_NAME"
