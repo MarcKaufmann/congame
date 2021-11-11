@@ -26,7 +26,7 @@ case "$1" in
         IDENTITY_RUN_PATH="/opt/congame/identity-production"
         WEB_CONTAINER_NAME="congame"
         WEB_CONTAINER_PORT="8000"
-        WEB_CONTAINER_SMTP_PORT="8765"
+        WEB_CONTAINER_SMTP_PORT="8675"
         WEB_ENVIRONMENT_PATH="$BASEPATH/production.env"
         WEB_RUN_PATH="/opt/congame/production"
     ;;
@@ -37,7 +37,7 @@ case "$1" in
         IDENTITY_RUN_PATH="/opt/congame/identity-staging"
         WEB_CONTAINER_NAME="congame-staging"
         WEB_CONTAINER_PORT="9000"
-        WEB_CONTAINER_SMTP_PORT="9765"
+        WEB_CONTAINER_SMTP_PORT="9675"
         WEB_ENVIRONMENT_PATH="$BASEPATH/staging.env"
         WEB_RUN_PATH="/opt/congame/staging"
     ;;
@@ -78,6 +78,7 @@ log "Pulling image from GHCR..."
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   echo "$PAT" | docker login ghcr.io -u MarcKaufmann --password-stdin
   docker pull "$IDENTITY_IMAGE_NAME"
+  docker pull "$SMTP_IMAGE_NAME"
   docker pull "$WEB_IMAGE_NAME"
 EOF
 
@@ -108,7 +109,9 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     -p "0.0.0.0:$SMTP_CONTAINER_PORT_1":"$SMTP_CONTAINER_PORT_2" \
     -p "0.0.0.0:$SMTP_CONTAINER_PORT_2":"$SMTP_CONTAINER_PORT_2" \
     -d \
-    "$SMTP_IMAGE_NAME"
+    "$SMTP_IMAGE_NAME" \
+      --domain "@identity.totalinsightmanagement.com" 8675 \
+      --domain "@identity-staging.totalinsightmanagement.com" 9675
 
   docker stop "$WEB_CONTAINER_NAME" || true
   docker rm "$WEB_CONTAINER_NAME" || true
