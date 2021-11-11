@@ -110,6 +110,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     -p "0.0.0.0:$SMTP_CONTAINER_PORT_2":"$SMTP_CONTAINER_PORT_2" \
     -d \
     "$SMTP_IMAGE_NAME" \
+      --host 0.0.0.0 \
       --domain "@identity.totalinsightmanagement.com" 8675 \
       --domain "@identity-staging.totalinsightmanagement.com" 9675
 
