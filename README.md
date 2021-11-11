@@ -43,9 +43,10 @@ The features that will get implemented will however be determined by the priorit
 
     $ nvm use && npm install && npm run build
     $ raco pkg install chief
-    $ raco pkg install congame-core/   # install and build the core library and its deps
-    $ raco pkg install congame-web/    # install and build the application and its deps
-    $ raco pkg install congame-doc/    # install and build the docs and their deps
+    $ raco pkg install congame-core/     # install and build the core library and its deps
+    $ raco pkg install congame-identity/ # install and build the application and its deps
+    $ raco pkg install congame-web/      # install and build the application and its deps
+    $ raco pkg install congame-doc/      # install and build the docs and their deps
     # To install a package or study that tests depend on (e.g. congame-pjb-studies),
     # uncomment the following line and replace by appropriate package.
     # raco pkg install congame-pjb-studies/
