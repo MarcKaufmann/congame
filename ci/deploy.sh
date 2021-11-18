@@ -24,7 +24,6 @@ case "$1" in
         IDENTITY_CONTAINER_PORT="8100"
         IDENTITY_ENVIRONMENT_PATH="$BASEPATH/identity-production.env"
         IDENTITY_RUN_PATH="/opt/congame/identity-production"
-        IDENTITY_CONTAINER_SMTP_PORT="8675"
         WEB_CONTAINER_NAME="congame"
         WEB_CONTAINER_PORT="8000"
         WEB_ENVIRONMENT_PATH="$BASEPATH/production.env"
@@ -35,7 +34,6 @@ case "$1" in
         IDENTITY_CONTAINER_PORT="9100"
         IDENTITY_ENVIRONMENT_PATH="$BASEPATH/identity-staging.env"
         IDENTITY_RUN_PATH="/opt/congame/identity-staging"
-        IDENTITY_CONTAINER_SMTP_PORT="9675"
         WEB_CONTAINER_NAME="congame-staging"
         WEB_CONTAINER_PORT="9000"
         WEB_ENVIRONMENT_PATH="$BASEPATH/staging.env"
@@ -100,7 +98,6 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     --env-file "$IDENTITY_RUN_PATH/env" \
     --network congame \
     -v "$IDENTITY_RUN_PATH":"$IDENTITY_RUN_PATH" \
-    -p "127.0.0.1:$IDENTITY_CONTAINER_SMTP_PORT":"8675" \
     -p "127.0.0.1:$IDENTITY_CONTAINER_PORT":"$IDENTITY_CONTAINER_PORT" \
     -d \
     "$IDENTITY_IMAGE_NAME"
@@ -116,7 +113,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     "$SMTP_IMAGE_NAME" \
       --host 0.0.0.0 \
       --domain "@identity.totalinsightmanagement.com" congame-identity 8675 \
-      --domain "@identity-staging.totalinsightmanagement.com" congame-identity-staging 9675
+      --domain "@identity-staging.totalinsightmanagement.com" congame-identity-staging 8675
 
   docker stop "$WEB_CONTAINER_NAME" || true
   docker rm "$WEB_CONTAINER_NAME" || true
