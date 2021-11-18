@@ -12,12 +12,14 @@
     (error 'handler "only one recipient allowed"))
   (define recipient (car (envelope-recipients e)))
   (define matched?
-    (for/first ([(domain port) (in-hash mapping)] #:when (regexp-match? domain recipient))
+    (for/first ([(domain host&port) (in-hash mapping)] #:when (regexp-match? domain recipient))
+      (define host (car host&port))
+      (define port (cdr host&port))
       (define-values (header lines)
         (split-data (envelope-data e)))
       (begin0 #t
         (smtp-send-message
-         "127.0.0.1" #:port-no port
+         host #:port-no port
          (envelope-sender e)
          (envelope-recipients e)
          header
@@ -68,7 +70,7 @@
                      (exit 1))
                    (set! port port-num)]
        #:multi
-       [("--domain") DOMAIN PORT "a mapping from a TLD to the port of an SMTP server"
+       [("--domain") DOMAIN HOSTNAME PORT "a mapping from a TLD to the host & port of an SMTP server"
                      (unless (string-prefix? DOMAIN "@")
                        (eprintf "error: DOMAIN must start with '@'~n")
                        (exit 1))
@@ -76,7 +78,9 @@
                      (unless port-num
                        (eprintf "error: PORT must be a number~n")
                        (exit 1))
-                     (hash-set! mapping (byte-regexp (regexp-quote (string->bytes/utf-8 DOMAIN))) port-num)]
+                     (define domain-re
+                       (byte-regexp (regexp-quote (string->bytes/utf-8 DOMAIN))))
+                     (hash-set! mapping domain-re (cons HOSTNAME port-num))]
        #:args []
        (when (hash-empty? mapping)
          (eprintf "error: at least one --domain is required~n")

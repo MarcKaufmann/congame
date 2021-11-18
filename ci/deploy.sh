@@ -91,12 +91,14 @@ EOF
 scp -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$IDENTITY_ENVIRONMENT_PATH" "$TARGET_HOST:$IDENTITY_RUN_PATH/env"
 scp -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$WEB_ENVIRONMENT_PATH" "$TARGET_HOST:$WEB_RUN_PATH/env"
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
+  docker network create congame || true
   docker stop "$IDENTITY_CONTAINER_NAME" || true
   docker rm "$IDENTITY_CONTAINER_NAME" || true
+
   docker run \
     --name "$IDENTITY_CONTAINER_NAME" \
     --env-file "$IDENTITY_RUN_PATH/env" \
-    --link "postgres-13" \
+    --network congame \
     -v "$IDENTITY_RUN_PATH":"$IDENTITY_RUN_PATH" \
     -p "127.0.0.1:$IDENTITY_CONTAINER_SMTP_PORT":"8675" \
     -p "127.0.0.1:$IDENTITY_CONTAINER_PORT":"$IDENTITY_CONTAINER_PORT" \
@@ -107,20 +109,21 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   docker rm "$SMTP_CONTAINER_NAME" || true
   docker run \
     --name "$SMTP_CONTAINER_NAME" \
+    --network congame \
     -p "0.0.0.0:$SMTP_CONTAINER_PORT_1":"$SMTP_CONTAINER_PORT_2" \
     -p "0.0.0.0:$SMTP_CONTAINER_PORT_2":"$SMTP_CONTAINER_PORT_2" \
     -d \
     "$SMTP_IMAGE_NAME" \
       --host 0.0.0.0 \
-      --domain "@identity.totalinsightmanagement.com" 8675 \
-      --domain "@identity-staging.totalinsightmanagement.com" 9675
+      --domain "@identity.totalinsightmanagement.com" congame-identity 8675 \
+      --domain "@identity-staging.totalinsightmanagement.com" congame-identity-staging 9675
 
   docker stop "$WEB_CONTAINER_NAME" || true
   docker rm "$WEB_CONTAINER_NAME" || true
   docker run \
     --name "$WEB_CONTAINER_NAME" \
+    --network congame \
     --env-file "$WEB_RUN_PATH/env" \
-    --link "postgres-13" \
     -v "$WEB_RUN_PATH":"$WEB_RUN_PATH" \
     -p "127.0.0.1:$WEB_CONTAINER_PORT":"$WEB_CONTAINER_PORT" \
     -d \
