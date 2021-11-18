@@ -107,14 +107,14 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   docker run \
     --name "$SMTP_CONTAINER_NAME" \
     --network congame \
-    -v /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001:/etc/certs \
+    -v /etc/letsencrypt:/etc/letsencrypt \
     -p "0.0.0.0:$SMTP_CONTAINER_PORT_1":"$SMTP_CONTAINER_PORT_2" \
     -p "0.0.0.0:$SMTP_CONTAINER_PORT_2":"$SMTP_CONTAINER_PORT_2" \
     -d \
     "$SMTP_IMAGE_NAME" \
       --host 0.0.0.0 \
-      --ssl-key /etc/certs/privkey.pem \
-      --ssl-cert /etc/certs/fullchain.pem \
+      --ssl-key /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001/privkey.pem \
+      --ssl-cert /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001/fullchain.pem \
       --domain "@identity.totalinsightmanagement.com" congame-identity 8675 \
       --domain "@identity-staging.totalinsightmanagement.com" congame-identity-staging 8675
 
