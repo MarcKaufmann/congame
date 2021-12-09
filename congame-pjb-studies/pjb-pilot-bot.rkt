@@ -6,48 +6,38 @@
          "pjb-pilot.rkt")
 
 (provide
- pjb-pilot-bot
+ make-pjb-pilot-bot
  pjb-pilot-bot-model
- relax-test-bot
+ make-relax-test-bot
  relax-test-bot-model)
 
-(define pjb-pilot-bot
+(define make-pjb-pilot-bot
   (study->bot pjb-pilot-study))
 
-(define relax-test-bot
+(define make-relax-test-bot
   (study->bot relax-test-study))
 
-(define (relax-test-bot-model id)
+(define (relax-test-bot-model id bot)
   (match id
-    [_ (values)]))
+    [_ (bot)]))
 
-(define (pjb-pilot-bot-model id)
+(define (pjb-pilot-bot-model id bot)
   (match id
-    #;['(*root* elicit-WTW-and-work elicit-immediate-WTW)
-       (willing-to-work? #t)]
-
     ['(*root* the-study tutorial-tasks task)
-     #t]
+     (bot #t)]
 
     ['(*root* the-study required-tasks task)
-     #t
-     #;(begin0 (zero? c)
-         (set! c (add1 c)))
-     ]
-
-    #;['(*root* price-list)
-       1]
+     (bot #t)]
 
     ['(*root* the-study elicit-WTW-and-work extra-tasks task)
-     #t]
+     (bot #t)]
 
     ['(*root* the-study elicit-WTW-and-work elicit-immediate-WTW)
-     2]
+     (bot 2)]
 
     [_
-     (values)]))
+     (bot)]))
 
-;; TODO: Give bots the ability to `get' (but maybe not put!) data.
 (module+ main
   (time
    (run-bot
@@ -55,4 +45,4 @@
     #:username "bot@example.com"
     #:password "password"
     #:headless? #t
-    (pjb-pilot-bot pjb-pilot-bot-model))))
+    (make-pjb-pilot-bot pjb-pilot-bot-model))))

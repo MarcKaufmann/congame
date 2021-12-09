@@ -42,7 +42,7 @@
                                (bot-set-study-instance-id the-set)
                                (bot-set-id the-set)
                                id)
-            #:role 'bot
+            #:roles #(bot)
             #:verified? #t
             #:bot-set-id (bot-set-id the-set))))
 
