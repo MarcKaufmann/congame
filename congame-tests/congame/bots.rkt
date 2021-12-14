@@ -68,7 +68,7 @@
      #:username "bot@example.com"
      #:password "password"
      #:headless? #t
-     (pjb-pilot-bot pjb-pilot-bot-model)))))
+     (make-pjb-pilot-bot pjb-pilot-bot-model)))))
 
 (module+ test
   (require rackunit/text-ui)
