@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require net/http-easy
+         racket/contract
          racket/format
          racket/hash
          racket/list
@@ -119,8 +120,11 @@
   (for/list ([p (get-participants-data instance-id)])
     (map (get-participant-data p) vars-to-keep)))
 
+
 (define (frm a)
-  (cond [(string? a) (format "\"~a\"" a)]
+  (define (escape s)
+    (format "\"~a\"" (string-replace a "\"" "\\\"")))
+  (cond [(string? a) (escape a)]
         [(symbol? a) (frm (symbol->string a))]
         [(boolean? a) (if (equal? a #f) "FALSE" "TRUE")]
         [(and (list? a) (empty? a)) "NA"]
@@ -131,10 +135,14 @@
             ([iid pjb-pilot-instance-ids])
     (append (get-clean-data iid) all-data)))
 
+(define/contract (dash->underscore s)
+  (-> string? string?)
+  (string-replace s "-" "_"))
+
 (define (write-data data path)
   (call-with-output-file path
     (lambda (out)
-      (displayln (string-join (map frm var-labels) ",") out)
+      (displayln (string-join (map (compose dash->underscore frm) var-labels) ",") out)
       (for ([p data])
         (displayln (string-join (map frm p) ",") out)))))
 

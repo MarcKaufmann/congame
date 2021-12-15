@@ -1,0 +1,193 @@
+---
+title: "An Experiment on Projection Bias in Effort Choices"
+author: |
+  | Marc Kaufmann (Central European University)
+date: "December 2021"
+output:
+  beamer_presentation:
+    theme: metropolis
+header-includes: 
+  - \usepackage{graphicx}
+  - \usepackage{tcolorbox}
+  - \usepackage{import}
+fontsize: 10pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Introduction
+
+**Research Question**: Do people exhibit projection bias in effort choices?
+
+**Today**: How to create differences in marginal disutility of effort
+
+Idea of the pilot that I ran in September 2021:
+
+1. Everyone does required tasks
+2. Two treatments:
+    - *No Rest*: elicit WTW for 5, 8, 11, 15 additional tasks, then rest
+    - *Rest*: rest, then elicit WTW for 5, 8, 11, 15 additional tasks
+    
+## Introduction
+
+Projection bias predicts that people mispredict their future tastes as closer to their current tastes than they are.
+
+- In effort choices: project their current taste for work ($D'(s)$) onto the future: 
+\begin{equation*}
+  \tilde{D}'(e|s) = (1 - \alpha) D'(e) + \alpha D'(s)
+\end{equation*}
+
+where $\alpha \in [0, 1]$ is degree of projection bias. 
+
+For identification, need change in $D'(s)$, the current (marginal) disutility of work.
+
+## Literature
+
+Bla.
+
+## Experiment Pilot: Design
+
+Participants do the following:
+
+- Tutorial with 2 tasks
+- Some questions and consent
+- After consent, get randomized into individually balanced (not cross-balanced) treatments:
+    - *rest* or *no rest* before elicitation of WTW
+    - 5, 10, or 15 required tasks
+    - participation fee (can be high or low)
+    - *classical music*, *meditation*, or *wave sounds* during rest (always 5-7 minutes)
+- Required tasks
+- *No Rest*: price list for WTW for 5, 8, 11, 15 extra tasks; then rest
+- *Rest*: rest; then price list for WTW 
+- Debrief survey
+
+## Experiment Pilot: Summary Statistics
+
+```{r load_data, message=FALSE, warning=FALSE, echo=FALSE}
+library(tidyverse)
+library(ggplot2)
+library(kableExtra)
+
+df <- readRDS("clean_df.rds")
+```
+
+```{r summary_stats, message=FALSE, echo=FALSE}
+df %>%
+  group_by(rest_treatment, relax_treatment) %>%
+  summarise(n()) %>%
+  kable()
+```
+
+## Experiment Pilot: Summary Statistics
+
+```{r summary_stats2, echo=FALSE, message=FALSE}
+df %>%
+  group_by(rest_treatment, participation_fee) %>%
+  summarise(n()) %>%
+  kable()
+```
+
+## Experiment Pilot: Summary Statistics
+
+```{r balanced3, echo=FALSE, message=FALSE}
+df %>%
+  group_by(rest_treatment, relax_treatment) %>%
+  summarise(n()) %>%
+  kable()
+```
+
+## Experiment Pilot: Results
+
+```{r line_plot_main_treatment, echo=FALSE, message=FALSE}
+df %>% 
+  group_by(rest_treatment, extra_tasks) %>%
+  summarize(WTW = mean(WTW), N = n()) %>%
+  ggplot(mapping = aes(x = extra_tasks, y = WTW)) + 
+  geom_line(aes(group = rest_treatment, color = rest_treatment)) + xlim(5, 15) + ylim(0, 3.2)
+```
+
+## Experiment Pilot: Results
+
+```{r line_plot}
+df %>%
+  mutate(rest_treatment = if_else(rest_treatment == "elicit-then-get-rest", "NR", "R")) %>%
+  mutate(cross = paste(rest_treatment, relax_treatment, sep = "_")) %>%
+  group_by(cross, relax_treatment, rest_treatment, extra_tasks) %>%
+  summarize(WTW = mean(WTW), N = n()) %>%
+  ggplot(mapping = aes(x = extra_tasks, y = WTW, group = cross)) +
+  geom_line(aes(color = relax_treatment, linetype = rest_treatment)) + xlim(5, 15) + ylim(0, 3.2) + 
+  labs(title = "Splitting by rest treatment and type")
+```
+
+## Experiment Pilot: Results
+
+```{r box_plot_main_treatments}
+df %>%
+  mutate(extra_tasks = as_factor(extra_tasks)) %>%
+  ggplot(aes(x = extra_tasks, y = WTW)) + 
+  geom_boxplot(aes(color = rest_treatment)) +
+  facet_grid(. ~ rest_treatment)
+```
+
+## Experiment Pilot: Results
+
+```{r box_plot_by_rest_type_no_rest}
+df %>%
+  filter(rest_treatment == "elicit-then-get-rest") %>%
+  mutate(extra_tasks = as_factor(extra_tasks)) %>%
+  ggplot(aes(x = extra_tasks, y = WTW)) + 
+  geom_boxplot(aes(color = relax_treatment)) +
+  facet_grid(. ~ relax_treatment) +
+  labs(title = "No Rest before Elicitation")
+```
+
+## Experiment Pilot: Results
+
+```{r box_plot_by_rest_type_rest}
+df %>%
+  filter(rest_treatment == "get-rest-then-elicit") %>%
+  mutate(extra_tasks = as_factor(extra_tasks)) %>%
+  ggplot(aes(x = extra_tasks, y = WTW)) + 
+  geom_boxplot(aes(color = relax_treatment)) +
+  facet_grid(. ~ relax_treatment) +
+  labs(title = "Rest before Elicitation")
+```
+
+## Experiment Pilot: Results
+
+\import{./}{basic_regs.tex}
+
+## Experiment Pilot: Results
+
+\import{./}{required_tasks_regs.tex}
+
+## Experiment Pilot: Results
+
+\import{./}{fee_regs.tex}
+
+## Conclusion
+
+How to get people tired -- how to get changes in marginal disutility?
+
+- Across days?
+- Within days?
+- Without attrition (earlier experiment had that issue -- and no meaningful change in $D'$)
+
+## Every End is a Beginning
+
+\pause{}
+
+\begin{center}
+    \huge
+    Thanks
+    \normalsize
+\end{center}
+
+Email questions, compliments, and helpful comments to Marc: KaufmannM@ceu.edu
+
+
+# References
+
+## References

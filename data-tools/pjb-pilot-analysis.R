@@ -1,156 +1,147 @@
-## Get local data
-library("curl")
-library("httr")
-library("jsonlite")
 library("tidyverse")
 
-studies_url <- "/api/v1/studies.json"
+df_raw <- read_csv("all-instances.csv")
 
-congame_api <- function(path, is_local) {
-  if (is_local) {
-    base_url <- "http://127.0.0.1:5100"
-    url = modify_url(base_url, path=path)
-    api_key <- Sys.getenv("CONGAME_LOCAL_API_KEY")
-  } else {
-    base_url <- "https://totalinsightmanagement.com"
-    url = modify_url(base_url, path=path)
-    api_key <- Sys.getenv("CONGAME_API_KEY")
-  }
+max_wtw <- "3.0" # Check that the scale maxes out at 3.0, i.e. 2.8 is the highest possible amount
 
-  resp <- GET(url=url, add_headers(authorization = api_key))
-  if (http_type(resp) != "application/json") {
-    stop("API did not return json", call = FALSE)
-  }
+neverswitch_to_max <- function(wtw) {
+  if_else(wtw == "never-switched", max_wtw, wtw)
+}
 
-  parsed <- jsonlite::fromJSON(content(resp, "text"), simplifyVector = FALSE)
-  parsed_df <- jsonlite::fromJSON(content(resp, "text", simplifyVector = TRUE, flatten = TRUE))
-
-  structure(
-    list(
-      content=parsed,
-      df = parsed_df,
-      path=path,
-      response=resp
-    ),
-    class = 'congame_api'
+df <- df_raw %>%
+  rename(has_completed = `completed?`) %>%
+  # Keep participants completed the study
+  filter(has_completed) %>%
+  # Drop participants who did not consent or failed out of the study
+  filter(rest_treatment %in% c("get-rest-then-elicit", "elicit-then-get-rest")) %>%
+  # Replace "never-switched" by max_wtw
+  mutate(
+    pl5 = neverswitch_to_max(pl5),
+    pl8 = neverswitch_to_max(pl8),
+    pl11 = neverswitch_to_max(pl11),
+    pl15 = neverswitch_to_max(pl15)
+  ) %>%
+  pivot_longer(names_to = "extra_tasks", names_prefix = "pl", values_to = "WTW", cols = starts_with("pl")) %>%
+  select(participant_id, required_tasks, rest_treatment, relax_treatment, extra_tasks, WTW, everything()) %>%
+  filter(WTW != "switch-back") %>%
+  mutate(
+    WTW = parse_double(WTW),
+    extra_tasks = parse_double(extra_tasks),
+    rest_treatment = as_factor(rest_treatment),
+    relax_treatment = as_factor(relax_treatment)
   )
-}
 
-print.congame_api <- function(x, ...) {
-  cat("<congame ", x$path, ">\n", sep="")
-  str(x$content)
-  invisible(x)
-}
+saveRDS(df, "clean_df.rds")
 
-congame_participant_api <- function(study_id, instance_id, is_local = TRUE) {
-  congame_api(paste0("/api/v1/studies/", study_id, "/instances/", instance_id, "/participants.json"), is_local)
-}
+df %>% 
+  group_by(extra_tasks, rest_treatment, relax_treatment) %>%
+  summarise(mean(WTW), n())
 
-## Shape of the data:
-# instance-id
-# study-id
-# list of participants
-# - instance-id
-# - study-id
-# - participant-id
-# - vars: list of steps
-#   - each step is a list of 7 items:
-#     - first-put-at: chr, but really a datetime
-#     - group: chr
-#     - id: chr
-#     - last-put-at: chr, but really a datetime
-#     - round: chr
-#     - stack: list of multiple chr, e.g. list("*root*", "the-study")
-#     - value: depends on the type of step, can be anything probably
-#     The combination of id and stack is unique in this experiment. More generally one might need to disambiguate via group x round for uniqueness.
+df <- df %>%
+  rename(rest_treatment = rest) %>%
+  rename(relax = relax_treatment)
 
-djson <- readRDS("prolific-pilot.rds")
+df <- df %>%
+  mutate(rest = if_else(rest == "elicit-then-get-rest", "NR", "R"),
+         relax = if_else(relax == "classical-piano", "classical", if_else(relax == "guided-meditation", "meditation", "waves")))
 
-## Check that all participants have identical names (they do)
-stopifnot(djson$participants %>% map(names) %>% unique() %>% length() == 1)
+# After making data long, drop choices that are inconsistent
+# After that, turn wtw into doubles
+library(stargazer)
+m1 <- lm(WTW ~ as_factor(extra_tasks) + rest, data = df)
+m2 <- lm(WTW ~ as_factor(extra_tasks) + rest + relax, data = df)
+m3 <- lm(WTW ~ as_factor(extra_tasks) + rest*relax, data = df)
 
-vars_to_keep <- c(
-  "consent?",
-  "practice-tasks",
-  "required-tasks",
-  "participation-fee",
-  "relax-treatment",
-  "tutorial-success?",
-  "consent?",
-  "rest-treatment"
-)
+stargazer(m1, m2, m3, header=FALSE, 
+          title='Base Regressions', 
+          type='latex', 
+          float = TRUE, 
+          single.row = TRUE,
+          no.space = TRUE,
+          column.sep.width = "3pt",
+          font.size = "tiny") %>%
+  write("basic_regs.tex")
 
-stack_for_vars <- list(
-  "practice-tasks" = "*root*||the-study",
-  "required-tasks" = "*root*||the-study",
-  "participation-fee" = "*root*||the-study",
-  "relax-treatment" = "*root*||the-study",
-  "tutorial-success?" = "*root*||the-study",
-  "consent?" = "*root*||the-study",
-  "rest-treatment" = "*root*||the-study"
-)
+m4 <- lm(WTW ~ as_factor(extra_tasks) + required_tasks + rest, data = df)
+m5 <- lm(WTW ~ as_factor(extra_tasks) + required_tasks + rest + relax, data = df)
+m6 <- lm(WTW ~ as_factor(extra_tasks) + required_tasks + rest*relax, data = df)
 
-df <- map_dfr(djson$participants,
-              function(p) {
-                c(
-                  c(
-                    pid = p[["participant-id"]],
-                    instance_id = p[["instance-id"]],
-                    study_id = p[["study-id"]],
-                    practice_tasks = p$vars[["practice-tasks"]]
-                  ),
-                  pivot_wider(
-                    map_df(
-                      keep(p$vars,
-                           ~ (.$id %in% vars_to_keep) && (paste0(.$stack, collapse = "||") == stack_for_vars[[.$id]])),
-                      ~ c(task_id = .$id, value = if_else(is.list(.$value), flatten(.$value), .$value))
-                    ),
-                    names_from = "task_id",
-                    values_from = "value"
-                  ))
-              })
+stargazer(m4, m5, m6, header=FALSE, 
+          title='Required Tasks Regressions', 
+          type='latex', 
+          float = TRUE, 
+          single.row = TRUE,
+          no.space = TRUE,
+          column.sep.width = "3pt",
+          font.size = "tiny") %>%
+  write("required_tasks_regs.tex")
 
-get_df <- function(f) {
-  map_df(djson$participants,
-          function(p) {
-            cbind(
-              tibble(
-                pid = p[["participant-id"]],
-                instance_id = p[["instance-id"]],
-                study_id = p[["study-id"]],
-                practice_tasks = p$vars[["practice-tasks"]]
-              ),
-              f(p$vars)
-            )})
-}
+m7 <- lm(WTW ~ as_factor(extra_tasks) + required_tasks + as_factor(participation_fee) + rest, data = df)
+m8 <- lm(WTW ~ as_factor(extra_tasks) + required_tasks+ as_factor(participation_fee) + rest + relax, data = df)
+m9 <- lm(WTW ~ as_factor(extra_tasks) + required_tasks + as_factor(participation_fee) + rest*relax, data = df )
+  
+stargazer(m7, m8, m9, header=FALSE, 
+          title='Base Regressions', 
+          type='latex', 
+          float = TRUE, 
+          single.row = TRUE,
+          no.space = TRUE,
+          column.sep.width = "3pt",
+          font.size = "tiny") %>%
+  write("fee_regs.tex")
 
-get_step <- function(step_id, stack) {
-  function(pvars) {
-    keep(pvars, ~ (.$id == step_id) && (paste0(.$stack, collapse = "||") == stack))
-  }
-}
+library("ggplot2")
 
-get_WTWs <- function(pvars) {
-  r <- get_step("WTWs", "*root*||the-study")(pvars)
-  if (length(r) == 1)  return(as_tibble(r[[1]]$value)) else return(tibble(pl5 = NA, pl8 = NA, pl11 = NA, pl15 = NA))
-}
+# Plot the disutility at 5, 8, 11, 15 tasks for all
 
-get_debrief <- function(pvars) {
-  r <- get_step("debrief-survey", "*root*||the-study")(pvars)
-  if (length(r) == 1) {
-    rv <- r[[1]]$value
-    tibble(
-      "comments" = rv[["comments"]],
-      "gender"   = rv[["gender"]]
-    )
-  } else {
-    tibble(
-      "comments" = NA,
-      "gender" = NA
-    )
-  }
-}
+df %>% 
+  group_by(rest_treatment, extra_tasks) %>%
+  summarize(WTW = mean(WTW), N = n()) %>%
+  ggplot(mapping = aes(x = extra_tasks, y = WTW)) + 
+  geom_line(aes(group = rest_treatment, color = rest_treatment)) + xlim(5, 15) + ylim(0, 3.2)
 
-df_WTWs <- get_df(get_WTWs)
+#df %>%
+#  filter(rest_treatment == "elicit-then-get-rest") %>%
+#  group_by(relax_treatment, extra_tasks) %>%
+#  summarize(WTW = mean(WTW), N = n()) %>%
+#  ggplot(mapping = aes(x = extra_tasks, y = WTW, group = relax_treatment, color = relax_treatment)) + 
+#  geom_line() + xlim(5, 15) + ylim(0, 3.2) + 
+#  labs(title = "Elicit before rest")
+#
+#df %>%
+#  filter(rest_treatment == "get-rest-then-elicit") %>%
+#  group_by(relax_treatment, extra_tasks) %>%
+#  summarize(WTW = mean(WTW), N = n()) %>%
+#  ggplot(mapping = aes(x = extra_tasks, y = WTW, group = relax_treatment, color = relax_treatment)) + 
+#  geom_line() + xlim(5, 15) + ylim(0, 3.2) +
+#  labs(title = "Rest then elicit")
+  
+df %>%
+  mutate(rest_treatment = if_else(rest_treatment == "elicit-then-get-rest", "NR", "R")) %>%
+  mutate(cross = paste(rest_treatment, relax_treatment, sep = "_")) %>%
+  group_by(cross, relax_treatment, rest_treatment, extra_tasks) %>%
+  summarize(WTW = mean(WTW), N = n()) %>%
+  ggplot(mapping = aes(x = extra_tasks, y = WTW, group = cross)) +
+  geom_line(aes(color = relax_treatment, linetype = rest_treatment)) + xlim(5, 15) + ylim(0, 3.2)
 
-df_debrief_survey <- get_df(get_debrief)
+df %>%
+  mutate(extra_tasks = as_factor(extra_tasks)) %>%
+  ggplot(aes(x = extra_tasks, y = WTW)) + 
+  geom_boxplot(aes(color = rest_treatment)) +
+  facet_grid(. ~ rest_treatment)
+
+df %>%
+  filter(rest_treatment == "elicit-then-get-rest") %>%
+  mutate(extra_tasks = as_factor(extra_tasks)) %>%
+  ggplot(aes(x = extra_tasks, y = WTW)) + 
+  geom_boxplot(aes(color = relax_treatment)) +
+  facet_grid(. ~ relax_treatment) +
+  labs(title = "No Rest before Elicitation")
+
+df %>%
+  filter(rest_treatment == "get-rest-then-elicit") %>%
+  mutate(extra_tasks = as_factor(extra_tasks)) %>%
+  ggplot(aes(x = extra_tasks, y = WTW)) + 
+  geom_boxplot(aes(color = relax_treatment)) +
+  facet_grid(. ~ relax_treatment) +
+  labs(title = "Rest before Elicitation")
