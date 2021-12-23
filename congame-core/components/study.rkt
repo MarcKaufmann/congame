@@ -821,6 +821,7 @@ QUERY
 ;; db ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ (schema-out researcher&instance)
  (schema-out study-meta)
  (schema-out study-instance)
  (schema-out study-instance-var)
@@ -834,6 +835,8 @@ QUERY
  call-with-study-manager
  list-studies
  list-study-instances
+ list-study-instances-by-researcher
+ list-study-instances-for-owner
  list-all-study-instances
  list-active-study-instances
  list-study-instance-participants/admin
@@ -849,6 +852,7 @@ QUERY
  lookup-study
  lookup-study-meta
  lookup-study-instance
+ lookup-study-instance-for-researcher
  lookup-study-participant/admin
  lookup-study-vars)
 
@@ -864,11 +868,19 @@ QUERY
   #:table "study_instances"
   ([id integer/f #:primary-key #:auto-increment]
    [study-id integer/f]
+   [owner-id integer/f]
    [name string/f #:contract non-empty-string?]
    [slug string/f #:contract non-empty-string?]
    [(enrollment-code (generate-random-string 16)) string/f]
    [(status 'active) symbol/f #:contract (or/c 'active 'inactive 'archived)]
    [(created-at (now/moment)) datetime-tz/f]))
+
+(define-schema researcher&instance
+  #:virtual
+  ([researcher-id integer/f]
+   [researcher-username string/f]
+   [instance-id integer/f]
+   [instance-name string/f]))
 
 (define-schema study-instance-var
   #:table "study_instance_data"
@@ -967,6 +979,25 @@ QUERY
     (sequence->list
      (in-entities conn (~> (from study-instance #:as i)
                            (where (= i.study-id ,study-id))
+                           (order-by ([i.created-at #:desc])))))))
+
+(define/contract (list-study-instances-by-researcher db study-id)
+  (-> database? id/c (listof researcher&instance?))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn (~> (from user #:as u)
+                           (join study-instance #:as i #:on (= i.owner-id u.id))
+                           (where (= i.study-id ,study-id))
+                           (select u.id u.username i.id i.name)
+                           (project-onto researcher&instance-schema))))))
+
+(define/contract (list-study-instances-for-owner db study-id owner-id)
+  (-> database? id/c id/c (listof study-instance?))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn (~> (from study-instance #:as i)
+                           (where (and (= i.study-id ,study-id)
+                                       (= i.owner-id ,owner-id)))
                            (order-by ([i.created-at #:desc])))))))
 
 (define/contract (list-all-study-instances db)
@@ -1111,6 +1142,13 @@ QUERY
   (with-database-connection [conn db]
     (lookup conn (~> (from study-instance #:as i)
                      (where (= i.id ,instance-id))))))
+
+(define/contract (lookup-study-instance-for-researcher db instance-id researcher-id)
+  (-> database? id/c id/c (or/c #f study-instance?))
+  (with-database-connection [conn db]
+    (lookup conn (~> (from study-instance #:as i)
+                     (where (and (= i.id ,instance-id)
+                                 (= i.owner-id ,researcher-id)))))))
 
 (define/contract (lookup-study-participant/admin db participant-id)
   (-> database? id/c (or/c #f study-participant/admin?))

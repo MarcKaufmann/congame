@@ -136,8 +136,39 @@
     (lookup-study-meta db study-id))
   (unless meta
     (next-dispatcher))
-  (define instances
-    (list-study-instances db study-id))
+  (define u (current-user))
+  (define instances-xexpr
+    (cond
+      [(user-researcher? u)
+       (haml
+        (:ul.study-list
+         ,@(for/list ([s (in-list (list-study-instances-for-owner db study-id (user-id u)))])
+             (haml
+              (:li
+               (:a
+                ([:href (reverse-uri 'admin:view-study-instance-page study-id (study-instance-id s))])
+                (study-instance-name s)))))))]
+      [else
+       (define instances-by-researcher
+         (for/fold ([insts (hash)])
+                   ([r (in-list (list-study-instances-by-researcher db study-id))])
+           (hash-update insts
+                        (researcher&instance-researcher-username r)
+                        (λ (lst) (cons r lst))
+                        null)))
+       (haml
+        (:ul.researcher-list
+         ,@(for/list ([(username instances) (in-hash instances-by-researcher)])
+             (haml
+              (:li
+               (:strong username)
+               (:ul.study-list
+                ,@(for/list ([in (in-list instances)])
+                    (haml
+                     (:li
+                      (:a
+                       ([:href (reverse-uri 'admin:view-study-instance-page study-id (researcher&instance-instance-id in))])
+                       (researcher&instance-instance-name in)))))))))))]))
   (send/suspend/dispatch/protect
    (lambda (embed/url)
      (tpl:page
@@ -149,13 +180,7 @@
           (:a
            ([:href (reverse-uri 'admin:create-study-instance-page study-id)])
            "New Instance"))
-         (:ul.study-list
-          ,@(for/list ([s (in-list instances)])
-              (haml
-               (:li
-                (:a
-                 ([:href (reverse-uri 'admin:view-study-instance-page study-id (study-instance-id s))])
-                 (study-instance-name s))))))
+         instances-xexpr
          (:br)
          (:a
           ([:href (embed/url
@@ -236,6 +261,7 @@
           (define the-study-instance
             (with-database-connection [conn db]
               (insert-one! conn (make-study-instance
+                                 #:owner-id (user-id (current-user))
                                  #:study-id study-id
                                  #:name name
                                  #:slug slug
@@ -255,7 +281,7 @@
 (define/contract ((edit-study-instance-page db) req study-id study-instance-id)
   (-> database? (-> request? id/c id/c response?))
   (let loop ([req req])
-    (define the-instance (lookup-study-instance db study-instance-id))
+    (define the-instance (lookup-study-instance/checked db study-instance-id))
     (unless the-instance
       (next-dispatcher))
     (send/suspend/dispatch/protect
@@ -289,9 +315,14 @@
                 (:h1 "Edit Instance")
                 (render-study-instance-form (embed/url loop) rw "Update")))))]))))))
 
+(define (lookup-study-instance/checked db instance-id)
+  (user-roles-case (current-user)
+    [(researcher) (lookup-study-instance-for-researcher db instance-id (user-id (current-user)))]
+    [else (lookup-study-instance db instance-id)]))
+
 (define/contract ((view-study-instance-page db) _req study-id study-instance-id)
   (-> database? (-> request? id/c id/c response?))
-  (define the-instance (lookup-study-instance db study-instance-id))
+  (define the-instance (lookup-study-instance/checked db study-instance-id))
   (unless the-instance
     (next-dispatcher))
   (define participants
@@ -459,7 +490,7 @@
   (define the-study
     (lookup-study-meta db study-id))
   (define the-instance
-    (lookup-study-instance db study-instance-id))
+    (lookup-study-instance/checked db study-instance-id))
   (define the-participant
     (lookup-study-participant/admin db participant-id))
   (unless (and the-study the-instance the-participant)
@@ -555,7 +586,7 @@
   (define the-study
     (lookup-study-meta db study-id))
   (define the-instance
-    (lookup-study-instance db study-instance-id))
+    (lookup-study-instance/checked db study-instance-id))
   (unless (and the-study the-instance)
     (next-dispatcher))
   (define study-racket-id
@@ -667,7 +698,7 @@
   (define the-study
     (lookup-study-meta db study-id))
   (define the-instance
-    (lookup-study-instance db study-instance-id))
+    (lookup-study-instance/checked db study-instance-id))
   (define the-bot-set
     (lookup-bot-set db bot-set-id))
   (unless (and the-study the-instance the-bot-set)

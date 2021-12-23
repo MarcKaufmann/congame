@@ -11,7 +11,7 @@
          xml
          (prefix-in config: "../config.rkt")
          "auth.rkt"
-         (only-in "user.rkt" user-admin?))
+         (only-in "user.rkt" user-admin-like?))
 
 (provide
  static-uri
@@ -69,7 +69,7 @@
           ([:href (reverse-uri 'admin:stop-impersonation-page)])
           "Stop impersonating user."))))
      (when show-nav?
-       (cond [(and (current-user) (user-admin? (current-user)))
+       (cond [(and (current-user) (user-admin-like? (current-user)))
               (nav
                (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
                (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out))
