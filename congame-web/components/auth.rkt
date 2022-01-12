@@ -110,12 +110,13 @@
                 (hasheq 'error "authorization failed")))])]
           [else
            (and maybe-user
-                (user-roles-case
+                (user-roles-case ;; each case requires all roles in that statement
                  maybe-user
-                 [(admin) #t]
-                 [(api)   #f]
-                 [(bot)   (equal? roles '(user))]
-                 [else    (apply user-has-roles? maybe-user roles)]))]))
+                 [(admin)      #t]
+                 [(researcher) #t]
+                 [(api)        #f]
+                 [(bot)        (equal? roles '(user))]
+                 [else         (apply user-has-roles? maybe-user roles)]))]))
       (cond
         [ok?
          (parameterize ([current-user maybe-user]

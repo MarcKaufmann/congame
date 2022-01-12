@@ -25,7 +25,8 @@
  user-roles-case
  user-has-roles?
  user-has-role?
- user-admin?
+ user-admin-like?
+ user-researcher?
  generate-api-key)
 
 (define (non-empty-vectorof c)
@@ -40,7 +41,7 @@
    [username string/f #:contract non-empty-string? #:wrapper string-downcase]
    [(password-hash "") string/f]
    [api-key string/f #:nullable]
-   [(roles #(user)) (array/f symbol/f) #:contract (non-empty-vectorof (or/c 'user 'bot 'api 'admin))]
+   [(roles #(user)) (array/f symbol/f) #:contract (non-empty-vectorof (or/c 'user 'bot 'api 'researcher 'admin))]
    [(verified? #f) boolean/f]
    [(verification-code (generate-random-string)) string/f #:contract non-empty-string?]
    [parent-id integer/f #:nullable]
@@ -77,9 +78,14 @@
   (-> user? symbol? boolean?)
   (and (vector-member r (user-roles u)) #t))
 
-(define/contract (user-admin? u)
+(define/contract (user-admin-like? u)
   (-> user? boolean?)
-  (user-has-role? u 'admin))
+  (for/or ([r (in-list '(admin researcher))])
+    (user-has-role? u r)))
+
+(define/contract (user-researcher? u)
+  (-> user? boolean?)
+  (user-has-role? u 'researcher))
 
 (define/contract (generate-api-key u)
   (-> user? string?)
@@ -139,7 +145,7 @@
   (user-manager db hasher))
 
 (define/contract (user-manager-create! um username password [roles #(user)])
-  (->* (user-manager? string? string?) ((non-empty-vectorof (or/c 'admin 'user 'bot))) user?)
+  (->* (user-manager? string? string?) ((non-empty-vectorof (or/c 'admin 'researcher 'bot 'user))) user?)
 
   (define user
     (~> (make-user #:username username
