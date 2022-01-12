@@ -49,6 +49,7 @@
                               #:racket-id 'pjb-pilot-study)))
 
          (insert-one! conn (make-study-instance
+                            #:owner-id (user-id bot-user)
                             #:study-id (study-meta-id pjb-pilot-study)
                             #:name "pjb-pilot"
                             #:slug "pjb-pilot"
