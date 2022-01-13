@@ -8,7 +8,7 @@
     "broccoli-sass-source-maps": "^4.0.0",
     "broccoli-uglify-sourcemap": "^3.1.1",
     "eslint": "^5.15.0",
-    "node-sass": "^4.12.0",
+    "node-sass": "^7.0.1",
     "prettier": "^1.16.4"
   },
   "scripts": {
