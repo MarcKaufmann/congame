@@ -57,7 +57,7 @@
     (current-application-url-port (string->number url-port))))
 
 (define-values (_ default-db-host default-db-port default-db-name default-db-username default-db-password)
-  (parse-database-url (or (getenv "CONGAME_DATABASE_URL") "postgres://congame:congame@127.0.0.1:5432/congame")))
+  (parse-database-url (or (getenv "DATABASE_URL") "postgres://congame:congame@127.0.0.1:5432/congame")))
 
 (define-option db-name #:default default-db-name)
 (define-option db-username #:default default-db-username)
