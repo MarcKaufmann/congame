@@ -3,6 +3,7 @@
 (require congame/components/formular
          congame/components/study
          koyo/haml
+         (only-in forms ok err)
          racket/list
          racket/random
          web-server/http)
@@ -67,6 +68,12 @@
           #t])]
       [else #f])))
 
+(define (valid-pdf? b)
+  (if  (and (binding:file? b)
+            (regexp-match? #rx#"^%PDF-" (binding:file-content b)))
+       (ok b)
+       (err "the file must be a PDF")))
+
 (define (provide-design)
   (page
    (haml
@@ -74,7 +81,7 @@
      (formular
       (haml
        (:div
-        (#:design (input-file "Please provide a study design"))
+        (#:design (input-file "Please provide a study design" #:validators (list valid-pdf?)))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:design design)
         (with-study-transaction

@@ -175,10 +175,10 @@
           ((widget-radio-group options) name value errors))
          ,@((widget-errors) name value errors))))]))
 
-(define ((input-file label) meth)
+(define ((input-file label #:validators [validators null]) meth)
   (match meth
     ['validator
-     (ensure binding/file (required))]
+     (apply ensure binding/file (required) validators)]
 
     ['widget
      (lambda (name value errors)
