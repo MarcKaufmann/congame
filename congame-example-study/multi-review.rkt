@@ -4,7 +4,8 @@
          congame/components/study
          koyo/haml
          racket/list
-         racket/random)
+         racket/random
+         web-server/http)
 
 ;; TODO: support for the admin to set/trigger instance variables
 
@@ -19,7 +20,7 @@
 
 (define class-size 4)
 
-;; FIXME: the wrost-case complexity here is really bad.  There must be
+;; FIXME: the worst-case complexity here is really bad.  There must be
 ;; a way to do this without drawing randomly and retrying on failure.
 (define (assign-reviewers pids [n 2])
   (when (<= (length pids) (add1 n))
@@ -73,12 +74,13 @@
      (formular
       (haml
        (:div
-        (#:design (input-textarea "Please provide a study design"))
+        (#:design (input-file "Please provide a study design"))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:design design)
         (with-study-transaction
+          (define design-file (put/instance-file design))
           (define designs (get/instance 'designs (hash)))
-          (define updated-designs (hash-set designs (current-participant-id) design))
+          (define updated-designs (hash-set designs (current-participant-id) design-file))
           (put/instance 'designs updated-designs))))))))
 
 (define (lobby)
@@ -104,11 +106,23 @@ SCRIPT
 (define (review)
   (define designs (get/instance 'designs))
   (define assignments (get 'assignments))
+  (define design-file (get/instance-file (hash-ref designs (car assignments))))
   (page
    (haml
     (:div
      (:p "Please review this design.")
-     (:p (hash-ref designs (car assignments)))
+     (:p
+      (:a
+       ([:href ((current-embed/url)
+                (lambda (_req)
+                  (response/output
+                   #:headers (list
+                              (or (headers-assq* #"content-type" (binding:file-headers design-file))
+                                  (make-header #"content-type" "application/octet-stream"))
+                              (make-header #"content-disposition" (string->bytes/utf-8 (format "attachment; filename=\"~a\"" (binding:file-filename design-file)))))
+                   (lambda (out)
+                     (write-bytes (binding:file-content design-file) out)))))])
+       "Download"))
      (button
       (lambda ()
         (put 'assignments (cdr assignments)))

@@ -3,7 +3,8 @@
 (require racket/contract
          racket/format
          racket/generic
-         json)
+         json
+         web-server/http)
 
 (provide
  gen:jsexprable
@@ -32,12 +33,19 @@
          (string->symbol (~a k))]))
     (values k-sym (->jsexpr v))))
 
+(define (binding:file->jsexpr b)
+  (format "<file:~a, size:~a>" (binding:file-filename b) (~MiB (bytes-length (binding:file-content b)))))
+
+(define (~MiB b)
+  (~a (~r #:precision '(= 2) (/ b 1024.0 1024.0)) "MB"))
+
 (define-generics jsexprable
   [->jsexpr jsexprable]
   #:fast-defaults
-  ([boolean? (define ->jsexpr values)]
-   [number?  (define ->jsexpr values)]
-   [string?  (define ->jsexpr values)]
-   [symbol?  (define ->jsexpr symbol->string)]
-   [list?    (define ->jsexpr list->jsexpr)]
-   [hash?    (define ->jsexpr hash->jsexpr)]))
+  ([boolean?      (define ->jsexpr values)]
+   [number?       (define ->jsexpr values)]
+   [string?       (define ->jsexpr values)]
+   [symbol?       (define ->jsexpr symbol->string)]
+   [list?         (define ->jsexpr list->jsexpr)]
+   [hash?         (define ->jsexpr hash->jsexpr)]
+   [binding:file? (define ->jsexpr binding:file->jsexpr)]))

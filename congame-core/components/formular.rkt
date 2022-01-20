@@ -16,6 +16,7 @@
  formular-autofill
  checkbox
  radios
+ input-file
  input-number
  input-text
  input-textarea)
@@ -172,6 +173,19 @@
          (:label.radio-group
           label
           ((widget-radio-group options) name value errors))
+         ,@((widget-errors) name value errors))))]))
+
+(define ((input-file label) meth)
+  (match meth
+    ['validator
+     (ensure binding/file (required))]
+
+    ['widget
+     (lambda (name value errors)
+       (haml
+        (.group
+         (:label
+          ((widget-file) name value errors) label)
          ,@((widget-errors) name value errors))))]))
 
 (define ((input-number label #:min [min -inf.0] #:max [max +inf.0] #:validators [validators null]) meth)

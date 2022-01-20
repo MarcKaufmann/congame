@@ -9,6 +9,7 @@
          deta
          file/zip
          gregor
+         json
          koyo/continuation
          koyo/database
          koyo/haml
@@ -459,7 +460,9 @@
            (:td (:pre
                  (with-output-to-string
                    (lambda ()
-                     (pretty-print (study-instance-var-value/deserialized v)))))))))))))
+                     (define deserialized-v
+                       (study-instance-var-value/deserialized v))
+                     (pretty-write (->jsexpr deserialized-v)))))))))))))
 
 (define (render-participant-list study-id study-instance-id participants)
   (haml

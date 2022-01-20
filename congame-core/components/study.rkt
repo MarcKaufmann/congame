@@ -64,9 +64,11 @@
  set-group-name!
  put
  put/instance
+ put/instance-file
  put/group
  get
  get/instance
+ get/instance-file
  get/group)
 
 (define/contract current-git-sha
@@ -189,6 +191,12 @@ QUERY
 
 (define-syntax-rule (with-study-transaction e0 e ...)
   (call-with-study-transaction (λ () e0 e ...)))
+
+;; For later extension if we decide to store files outside the database.
+;; This way studies that operate on files can be forward-compatible with
+;; changes in the way we actually store files.
+(define (put/instance-file v) v)
+(define (get/instance-file v) v)
 
 (define (put/instance k v)
   (log-study-debug "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
@@ -344,6 +352,7 @@ QUERY
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ current-embed/url
  when-bot
  page
  button
@@ -437,7 +446,7 @@ QUERY
          (continue)))])
     label)))
 
-(define/widget (form f action render #:id [id ""])
+(define/widget (form f action render #:id [id ""] #:enctype [enctype "multipart/form-data"])
   (match (form-run f this-request)
     [(list 'passed res _)
      (redirect/get/forget/protect)
@@ -451,6 +460,7 @@ QUERY
                   (lambda (_req)
                     (response/render this-step (current-renderer))))]
         [:data-widget-id (when-bot id)]
+        [:enctype enctype]
         [:method "POST"])
        (render rw)))]))
 
