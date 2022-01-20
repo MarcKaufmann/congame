@@ -73,7 +73,7 @@
      (formular
       (haml
        (:div
-        (#:design (input-text "Please provide a study design"))
+        (#:design (input-textarea "Please provide a study design"))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:design design)
         (with-study-transaction

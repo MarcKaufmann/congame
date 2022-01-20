@@ -17,7 +17,8 @@
  checkbox
  radios
  input-number
- input-text)
+ input-text
+ input-textarea)
 
 ;; Building up an intermediate representation of formualrs would allow
 ;; us to compose smaller formulars into larger ones.  We may want to
@@ -198,4 +199,16 @@
         (.group
          (:label
           ((widget-text) name value errors) label)
+         ,@((widget-errors) name value errors))))]))
+
+(define ((input-textarea label #:validators [validators null]) meth)
+  (match meth
+    ['validator
+     (apply ensure binding/text (required) validators)]
+    ['widget
+     (lambda (name value errors)
+       (haml
+        (.group
+         (:label
+          ((widget-textarea) name value errors) label)
          ,@((widget-errors) name value errors))))]))
