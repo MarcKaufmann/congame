@@ -38,6 +38,33 @@
     [_
      (bot)]))
 
+;; While bots can't access instance data, they still have the ability
+;; to introspect the same things a normal human could.  So, in the
+;; multi-review example, while bots can't know ahead of time who they
+;; will be matched with, they can inspect the design files and make
+;; decisions based on that.
+(define current-multi-bot-id (make-parameter #f))
+(define (make-multi-bot)
+  (define sema (make-semaphore 1))
+  (define bots (make-hash))
+  (define seq 0)
+  (define (next-bot-id)
+    (begin0 seq
+      (set! seq (add1 seq))))
+  (lambda (id bot)
+    (call-with-semaphore sema
+      (lambda ()
+        (match id
+          ['(*root* the-study arrive)
+           (current-multi-bot-id (next-bot-id))
+           (hash-set! bots (next-bot-id) 'initial-state)
+           (bot)]
+          ['(*root* the-study step-2)
+           (current-multi-bot-id)
+           (bot)]
+          [_
+           (bot)])))))
+
 (module+ main
   (time
    (run-bot
