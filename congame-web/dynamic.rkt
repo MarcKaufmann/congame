@@ -85,6 +85,7 @@
   (define stop-logger
     (start-logger
      #:levels `((app                  . ,config:log-level)
+                (jsexprable           . ,config:log-level)
                 (marionette           . ,config:log-level)
                 (mail-adapter         . ,config:log-level)
                 (memory-session-store . ,config:log-level)

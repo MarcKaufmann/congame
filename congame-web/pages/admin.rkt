@@ -360,8 +360,10 @@
            ([:href
              (embed/url
               (lambda (_req)
+                (define vars
+                  (list-study-instance-vars db study-instance-id))
                 (response/jsexpr
-                 (study-participants->jsexpr db study-id study-instance-id participants))))])
+                 (study-instance->jsexpr db study-id study-instance-id vars participants))))])
            "Export JSON"))
          (:h4
           (:a

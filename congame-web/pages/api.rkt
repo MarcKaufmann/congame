@@ -50,10 +50,12 @@
        (response/jsexpr
         #:code 400
         (hash 'error "instance not found"))))
+    (define vars
+      (list-study-instance-vars db study-instance-id))
     (define participants
       (list-study-instance-participants/admin db study-instance-id))
     (response/jsexpr
-     (study-participants->jsexpr db study-id study-instance-id participants))))
+     (study-instance->jsexpr db study-id study-instance-id vars participants))))
 
 (define/contract ((enroll-participant-from-identity db auth users) req)
   (-> database? auth-manager? user-manager? (-> request? response?))

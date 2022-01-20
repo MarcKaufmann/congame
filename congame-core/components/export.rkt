@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require racket/contract
+         racket/format
          racket/generic
          json)
 
@@ -11,13 +12,25 @@
  (contract-out
   [->jsexpr (-> any/c jsexpr?)]))
 
+(define-logger jsexprable)
+
 (define (list->jsexpr xs)
   (map ->jsexpr xs))
 
+;; WARN: Studies can store hashes with arbirtrary keys, which means
+;; over here we may end up with collisions because we convert
+;; non-symbol keys to symbols.  So, a hash that has an entry with key
+;; "42" (string) and one with 42 (number) will collide, one of the
+;; keys winning over the other (nondeterministically).
 (define (hash->jsexpr xs)
-  ;; TODO: error if key is not a symbol
   (for/hash ([(k v) (in-hash xs)])
-    (values k (->jsexpr v))))
+    (define k-sym
+      (cond
+        [(symbol? k) k]
+        [else
+         (log-jsexprable-warning "key ~s converted to JSON string!" k)
+         (string->symbol (~a k))]))
+    (values k-sym (->jsexpr v))))
 
 (define-generics jsexprable
   [->jsexpr jsexprable]
