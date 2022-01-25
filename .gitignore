@@ -4,7 +4,7 @@ coverage
 node_modules
 static
 ip-notifications/
-congame-doc/
+congame-doc/doc/
 dist/
 .Rproj.user
 app.tmux.conf
