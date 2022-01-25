@@ -81,7 +81,7 @@
 (define-option product-name #:default "congame-identity")
 (define-option company-name #:default "congame-identity")
 (define-option company-address #:default "")
-(define-option support-name #:default "Bot Botterson")
+(define-option support-name #:default "Marc Kaufmann")
 (define-option support-email #:default "admin@totalinsightmanagement.com")
 
 (provide common-mail-variables)
