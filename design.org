@@ -4,6 +4,8 @@
 
 ** Teaching
 
+Highlight difference between identity and congame servers visually so I don't get confused. Change color and have 'Identity' at the top.
+
 Multi-player feedback study
 
 - scores
@@ -87,3 +89,8 @@ Topics: study flow; user-specific step actions; treatment specification and cont
 3. buttons and submits: How to put time limits on when it is possible to move on? E.g. for listening to music: wait until it has finished, and after at least as much time as the music takes to play
 4. helper functions to deal with timing
 5. Do we need the provides and requires? Yes, at least sometimes. The provides not necessarily, but the requires. The provides can be used for simplifying data for easy data extraction.
+
+** Features that were unnecessary so far
+
+- Busting caches (see README.md)
+- Transition graphs (probably useful later, not now)
