@@ -6,9 +6,16 @@
 @title{Congame}
 @author[(author+email "Marc Kaufmann" "marc@trichotomy.xyz")]
 
+@include-section["introduction.scrbl"]
+
 @defmodule[congame/components/study]
 
-@include-section["introduction.scrbl"]
+@defproc[(run-study [s study?]
+                    [req request? (current-request)]
+                    [#:bindings bindings (hash/c symbol? any/c) (hasheq)]) any/c]{
+
+  Runs the study @racket[s] under @racket[req] with @racket[bindings].
+}
 
 @section{Examples}
 
