@@ -82,7 +82,7 @@
              [else
               (nav (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
                    (nav-item (reverse-uri 'login-page) (translate 'nav-log-in))
-                   (nav-item (reverse-uri 'signup-page) (translate 'nav-sign-up)))]))
+                   #;(nav-item (reverse-uri 'signup-page) (translate 'nav-sign-up)))]))
 
      (unless (null? (current-flash-messages))
        (container
