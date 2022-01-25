@@ -31,19 +31,12 @@ Sysadmin
 
 - log into the server daily, do sysadmin tasks (backup of data etc)
 
-** Self
-
-- Time and mood tracker (including daily gratitude)
-- Document my learning of congame and racket so that I can publish it as a book
-
 ** Documenting Congame
 
-- [ ] How to set up congame identity with congame server
-  - Looks like I have to manually set up the congame server in the identity server's database, while also providing some kind of api access to identity. That seems to require setting up an api user (with arbitrary email) with the same key as in the identity DB for that congame server
-- [ ] document congame (widgets and widget-actions)
-- [ ] /How to set up congame/
-- [ ] /How to write your first study/
-- [ ] /How to write a multi-user study/
+  - [ ] document congame (widgets and widget-actions)
+  - [ ] /How to set up congame/
+  - [ ] /How to write your first study/
+  - [ ] /How to write a multi-user study/
 
 ** Design
 
