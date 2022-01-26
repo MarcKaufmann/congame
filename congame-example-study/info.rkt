@@ -11,4 +11,6 @@
     (congame-example-study/example simple-study)
     (congame-example-study/looping looping-study)
     (congame-example-study/matchmaking matchmaking-study)
-    (congame-example-study/multi-review review-study)))
+    (congame-example-study/multi-review review-pdf)
+    (congame-example-study/multi-review review-research-ideas)
+    (congame-example-study/multi-review submit-two-research-ideas)))
