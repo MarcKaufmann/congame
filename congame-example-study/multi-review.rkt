@@ -18,16 +18,15 @@
 
 (provide
  review-pdf
- review-research-ideas
- submit-two-research-ideas)
+ review-research-ideas)
 
 (define class-size 3)
 
 ;; FIXME: the worst-case complexity here is really bad.  There must be
 ;; a way to do this without drawing randomly and retrying on failure.
-(define (assign-reviewers pids [n 1])
+(define (assign-reviewers pids [n 2])
   (when (<= (length pids) n)
-    (raise-arguments-error 'assign-reviewers "pids must be > n + 1" "pids" pids "n" n))
+    (raise-arguments-error 'assign-reviewers "pids must be > n " "pids" pids "n" n))
   (define (help)
     (for/fold ([assignments (hash)]
                [pids pids]
@@ -86,17 +85,13 @@
         (#:submission (input-file "Please provide a study submission" #:validators (list valid-pdf?)))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:submission submission)
-        (with-study-transaction
-          (define submission-file (put/instance-file submission))
-          (define submissions (get/instance 'submissions (hash)))
-          (define updated-submissions (hash-set submissions (current-participant-id) submission-file))
-          (put/instance 'submissions updated-submissions))))))))
+        (put 'submission submission)))))))
 
 (define provide-pdf-submission/study
   (make-study
    "provide-pdf-submission"
    #:requires '()
-   #:provides '()
+   #:provides '(submission)
    (list
     (make-step 'provide-pdf-submission provide-pdf-submission))))
 
@@ -120,26 +115,30 @@ setTimeout(function() {
 SCRIPT
           ))))))
 
-(define (review)
+(define (display-file assignments)
   (define submissions (get/instance 'submissions))
-  (define assignments (get 'assignments))
   (define submission-file (get/instance-file (hash-ref submissions (car assignments))))
+  (haml
+   (:p
+    (:a
+     ([:href ((current-embed/url)
+              (lambda (_req)
+                (response/output
+                 #:headers (list
+                            (or (headers-assq* #"content-type" (binding:file-headers submission-file))
+                                (make-header #"content-type" "application/octet-stream"))
+                            (make-header #"content-disposition" (string->bytes/utf-8 (format "attachment; filename=\"~a\"" (binding:file-filename submission-file)))))
+                 (lambda (out)
+                   (write-bytes (binding:file-content submission-file) out)))))])
+     "Download"))))
+
+(define ((review display-submission))
+  (define assignments (get 'assignments))
   (page
    (haml
-    (:div
+    (:div.container
      (:p "Please review this submission.")
-     (:p
-      (:a
-       ([:href ((current-embed/url)
-                (lambda (_req)
-                  (response/output
-                   #:headers (list
-                              (or (headers-assq* #"content-type" (binding:file-headers submission-file))
-                                  (make-header #"content-type" "application/octet-stream"))
-                              (make-header #"content-disposition" (string->bytes/utf-8 (format "attachment; filename=\"~a\"" (binding:file-filename submission-file)))))
-                   (lambda (out)
-                     (write-bytes (binding:file-content submission-file) out)))))])
-       "Download"))
+     (display-submission assignments)
      (button
       (lambda ()
         (put 'assignments (cdr assignments)))
@@ -148,10 +147,13 @@ SCRIPT
 (define (final)
   (page
    (haml
-    (:p "You're done. Thanks!"))))
+    (.container
+     (:p "You're done. Thanks!")))))
 
 (define (update-submissions)
-  ; FIXME: This code does not work for files, it assumes direct data.
+  ;; FIXME: This code will break if we no longer treat files as data, but
+  ;; instead deal with them as links. Add a note that `get` and `put` should be
+  ;; able to do the right thing when dealing with files? But how do they know?
   (with-study-transaction
     (define submission (get 'submission))
     (define submissions (get/instance 'submissions (hash)))
@@ -159,24 +161,23 @@ SCRIPT
     (put/instance 'submissions updated-submissions))
   (skip))
 
-(define (review-study submission-study)
+(define (review-study submission-study display-submission submission-name)
   (make-study
    "review-study"
    #:requires '()
    #:provides '()
    (list
-    (make-step/study
-     'submit
-     submission-study
-     #:provide-bindings '([submission research-ideas]))
+    (make-step/study 'submit submission-study
+                     #:provide-bindings `([submission ,submission-name]))
     (make-step 'update-submissions update-submissions)
     (make-step 'lobby lobby)
-    (make-step 'review-1 review)
-    (make-step 'review-2 review)
-    (make-step 'final final))))
+    (make-step 'review-1 (review display-submission))
+    (make-step 'review-2 (review display-submission))
+    (make-step 'final final)
+    )))
 
 (define review-pdf
-  (review-study provide-pdf-submission/study))
+  (review-study provide-pdf-submission/study display-file 'submission))
 
 ;;; Assignments to use with multi-review
 
@@ -215,17 +216,19 @@ SCRIPT
     (make-step 'initialize initialize next-or-done/transition)
     (make-step 'submit-research-idea submit-research-idea next-or-done/transition))))
 
-(define submit-two-research-ideas
-
-  (make-study
-   "submit-two-research-ideas"
-   #:requires '()
-   #:provides '()
-   (list
-    (make-step/study
-     'sutmit-two-research-ideas
-     (submit-research-ideas))
-    (make-step 'done final))))
+(define (display-research-ideas assignments)
+  (define submissions (get/instance 'submissions))
+  (displayln (format "Submission: ~a" submissions))
+  (flush-output)
+  (define research-ideas (hash-ref submissions (car assignments)))
+  (displayln (format "Research ideas: ~a" research-ideas))
+  (flush-output)
+  (haml
+   (:ol
+    ; TODO: Put in documentation that these things need to be spliced in
+    ,@(for/list ([idea research-ideas])
+      (haml
+       (:li idea))))))
 
 (define review-research-ideas
-  (review-study (submit-research-ideas 2)))
+  (review-study (submit-research-ideas 2) display-research-ideas 'research-ideas))
