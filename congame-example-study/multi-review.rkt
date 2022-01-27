@@ -109,7 +109,7 @@
         "Continue."))
       (page
        (haml
-        (:div
+        (.container
          (:p "Please wait for more participants to join.")
          (:script
           #<<SCRIPT
