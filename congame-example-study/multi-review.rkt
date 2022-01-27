@@ -8,7 +8,11 @@
          racket/random
          web-server/http)
 
-;; TODO: support for the admin to set/trigger instance variables
+;; TODO: support for the admin to set/trigger instance variables. That may best
+;; be achieved by having an admin role who can enroll, e.g. by setting the owner
+;; as default admin, and then displaying different pages for the admin in
+;; different orders. That page sets instance variables that can also be used to
+;; configure the study, including reconfiguring it on the fly.
 
 ;; design:
 ;; * the entire class is part of the same group
@@ -218,11 +222,7 @@ SCRIPT
 
 (define (display-research-ideas assignments)
   (define submissions (get/instance 'submissions))
-  (displayln (format "Submission: ~a" submissions))
-  (flush-output)
   (define research-ideas (hash-ref submissions (car assignments)))
-  (displayln (format "Research ideas: ~a" research-ideas))
-  (flush-output)
   (haml
    (:ol
     ; TODO: Put in documentation that these things need to be spliced in
