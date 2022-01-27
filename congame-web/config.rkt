@@ -43,6 +43,7 @@
 (define-option http-host #:default "127.0.0.1")
 (define-option http-port #:default (or (getenv "PORT") "8000")
   (string->number http-port))
+(define-option http-max-file-size #:default (* 20 1024 1024)) ; 20 MiB
 
 (define-option url-scheme #:default "http"
   (begin0 url-scheme

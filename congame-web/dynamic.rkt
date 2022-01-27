@@ -21,7 +21,8 @@
          "components/auth.rkt"
          "components/mail.rkt"
          "components/user.rkt"
-         (prefix-in config: "config.rkt"))
+         (prefix-in config: "config.rkt")
+         web-server/safety-limits)
 
 ;; System ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -58,7 +59,8 @@
   [migrator (db) (make-migrator-factory migrations-path)]
   [server (app) (compose1
                  (make-server-factory #:host config:http-host
-                                      #:port config:http-port)
+                                      #:port config:http-port
+                                      #:limits (make-safety-limits #:max-form-data-file-length config:http-max-file-size))
                  app-dispatcher)]
   [sessions (make-session-manager-factory #:cookie-name config:session-cookie-name
                                           #:cookie-secure? #f

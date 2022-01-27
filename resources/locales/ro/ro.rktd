@@ -6,6 +6,7 @@
  (nav-admin                 . "Administrare")
  (nav-jobs                  . "Sarcini")
 
+ (subtitle-file-too-large         . "Fișierul este prea mare")
  (subtitle-not-found              . "Pagină inexistentă")
  (subtitle-log-in                 . "Conectează-te")
  (subtitle-sign-up                . "Înregistrează-te")
@@ -27,6 +28,7 @@
  (action-request-password-reset . "Resetează parola")
  (action-reset-password         . "Resetează parola")
 
+ (message-file-too-large-try-again . "Fișierul pe care l-ați trimis este prea mare. Vă rugăm să încercați din nou furnizând un fișier mai mic.")
  (message-session-expired          . "Ne pare rău dar sesiunea ta a expirat. Te rugăm să încerci din nou.")
  (message-not-found                . "Pagina pe care o cauți nu a putut fi găsită.")
  (message-post-sign-up             . "Trebuie să îți confirmi adresa de e-mail înainte să te poți conecta.")

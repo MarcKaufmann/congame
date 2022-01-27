@@ -136,6 +136,9 @@
       #:method "post"
       (api:enroll-participant-from-identity db auth users)]
 
+     [("errors" "file-too-large")
+      (error-413-page)]
+
      [("study" (string-arg))
       #:roles (user)
       (study-page db)]

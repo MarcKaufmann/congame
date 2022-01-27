@@ -6,6 +6,7 @@
  (nav-admin                 . "Admin")
  (nav-jobs                  . "Jobs")
 
+ (subtitle-file-too-large         . "File is too large")
  (subtitle-not-found              . "Page Not Found")
  (subtitle-log-in                 . "Log In")
  (subtitle-sign-up                . "Sign Up")
@@ -27,6 +28,7 @@
  (action-request-password-reset . "Reset Password")
  (action-reset-password         . "Reset Password")
 
+ (message-file-too-large-try-again . "The file you submitted is too large. Please try again by providing a smaller file.")
  (message-session-expired          . "Sorry! Your session expired. Please try again.")
  (message-not-found                . "The page you are looking for could not be found.")
  (message-post-sign-up             . "You need to confirm your e-mail address before you can log in.")
