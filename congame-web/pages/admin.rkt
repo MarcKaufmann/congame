@@ -458,11 +458,7 @@
            (:td (~t (study-instance-var-first-put-at v) datetime-format))
            (:td (~t (study-instance-var-last-put-at v) datetime-format))
            (:td (:pre
-                 (with-output-to-string
-                   (lambda ()
-                     (define deserialized-v
-                       (study-instance-var-value/deserialized v))
-                     (pretty-write (->jsexpr deserialized-v)))))))))))))
+                 (~study-var (study-instance-var-value/deserialized v)))))))))))
 
 (define (render-participant-list study-id study-instance-id participants)
   (haml
@@ -582,9 +578,7 @@
                  (:td (~t (study-var-first-put-at v) datetime-format))
                  (:td (~t (study-var-last-put-at v) datetime-format))
                  (:td (:pre
-                       (with-output-to-string
-                         (lambda ()
-                           (pretty-print (study-var-value/deserialized v))))))))))))))))))
+                       (~study-var (study-var-value/deserialized v))))))))))))))))
 
 (define/contract ((create-study-instance-bot-sets-page db) req study-id study-instance-id)
   (-> database? (-> request? id/c id/c response?))
@@ -799,9 +793,14 @@
                 (study-meta-id the-study)
                 (study-instance-id the-instance))))
 
-
 (define/contract ((stop-impersonation-page am) _req)
   (-> auth-manager? (-> request? response?))
   (when (impostor?)
     (auth-manager-stop-impersonation! am))
   (redirect-to (reverse-uri 'study-instances-page)))
+
+(define (~study-var deserialized-v)
+  (with-output-to-string
+    (lambda ()
+      (define deserialized deserialized-v)
+      (pretty-write (->jsexpr deserialized)))))
