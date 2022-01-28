@@ -223,6 +223,5 @@
      (lambda (name value errors)
        (haml
         (.group
-         (:label
-          ((widget-textarea) name value errors) label)
+         (:label label ((widget-textarea) name value errors))
          ,@((widget-errors) name value errors))))]))
