@@ -24,11 +24,11 @@
  submit+review-pdf
  submit+review-research-ideas)
 
-(define class-size 3)
+(define class-size 2)
 
 ;; FIXME: the worst-case complexity here is really bad.  There must be
 ;; a way to do this without drawing randomly and retrying on failure.
-(define (assign-reviewers pids [n 2])
+(define (assign-reviewers pids [n 1])
   (when (<= (length pids) n)
     (raise-arguments-error 'assign-reviewers "pids must be > n " "pids" pids "n" n))
   (define (help)
@@ -272,59 +272,70 @@ SCRIPT
     (make-step 'initialize initialize next-or-done/transition)
     (make-step 'submit-research-idea submit-research-idea next-or-done/transition))))
 
-(define ((review-research-ideas-handler n))
-  (define assignments (get 'assignments))
-  (define submissions (get 'submissions))
-  (define research-ideas (hash-ref submissions (car assignments)))
+(define (review-next-research-idea)
   (define research-ideas-rubric-url "https://trichotomy.xyz")
+  (define next-research-idea (car (get 'current-research-ideas)))
   (page
    (haml
     (.container
-     (:h1 "Review these Research Ideas")
+     (:h1 "Review Research Idea")
      (.submission
-      (:h3 "Submitted Research Ideas")
-      (:ol
-       ; TODO: Put in documentation that these things need to be spliced in
-       ,@(for/list ([idea research-ideas])
-           (haml
-            (:li idea)))))
-     (:div
-      (:h3 "Rubric for Research Ideas")
-      (:p "For further details on this rubric, see "(:a ((:href research-ideas-rubric-url)) "Explanations on Research Ideas") ".")
-      (formular
-       (haml
-        (:div
-         (#:how-many-ideas (input-number "How many ideas have been provided (ignore whether they are valid or not in your opinion)?"
-                                         #:min 0 #:max n))
-         (#:how-many-valid-ideas (input-number "How many valid research have been provided?"
-                                               #:min 0
-                                               #:max n))
-         (#:provide-feedback (input-textarea "If you think there are invalid ideas, please pick one of them, state why you believe it is not valid, and provide constructive suggestion for turning it into a valid research idea."))
-         (:button.button.next-button ((:type "submit")) "Submit")))
-       (lambda (#:how-many-ideas how-many-ideas
-                #:how-many-valid-ideas how-many-valid-ideas
-                #:provide-feedback provide-feedback)
-         (put 'review (hash
-                       'submitter-id (car assignments)
-                       'research-ideas research-ideas
-                       'how-many-ideas how-many-ideas
-                       'how-many-valid-ideas how-many-valid-ideas
-                       'provide-feedback provide-feedback))
-         (put 'assignments (cdr assignments)))))))))
+      (:h3 "Submitted Research Idea")
+      (:p next-research-idea))
 
-(define (review-research-ideas n)
+     (:h3 "Rubric for Research Idea")
+     (:p "See "(:a ((:href research-ideas-rubric-url)) "Explanations on Research Ideas") " for details.")
+     (formular
+      (haml
+       (:div
+        (#:valid-research-idea?
+         (radios
+          "Do you consider this a valid research idea?"
+          '(("yes" . "Yes")
+            ("no"  . "No"))))
+        (#:provide-feedback (input-textarea "Provide a constructive suggestion how to improve this research question / turn it into a valid research question."))
+        (:button.button.next-button ((:type "submit")) "Submit")))
+      (lambda (#:valid-research-idea? valid-research-idea?
+               #:provide-feedback provide-feedback)
+        (put 'review (hash
+                      'submitter-id         (get 'current-assignment)
+                      'valid-research-idea? valid-research-idea?
+                      'provide-feedback     provide-feedback))
+        (put 'current-research-ideas (cdr (get 'current-research-ideas)))))))))
+
+(define (review-research-ideas)
+  (define (next-or-done/transition)
+    (cond [(empty? (get 'current-research-ideas)) done]
+          [else
+           'review-next-research-idea]))
+
+  (define (initialize-review)
+    (define assignments (get 'assignments))
+    (define current-assignment (car assignments))
+    (put 'current-assignment current-assignment)
+    (put 'assignments (cdr assignments))
+    (define submissions (get 'submissions))
+    (define current-research-ideas (hash-ref submissions current-assignment))
+    (put 'current-research-ideas current-research-ideas)
+    (skip))
+
   (make-study
    "research-ideas-review"
    #:provides '(assignments)
    #:requires '(assignments submissions)
    (list
     (make-step
-     'review-research-ideas
-     (review-research-ideas-handler n)))))
+     'initialize-review
+     initialize-review
+     next-or-done/transition)
+    (make-step
+     'review-next-research-idea
+     review-next-research-idea
+     next-or-done/transition))))
 
-;; FIXME: Design study so that the number of research ideas can be configure by
+;; FIXME: Design study so that the number of research ideas can be configured by
 ;; the admin after creating a study instance.
 (define submit+review-research-ideas
   (submit+review-study #:submission-study (submit-research-ideas 2)
-                       #:review-study (review-research-ideas 2)
+                       #:review-study (review-research-ideas)
                        #:submission-key 'research-ideas))
