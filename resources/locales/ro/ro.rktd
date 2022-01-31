@@ -1,4 +1,5 @@
 ((nav-dashboard             . "Panou")
+ (nav-identity-dashboard    . "Identiyt Panou")
  (nav-log-in                . "Conectare")
  (nav-log-out               . "Deconectare")
  (nav-messages              . "Mesaje")

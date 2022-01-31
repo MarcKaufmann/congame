@@ -27,7 +27,7 @@
 
 (define (nav . items)
   (haml
-   (.nav
+   (.nav.identity
     ([:up-nav ""])
     (container
      (haml (.nav__items ,@items))))))
@@ -63,10 +63,10 @@
         (:body
          (when show-nav?
            (if (current-user)
-               (nav (nav-item (reverse-uri 'dashboard-page) (translate 'nav-dashboard))
+               (nav (nav-item (reverse-uri 'dashboard-page) (translate 'nav-identity-dashboard))
                     (nav-item (reverse-uri 'messages-page) (translate 'nav-messages))
                     (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out)))
-               (nav (nav-item (reverse-uri 'dashboard-page) (translate 'nav-dashboard))
+               (nav (nav-item (reverse-uri 'dashboard-page) (translate 'nav-identity-dashboard))
                     (nav-item (reverse-uri 'login-page) (translate 'nav-log-in))
                     (nav-item (reverse-uri 'signup-page) (translate 'nav-sign-up)))))
 

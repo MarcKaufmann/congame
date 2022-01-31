@@ -1,4 +1,5 @@
 ((nav-dashboard             . "Dashboard")
+ (nav-identity-dashboard    . "Identity Dashboard")
  (nav-log-in                . "Log in")
  (nav-log-out               . "Log out")
  (nav-messages              . "Messages")
