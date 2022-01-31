@@ -4,6 +4,7 @@
          congame/components/study
          koyo/haml
          (only-in forms ok err)
+         racket/format
          racket/list
          racket/random
          web-server/http)
@@ -24,11 +25,11 @@
  submit+review-pdf
  submit+review-research-ideas)
 
-(define class-size 2)
+(define class-size 3)
 
 ;; FIXME: the worst-case complexity here is really bad.  There must be
 ;; a way to do this without drawing randomly and retrying on failure.
-(define (assign-reviewers pids [n 1])
+(define (assign-reviewers pids [n 2])
   (when (<= (length pids) n)
     (raise-arguments-error 'assign-reviewers "pids must be > n " "pids" pids "n" n))
   (define (help)
@@ -85,6 +86,8 @@
             (define all-assignments (get/instance 'assignments))
             (define participant-assignments (hash-ref all-assignments (current-participant-id)))
             (put 'assignments participant-assignments)
+            (put 'n-assignments (length participant-assignments))
+            (put 'n-reviewed-assignments 0)
             (define all-submissions (get/instance 'submissions))
             (define participant-submissions
               (for/hash ([a participant-assignments])
@@ -125,6 +128,16 @@ SCRIPT
 (define (submit+review-study #:submission-study submission-study
                              #:review-study review-study
                              #:submission-key submission-key)
+  (define (show-next-review)
+    (define n (get 'n-reviewed-assignments))
+    (page
+     (haml
+      (.container
+       (:h1 (format "Review Next Submission (~a out of ~a)" (add1 n) (get 'n-assignments)))
+       (button
+        void
+        "Go to Review")))))
+
   (make-study
    "review-study"
    #:requires '()
@@ -134,23 +147,16 @@ SCRIPT
                      #:provide-bindings `([submission ,submission-key]))
     (make-step 'update-submissions update-submissions)
     (make-step 'lobby lobby)
-    (make-step/study 'review-1 review-study
+    (make-step 'show-next-review show-next-review)
+    (make-step/study 'next-review
+                     review-study
+                     (λ ()
+                       (put 'assignments (cdr (get 'assignments)))
+                       (put 'n-reviewed-assignments (add1 (get 'n-reviewed-assignments)))
+                       (cond [(empty? (get 'assignments)) 'final]
+                             [else 'show-next-review]))
                      #:require-bindings '((assignments assignments)
-                                                                 (submissions submissions))
-                     #:provide-bindings '((assignments assignments)))
-    ; FIXME: Ideally the submissions are just stored on the instance. However,
-    ; they are stored at the '(*root*) stack, not '(*root* review-study) where
-    ; they are accessed. Currently we can only pass around user-variables, not
-    ; instance-variables, which means I am copying all the submissions over and
-    ; over. While we could only copy the needed submissions, the lack of such a
-    ; feature is problematic, and having to pass the whole variable (rather than
-    ; a reference) around is too. That would require having non-mutable data,
-    ; unless otherwise specified, with even more complications. Currently this
-    ; is likely to be an issue only for files or for lots of copying.
-    (make-step/study 'review-2 review-study
-                     #:require-bindings '((assignments assignments)
-                                                                 (submissions submissions))
-                     #:provide-bindings '((assignments assignments)))
+                                          (submissions submissions)))
     (make-step 'final final)
     )))
 
@@ -215,13 +221,12 @@ SCRIPT
          (put 'review (hash
                        'submitter-id (car assignments)
                        'submission submission-file
-                       'how-good-is-the-submission how-good-is-the-submission))
-         (put 'assignments (cdr assignments)))))))))
+                       'how-good-is-the-submission how-good-is-the-submission)))))))))
 
 (define review-pdf
   (make-study
    "review-pdf"
-   #:provides '(assignments)
+   #:provides '()
    #:requires '(assignments submissions)
 
    (list
@@ -275,10 +280,11 @@ SCRIPT
 (define (review-next-research-idea)
   (define research-ideas-rubric-url "https://trichotomy.xyz")
   (define next-research-idea (car (get 'current-research-ideas)))
+  (define n (get 'n-reviewed-ideas))
   (page
    (haml
     (.container
-     (:h1 "Review Research Idea")
+     (:h1 (format "Review Research Idea ~a (of ~a)" (add1 n) (get 'n-research-ideas)))
      (.submission
       (:h3 "Submitted Research Idea")
       (:p next-research-idea))
@@ -297,11 +303,15 @@ SCRIPT
         (:button.button.next-button ((:type "submit")) "Submit")))
       (lambda (#:valid-research-idea? valid-research-idea?
                #:provide-feedback provide-feedback)
-        (put 'review (hash
-                      'submitter-id         (get 'current-assignment)
-                      'valid-research-idea? valid-research-idea?
-                      'provide-feedback     provide-feedback))
-        (put 'current-research-ideas (cdr (get 'current-research-ideas)))))))))
+        (put 'reviews
+             (cons
+              (hash 'submitter-id         (get 'current-assignment)
+                    'research-idea        next-research-idea
+                    'valid-research-idea? valid-research-idea?
+                    'provide-feedback     provide-feedback)
+              (get 'reviews '())))
+        (put 'current-research-ideas (cdr (get 'current-research-ideas)))
+        (put 'n-reviewed-ideas (add1 (get 'n-reviewed-ideas)))))))))
 
 (define (review-research-ideas)
   (define (next-or-done/transition)
@@ -313,15 +323,16 @@ SCRIPT
     (define assignments (get 'assignments))
     (define current-assignment (car assignments))
     (put 'current-assignment current-assignment)
-    (put 'assignments (cdr assignments))
     (define submissions (get 'submissions))
     (define current-research-ideas (hash-ref submissions current-assignment))
     (put 'current-research-ideas current-research-ideas)
+    (put 'n-reviewed-ideas 0)
+    (put 'n-research-ideas (length current-research-ideas))
     (skip))
 
   (make-study
    "research-ideas-review"
-   #:provides '(assignments)
+   #:provides '()
    #:requires '(assignments submissions)
    (list
     (make-step
