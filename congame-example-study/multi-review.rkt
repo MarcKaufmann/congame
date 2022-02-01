@@ -4,6 +4,7 @@
          congame/components/study
          koyo/haml
          (only-in forms ok err)
+         racket/contract
          racket/format
          racket/list
          racket/random
@@ -107,12 +108,24 @@ setTimeout(function() {
 SCRIPT
           ))))))
 
-(define (final)
+(define/contract ((final compute-scores))
+  ; FIXME: compute-score should return a hash of participant-id -> score. This should be checked upon creation of the study with a helpful error message.
+  (-> (-> (hash/c integer? number?)) any)
+  ; FIXME: compute-scores gets called on every refresh, which can be costly.
+  ; Recompute scores only if triggered in the admin interface or based on a
+  ; timed job.
+  (define scores (compute-scores))
+  (put 'scores scores)
   (page
    (haml
     (.container
      (:h1 "End of Review Phase")
-     (:p "You're done. Thanks for reviewing!")))))
+     (:p "Thanks for completing your reviews.")
+     (:h3 "Reviews of your Submission by Reviewer")
+     (:ul
+      ,@(for/list ([(reviewer score) (in-hash scores)])
+          (haml
+           (:li (format "Reviewer ~a score: ~a" reviewer score)))))))))
 
 (define (update-submissions)
   ;; FIXME: This code will break if we no longer treat files as data, but
@@ -125,9 +138,18 @@ SCRIPT
     (put/instance 'submissions updated-submissions))
   (skip))
 
+(define (update-reviews)
+  (with-study-transaction
+    (define participant-reviews (get 'participant-reviews))
+    (define reviews (get/instance 'reviews '()))
+    (define updated-reviews (append reviews participant-reviews))
+    (put/instance 'reviews updated-reviews))
+  (skip))
+
 (define (submit+review-study #:submission-study submission-study
                              #:review-study review-study
-                             #:submission-key submission-key)
+                             #:submission-key submission-key
+                             #:compute-scores (compute-scores (λ () (hash))))
   (define (show-next-review)
     (define n (get 'n-reviewed-assignments))
     (page
@@ -148,16 +170,19 @@ SCRIPT
     (make-step 'update-submissions update-submissions)
     (make-step 'lobby lobby)
     (make-step 'show-next-review show-next-review)
-    (make-step/study 'next-review
+    (make-step/study 'next-assignment-reviews
                      review-study
                      (λ ()
+                       (put 'participant-reviews (append (get 'participant-reviews '()) (get 'next-reviews)))
                        (put 'assignments (cdr (get 'assignments)))
                        (put 'n-reviewed-assignments (add1 (get 'n-reviewed-assignments)))
-                       (cond [(empty? (get 'assignments)) 'final]
+                       (cond [(empty? (get 'assignments)) 'update-reviews]
                              [else 'show-next-review]))
                      #:require-bindings '((assignments assignments)
-                                          (submissions submissions)))
-    (make-step 'final final)
+                                          (submissions submissions))
+                     #:provide-bindings '((next-reviews reviews)))
+    (make-step 'update-reviews update-reviews)
+    (make-step 'final (final compute-scores))
     )))
 
 ;; REVIEW-PDF
@@ -220,6 +245,7 @@ SCRIPT
        (lambda (#:how-good-is-the-submission how-good-is-the-submission)
          (put 'review (hash
                        'submitter-id (car assignments)
+                       'reviewer-id (current-participant-id)
                        'submission submission-file
                        'how-good-is-the-submission how-good-is-the-submission)))))))))
 
@@ -305,17 +331,19 @@ SCRIPT
                #:provide-feedback provide-feedback)
         (put 'reviews
              (cons
-              (hash 'submitter-id         (get 'current-assignment)
-                    'research-idea        next-research-idea
-                    'valid-research-idea? valid-research-idea?
-                    'provide-feedback     provide-feedback)
+              (hash 'submitter-id           (get 'current-assignment)
+                    'reviewer-id            (current-participant-id)
+                    'research-idea          next-research-idea
+                    'valid-research-idea?       (string=? valid-research-idea? "yes")
+                    'provide-feedback       provide-feedback)
               (get 'reviews '())))
         (put 'current-research-ideas (cdr (get 'current-research-ideas)))
         (put 'n-reviewed-ideas (add1 (get 'n-reviewed-ideas)))))))))
 
 (define (review-research-ideas)
   (define (next-or-done/transition)
-    (cond [(empty? (get 'current-research-ideas)) done]
+    (cond [(empty? (get 'current-research-ideas))
+           done]
           [else
            'review-next-research-idea]))
 
@@ -332,7 +360,7 @@ SCRIPT
 
   (make-study
    "research-ideas-review"
-   #:provides '()
+   #:provides '(reviews)
    #:requires '(assignments submissions)
    (list
     (make-step
@@ -344,9 +372,29 @@ SCRIPT
      review-next-research-idea
      next-or-done/transition))))
 
+(define (compute-research-ideas-scores)
+  (define (score r)
+    (if (hash-ref r 'valid-research-idea?) 1 0))
+
+  (define reviews (get/instance 'reviews))
+  (define reviews-of-participant
+    (filter (λ (r)
+              (equal? (hash-ref r 'submitter-id) (current-participant-id)))
+            reviews))
+  (define res
+    (for/fold ([reviewer-scores (hash)])
+            ([r reviews-of-participant])
+    ; FIXME: Relies on reviews providing the correct keys. Write more defensive code: either disallow providing the wrong kind of reviews when creating a new review-study, or check here. The former is better.
+    (define reviewer (hash-ref r 'reviewer-id))
+    (hash-set reviewer-scores
+              reviewer
+              (+ (score r) (hash-ref reviewer-scores reviewer 0)))))
+    res)
+
 ;; FIXME: Design study so that the number of research ideas can be configured by
 ;; the admin after creating a study instance.
 (define submit+review-research-ideas
   (submit+review-study #:submission-study (submit-research-ideas 2)
                        #:review-study (review-research-ideas)
-                       #:submission-key 'research-ideas))
+                       #:submission-key 'research-ideas
+                       #:compute-scores compute-research-ideas-scores))
