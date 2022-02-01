@@ -2,11 +2,13 @@
 
 (require congame/components/formular
          congame/components/study
+         congame/components/export
          koyo/haml
          (only-in forms ok err)
          racket/contract
          racket/format
          racket/list
+         racket/match
          racket/random
          web-server/http)
 
@@ -166,18 +168,19 @@ SCRIPT
     (put/instance 'reviews updated-reviews))
   (skip))
 
-(define (admin-interface)
+(define ((admin-interface display-admin))
   (page
    (haml
     (.container
      (:h1 "Admin Interface for a Review Study")
-     (:p "You are in the admin interface")))))
+     (display-admin)))))
 
 (define (submit+review-study #:submission-study submission-study
                              #:review-study review-study
                              #:submission-key submission-key
                              #:compute-scores [compute-scores (λ () (hash))]
-                             #:display-feedback [display-feedback (λ () "")])
+                             #:display-feedback [display-feedback (λ () "")]
+                             #:display-admin [display-admin (λ () "")])
   (define (show-next-review)
     (define n (get 'n-reviewed-assignments))
     (page
@@ -199,7 +202,7 @@ SCRIPT
               'admin-interface]
              [else
               'submit])))
-    (make-step 'admin-interface admin-interface)
+    (make-step 'admin-interface (admin-interface display-admin))
     (make-step/study 'submit submission-study
                      #:provide-bindings `([submission ,submission-key]))
     (make-step 'update-submissions update-submissions)
@@ -444,6 +447,50 @@ SCRIPT
             (:li "Feedback: " feedback)
             (:li "Valid: " (if valid? "Yes" "No"))))))))))
 
+(define (research-ideas-admin)
+  (define submissions (get/instance 'submissions))
+  (define reviews (sort (get/instance 'reviews)
+                        (λ (x y)
+                          (< (hash-ref x 'reviewer-id)
+                             (hash-ref y 'reviewer-id)))))
+  (haml
+   (:div
+    (:h3 "Research Ideas Submitted")
+    (:table
+     (:thead
+      (:tr
+       (:th "Submitter ID")
+       (:th "Research Idea")))
+     (:tbody
+      ,@(for*/list ([(submitter-id ideas) (in-hash submissions)]
+                    [i ideas])
+          (haml
+           (:tr
+            (:td (~a submitter-id))
+            (:td (~a i)))))))
+
+    (:h3 "Research Ideas Reviews")
+
+    (:table
+     (:thead
+      (:th "Reviewer ID")
+      (:th "Reviewed Idea")
+      (:th "Valid Idea?")
+      (:th "Feedback"))
+     (:tbody
+      ,@(for/list ([r reviews])
+          (match-define (hash-table ('feedback feedback)
+                                    ('research-idea research-idea)
+                                    ('reviewer-id reviewer-id)
+                                    ('submitter-id submitter-id)
+                                    ('valid-research-idea? valid?))
+            r)
+          (haml
+           (:tr
+            (:td (~a reviewer-id))
+            (:td (~a research-idea))
+            (:td (~a valid?))
+            (:td (~a feedback))))))))))
 
 ;; FIXME: Design study so that the number of research ideas can be configured by
 ;; the admin after creating a study instance.
@@ -452,4 +499,5 @@ SCRIPT
                        #:review-study (review-research-ideas)
                        #:submission-key 'research-ideas
                        #:compute-scores compute-research-ideas-scores
-                       #:display-feedback research-ideas-display-feedback))
+                       #:display-feedback research-ideas-display-feedback
+                       #:display-admin research-ideas-admin))
