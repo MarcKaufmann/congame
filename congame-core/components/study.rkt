@@ -856,6 +856,7 @@ QUERY
  clear-study-instance-vars!
  current-participant-id
  participant-email
+ current-user-owner?
  clear-participant-progress!
  participant-enrolled?
  enroll-participant!
@@ -984,6 +985,16 @@ QUERY
 
 (define current-study-instance-id
   (compose1 study-participant-instance-id current-participant))
+
+(define (current-study-instance-owner-id)
+  (study-instance-owner-id
+   (lookup-study-instance (current-database) (current-study-instance-id))))
+
+(define current-participant-user-id
+  (compose1 study-participant-user-id current-participant))
+
+(define (current-user-owner?)
+  (equal? (current-participant-user-id) (current-study-instance-owner-id)))
 
 (define/contract (list-studies db)
   (-> database? (listof study-meta?))

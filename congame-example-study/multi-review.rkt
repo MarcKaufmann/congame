@@ -166,6 +166,13 @@ SCRIPT
     (put/instance 'reviews updated-reviews))
   (skip))
 
+(define (admin-interface)
+  (page
+   (haml
+    (.container
+     (:h1 "Admin Interface for a Review Study")
+     (:p "You are in the admin interface")))))
+
 (define (submit+review-study #:submission-study submission-study
                              #:review-study review-study
                              #:submission-key submission-key
@@ -186,6 +193,13 @@ SCRIPT
    #:requires '()
    #:provides '()
    (list
+    (make-step 'check-owner skip
+     (λ ()
+       (cond [(current-user-owner?)
+              'admin-interface]
+             [else
+              'submit])))
+    (make-step 'admin-interface admin-interface)
     (make-step/study 'submit submission-study
                      #:provide-bindings `([submission ,submission-key]))
     (make-step 'update-submissions update-submissions)
