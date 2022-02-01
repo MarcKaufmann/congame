@@ -61,7 +61,10 @@
            (loop merged next-i)
            (loop assignments i))])))
 
-(define (matchmake)
+(define (matchmake #:self-review? [self-review? #t])
+  (define (add-self-to-reviewers assignments)
+    (for/hash ([(reviewer assignments) (in-hash assignments)])
+      (values reviewer (cons reviewer assignments))))
   (with-study-transaction
     (define submissions (get/instance 'submissions (hash)))
     (cond
@@ -71,7 +74,11 @@
          [assignments #t]
          [else
           (define participant-ids (hash-keys submissions))
-          (put/instance 'assignments (assign-reviewers participant-ids))
+          (define assigned-reviewers (assign-reviewers participant-ids))
+          (put/instance 'assignments
+                        (if (not self-review?)
+                            assigned-reviewers
+                            (add-self-to-reviewers assigned-reviewers)))
           #t])]
       [else #f])))
 
@@ -364,6 +371,11 @@ SCRIPT
   (define (initialize-review)
     (define assignments (get 'assignments))
     (define current-assignment (car assignments))
+    ; Clear reviews since last review. FIXME: Stateful stuff that is obnoxious
+    ; to deal with. One way around this would be to provide reviews only once it
+    ; is clear that it is the final call to 'next-assignment-reviews. Any other
+    ; strategies?
+    (put 'reviews '())
     (put 'current-assignment current-assignment)
     (define submissions (get 'submissions))
     (define current-research-ideas (hash-ref submissions current-assignment))
@@ -405,13 +417,18 @@ SCRIPT
 (define (research-ideas-display-feedback)
   (haml
    (:div
-    (:h3 "Research Ideas Feedback")
+    (:h3 "Detailed Feedback")
     (:div
      ,@(for/list ([r (get-reviews-of-participant)])
+         (define valid? (hash-ref r 'valid-research-idea?))
+         (define research-idea (hash-ref r 'research-idea))
+         (define feedback (hash-ref r 'feedback))
          (haml
           (.feedback
-           (:p (:strong "Research Idea: ") (hash-ref r 'research-idea))
-           (:p (:strong "Feedback: ") (hash-ref r 'feedback)))))))))
+           (:p (:strong "Research Idea: ") research-idea)
+           (:ul
+            (:li "Feedback: " feedback)
+            (:li "Valid: " (if valid? "Yes" "No"))))))))))
 
 
 ;; FIXME: Design study so that the number of research ideas can be configured by
