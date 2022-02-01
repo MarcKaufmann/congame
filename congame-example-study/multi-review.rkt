@@ -175,6 +175,20 @@ SCRIPT
      (:h1 "Admin Interface for a Review Study")
      (display-admin)))))
 
+(define (admin-review)
+  (page
+   (haml
+    (.container
+     (:h1 "Admin Review")
+     (button void "Back to Admin Interface")))))
+
+(define (admin-review-review)
+  (page
+   (haml
+    (.container
+     (:h1 "Admin Review Review")
+     (button void "Back to Admin Interface")))))
+
 (define (submit+review-study #:submission-study submission-study
                              #:review-study review-study
                              #:submission-key submission-key
@@ -203,6 +217,8 @@ SCRIPT
              [else
               'submit])))
     (make-step 'admin-interface (admin-interface display-admin))
+    (make-step 'admin-review admin-review (λ () 'admin-interface))
+    (make-step 'admin-review-review admin-review-review (λ () 'admin-interface))
     (make-step/study 'submit submission-study
                      #:provide-bindings `([submission ,submission-key]))
     (make-step 'update-submissions update-submissions)
@@ -460,14 +476,19 @@ SCRIPT
      (:thead
       (:tr
        (:th "Submitter ID")
-       (:th "Research Idea")))
+       (:th "Research Idea")
+       (:th "Provide Feedback")))
      (:tbody
       ,@(for*/list ([(submitter-id ideas) (in-hash submissions)]
                     [i ideas])
           (haml
            (:tr
             (:td (~a submitter-id))
-            (:td (~a i)))))))
+            (:td (~a i))
+            (:td (button/dispatch
+                  void
+                  "Review the Idea"
+                  'admin-review)))))))
 
     (:h3 "Research Ideas Reviews")
 
@@ -476,7 +497,8 @@ SCRIPT
       (:th "Reviewer ID")
       (:th "Reviewed Idea")
       (:th "Valid Idea?")
-      (:th "Feedback"))
+      (:th "Reviewer Feedback")
+      (:th "Review this Review"))
      (:tbody
       ,@(for/list ([r reviews])
           (match-define (hash-table ('feedback feedback)
@@ -490,7 +512,11 @@ SCRIPT
             (:td (~a reviewer-id))
             (:td (~a research-idea))
             (:td (~a valid?))
-            (:td (~a feedback))))))))))
+            (:td (~a feedback))
+            (:td (button/dispatch
+                  void
+                  "Review the Review"
+                  'admin-review-review))))))))))
 
 ;; FIXME: Design study so that the number of research ideas can be configured by
 ;; the admin after creating a study instance.
