@@ -168,33 +168,26 @@ SCRIPT
     (put/instance 'reviews updated-reviews))
   (skip))
 
-(define ((admin-interface display-admin))
-  (page
-   (haml
-    (.container
-     (:h1 "Admin Interface for a Review Study")
-     (display-admin)))))
+(define (default-admin-interface)
+  (define (admin)
+    (page
+     (haml
+      (.container
+       (:h1 "No Admin Interface Implemented")))))
 
-(define (admin-review)
-  (page
-   (haml
-    (.container
-     (:h1 "Admin Review")
-     (button void "Back to Admin Interface")))))
-
-(define (admin-review-review)
-  (page
-   (haml
-    (.container
-     (:h1 "Admin Review Review")
-     (button void "Back to Admin Interface")))))
+  (make-study
+   "default-admin-interface"
+   #:provides '()
+   #:requires '()
+   (list
+    (make-step 'admin admin (λ () 'admin)))))
 
 (define (submit+review-study #:submission-study submission-study
                              #:review-study review-study
                              #:submission-key submission-key
                              #:compute-scores [compute-scores (λ () (hash))]
                              #:display-feedback [display-feedback (λ () "")]
-                             #:display-admin [display-admin (λ () "")])
+                             #:admin-interface [admin-interface (default-admin-interface)])
   (define (show-next-review)
     (define n (get 'n-reviewed-assignments))
     (page
@@ -216,9 +209,7 @@ SCRIPT
               'admin-interface]
              [else
               'submit])))
-    (make-step 'admin-interface (admin-interface display-admin))
-    (make-step 'admin-review admin-review (λ () 'admin-interface))
-    (make-step 'admin-review-review admin-review-review (λ () 'admin-interface))
+    (make-step/study 'admin-interface admin-interface)
     (make-step/study 'submit submission-study
                      #:provide-bindings `([submission ,submission-key]))
     (make-step 'update-submissions update-submissions)
@@ -464,59 +455,88 @@ SCRIPT
             (:li "Valid: " (if valid? "Yes" "No"))))))))))
 
 (define (research-ideas-admin)
-  (define submissions (get/instance 'submissions))
-  (define reviews (sort (get/instance 'reviews)
+
+  (define submissions (get/instance 'submissions (hash)))
+  (define reviews (sort (get/instance 'reviews '())
                         (λ (x y)
                           (< (hash-ref x 'reviewer-id)
                              (hash-ref y 'reviewer-id)))))
-  (haml
-   (:div
-    (:h3 "Research Ideas Submitted")
-    (:table
-     (:thead
-      (:tr
-       (:th "Submitter ID")
-       (:th "Research Idea")
-       (:th "Provide Feedback")))
-     (:tbody
-      ,@(for*/list ([(submitter-id ideas) (in-hash submissions)]
-                    [i ideas])
-          (haml
-           (:tr
-            (:td (~a submitter-id))
-            (:td (~a i))
-            (:td (button/dispatch
-                  void
-                  "Review the Idea"
-                  'admin-review)))))))
+  (page
+   (haml
+    (.container
+     (:h1 "Admin Interface for a Review Study")
+     (:h3 "Research Ideas Submitted")
+     (:table
+      (:thead
+       (:tr
+        (:th "Submitter ID")
+        (:th "Research Idea")
+        (:th "Provide Feedback")))
+      (:tbody
+       ,@(for*/list ([(submitter-id ideas) (in-hash submissions)]
+                     [i ideas])
+           (haml
+            (:tr
+             (:td (~a submitter-id))
+             (:td (~a i))
+             (:td (button/dispatch
+                   void
+                   "Review the Idea"
+                   'admin-review)))))))
 
-    (:h3 "Research Ideas Reviews")
+     (:h3 "Research Ideas Reviews")
 
-    (:table
-     (:thead
-      (:th "Reviewer ID")
-      (:th "Reviewed Idea")
-      (:th "Valid Idea?")
-      (:th "Reviewer Feedback")
-      (:th "Review this Review"))
-     (:tbody
-      ,@(for/list ([r reviews])
-          (match-define (hash-table ('feedback feedback)
-                                    ('research-idea research-idea)
-                                    ('reviewer-id reviewer-id)
-                                    ('submitter-id submitter-id)
-                                    ('valid-research-idea? valid?))
-            r)
-          (haml
-           (:tr
-            (:td (~a reviewer-id))
-            (:td (~a research-idea))
-            (:td (~a valid?))
-            (:td (~a feedback))
-            (:td (button/dispatch
-                  void
-                  "Review the Review"
-                  'admin-review-review))))))))))
+     (:table
+      (:thead
+       (:th "Reviewer ID")
+       (:th "Reviewed Idea")
+       (:th "Valid Idea?")
+       (:th "Reviewer Feedback")
+       (:th "Review this Review"))
+      (:tbody
+       ,@(for/list ([r reviews])
+           (match-define (hash-table ('feedback feedback)
+                                     ('research-idea research-idea)
+                                     ('reviewer-id reviewer-id)
+                                     ('submitter-id submitter-id)
+                                     ('valid-research-idea? valid?))
+             r)
+           (haml
+            (:tr
+             (:td (~a reviewer-id))
+             (:td (~a research-idea))
+             (:td (~a valid?))
+             (:td (~a feedback))
+             (:td (button/dispatch
+                   void
+                   "Review the Review"
+                   'admin-review-review)))))))))))
+
+(define research-ideas-admin-interface
+
+  (make-study
+   "research-ideas-admin-interface"
+   #:provides '()
+   #:requires '()
+   (list
+    (make-step 'admin research-ideas-admin)
+    (make-step 'admin-review admin-review (λ () 'admin))
+    (make-step 'admin-review-review admin-review-review (λ () 'admin)))))
+
+(define (admin-review)
+  (page
+   (haml
+    (.container
+     (:h1 "Admin Review")
+     (button void "Back to Admin Interface")))))
+
+(define (admin-review-review)
+  (page
+   (haml
+    (.container
+     (:h1 "Admin Review Review")
+     (button void "Back to Admin Interface")))))
+
 
 ;; FIXME: Design study so that the number of research ideas can be configured by
 ;; the admin after creating a study instance.
@@ -526,4 +546,4 @@ SCRIPT
                        #:submission-key 'research-ideas
                        #:compute-scores compute-research-ideas-scores
                        #:display-feedback research-ideas-display-feedback
-                       #:display-admin research-ideas-admin))
+                       #:admin-interface research-ideas-admin-interface))
