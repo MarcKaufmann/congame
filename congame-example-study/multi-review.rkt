@@ -165,8 +165,7 @@ SCRIPT
     (define participant-reviews (get 'participant-reviews))
     (define reviews (get/instance 'reviews '()))
     (define updated-reviews (append reviews participant-reviews))
-    (put/instance 'reviews updated-reviews))
-  (skip))
+    (put/instance 'reviews updated-reviews)))
 
 (define (default-admin-interface)
   (define (admin)
@@ -203,13 +202,30 @@ SCRIPT
    #:requires '()
    #:provides '()
    (list
+    ; FIXME: passing all in via `#:require-bindings` is a hack. Pass in the step
+    ; for the admin-interface, not the study from which the step is built.
+    ; Except I need both 'check-owner step and the admin step to bootstrap this
+    ; process. Can be solved if `#:require-bindings` and `#:provide-bindings`
+    ; can either take default values or `get/instance` not just `get`.
     (make-step 'check-owner skip
      (λ ()
        (cond [(current-user-owner?)
+              (put 'submissions (get/instance 'submissions))
+              (put 'assignments (get/instance 'assignments))
+              (put 'reviews (get/instance 'reviews))
               'admin-interface]
              [else
               'submit])))
-    (make-step/study 'admin-interface admin-interface)
+    (make-step/study 'admin-interface
+                     admin-interface
+                     (λ ()
+                       (update-reviews)
+                       (put 'participant-reviews '())
+                       'check-owner)
+                     #:require-bindings '((submissions submissions)
+                                          (reviews reviews)
+                                          (assignments assignments))
+                     #:provide-bindings '((participant-reviews participant-reviews)))
     (make-step/study 'submit submission-study
                      #:provide-bindings `([submission ,submission-key]))
     (make-step 'update-submissions update-submissions)
@@ -221,12 +237,13 @@ SCRIPT
                        (put 'participant-reviews (append (get 'participant-reviews '()) (get 'next-reviews)))
                        (put 'assignments (cdr (get 'assignments)))
                        (put 'n-reviewed-assignments (add1 (get 'n-reviewed-assignments)))
-                       (cond [(empty? (get 'assignments)) 'update-reviews]
+                       (cond [(empty? (get 'assignments))
+                              (update-reviews)
+                              'final]
                              [else 'show-next-review]))
                      #:require-bindings '((assignments assignments)
                                           (submissions submissions))
                      #:provide-bindings '((next-reviews reviews)))
-    (make-step 'update-reviews update-reviews)
     (make-step 'final (final compute-scores display-feedback))
     )))
 
@@ -456,15 +473,29 @@ SCRIPT
 
 (define (research-ideas-admin)
 
-  (define submissions (get/instance 'submissions (hash)))
-  (define reviews (sort (get/instance 'reviews '())
+  (define submissions (get 'submissions (hash)))
+  (define reviews (sort (get 'reviews '())
                         (λ (x y)
                           (< (hash-ref x 'reviewer-id)
                              (hash-ref y 'reviewer-id)))))
+  (define admin-reviews
+    (map
+     (λ (r)
+       (list (hash-ref r 'submitter-id) (hash-ref r 'research-idea)))
+     (filter (λ (r)
+              (equal? (hash-ref r 'reviewer-id) (current-participant-id)))
+             reviews)))
   (page
    (haml
     (.container
      (:h1 "Admin Interface for a Review Study")
+
+     ; exit admin interface, then re-enter (relies on next step being configured so that we re-enter admin necessarily after exiting), thus passing in the data via `#:require-bindings`
+     (:p (button/dispatch
+          void
+          "Update Admin Data"
+          'done))
+
      (:h3 "Research Ideas Submitted")
      (:table
       (:thead
@@ -479,10 +510,15 @@ SCRIPT
             (:tr
              (:td (~a submitter-id))
              (:td (~a i))
-             (:td (button/dispatch
-                   void
-                   "Review the Idea"
-                   'admin-review)))))))
+             (:td
+              (if (member (list submitter-id i) admin-reviews)
+                  "Reviewed"
+                  (button/dispatch
+                   (λ ()
+                     (put 'next-submissions (hash submitter-id (list i)))
+                     (put 'next-assignments (list submitter-id)))
+                   "Review this Idea"
+                   'admin-review))))))))
 
      (:h3 "Research Ideas Reviews")
 
@@ -512,24 +548,6 @@ SCRIPT
                    "Review the Review"
                    'admin-review-review)))))))))))
 
-(define research-ideas-admin-interface
-
-  (make-study
-   "research-ideas-admin-interface"
-   #:provides '()
-   #:requires '()
-   (list
-    (make-step 'admin research-ideas-admin)
-    (make-step 'admin-review admin-review (λ () 'admin))
-    (make-step 'admin-review-review admin-review-review (λ () 'admin)))))
-
-(define (admin-review)
-  (page
-   (haml
-    (.container
-     (:h1 "Admin Review")
-     (button void "Back to Admin Interface")))))
-
 (define (admin-review-review)
   (page
    (haml
@@ -537,6 +555,28 @@ SCRIPT
      (:h1 "Admin Review Review")
      (button void "Back to Admin Interface")))))
 
+(define research-ideas-admin-interface
+
+  (make-study
+   "research-ideas-admin-interface"
+   #:provides '(participant-reviews)
+   #:requires '(assignments submissions reviews)
+   (list
+    (make-step 'admin research-ideas-admin)
+    (make-step/study
+     'admin-review
+     (review-research-ideas)
+     #:require-bindings '((assignments next-assignments)
+                          (submissions next-submissions))
+     #:provide-bindings '((next-reviews reviews))
+     (λ ()
+       (put 'participant-reviews (append (get 'participant-reviews '()) (get 'next-reviews)))
+       (put 'next-assignments (cdr (get 'next-assignments)))
+       (cond [(empty? (get 'next-assignments))
+              'done]
+             [else 'admin-review])))
+    (make-step 'admin-review-review admin-review-review (λ () 'admin))
+    (make-step 'done skip (λ () done)))))
 
 ;; FIXME: Design study so that the number of research ideas can be configured by
 ;; the admin after creating a study instance.
