@@ -117,7 +117,7 @@ setTimeout(function() {
 SCRIPT
           ))))))
 
-(define/contract ((final compute-scores display-feedback))
+(define/contract ((final compute-scores final-page))
   ; FIXME: compute-score should return a hash of participant-id -> score. This should be checked upon creation of the study with a helpful error message.
   (-> (-> (hash/c integer? number?)) (-> any) any)
   ; FIXME: compute-scores gets called on every refresh, which can be costly.
@@ -125,29 +125,7 @@ SCRIPT
   ; timed job.
   (define scores (compute-scores))
   (put 'scores scores)
-  (define n (hash-count scores))
-
-  (define score-display
-    (if (> n 0)
-        (haml
-         (:div
-          (:h3 "Reviews of your Submission by Reviewer")
-          (:ul
-           ,@(for/list ([(reviewer score) (in-hash scores)])
-               (haml
-                (:li (format "Reviewer ~a score: ~a" reviewer score)))))))
-        (haml
-         (:div
-          (:h3 "No Reviews of your Submission available")))))
-
-  (page
-   (haml
-    (.container
-     (:h1 "End of Review Phase")
-     (:p "Thanks for completing your reviews.")
-     score-display
-     (display-feedback)
-     ))))
+  (final-page))
 
 (define (update-submissions)
   ;; FIXME: This code will break if we no longer treat files as data, but
@@ -181,11 +159,18 @@ SCRIPT
    (list
     (make-step 'admin admin (λ () 'admin)))))
 
+(define (default-final-page)
+  (page
+   (haml
+    (.container
+     (:h1 "Thank you for participating")
+     (:p "You are done.")))))
+
 (define (submit+review-study #:submission-study submission-study
                              #:review-study review-study
                              #:submission-key submission-key
                              #:compute-scores [compute-scores (λ () (hash))]
-                             #:display-feedback [display-feedback (λ () "")]
+                             #:final-page [final-page default-final-page]
                              #:admin-interface [admin-interface (default-admin-interface)])
   (define (show-next-review)
     (define n (get 'n-reviewed-assignments))
@@ -244,7 +229,7 @@ SCRIPT
                      #:require-bindings '((assignments assignments)
                                           (submissions submissions))
                      #:provide-bindings '((next-reviews reviews)))
-    (make-step 'final (final compute-scores display-feedback))
+    (make-step 'final (final compute-scores final-page))
     )))
 
 ;; REVIEW-PDF
@@ -455,21 +440,43 @@ SCRIPT
               reviewer
               (+ (score r) (hash-ref reviewer-scores reviewer 0)))))
 
-(define (research-ideas-display-feedback)
-  (haml
-   (:div
-    (:h3 "Detailed Feedback")
-    (:div
-     ,@(for/list ([r (get-reviews-of-participant)])
-         (define valid? (hash-ref r 'valid-research-idea?))
-         (define research-idea (hash-ref r 'research-idea))
-         (define feedback (hash-ref r 'feedback))
-         (haml
-          (.feedback
-           (:p (:strong "Research Idea: ") research-idea)
-           (:ul
-            (:li "Feedback: " feedback)
-            (:li "Valid: " (if valid? "Yes" "No"))))))))))
+(define (research-ideas-final-page)
+  (define scores (get 'scores))
+  (define n (hash-count scores))
+  (define score-display
+    (if (> n 0)
+        (haml
+         (:div
+          (:h3 "Reviews of your Submission by Reviewer")
+          (:ul
+           ,@(for/list ([(reviewer score) (in-hash scores)])
+               (haml
+                (:li (format "Reviewer ~a score: ~a" reviewer score)))))))
+        (haml
+         (:div
+          (:h3 "No Reviews of your Submission available")))))
+  (define feedback
+    (haml
+     (:div
+      (:h3 "Detailed Feedback")
+      (:div
+       ,@(for/list ([r (get-reviews-of-participant)])
+           (define valid? (hash-ref r 'valid-research-idea?))
+           (define research-idea (hash-ref r 'research-idea))
+           (define feedback (hash-ref r 'feedback))
+           (haml
+            (.feedback
+             (:p (:strong "Research Idea: ") research-idea)
+             (:ul
+              (:li "Feedback: " feedback)
+              (:li "Valid: " (if valid? "Yes" "No"))))))))))
+  (page
+   (haml
+    (.container
+     (:h1 "End of Review Phase")
+     (:p "Thanks for completing your reviews.")
+     score-display
+     feedback))))
 
 (define (research-ideas-admin)
 
@@ -585,5 +592,5 @@ SCRIPT
                        #:review-study (review-research-ideas)
                        #:submission-key 'research-ideas
                        #:compute-scores compute-research-ideas-scores
-                       #:display-feedback research-ideas-display-feedback
+                       #:final-page research-ideas-final-page
                        #:admin-interface research-ideas-admin-interface))
