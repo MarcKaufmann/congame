@@ -621,6 +621,7 @@ QUERY
 ;; study ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ current-study-stack
  wrap-sub-study
  make-study
  run-study
