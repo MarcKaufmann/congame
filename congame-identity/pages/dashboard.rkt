@@ -4,6 +4,7 @@
          koyo/haml
          koyo/url
          racket/contract
+         racket/match
          web-server/dispatchers/dispatch
          web-server/http
          "../components/auth.rkt"
@@ -16,30 +17,40 @@
 
 (define/contract ((dashboard-page db) _req)
   (-> database? (-> request? response?))
-  (define instances-by-server
+  (struct data (server tags instances))
+  (define data-by-server
     (sort
      (for/list ([server (in-list (get-congame-servers db))])
-       (cons server (congame-server-study-instances server (current-user))))
-     #:key (compose1 congame-server-name car) string<?))
+       (data server
+             (congame-server-tags server)
+             (congame-server-study-instances server (current-user))))
+     #:key (compose1 congame-server-name data-server) string<?))
 
   (page
    (haml
     (.container
-     ,@(for/list ([p (in-list instances-by-server)])
-         (define server (car p))
-         (define instances (cdr p))
+     ,@(for/list ([d (in-list data-by-server)])
+         (match-define (data server tags instances) d)
          (haml
           (.server
            (:h1 (congame-server-name server))
-           (:ul
-            ,@(for/list ([instance (in-list instances)])
-                (haml
-                 (:li
-                  (:a
-                   ([:href (reverse-uri 'enroll-or-resume-page
-                                        (congame-server-id server)
-                                        (study-instance-id instance))])
-                   (study-instance-name instance)))))))))))))
+           (.section
+            (:h4 "Tags")
+            (:ul
+             ,@(for/list ([name (in-list tags)])
+                 (haml
+                  (:li name)))))
+           (.section
+            (:h4 "Studies")
+            (:ul
+             ,@(for/list ([instance (in-list instances)])
+                 (haml
+                  (:li
+                   (:a
+                    ([:href (reverse-uri 'enroll-or-resume-page
+                                         (congame-server-id server)
+                                         (study-instance-id instance))])
+                    (study-instance-name instance))))))))))))))
 
 (define/contract ((enroll-or-resume-page db) _req server-id instance-id)
   (-> database? (-> request? integer? integer? response?))

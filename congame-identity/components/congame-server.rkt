@@ -16,6 +16,7 @@
  (schema-out study-instance)
  congame-server-enroll-user!
  congame-server-study-instances
+ congame-server-tags
  get-congame-server
  get-congame-servers)
 
@@ -46,6 +47,7 @@
   (-> congame-server? string? ... string?)
   (apply ~a (congame-server-url cs) args))
 
+;; TODO: Refactor access so that common error handling stuff is all handled in one place.
 (define/contract (congame-server-study-instances cs u)
   (-> congame-server? user? (listof study-instance?))
   (define res
@@ -72,6 +74,14 @@
                         'instance-id instance-id
                         'user-display-name (user-display-name u)))))
   (congame-server-path cs (hash-ref data 'target-path)))
+
+(define/contract (congame-server-tags cs)
+  (-> congame-server? (listof string?))
+  (define data
+    (http:response-json
+     (http:get (congame-server-path cs "/api/v1/tags.json")
+               #:auth (congame-server-auth cs))))
+  (hash-ref data 'tags))
 
 (define/contract (get-congame-server db id)
   (-> database? id/c (or/c #f congame-server?))
