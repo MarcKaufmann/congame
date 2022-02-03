@@ -48,11 +48,14 @@
 
 (define/contract (congame-server-study-instances cs u)
   (-> congame-server? user? (listof study-instance?))
+  (define res
+    (http:get (congame-server-path cs "/api/v1/studies.json")
+              #:auth (congame-server-auth cs)
+              #:params `((user-display-name . ,(user-display-name u)))))
   (define data
-    (http:response-json
-     (http:get (congame-server-path cs "/api/v1/studies.json")
-               #:auth (congame-server-auth cs)
-               #:params `((user-display-name . ,(user-display-name u))))))
+    (http:response-json res))
+  (unless (= (http:response-status-code res) 200)
+    (error 'congame-server-study-instances "API error: ~a" (hash-ref data 'error)))
   (for*/list ([study-data (in-list (hash-ref data 'studies))]
               [instance-data (in-list (hash-ref study-data 'instances))])
     (make-study-instance
