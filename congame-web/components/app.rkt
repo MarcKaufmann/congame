@@ -111,6 +111,14 @@
       #:roles (admin)
       (admin:view-study-instance-bot-set-page db users)]
 
+     [("admin" "tags" "new")
+      #:roles (admin)
+      (admin:create-tag-page db)]
+
+     [("admin" "tags" (integer-arg))
+      #:roles (admin)
+      (admin:view-tag-page db)]
+
      [("admin" "jobs" (string-arg) ...)
       #:roles (admin)
       (lambda (req . _args)
@@ -135,6 +143,10 @@
       #:roles (api)
       #:method "post"
       (api:enroll-participant-from-identity db auth users)]
+
+     [("api" "v1" "tags.json")
+      #:roles (api)
+      (api:tags db)]
 
      [("errors" "file-too-large")
       (error-413-page)]

@@ -32,6 +32,7 @@
          "../components/auth.rkt"
          "../components/bot-set.rkt"
          "../components/prolific.rkt"
+         "../components/tag.rkt"
          (prefix-in tpl: "../components/template.rkt")
          "../components/user.rkt"
          "../studies/all.rkt"
@@ -55,22 +56,37 @@
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
   (define studies (list-studies db))
+  (define tags (list-tags db))
   (tpl:page
    (tpl:container
     (haml
-     (:section.studies
-      (:h1 "Studies")
-      (:h4
-       (:a
-        ([:href (reverse-uri 'admin:create-study-page)])
-        "New Study"))
-      (:ul.study-list
-       ,@(for/list ([s (in-list studies)])
-           (haml
-            (:li
-             (:a
-              ([:href (reverse-uri 'admin:view-study-page (study-meta-id s))])
-              (study-meta-name s)))))))))))
+     (:div
+      (:section.studies
+       (:h1 "Studies")
+       (:h4
+        (:a
+         ([:href (reverse-uri 'admin:create-study-page)])
+         "New Study"))
+       (:ul.study-list
+        ,@(for/list ([s (in-list studies)])
+            (haml
+             (:li
+              (:a
+               ([:href (reverse-uri 'admin:view-study-page (study-meta-id s))])
+               (study-meta-name s)))))))
+      (:section.tags
+       (:h1 "Tags")
+       (:h4
+        (:a
+         ([:href (reverse-uri 'admin:create-tag-page)])
+         "New Tag")
+        (:ul.tag-list
+         ,@(for/list ([t (in-list tags)])
+             (haml
+              (:li
+               (:a
+                ([:href (reverse-uri 'admin:view-tag-page (tag-id t))])
+                (tag-name t)))))))))))))
 
 (define (slugify s)
   (~> s
@@ -804,3 +820,85 @@
     (lambda ()
       (define deserialized deserialized-v)
       (pretty-write (->jsexpr deserialized)))))
+
+
+;; tags ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ create-tag-page
+ view-tag-page)
+
+(define create-tag-form
+  (form* ([name (ensure binding/text (required))])
+    name))
+
+(define/contract ((create-tag-page db) req)
+  (-> database? (-> request? response?))
+  (let loop ([req req])
+    (send/suspend/dispatch/protect
+     (lambda (embed/url)
+       (match (form-run create-tag-form req)
+         [`(passed ,name ,_)
+          (define the-tag (create-tag! db name))
+          (redirect-to (reverse-uri 'admin:view-tag-page (tag-id the-tag)))]
+
+         [`(,_ ,_ ,rw)
+          (tpl:page
+           (tpl:container
+            (haml
+             (:section.create-tag
+              (:h1 "Create Tag")
+              (:form
+               ([:action (embed/url loop)]
+                [:method "POST"])
+               (:h1 "Create Tag")
+               (rw "name" (field-group "Name"))
+               (:button ([:type "submit"]) "Create"))))))])))))
+
+(define associate-tag-form
+  (form* ([instance-ids (ensure binding/text (required))])
+    instance-ids))
+
+(define/contract ((view-tag-page db) req tag-id)
+  (-> database? (-> request? id/c response?))
+  (define the-tag (lookup-tag db tag-id))
+  (unless the-tag (next-dispatcher))
+  (let loop ([req req])
+    (send/suspend/dispatch/protect
+     (lambda (embed/url)
+       (match (form-run associate-tag-form req)
+         [`(passed ,_ ,_)
+          (define instance-ids
+            (map (compose1 string->number bytes->string/utf-8 binding:form-value)
+                 (bindings-assq-all #"instance-ids" (request-bindings/raw req))))
+          (associate-tags! db tag-id instance-ids)
+          (redirect-to (reverse-uri 'admin:view-tag-page tag-id))]
+
+         [`(,_ ,_ ,rw)
+          (define instance-ids
+            (get-tag-instance-ids db tag-id))
+          (tpl:page
+           (tpl:container
+            (haml
+             (:section
+              (:h1 (tag-name the-tag))
+              (:h4 "Instances")
+              (:form
+               ([:action (embed/url loop)]
+                [:method "POST"])
+               (:select
+                ([:name "instance-ids"]
+                 [:multiple ""]
+                 [:size "24"])
+                ,@(for/list ([i (in-list (list-all-study-instances db))])
+                    (define id (study-instance-id i))
+                    `(option
+                      ([value ,(~a id)]
+                       ,@(if (member id instance-ids)
+                             `((selected ""))
+                             `()))
+                      ,(study-instance-name i))))
+               (:br)
+               (:button
+                ([:type "submit"])
+                "Save"))))))])))))

@@ -9,6 +9,7 @@
          web-server/dispatchers/dispatch
          web-server/servlet
          "../components/auth.rkt"
+         "../components/tag.rkt"
          "../components/user.rkt"
          "render.rkt")
 
@@ -84,3 +85,14 @@
     (hash
      'id (study-instance-id i)
      'name (study-instance-name i))))
+
+
+;; tags ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ tags)
+
+(define/contract ((tags db) req)
+  (-> database? (-> request? response?))
+  (response/jsexpr
+   (hash 'tags (map tag-name (list-tags db)))))
