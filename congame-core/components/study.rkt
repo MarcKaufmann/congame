@@ -356,7 +356,6 @@ QUERY
  when-bot
  page
  button
- button/dispatch
  form
  skip)
 
@@ -436,7 +435,7 @@ QUERY
        (with-widget-parameterization
          body ...))])
 
-(define/widget (button action label #:id [id ""])
+(define/widget (button action label #:id [id ""] #:to-step-id [to-step-id #f])
   (haml
    (:a.button.next-button
     ([:data-widget-id (when-bot id)]
@@ -444,18 +443,10 @@ QUERY
       (embed
        (lambda (_req)
          (action)
-         (continue)))])
-    label)))
-
-;; FIXME: (Marc) add `#:id` as in `button` for bots
-(define/widget (button/dispatch action label to-step-id)
-  (haml
-   (:a.button.dispatch-button
-    ([:href
-      (embed
-       (lambda (_req)
-         (action)
-         (continue to-step-id)))])
+         (cond [to-step-id
+                (continue to-step-id)]
+               [else
+                (continue)])))])
     label)))
 
 (define/widget (form f action render #:id [id ""] #:enctype [enctype "multipart/form-data"])

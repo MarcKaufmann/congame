@@ -498,10 +498,10 @@ SCRIPT
      (:h1 "Admin Interface for a Review Study")
 
      ; exit admin interface, then re-enter (relies on next step being configured so that we re-enter admin necessarily after exiting), thus passing in the data via `#:require-bindings`
-     (:p (button/dispatch
+     (:p (button
           void
           "Update Admin Data"
-          'done))
+          #:to-step-id 'done))
 
      (:h3 "Research Ideas Submitted")
      (:table
@@ -520,12 +520,12 @@ SCRIPT
              (:td
               (if (member (list submitter-id i) admin-reviews)
                   "Reviewed"
-                  (button/dispatch
+                  (button
                    (λ ()
                      (put 'next-submissions (hash submitter-id (list i)))
                      (put 'next-assignments (list submitter-id)))
                    "Review this Idea"
-                   'admin-review))))))))
+                   #:to-step-id 'admin-review))))))))
 
      (:h3 "Research Ideas Reviews")
 
@@ -550,10 +550,10 @@ SCRIPT
              (:td (~a research-idea))
              (:td (~a valid?))
              (:td (~a feedback))
-             (:td (button/dispatch
+             (:td (button
                    void
                    "Review the Review"
-                   'admin-review-review)))))))))))
+                   #:to-step-id 'admin-review-review)))))))))))
 
 (define (admin-review-review)
   (page
