@@ -47,6 +47,13 @@
   (-> congame-server? string? ... string?)
   (apply ~a (congame-server-url cs) args))
 
+(define (response-json/success res api-name)
+  (define data (http:response-json res))
+  (cond [(= (http:response-status-code res) 200)
+         data]
+        [else
+         (error api-name "API error: ~a" (hash-ref data 'error))]))
+
 ;; TODO: Refactor access so that common error handling stuff is all handled in one place.
 (define/contract (congame-server-study-instances cs u)
   (-> congame-server? user? (listof study-instance?))
@@ -55,9 +62,7 @@
               #:auth (congame-server-auth cs)
               #:params `((user-display-name . ,(user-display-name u)))))
   (define data
-    (http:response-json res))
-  (unless (= (http:response-status-code res) 200)
-    (error 'congame-server-study-instances "API error: ~a" (hash-ref data 'error)))
+    (response-json/success res 'congame-server-study-instances))
   (for*/list ([study-data (in-list (hash-ref data 'studies))]
               [instance-data (in-list (hash-ref study-data 'instances))])
     (make-study-instance
@@ -67,20 +72,22 @@
 (define/contract (congame-server-enroll-user! cs u instance-id)
   (-> congame-server? user? id/c string?)
   (define data
-    (http:response-json
+    (response-json/success
      (http:post (congame-server-path cs "/api/v1/study-participants-with-identity")
                 #:auth (congame-server-auth cs)
                 #:json (hasheq
                         'instance-id instance-id
-                        'user-display-name (user-display-name u)))))
+                        'user-display-name (user-display-name u)))
+     'congame-server-enroll-user!))
   (congame-server-path cs (hash-ref data 'target-path)))
 
 (define/contract (congame-server-tags cs)
   (-> congame-server? (listof string?))
   (define data
-    (http:response-json
+    (response-json/success
      (http:get (congame-server-path cs "/api/v1/tags.json")
-               #:auth (congame-server-auth cs))))
+               #:auth (congame-server-auth cs))
+     'congame-server-tags))
   (hash-ref data 'tags))
 
 (define/contract (get-congame-server db id)
