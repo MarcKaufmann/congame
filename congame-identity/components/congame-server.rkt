@@ -9,7 +9,8 @@
          racket/sequence
          racket/string
          threading
-         "user.rkt")
+         "user.rkt"
+         (prefix-in config: "../config.rkt"))
 
 (provide
  (schema-out congame-server)
@@ -77,7 +78,10 @@
                 #:auth (congame-server-auth cs)
                 #:json (hasheq
                         'instance-id instance-id
-                        'user-display-name (user-display-name u)))
+                        'user-display-name (user-display-name u)
+                        'identity-domain config:domain-name
+                        ;; FIXME: Pass in the api_key on identity
+                        'identity-key "sht!sicrit!"))
      'congame-server-enroll-user!))
   (congame-server-path cs (hash-ref data 'target-path)))
 

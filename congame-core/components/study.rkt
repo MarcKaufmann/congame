@@ -860,7 +860,7 @@ QUERY
  clear-study-instance-vars!
  current-participant-id
  participant-email
- current-user-owner?
+ current-participant-owner?
  clear-participant-progress!
  participant-enrolled?
  enroll-participant!
@@ -997,7 +997,7 @@ QUERY
 (define current-participant-user-id
   (compose1 study-participant-user-id current-participant))
 
-(define (current-user-owner?)
+(define (current-participant-owner?)
   (equal? (current-participant-user-id) (current-study-instance-owner-id)))
 
 (define/contract (list-studies db)
@@ -1193,6 +1193,7 @@ QUERY
                      (select p.id u.id u.username u.roles p.progress p.current-round-name p.current-group-name p.enrolled-at)
                      (project-onto study-participant/admin-schema)))))
 
+;; FIXME: Needs to deal with emails for users signed up via identity
 (define/contract (participant-email pid)
   (-> id/c string?)
   (study-participant/admin-email

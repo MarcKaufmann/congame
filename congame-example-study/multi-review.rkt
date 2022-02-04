@@ -194,7 +194,7 @@ SCRIPT
     ; can either take default values or `get/instance` not just `get`.
     (make-step 'check-owner skip
      (λ ()
-       (cond [(current-user-owner?)
+       (cond [(current-participant-owner?)
               (put 'submissions (get/instance 'submissions))
               (put 'assignments (get/instance 'assignments))
               (put 'reviews (get/instance 'reviews))

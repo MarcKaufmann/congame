@@ -22,6 +22,7 @@
 (provide
  (schema-out user)
  set-user-password
+ user-enrolled-via-identity?
  user-roles-case
  user-has-roles?
  user-has-role?
@@ -160,8 +161,8 @@
     (with-database-transaction [conn (user-manager-db um)]
       (insert-one! conn user))))
 
-(define/contract (user-manager-create-from-identity! um u display-name)
-  (-> user-manager? user? string? user?)
+(define/contract (user-manager-create-from-identity! um u display-name domain-name identity-key)
+  (-> user-manager? user? string? string? string? user?)
   (define username
     (format "id.~a.~a" (user-id u) display-name))
   (define the-user
@@ -169,7 +170,9 @@
         (set-user-verified? #t)
         (set-user-parent-id (user-id u))
         (set-user-password (user-manager-hasher um)
-                           (generate-random-string))))
+                           (generate-random-string))
+        (set-user-identity-service-url (format "https://~a" domain-name))
+        (set-user-identity-service-key identity-key)))
 
   (with-database-connection [conn (user-manager-db um)]
     (with-handlers ([exn:fail:sql:constraint-violation?
@@ -280,3 +283,8 @@
   (query-exec conn (~> (from password-reset #:as pr)
                        (where (= pr.user-id ,user-id))
                        (delete))))
+
+(define/contract (user-enrolled-via-identity? u)
+  (-> user? boolean?)
+  ; Using if to avoid leaking username
+  (if (regexp-match #px"id\\.\\d+\\..*" (user-username u)) #t #f))

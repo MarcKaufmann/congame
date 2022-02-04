@@ -8,6 +8,7 @@
          racket/match
          web-server/dispatchers/dispatch
          web-server/http
+         web-server/servlet
          "../components/auth.rkt"
          (prefix-in tpl: "../components/template.rkt")
          "../components/user.rkt")
@@ -18,20 +19,27 @@
  home-page)
 
 (define ((study-instances-page db) _req)
-  (send/suspend/dispatch/protect
-   (lambda (embed/url)
-     (tpl:page
-      (haml
-       (.container
-        (:ul
-         ,@(for/list ([i (in-list (list-active-study-instances db))])
+  (cond [(user-enrolled-via-identity? (current-user))
+         (define identity-dashboard-url
+           (user-identity-service-url (current-user)))
+         (redirect/get/forget)
+         (redirect-to identity-dashboard-url)]
+
+        [else
+         (send/suspend/dispatch/protect
+          (lambda (embed/url)
+            (tpl:page
              (haml
-              (:li
-               (study-instance-name i)
-               " " 'mdash " "
-               (:a
-                ([:href (embed/url (enroll db i))])
-                (enroll/resume-message db i))))))))))))
+              (.container
+               (:ul
+                ,@(for/list ([i (in-list (list-active-study-instances db))])
+                    (haml
+                     (:li
+                      (study-instance-name i)
+                      " " 'mdash " "
+                      (:a
+                       ([:href (embed/url (enroll db i))])
+                       (enroll/resume-message db i)))))))))))]))
 
 (define (home-page _req)
   (tpl:page
