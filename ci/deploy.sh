@@ -24,7 +24,7 @@ case "$1" in
         IDENTITY_CONTAINER_PORT="8100"
         IDENTITY_ENVIRONMENT_PATH="$BASEPATH/identity-production.env"
         IDENTITY_RUN_PATH="/opt/congame/identity-production"
-        WEB_CONTAINER_NAME="congame"
+        WEB_CONTAINER_NAME="congame-production"
         WEB_CONTAINER_PORT="8000"
         WEB_ENVIRONMENT_PATH="$BASEPATH/production.env"
         WEB_RUN_PATH="/opt/congame/production"
