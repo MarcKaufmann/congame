@@ -86,7 +86,11 @@
 
     (:a.button.button--secondary
      ([:href (reverse-uri 'signup-page)])
-     (translate 'action-sign-up-no-account)))))
+     (translate 'action-sign-up-no-account))
+
+    (:a.button
+     ([:href (reverse-uri 'request-password-reset-page)])
+     (translate 'action-reset-password)))))
 
 
 ;; signup & verify ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
