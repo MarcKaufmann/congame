@@ -192,6 +192,14 @@ SCRIPT
     ; Except I need both 'check-owner step and the admin step to bootstrap this
     ; process. Can be solved if `#:require-bindings` and `#:provide-bindings`
     ; can either take default values or `get/instance` not just `get`.
+    (make-step 'start (λ () (page
+                             (haml
+                              (.container
+                               (:h1 "Submission and Review")
+                               (:p "This is the start of the submission and review process.")
+                               (button
+                                void
+                                "Go to Submission"))))))
     (make-step 'check-owner skip
      (λ ()
        (cond [(current-participant-owner?)
