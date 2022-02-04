@@ -83,6 +83,7 @@
 (define-option company-address #:default "")
 (define-option support-name #:default "Marc Kaufmann")
 (define-option support-email #:default "admin@totalinsightmanagement.com")
+(define-option domain-name)
 
 (provide common-mail-variables)
 (define common-mail-variables
