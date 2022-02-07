@@ -895,7 +895,8 @@ QUERY
   ([researcher-id integer/f]
    [researcher-username string/f]
    [instance-id integer/f]
-   [instance-name string/f]))
+   [instance-name string/f]
+   [created-at datetime-tz/f]))
 
 (define-schema study-instance-var
   #:table "study_instance_data"
@@ -1022,7 +1023,7 @@ QUERY
      (in-entities conn (~> (from user #:as u)
                            (join study-instance #:as i #:on (= i.owner-id u.id))
                            (where (= i.study-id ,study-id))
-                           (select u.id u.username i.id i.name)
+                           (select u.id u.username i.id i.name i.created-at)
                            (project-onto researcher&instance-schema))))))
 
 (define/contract (list-study-instances-for-owner db study-id owner-id)

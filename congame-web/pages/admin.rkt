@@ -73,7 +73,7 @@
              (:li
               (:a
                ([:href (reverse-uri 'admin:view-study-page (study-meta-id s))])
-               (study-meta-name s)))))))
+               (study-meta-name s)) (format "(~a)" (study-meta-racket-id s)))))))
       (:section.tags
        (:h1 "Tags")
        (:h4
@@ -158,13 +158,19 @@
     (cond
       [(user-researcher? u)
        (haml
-        (:ul.study-list
+        (:table.study-list
+         (:tr
+          (:th "Instance Name")
+          (:th "Created"))
          ,@(for/list ([s (in-list (list-study-instances-for-owner db study-id (user-id u)))])
              (haml
-              (:li
-               (:a
-                ([:href (reverse-uri 'admin:view-study-instance-page study-id (study-instance-id s))])
-                (study-instance-name s)))))))]
+              (:tr
+               (:td
+                (:a
+                 ([:href (reverse-uri 'admin:view-study-instance-page study-id (study-instance-id s))])
+                 (study-instance-name s)))
+               (:td
+                (~t (study-instance-created-at s) "yyyy-MM-dd, HH:mm")))))))]
       [else
        (define instances-by-researcher
          (for/fold ([insts (hash)])
@@ -174,25 +180,31 @@
                         (λ (lst) (cons r lst))
                         null)))
        (haml
-        (:ul.researcher-list
+        (:div.researcher-list
          ,@(for/list ([(username instances) (in-hash instances-by-researcher)])
              (haml
-              (:li
-               (:strong username)
-               (:ul.study-list
+              (:div
+               (:p (:strong (~a username)))
+               (:table.study-list
+                (:tr
+                 (:th "Instance Name")
+                 (:th "Created"))
                 ,@(for/list ([in (in-list instances)])
                     (haml
-                     (:li
-                      (:a
-                       ([:href (reverse-uri 'admin:view-study-instance-page study-id (researcher&instance-instance-id in))])
-                       (researcher&instance-instance-name in)))))))))))]))
+                     (:tr
+                      (:td
+                       (:a
+                        ([:href (reverse-uri 'admin:view-study-instance-page study-id (researcher&instance-instance-id in))])
+                        (researcher&instance-instance-name in)))
+                      (:td
+                       (~t (researcher&instance-created-at in) "yyyy-MM-dd, HH:mm")))))))))))]))
   (send/suspend/dispatch/protect
    (lambda (embed/url)
      (tpl:page
       (tpl:container
        (haml
         (:section.studies
-         (:h1 "Instances")
+         (:h1 (format "Instances of ~a" (study-meta-racket-id meta)))
          (:h4
           (:a
            ([:href (reverse-uri 'admin:create-study-instance-page study-id)])
