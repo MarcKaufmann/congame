@@ -37,7 +37,8 @@
 (define-schema study-instance
   #:virtual
   ([id id/f]
-   [name string/f]))
+   [name string/f]
+   [status symbol/f #:contract (or/c 'active 'inactive 'archived)]))
 
 (define/contract (congame-server-auth cs)
   (-> congame-server? http:auth-procedure/c)
@@ -65,10 +66,12 @@
   (define data
     (response-json/success res 'congame-server-study-instances))
   (for*/list ([study-data (in-list (hash-ref data 'studies))]
-              [instance-data (in-list (hash-ref study-data 'instances))])
+              [instance-data (in-list (hash-ref study-data 'instances))]
+              #:when (string=? (hash-ref instance-data 'status) "active"))
     (make-study-instance
      #:id (hash-ref instance-data 'id)
-     #:name (hash-ref instance-data 'name))))
+     #:name (hash-ref instance-data 'name)
+     #:status (string->symbol (hash-ref instance-data 'status)))))
 
 (define/contract (congame-server-enroll-user! cs u instance-id)
   (-> congame-server? user? id/c string?)

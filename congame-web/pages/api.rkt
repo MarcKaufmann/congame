@@ -86,7 +86,8 @@
   (for/list ([i (in-list (list-study-instances db study-id))])
     (hash
      'id (study-instance-id i)
-     'name (study-instance-name i))))
+     'name (study-instance-name i)
+     'status (format "~a" (study-instance-status i)))))
 
 
 ;; tags ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
