@@ -187,11 +187,6 @@ SCRIPT
    #:requires '()
    #:provides '()
    (list
-    ; FIXME: passing all in via `#:require-bindings` is a hack. Pass in the step
-    ; for the admin-interface, not the study from which the step is built.
-    ; Except I need both 'check-owner step and the admin step to bootstrap this
-    ; process. Can be solved if `#:require-bindings` and `#:provide-bindings`
-    ; can either take default values or `get/instance` not just `get`.
     (make-step 'start (λ () (page
                              (haml
                               (.container
@@ -203,22 +198,13 @@ SCRIPT
     (make-step 'check-owner skip
      (λ ()
        (cond [(current-participant-owner?)
-              (put 'submissions (get/instance 'submissions))
-              (put 'assignments (get/instance 'assignments))
-              (put 'reviews (get/instance 'reviews))
               'admin-interface]
              [else
               'submit])))
     (make-step/study 'admin-interface
                      admin-interface
                      (λ ()
-                       (update-reviews)
-                       (put 'participant-reviews '())
-                       'check-owner)
-                     #:require-bindings '((submissions submissions)
-                                          (reviews reviews)
-                                          (assignments assignments))
-                     #:provide-bindings '((participant-reviews participant-reviews)))
+                       'admin-interface))
     (make-step/study 'submit submission-study
                      #:provide-bindings `([submission ,submission-key]))
     (make-step 'update-submissions update-submissions)
@@ -488,11 +474,17 @@ SCRIPT
 
 (define (research-ideas-admin)
 
-  (define submissions (get 'submissions (hash)))
-  (define reviews (sort (get 'reviews '())
+  (define submissions
+    (parameterize ([current-study-stack '(*root*)])
+      (get/instance 'submissions (hash))))
+
+  (define reviews
+    (parameterize ([current-study-stack '(*root*)])
+      (sort (get/instance 'reviews '())
                         (λ (x y)
                           (< (hash-ref x 'reviewer-id)
-                             (hash-ref y 'reviewer-id)))))
+                             (hash-ref y 'reviewer-id))))))
+
   (define admin-reviews
     (map
      (λ (r)
@@ -500,16 +492,13 @@ SCRIPT
      (filter (λ (r)
               (equal? (hash-ref r 'reviewer-id) (current-participant-id)))
              reviews)))
+
   (page
    (haml
     (.container
      (:h1 "Admin Interface for a Review Study")
 
      ; exit admin interface, then re-enter (relies on next step being configured so that we re-enter admin necessarily after exiting), thus passing in the data via `#:require-bindings`
-     (:p (button
-          void
-          "Update Admin Data"
-          #:to-step-id 'done))
 
      (:h3 "Research Ideas Submitted")
      (:table
@@ -570,12 +559,19 @@ SCRIPT
      (:h1 "Admin Review Review")
      (button void "Back to Admin Interface")))))
 
-(define research-ideas-admin-interface
+(define (research-ideas-admin-interface)
+
+  (define (update-admin-reviews new-reviews)
+    (with-study-transaction
+      (parameterize ([current-study-stack '(*root*)])
+        (define reviews (get/instance 'reviews '()))
+        (define updated-reviews (append reviews new-reviews))
+        (put/instance 'reviews updated-reviews))))
 
   (make-study
    "research-ideas-admin-interface"
-   #:provides '(participant-reviews)
-   #:requires '(assignments submissions reviews)
+   #:provides '()
+   #:requires '()
    (list
     (make-step 'admin research-ideas-admin)
     (make-step/study
@@ -585,11 +581,8 @@ SCRIPT
                           (submissions next-submissions))
      #:provide-bindings '((next-reviews reviews))
      (λ ()
-       (put 'participant-reviews (append (get 'participant-reviews '()) (get 'next-reviews)))
-       (put 'next-assignments (cdr (get 'next-assignments)))
-       (cond [(empty? (get 'next-assignments))
-              'done]
-             [else 'admin-review])))
+       (update-admin-reviews (get 'next-reviews))
+       'admin))
     (make-step 'admin-review-review admin-review-review (λ () 'admin))
     (make-step 'done skip (λ () done)))))
 
@@ -601,4 +594,4 @@ SCRIPT
                        #:submission-key 'research-ideas
                        #:compute-scores compute-research-ideas-scores
                        #:final-page research-ideas-final-page
-                       #:admin-interface research-ideas-admin-interface))
+                       #:admin-interface (research-ideas-admin-interface)))
