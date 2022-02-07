@@ -346,12 +346,11 @@ SCRIPT
 
 (define (review-next-research-idea)
   (define research-ideas-rubric-url "https://trichotomy.xyz")
-  (define next-research-idea (car (get 'current-research-ideas)))
-  (define n (get 'n-reviewed-ideas))
+  (define next-research-idea (car (get 'current-submissions)))
   (page
    (haml
     (.container
-     (:h1 (format "Review Research Idea ~a (of ~a)" (add1 n) (get 'n-research-ideas)))
+     (:h1 (format "Review Research Idea ~a (of ~a)" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
      (.submission
       (:h3 "Submitted Research Idea")
       (:p next-research-idea))
@@ -377,46 +376,87 @@ SCRIPT
                     'research-idea          next-research-idea
                     'valid-research-idea?   (string=? valid-research-idea? "yes")
                     'feedback               feedback)
-              (get 'reviews '())))
-        (put 'current-research-ideas (cdr (get 'current-research-ideas)))
-        (put 'n-reviewed-ideas (add1 (get 'n-reviewed-ideas)))))))))
+              (get 'reviews '())))))))))
 
-(define (review-research-ideas)
-  (define (next-or-done/transition)
-    (cond [(empty? (get 'current-research-ideas))
-           done]
-          [else
-           'review-next-research-idea]))
+(define (review-next-review)
+  (define r (car (get 'current-submissions)))
+  (match-define (hash-table ('feedback feedback)
+                            ('research-idea research-idea)
+                            ('reviewer-id reviewer-id)
+                            ('submitter-id submitter-id)
+                            ('valid-research-idea? valid?))
+    r)
+  (page
+   (haml
+    (.container
+     (:h1 "Review this Review")
+
+     (.submission
+      (:h3 "Original Submission and Review")
+      (:p (:strong "Submission: ") research-idea)
+      (:p (:strong "Review: ") feedback))
+
+     (formular
+      (haml
+       (:div
+        (#:comments-on-review
+         (input-textarea "Comments on Review:"))
+        (#:review-score
+         (input-number "Review Score (-5 to +5): "
+                       #:min -5 #:max 5))
+        (:button.button.next-button ([:type "submit"]) "Submit")))
+      (λ (#:comments-on-review comments-on-review
+          #:review-score review-score)
+        (put 'reviews
+             (cons
+              (hash-set
+               (hash-set r 'comments-on-review comments-on-review)
+               'review-score review-score)
+              (get 'reviews)))))))))
+
+(define (review-submissions review-next-submission)
 
   (define (initialize-review)
     (define assignments (get 'assignments))
     (define current-assignment (car assignments))
     ; Clear reviews since last review. FIXME: Stateful stuff that is obnoxious
-    ; to deal with. One way around this would be to provide reviews only once it
-    ; is clear that it is the final call to 'next-assignment-reviews. Any other
-    ; strategies?
+    ; to deal with.
     (put 'reviews '())
     (put 'current-assignment current-assignment)
     (define submissions (get 'submissions))
-    (define current-research-ideas (hash-ref submissions current-assignment))
-    (put 'current-research-ideas current-research-ideas)
-    (put 'n-reviewed-ideas 0)
-    (put 'n-research-ideas (length current-research-ideas))
+    (define current-submissions (hash-ref submissions current-assignment))
+    (put 'current-submissions current-submissions)
+    (put 'n-reviewed-submissions 0)
+    (put 'n-total-submissions (length current-submissions))
     (skip))
 
   (make-study
-   "research-ideas-review"
+   "submission-review"
    #:provides '(reviews)
    #:requires '(assignments submissions)
    (list
     (make-step
      'initialize-review
      initialize-review
-     next-or-done/transition)
+     (λ ()
+       (if (empty? (get 'current-submissions)) done 'review-next-submission)))
+
     (make-step
-     'review-next-research-idea
-     review-next-research-idea
-     next-or-done/transition))))
+     'review-next-submission
+     review-next-submission
+     (λ ()
+       (put 'current-submissions (cdr (get 'current-submissions)))
+       (put 'n-reviewed-submissions (add1 (get 'n-reviewed-submissions)))
+       (cond [(empty? (get 'current-submissions))
+              done]
+             [else
+              'review-next-submission]))))))
+
+(define (review-research-ideas)
+  (review-submissions review-next-research-idea))
+
+(define (review-reviews)
+  (review-submissions review-next-review))
 
 (define (get-reviews-of-participant)
   (filter (λ (r)
@@ -486,13 +526,14 @@ SCRIPT
                              (hash-ref y 'reviewer-id))))))
 
   (define admin-reviews
-    (map
-     (λ (r)
-       (list (hash-ref r 'submitter-id) (hash-ref r 'research-idea)))
-     (filter (λ (r)
+    (filter (λ (r)
               (equal? (hash-ref r 'reviewer-id) (current-participant-id)))
-             reviews)))
-
+            reviews))
+  (define reviewed
+    (for/hash ([r admin-reviews])
+      (values (list (hash-ref r 'submitter-id)
+                    (hash-ref r 'research-idea))
+              r)))
   (page
    (haml
     (.container
@@ -506,7 +547,8 @@ SCRIPT
        (:tr
         (:th "Submitter ID")
         (:th "Research Idea")
-        (:th "Provide Feedback")))
+        (:th "Feedback Given")
+        (:th "Review Idea")))
       (:tbody
        ,@(for*/list ([(submitter-id ideas) (in-hash submissions)]
                      [i ideas])
@@ -514,15 +556,15 @@ SCRIPT
             (:tr
              (:td (~a submitter-id))
              (:td (~a i))
+             (:td (cond [(hash-ref reviewed (list submitter-id i) #f) => (λ (x) (hash-ref x 'feedback ""))]
+                        [else ""]))
              (:td
-              (if (member (list submitter-id i) admin-reviews)
-                  "Reviewed"
-                  (button
-                   (λ ()
-                     (put 'next-submissions (hash submitter-id (list i)))
-                     (put 'next-assignments (list submitter-id)))
-                   "Review this Idea"
-                   #:to-step-id 'admin-review))))))))
+              (button
+               (λ ()
+                 (put 'next-submissions (hash submitter-id (list i)))
+                 (put 'next-assignments (list submitter-id)))
+               "Review this Idea"
+               #:to-step-id 'admin-review)))))))
 
      (:h3 "Research Ideas Reviews")
 
@@ -532,6 +574,8 @@ SCRIPT
        (:th "Reviewed Idea")
        (:th "Valid Idea?")
        (:th "Reviewer Feedback")
+       (:th "Comments on Review")
+       (:th "Score of Review")
        (:th "Review this Review"))
       (:tbody
        ,@(for/list ([r reviews])
@@ -547,9 +591,16 @@ SCRIPT
              (:td (~a research-idea))
              (:td (~a valid?))
              (:td (~a feedback))
-             (:td (button
-                   void
-                   "Review the Review"
+             (:td (~a (hash-ref r 'comments-on-review "")))
+             (:td (~a (hash-ref r 'review-score "")))
+             (:td
+                  (button
+                   (λ ()
+                     (put 'next-submissions (hash reviewer-id (list r)))
+                     (put 'next-assignments (list reviewer-id)))
+                   (if (hash-has-key? r 'comments-on-review)
+                       "Edit Review of Review"
+                       "Review the Review")
                    #:to-step-id 'admin-review-review)))))))))))
 
 (define (admin-review-review)
@@ -561,11 +612,37 @@ SCRIPT
 
 (define (research-ideas-admin-interface)
 
-  (define (update-admin-reviews new-reviews)
+  (define (review-in? r rs)
+    (match-define (hash-table ('submitter-id s1)
+                              ('research-idea i1)
+                              ('reviewer-id rv1))
+      r)
+    (findf (λ (r2)
+             (match-define (hash-table ('submitter-id s2)
+                                       ('research-idea i2)
+                                       ('reviewer-id rv2))
+               r2)
+             (and (equal? s1 s2)
+                  (equal? i1 i2)
+                  (equal? rv1 rv2)))
+           rs))
+
+  (define (add-admin-reviews new-reviews)
     (with-study-transaction
       (parameterize ([current-study-stack '(*root*)])
         (define reviews (get/instance 'reviews '()))
         (define updated-reviews (append reviews new-reviews))
+        (put/instance 'reviews updated-reviews))))
+
+  (define (update-admin-reviews new-reviews)
+    (with-study-transaction
+      (parameterize ([current-study-stack '(*root*)])
+        (define rs
+          (filter (λ (r)
+                    (not (review-in? r new-reviews)))
+                  (get/instance 'reviews)))
+        (define updated-reviews
+          (append new-reviews rs))
         (put/instance 'reviews updated-reviews))))
 
   (make-study
@@ -583,7 +660,15 @@ SCRIPT
      (λ ()
        (update-admin-reviews (get 'next-reviews))
        'admin))
-    (make-step 'admin-review-review admin-review-review (λ () 'admin))
+    (make-step/study
+     'admin-review-review
+     (review-reviews)
+     #:require-bindings '((assignments next-assignments)
+                          (submissions next-submissions))
+     #:provide-bindings '((next-review-reviews reviews))
+     (λ ()
+       (update-admin-reviews (get 'next-review-reviews))
+       'admin))
     (make-step 'done skip (λ () done)))))
 
 ;; FIXME: Design study so that the number of research ideas can be configured by
