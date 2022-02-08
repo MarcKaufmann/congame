@@ -1,22 +1,26 @@
 #lang racket/base
 
-(require congame/components/formular
+(require component
+         congame/components/bot
+         congame/components/formular
          congame/components/study
          congame/components/export
+         gregor
          koyo/haml
+         koyo/job
          (only-in forms ok err)
          racket/contract
          racket/format
          racket/list
          racket/match
          racket/random
-         web-server/http)
+         sentry
+         web-server/http
+         "mail.rkt")
 
-;; TODO: support for the admin to set/trigger instance variables. That may best
-;; be achieved by having an admin role who can enroll, e.g. by setting the owner
-;; as default admin, and then displaying different pages for the admin in
-;; different orders. That page sets instance variables that can also be used to
-;; configure the study, including reconfiguring it on the fly.
+;; FIXME: refactor submit+review-study once we have used it some -- there is
+;; quite some duplication of code across the main and the admin studies,
+;; suggesting it can be done better.
 
 ;; design:
 ;; * the entire class is part of the same group
@@ -70,7 +74,8 @@
   (with-study-transaction
     (define submissions (get/instance 'submissions (hash)))
     (cond
-      [(= (hash-count submissions) class-size)
+      [(or (= (hash-count submissions) class-size)
+           (get/instance 'admin-triggers-assignments #f))
        (define assignments (get/instance 'assignments #f))
        (cond
          [assignments #t]
@@ -84,8 +89,18 @@
           #t])]
       [else #f])))
 
+; JS script for reloading page
+;
+;          #<<SCRIPT
+;setTimeout(function() {
+;  document.location.reload();
+;}, 1000);
+;SCRIPT
+
 (define (lobby)
-  (if (matchmake)
+  (matchmake)
+  (define review-phase? (get/instance 'start-review-phase #f))
+  (if review-phase?
       (page
        (haml
         (.container
@@ -108,14 +123,7 @@
        (haml
         (.container
          (:h1 "Waiting for Review Phase to Start")
-         (:p "You have reached the end of the submission phase. Come back once the review phase has started.")
-         (:script
-          #<<SCRIPT
-setTimeout(function() {
-  document.location.reload();
-}, 1000);
-SCRIPT
-          ))))))
+         (:p "You have reached the end of the submission phase. Come back once the review phase has started."))))))
 
 (define/contract ((final compute-scores final-page))
   ; FIXME: compute-score should return a hash of participant-id -> score. This should be checked upon creation of the study with a helpful error message.
@@ -128,9 +136,6 @@ SCRIPT
   (final-page))
 
 (define (update-submissions)
-  ;; FIXME: This code will break if we no longer treat files as data, but
-  ;; instead deal with them as links. Add a note that `get` and `put` should be
-  ;; able to do the right thing when dealing with files? But how do they know?
   (with-study-transaction
     (define submission (get 'submission))
     (define submissions (get/instance 'submissions (hash)))
@@ -145,12 +150,93 @@ SCRIPT
     (define updated-reviews (append reviews participant-reviews))
     (put/instance 'reviews updated-reviews)))
 
+(define-job (send-review-phase-started-email participant-email study-name)
+  (with-handlers ([exn:fail?
+                   (lambda (e)
+                     (sentry-capture-exception! e)
+                     (raise e))])
+    (define mailer (system-ref 'mailer))
+    (mailer-send-next-phase-started-email mailer participant-email study-name)))
+
+(define (send-review-phase-email participant-email study-name)
+  (unless (current-user-bot?)
+    (schedule-at
+     (now/moment)
+     (send-review-phase-started-email participant-email study-name))))
+
+(define (send-review-phase-notifications instance-id)
+  (define participant-ids
+    (parameterize ([current-study-stack '(*root*)])
+      (hash-keys (get/instance 'assignments (hash)))))
+  (for ([p participant-ids])
+    (send-review-phase-email (participant-email p) (current-study-instance-name))))
+
 (define (default-admin-interface)
   (define (admin)
     (page
-     (haml
-      (.container
-       (:h1 "No Admin Interface Implemented")))))
+     (parameterize ([current-study-stack '(*root*)])
+       (haml
+        (.container
+         (:h1 "Default Admin Interface")
+
+         (:h2 "Submissions")
+
+         (:ul
+          ,@(for/list ([submitter-id (hash-keys (get/instance 'submissions (hash)))])
+              (haml
+               (:li (~a submitter-id)))))
+
+         (:h3 "Assigned Reviews")
+
+         (:ul
+          ,@(for/list ([(submitter-id reviewer-ids) (in-hash (get/instance 'assignments (hash)))])
+              (haml
+               (:li (format "Submitter ~a with reviewers: " submitter-id)
+                   (:ul
+                    ,@(for/list ([r (in-list reviewer-ids)])
+                        (haml
+                         (:li (~a r)))))))))
+
+         (cond [(get/instance 'start-review-phase #f)
+                (haml
+                 (:div
+                  (:p "Review Phase has started -- cannot reassign reviews")
+
+                  (:div
+                   (button
+                    (λ ()
+                      (parameterize ([current-study-stack '(*root*)])
+                        (put/instance 'start-review-phase #f)))
+                    "Go back to pre Review"))
+                  ))]
+
+               [(not (get/instance 'assignments #f))
+                (button
+                 (λ ()
+                   (parameterize ([current-study-stack '(*root*)])
+                     (put/instance 'admin-triggers-assignments #t)
+                     (matchmake)))
+                 "Assign Reviews")]
+
+               [else
+                (haml
+                 (:div
+                  (:div
+                   (button
+                    (λ ()
+                      (parameterize ([current-study-stack '(*root*)])
+                        (put/instance 'admin-triggers-assignments #t)
+                        (put/instance 'assignments #f)
+                        (matchmake)))
+                    "Reassign Reviews"))
+
+                  (:div
+                   (button
+                    (λ ()
+                      (parameterize ([current-study-stack '(*root*)])
+                        (put/instance 'start-review-phase #t)
+                        (send-review-phase-notifications (current-study-instance-id))))
+                    "Start Review Phase"))))]))))))
 
   (make-study
    "default-admin-interface"
@@ -226,7 +312,7 @@ SCRIPT
     (make-step 'final (final compute-scores final-page))
     )))
 
-;; REVIEW-PDF
+;; SUBMIT+REVIEW-PDF
 
 (define (valid-pdf? b)
   (if  (and (binding:file? b)

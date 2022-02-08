@@ -861,6 +861,8 @@ QUERY
  current-participant-id
  participant-email
  current-participant-owner?
+ current-study-instance-id
+ current-study-instance-name
  clear-participant-progress!
  participant-enrolled?
  enroll-participant!
@@ -990,6 +992,10 @@ QUERY
 
 (define current-study-instance-id
   (compose1 study-participant-instance-id current-participant))
+
+(define (current-study-instance-name)
+  (study-instance-name
+   (lookup-study-instance (current-database) (current-study-instance-id))))
 
 (define (current-study-instance-owner-id)
   (study-instance-owner-id
