@@ -88,7 +88,8 @@
      ([:type "submit"])
      (translate 'action-log-in))
 
-    (:a.button.button--secondary
+    ;; Remove signup button to avoid random signups which lead to spam complaints.
+    #;(:a.button.button--secondary
      ([:href (reverse-uri 'signup-page)])
      (translate 'action-sign-up-no-account))
 
