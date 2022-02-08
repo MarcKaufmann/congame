@@ -161,10 +161,8 @@
     (with-database-transaction [conn (user-manager-db um)]
       (insert-one! conn user))))
 
-(define/contract (user-manager-create-from-identity! um u display-name domain-name identity-key)
+(define/contract (user-manager-create-from-identity! um u username domain-name identity-key)
   (-> user-manager? user? string? string? string? user?)
-  (define username
-    (format "id.~a.~a" (user-id u) display-name))
   (define the-user
     (~> (make-user #:username username)
         (set-user-verified? #t)

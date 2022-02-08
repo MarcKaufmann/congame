@@ -62,11 +62,11 @@
   (-> database? auth-manager? user-manager? (-> request? response?))
   (define data (call-with-input-bytes (request-post-data/raw req) read-json))
   (define instance-id (hash-ref data 'instance-id))
-  (define display-name (hash-ref data 'user-display-name))
+  (define username (hash-ref data 'identity-email))
   (define identity-domain (hash-ref data 'identity-domain))
   (define identity-key (hash-ref data 'identity-key))
   (define the-user
-    (user-manager-create-from-identity! users (current-user) display-name identity-domain identity-key))
+    (user-manager-create-from-identity! users (current-user) username identity-domain identity-key))
   (define the-instance
     (lookup-study-instance db instance-id))
   (unless the-instance

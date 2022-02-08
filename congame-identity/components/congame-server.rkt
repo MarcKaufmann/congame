@@ -81,7 +81,7 @@
                 #:auth (congame-server-auth cs)
                 #:json (hasheq
                         'instance-id instance-id
-                        'user-display-name (user-display-name u)
+                        'identity-email (format "~a@~a" (user-display-name u) config:domain-name)
                         'identity-domain config:domain-name
                         ;; FIXME: Pass in the api_key on identity
                         'identity-key "sht!sicrit!"))
