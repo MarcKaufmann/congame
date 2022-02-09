@@ -110,7 +110,7 @@
          (render-signup-form (embed/url (signup-page auth mailer users)) render-widget error-message))))
 
      (match (form-run signup-form req)
-       [(list 'passed (list username password) render-widget)
+       [(list 'passed (list username password _usertype) render-widget)
         (with-handlers ([exn:fail:user-manager:username-taken?
                          (lambda _
                            (render render-widget (translate 'error-username-taken)))])
@@ -136,9 +136,13 @@
   (redirect-to (reverse-uri 'login-page)))
 
 (define signup-form
-  (form* ([username (ensure binding/email (required))]
+  (form* ([usertype (ensure binding/text (required) (one-of '(("Student" . student)
+                                                                 ("Prolific" . prolific)
+                                                                 ("MTurk" . mturk))
+                                                              #:message "Sorry, at this point only students, Prolific users, or MTurk workers who are participating in a study can sign up"))]
+          [username (ensure binding/email (required))]
           [password (ensure binding/text (required) (longer-than 7))])
-    (list username password)))
+    (list username password usertype)))
 
 (define (render-signup-form target render-widget [error-message #f])
   (haml
@@ -153,6 +157,11 @@
        (:ul.form__errors
         (:li error-message))))
 
+    (render-widget "usertype"
+                   (field-group "Only sign up if you participate in a study or class asking you to sign up here. If so, which of the followign applies to you?" (widget-radio-group '(("Student" . "I am a student")
+                                                    ("MTurk" . "I am an MTurk worker")
+                                                    ("Prolific" . "I am a Prolific user")
+                                                    ("None" . "None of the above")))))
     (render-widget "username" (username-field))
     (render-widget "password" (password-field))
 
