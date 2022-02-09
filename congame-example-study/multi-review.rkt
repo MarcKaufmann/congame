@@ -61,8 +61,13 @@
          (for/hash ([(pid l) (in-hash assignments*)])
            (values pid (append l (hash-ref assignments pid null)))))
        (define ok?
-         (for/and ([l (in-hash-values merged)])
-           (= (length (remove-duplicates l)) (- n next-i))))
+         ; `help` can return incorrect assignments, which we check:
+         ; - a person is not assigned anyone, because they would have to be
+         ;   assigned themselves
+         ; - a person is assigned the same submission two or more times
+         (and (= (length (hash-values merged)) (length pids))
+              (for/and ([l (in-hash-values merged)])
+                (= (length (remove-duplicates l)) (- n next-i)))))
        (if ok?
            (loop merged next-i)
            (loop assignments i))])))
