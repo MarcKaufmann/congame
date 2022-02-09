@@ -104,7 +104,7 @@
 
 (define (lobby)
   (matchmake)
-  (define review-phase? (get/instance 'start-review-phase #f))
+  (define review-phase? (get/instance 'review-phase-started #f))
   (if review-phase?
       (page
        (haml
@@ -176,79 +176,90 @@
   (for ([p participant-ids])
     (send-review-phase-email (participant-email p) (current-study-instance-name))))
 
+(define (default-submissions-interface)
+  (haml
+   (:div
+    (:h2 "Submissions")
+    (:ul
+     ,@(for/list ([submitter-id (hash-keys (get/instance 'submissions (hash)))])
+         (haml
+          (:li (~a submitter-id))))))))
+
+(define (default-reviews-interface)
+  (haml
+   (:div
+    (:h3 "Assigned Reviews")
+    (:ul
+     ,@(for/list ([(submitter-id reviewer-ids) (in-hash (get/instance 'assignments (hash)))])
+         (haml
+          (:li (format "Submitter ~a with reviewers: " submitter-id)
+               (:ul
+                ,@(for/list ([r (in-list reviewer-ids)])
+                    (haml
+                     (:li (~a r))))))))))))
+
+(define ((admin-interface-handler
+         #:submissions-interface (submissions-interface default-submissions-interface)
+         #:reviews-interface (reviews-interface default-reviews-interface)))
+  (page
+   (parameterize ([current-study-stack '(*root*)])
+     (haml
+      (.container
+       (:h1 "Admin Interface")
+
+       (submissions-interface)
+       (reviews-interface)
+
+       (cond [(get/instance 'review-phase-started #f)
+              (haml
+               (:div
+                (:p "Review Phase has started -- cannot reassign reviews")
+
+                (:div
+                 (button
+                  (λ ()
+                    (parameterize ([current-study-stack '(*root*)])
+                      (put/instance 'review-phase-started #f)))
+                  "Go back to pre Review"))
+                ))]
+
+             [(not (get/instance 'assignments #f))
+              (button
+               (λ ()
+                 (parameterize ([current-study-stack '(*root*)])
+                   (put/instance 'admin-triggers-assignments #t)
+                   (matchmake)))
+               "Assign Reviews")]
+
+             [else
+              (haml
+               (:div
+                (:div
+                 (button
+                  (λ ()
+                    (parameterize ([current-study-stack '(*root*)])
+                      (put/instance 'admin-triggers-assignments #t)
+                      (put/instance 'assignments #f)
+                      (matchmake)))
+                  "Reassign Reviews"
+                  #:to-step-id 'admin))
+
+                (:div
+                 (button
+                  (λ ()
+                    (parameterize ([current-study-stack '(*root*)])
+                      (put/instance 'review-phase-started #t)
+                      (send-review-phase-notifications (current-study-instance-id))))
+                  "Start Review Phase"
+                  #:to-step-id 'admin))))]))))))
+
 (define (default-admin-interface)
-  (define (admin)
-    (page
-     (parameterize ([current-study-stack '(*root*)])
-       (haml
-        (.container
-         (:h1 "Default Admin Interface")
-
-         (:h2 "Submissions")
-
-         (:ul
-          ,@(for/list ([submitter-id (hash-keys (get/instance 'submissions (hash)))])
-              (haml
-               (:li (~a submitter-id)))))
-
-         (:h3 "Assigned Reviews")
-
-         (:ul
-          ,@(for/list ([(submitter-id reviewer-ids) (in-hash (get/instance 'assignments (hash)))])
-              (haml
-               (:li (format "Submitter ~a with reviewers: " submitter-id)
-                   (:ul
-                    ,@(for/list ([r (in-list reviewer-ids)])
-                        (haml
-                         (:li (~a r)))))))))
-
-         (cond [(get/instance 'start-review-phase #f)
-                (haml
-                 (:div
-                  (:p "Review Phase has started -- cannot reassign reviews")
-
-                  (:div
-                   (button
-                    (λ ()
-                      (parameterize ([current-study-stack '(*root*)])
-                        (put/instance 'start-review-phase #f)))
-                    "Go back to pre Review"))
-                  ))]
-
-               [(not (get/instance 'assignments #f))
-                (button
-                 (λ ()
-                   (parameterize ([current-study-stack '(*root*)])
-                     (put/instance 'admin-triggers-assignments #t)
-                     (matchmake)))
-                 "Assign Reviews")]
-
-               [else
-                (haml
-                 (:div
-                  (:div
-                   (button
-                    (λ ()
-                      (parameterize ([current-study-stack '(*root*)])
-                        (put/instance 'admin-triggers-assignments #t)
-                        (put/instance 'assignments #f)
-                        (matchmake)))
-                    "Reassign Reviews"))
-
-                  (:div
-                   (button
-                    (λ ()
-                      (parameterize ([current-study-stack '(*root*)])
-                        (put/instance 'start-review-phase #t)
-                        (send-review-phase-notifications (current-study-instance-id))))
-                    "Start Review Phase"))))]))))))
-
   (make-study
-   "default-admin-interface"
+   "default-admin-inteface"
    #:provides '()
    #:requires '()
    (list
-    (make-step 'admin admin (λ () 'admin)))))
+    (make-step 'admin (admin-interface-handler)))))
 
 (define (default-final-page)
   (page
@@ -392,10 +403,19 @@
      'review-pdf
      review-pdf-handler))))
 
+(define (pdf-admin-interface)
+  (make-study
+   "pdf-admin-interface"
+   #:provides '()
+   #:requires '()
+   (list
+    (make-step 'admin (admin-interface-handler) (λ () 'admin)))))
+
 (define submit+review-pdf
   (submit+review-study #:submission-study provide-pdf-submission/study
                        #:review-study review-pdf
-                       #:submission-key 'submission))
+                       #:submission-key 'submission
+                       #:admin-interface (pdf-admin-interface)))
 
 ;;; SUBMIT+REVIEW-RESEARCH-IDEAS
 
@@ -625,74 +645,83 @@
       (values (list (hash-ref r 'submitter-id)
                     (hash-ref r 'research-idea))
               r)))
-  (page
-   (haml
-    (.container
-     (:h1 "Admin Interface for a Review Study")
 
-     ; exit admin interface, then re-enter (relies on next step being configured so that we re-enter admin necessarily after exiting), thus passing in the data via `#:require-bindings`
+  (define review-phase?
+    (parameterize ([current-study-stack '(*root*)])
+      (get/instance 'review-phase-started #f)))
 
-     (:h3 "Research Ideas Submitted")
-     (:table
-      (:thead
-       (:tr
-        (:th "Submitter ID")
-        (:th "Research Idea")
-        (:th "Feedback Given")
-        (:th "Review Idea")))
-      (:tbody
-       ,@(for*/list ([(submitter-id ideas) (in-hash submissions)]
-                     [i ideas])
-           (haml
-            (:tr
-             (:td (~a submitter-id))
-             (:td (~a i))
-             (:td (cond [(hash-ref reviewed (list submitter-id i) #f) => (λ (x) (hash-ref x 'feedback ""))]
-                        [else ""]))
-             (:td
-              (button
-               (λ ()
-                 (put 'next-submissions (hash submitter-id (list i)))
-                 (put 'next-assignments (list submitter-id)))
-               "Review this Idea"
-               #:to-step-id 'admin-review)))))))
+  (define (research-ideas-submissions-interface)
+    (haml
+     (:div
+      (:h3 "Research Ideas Submitted")
+      (:table
+       (:thead
+        (:tr
+         (:th "Submitter ID")
+         (:th "Research Idea")
+         (:th "Feedback Given")
+         (:th "Review Idea")))
+       (:tbody
+        ,@(for*/list ([(submitter-id ideas) (in-hash submissions)]
+                      [i ideas])
+            (haml
+             (:tr
+              (:td (~a submitter-id))
+              (:td (~a i))
+              (:td (cond [(hash-ref reviewed (list submitter-id i) #f) => (λ (x) (hash-ref x 'feedback ""))]
+                         [else ""]))
+              (:td
+               (if (not review-phase?)
+                   "Submission phase -- cannot review"
+                   (button
+                    (λ ()
+                      (put 'next-submissions (hash submitter-id (list i)))
+                      (put 'next-assignments (list submitter-id)))
+                    "Review this Idea"
+                    #:to-step-id 'admin-review)))))))))))
 
-     (:h3 "Research Ideas Reviews")
+  (define (research-ideas-reviews-interface)
+    (haml
+     (:div
+      (:table
+       (:thead
+        (:th "Reviewer ID")
+        (:th "Reviewed Idea")
+        (:th "Valid Idea?")
+        (:th "Reviewer Feedback")
+        (:th "Comments on Review")
+        (:th "Score of Review")
+        (:th "Review this Review"))
+       (:tbody
+        ,@(for/list ([r reviews])
+            (match-define (hash-table ('feedback feedback)
+                                      ('research-idea research-idea)
+                                      ('reviewer-id reviewer-id)
+                                      ('submitter-id submitter-id)
+                                      ('valid-research-idea? valid?))
+              r)
+            (haml
+             (:tr
+              (:td (~a reviewer-id))
+              (:td (~a research-idea))
+              (:td (~a valid?))
+              (:td (~a feedback))
+              (:td (~a (hash-ref r 'comments-on-review "")))
+              (:td (~a (hash-ref r 'review-score "")))
+              (:td
+               (if (not review-phase?)
+                   "Submission Phase -- cannot review"
+                   (button
+                    (λ ()
+                      (put 'next-submissions (hash reviewer-id (list r)))
+                      (put 'next-assignments (list reviewer-id)))
+                    (if (hash-has-key? r 'comments-on-review)
+                        "Edit Review of Review"
+                        "Review the Review")
+                    #:to-step-id 'admin-review-review)))))))))))
 
-     (:table
-      (:thead
-       (:th "Reviewer ID")
-       (:th "Reviewed Idea")
-       (:th "Valid Idea?")
-       (:th "Reviewer Feedback")
-       (:th "Comments on Review")
-       (:th "Score of Review")
-       (:th "Review this Review"))
-      (:tbody
-       ,@(for/list ([r reviews])
-           (match-define (hash-table ('feedback feedback)
-                                     ('research-idea research-idea)
-                                     ('reviewer-id reviewer-id)
-                                     ('submitter-id submitter-id)
-                                     ('valid-research-idea? valid?))
-             r)
-           (haml
-            (:tr
-             (:td (~a reviewer-id))
-             (:td (~a research-idea))
-             (:td (~a valid?))
-             (:td (~a feedback))
-             (:td (~a (hash-ref r 'comments-on-review "")))
-             (:td (~a (hash-ref r 'review-score "")))
-             (:td
-                  (button
-                   (λ ()
-                     (put 'next-submissions (hash reviewer-id (list r)))
-                     (put 'next-assignments (list reviewer-id)))
-                   (if (hash-has-key? r 'comments-on-review)
-                       "Edit Review of Review"
-                       "Review the Review")
-                   #:to-step-id 'admin-review-review)))))))))))
+  ((admin-interface-handler #:submissions-interface research-ideas-submissions-interface
+                            #:reviews-interface research-ideas-reviews-interface)))
 
 (define (admin-review-review)
   (page
@@ -741,7 +770,7 @@
    #:provides '()
    #:requires '()
    (list
-    (make-step 'admin research-ideas-admin)
+    (make-step 'admin research-ideas-admin (λ () 'admin))
     (make-step/study
      'admin-review
      (review-research-ideas)
