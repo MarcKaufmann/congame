@@ -8,7 +8,6 @@
 
 (provide
  (all-from-out koyo/mail)
- mailer-send-next-phase-started-email
  mailer-send-password-reset-email
  mailer-send-welcome-email)
 
