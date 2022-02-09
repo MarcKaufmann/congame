@@ -78,8 +78,8 @@
 
 (define-option postmark-token)
 
-(define-option product-name #:default "congame-identity")
-(define-option company-name #:default "congame-identity")
+(define-option product-name #:default "TOTALINSIGHTMANAGEMENT.COM")
+(define-option company-name #:default "")
 (define-option company-address #:default "")
 (define-option support-name #:default "Marc Kaufmann")
 (define-option support-email #:default "admin@totalinsightmanagement.com")

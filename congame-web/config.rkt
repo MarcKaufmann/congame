@@ -84,10 +84,13 @@
 
 (define-option postmark-token)
 
-(define-option product-name #:default "Insightful Research")
-(define-option company-name #:default "Total Insight Management")
+(define-option product-name #:default "TOTALINSIGHTMANAGEMENT.COM")
+(define-option company-name #:default "")
 (define-option company-address #:default "")
 (define-option support-name #:default "Marc")
+(define-option support-email #:default "admin@totalinsightmanagement.com")
+; FIXME: should not be hardcoded, it can depend on user. Get from DB.
+(define-option identity-url #:default "identity.totalinsightmanagement.com")
 
 (provide common-mail-variables)
 (define common-mail-variables
@@ -96,6 +99,7 @@
           'company_name    company-name
           'company_address company-address
           'sender_name     support-name
+          'identity_url    identity-url
           'support_email   support-email))
 
 ;; For Sentry error tracking

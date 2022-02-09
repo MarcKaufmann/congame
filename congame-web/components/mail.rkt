@@ -8,8 +8,9 @@
 
 (provide
  (all-from-out koyo/mail)
- mailer-send-welcome-email
- mailer-send-password-reset-email)
+ mailer-send-next-phase-started-email
+ mailer-send-password-reset-email
+ mailer-send-welcome-email)
 
 (define/contract (mailer-send-welcome-email m user)
   (-> mailer? user? void?)
@@ -46,6 +47,23 @@
                       'action_url action-url
                       'name (user-username user)
                       'username (user-username user))))
+
+(define/contract (mailer-send-next-phase-started-email m recpt study-name)
+  (-> mailer? string? string? void?)
+  (define action-url
+    (make-application-url "dashboard"))
+
+  ; FIXME: I have to pass in 'identity_url to this, taken from the DB.
+  (mail-adapter-send-email-with-template
+   (mailer-adapter m)
+   #:to recpt
+   #:from (mailer-sender m)
+   #:template-alias "next-phase-started"
+   #:template-model (mailer-merge-common-variables m
+                      'action_url action-url
+                      'name recpt
+                      'study_name study-name
+                      'username recpt)))
 
 ;; Local Variables:
 ;; eval: (put 'mailer-merge-common-variables 'racket-indent-function #'begin)
