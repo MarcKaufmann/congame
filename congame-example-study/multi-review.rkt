@@ -3,7 +3,6 @@
 (require component
          congame/components/bot
          congame/components/formular
-         congame-web/components/mail
          congame/components/study
          congame/components/export
          gregor
@@ -16,7 +15,8 @@
          racket/match
          racket/random
          sentry
-         web-server/http)
+         web-server/http
+         "mail.rkt")
 
 ;; FIXME: refactor submit+review-study once we have used it some -- there is
 ;; quite some duplication of code across the main and the admin studies,

@@ -12,6 +12,7 @@
   (define action-url
     (make-application-url "dashboard"))
 
+  ; FIXME: I have to pass in 'identity_url to this, taken from the DB.
   (mail-adapter-send-email-with-template
    (mailer-adapter m)
    #:to recpt
