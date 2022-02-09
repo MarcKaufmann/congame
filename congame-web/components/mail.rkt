@@ -24,7 +24,7 @@
    (mailer-adapter m)
    #:to (user-username user)
    #:from (mailer-sender m)
-   #:template-alias "welcome-prolific"
+   #:template-alias "welcome"
    #:template-model (mailer-merge-common-variables m
                       'action_url action-url
                       'name (user-username user)
