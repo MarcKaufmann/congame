@@ -167,7 +167,7 @@
      [("password-reset" (integer-arg) (string-arg))
       (password-reset-page flashes mailer users)]
 
-     [("signup")
+     #;[("signup")
       (signup-page auth mailer users)]
 
      [("verify" (integer-arg) (string-arg))
