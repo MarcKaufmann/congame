@@ -63,18 +63,25 @@
       (-> (-> request? response?)
           (-> request? response?)))
 
+  (define (lookup-user)
+    (and~>> (session-manager-ref (auth-manager-sessions am) session-key #f)
+            (string->number)
+            (user-manager-lookup/id (auth-manager-users am))))
+
   (with-timing 'auth "wrap-auth-required"
     (define roles (req-roles req))
     (cond
       [(null? roles)
        (handler req)]
 
+      [(equal? roles '(anon))
+       (parameterize ([current-user (lookup-user)])
+         (handler req))]
+
       ;; NOTE: Roles are not actually checked beyond this point.  If you
       ;; implement roles other than 'user then you're going to want to
       ;; change this part of the code.
-      [(and~>> (session-manager-ref (auth-manager-sessions am) session-key #f)
-               (string->number)
-               (user-manager-lookup/id (auth-manager-users am)))
+      [(lookup-user)
        => (lambda (user)
             (parameterize ([current-user user])
               (handler req)))]

@@ -13,7 +13,16 @@
 
 (provide
  dashboard-page
- enroll-or-resume-page)
+ enroll-or-resume-page
+ homepage)
+
+(define/contract (homepage _req)
+  (-> request? response?)
+  (page
+   (haml
+    (.container
+     (:h1 "Homepage")
+     (:p "hello there")))))
 
 (define/contract ((dashboard-page db) _req)
   (-> database? (-> request? response?))

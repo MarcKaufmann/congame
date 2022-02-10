@@ -34,6 +34,14 @@
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
+      #:name 'dashboard-page
+      #:roles (anon)
+      (λ (req)
+        (if (current-user)
+            ((dashboard-page db) req)
+            (homepage req)))]
+
+     #;[("dashboard")
       #:roles (user)
       (dashboard-page db)]
 
