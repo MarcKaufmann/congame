@@ -10,8 +10,8 @@
          web-server/http
          xml
          (prefix-in config: "../config.rkt")
-         "auth.rkt"
-         (only-in "user.rkt" user-admin-like?))
+         congame-web/components/auth
+         (only-in congame-web/components/user user-admin-like?))
 
 (provide
  static-uri

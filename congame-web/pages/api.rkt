@@ -8,9 +8,9 @@
          racket/port
          web-server/dispatchers/dispatch
          web-server/servlet
-         "../components/auth.rkt"
+         congame-web/components/auth
          "../components/tag.rkt"
-         "../components/user.rkt"
+         congame-web/components/user
          "render.rkt")
 
 (provide

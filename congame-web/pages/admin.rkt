@@ -29,12 +29,12 @@
          threading
          web-server/dispatchers/dispatch
          web-server/http
-         "../components/auth.rkt"
+         congame-web/components/auth
          "../components/bot-set.rkt"
          "../components/prolific.rkt"
          "../components/tag.rkt"
          (prefix-in tpl: "../components/template.rkt")
-         "../components/user.rkt"
+         congame-web/components/user
          "../studies/all.rkt"
          "render.rkt")
 

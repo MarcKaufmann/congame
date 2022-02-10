@@ -8,8 +8,8 @@
          (prefix-in http: net/http-easy)
          racket/contract
          racket/format
-         "auth.rkt"
-         "user.rkt")
+         congame-web/components/auth
+         congame-web/components/user)
 
 (provide
  put/identity)

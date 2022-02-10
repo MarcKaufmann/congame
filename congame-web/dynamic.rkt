@@ -18,9 +18,9 @@
          racket/runtime-path
          sentry
          "components/app.rkt"
-         "components/auth.rkt"
+         congame-web/components/auth
          "components/mail.rkt"
-         "components/user.rkt"
+         congame-web/components/user
          (prefix-in config: "config.rkt")
          web-server/safety-limits)
 

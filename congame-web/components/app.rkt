@@ -22,12 +22,12 @@
          web-server/servlet-dispatch
          (prefix-in config: "../config.rkt")
          "../pages/all.rkt"
-         "auth.rkt"
+         congame-web/components/auth
          "mail.rkt"
          "prolific.rkt"
          "sentry.rkt"
          (prefix-in tpl: "template.rkt")
-         "user.rkt")
+         congame-web/components/user)
 
 (provide
  make-app

@@ -9,9 +9,9 @@
          web-server/dispatchers/dispatch
          web-server/http
          web-server/servlet
-         "../components/auth.rkt"
+         congame-web/components/auth
          (prefix-in tpl: "../components/template.rkt")
-         "../components/user.rkt")
+         congame-web/components/user)
 
 (provide
  study-instances-page

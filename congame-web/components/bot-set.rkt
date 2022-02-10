@@ -8,7 +8,7 @@
          koyo/random
          racket/contract
          threading
-         "user.rkt")
+         congame-web/components/user)
 
 (provide
  (schema-out bot-set)
