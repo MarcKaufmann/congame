@@ -158,10 +158,13 @@
         (:li error-message))))
 
     (render-widget "usertype"
-                   (field-group "Only sign up if you participate in a study or class asking you to sign up here. If so, which of the followign applies to you?" (widget-radio-group '(("Student" . "I am a student")
-                                                    ("MTurk" . "I am an MTurk worker")
-                                                    ("Prolific" . "I am a Prolific user")
-                                                    ("None" . "None of the above")))))
+                   (field-group
+                    "Only sign up if you participate in a study or class asking you to sign up here. If so, which of the followign applies to you?"
+                    (widget-radio-group
+                     '(("Student" . "I am a student")
+                       ("MTurk" . "I am an MTurk worker")
+                       ("Prolific" . "I am a Prolific user")
+                       ("None" . "None of the above")))))
     (render-widget "username" (username-field))
     (render-widget "password" (password-field))
 

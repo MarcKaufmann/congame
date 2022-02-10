@@ -138,13 +138,17 @@ body {
       font-size: 1rem;
       // border-top: 1px solid black;
 
-      input {
+      input[type=text],
+      input[type=email],
+      input[type=password] {
         display: block;
         margin: 4px 0 0 0;
       }
     }
 
-    input {
+    input[type=text],
+    input[type=email],
+    input[type=password] {
       padding: 9px;
       border: 1px solid $cool-grey-7;
       border-radius: 4px;
