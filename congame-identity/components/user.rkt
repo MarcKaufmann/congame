@@ -72,6 +72,7 @@
  user-manager-lookup/id
  user-manager-lookup/username
  user-manager-lookup/display-name
+ user-manager-lookup/key
  user-manager-create!
  user-manager-create-reset-token!
  user-manager-login
@@ -160,6 +161,13 @@
     (with-database-connection [conn (user-manager-db um)]
       (lookup conn (~> (from user #:as u)
                        (where (= u.display-name ,display-name)))))))
+
+(define/contract (user-manager-lookup/key um key)
+  (-> user-manager? string? (or/c false/c user?))
+  (with-timing 'user-manager (format "(user-manager-lookup/key ~v)" key)
+    (with-database-connection [conn (user-manager-db um)]
+      (lookup conn (~> (from user #:as u)
+                       (where (= u.api-key ,(string-downcase key))))))))
 
 (define/contract (user-manager-login um username password)
   (-> user-manager? string? string? (or/c false/c user?))

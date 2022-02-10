@@ -6,6 +6,7 @@
     (provide (all-from-out mod ...))))
 
 (reprovide
+ "api.rkt"
  "auth.rkt"
  "common.rkt"
  "dashboard.rkt"

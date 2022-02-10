@@ -73,7 +73,11 @@
 
      [("messages" (integer-arg))
       #:roles (user)
-      (message-page db)]))
+      (message-page db)]
+
+     [("api" "v1" "study-instances" (integer-arg) "data")
+      #:method "put"
+      (put-instance-page db users)]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)
