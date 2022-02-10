@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require buid
-         component
          db
          deta
          gregor
@@ -10,6 +9,7 @@
          koyo/profiler
          koyo/random
          racket/contract
+         racket/match
          racket/string
          threading)
 
@@ -29,6 +29,7 @@
    [(password-hash "") string/f]
    [(verified? #f) boolean/f]
    [(verification-code (generate-random-string)) string/f #:contract non-empty-string?]
+   [(api-key (generate-api-key)) string/f #:nullable]
    [(created-at (now/moment)) datetime-tz/f]
    [(updated-at (now/moment)) datetime-tz/f])
 
@@ -44,6 +45,9 @@
 
 (define (generate-random-display-name)
   (format "u.~a" (buid)))
+
+(define (generate-api-key)
+  (generate-random-string 48))
 
 
 ;; password reset ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -87,17 +91,26 @@
 (define/contract (user-manager-create! um username password)
   (-> user-manager? string? string? user?)
 
-  (define user
-    (~> (make-user #:username username)
-        (set-password um _ password)))
+  (let loop ([attempts 0])
+    (define user
+      (~> (make-user #:username username)
+          (set-password um _ password)))
 
-  (with-handlers ([exn:fail:sql:constraint-violation?
-                   (lambda _
-                     (raise (exn:fail:user-manager:username-taken
-                             (format "username '~a' is taken" username)
-                             (current-continuation-marks))))])
-    (with-database-transaction [conn (user-manager-db um)]
-      (insert-one! conn user))))
+    (with-handlers ([exn:fail:sql:constraint-violation?
+                     (lambda (e)
+                       (match (assq 'message (exn:fail:sql-info e))
+                         [`(message . ,(regexp "\"api_key\""))
+                          (unless (< attempts 5)
+                            (raise (exn:fail:user-manager
+                                    (format "failed to generate unique API key")
+                                    (current-continuation-marks))))
+                          (loop (add1 attempts))]
+                         [_
+                          (raise (exn:fail:user-manager:username-taken
+                                  (format "username '~a' is taken" username)
+                                  (current-continuation-marks)))]))])
+      (with-database-transaction [conn (user-manager-db um)]
+        (insert-one! conn user)))))
 
 (define/contract (user-manager-create-reset-token! um
                                                    #:username username

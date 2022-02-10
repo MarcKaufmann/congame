@@ -56,7 +56,6 @@
         [else
          (error api-name "API error: ~a" (hash-ref data 'error))]))
 
-;; TODO: Refactor access so that common error handling stuff is all handled in one place.
 (define/contract (congame-server-study-instances cs u)
   (-> congame-server? user? (listof study-instance?))
   (define res
@@ -83,8 +82,7 @@
                         'instance-id instance-id
                         'identity-email (format "~a@~a" (user-display-name u) config:domain-name)
                         'identity-domain config:domain-name
-                        ;; FIXME: Pass in the api_key on identity
-                        'identity-key "sht!sicrit!"))
+                        'identity-key (user-api-key u)))
      'congame-server-enroll-user!))
   (congame-server-path cs (hash-ref data 'target-path)))
 
