@@ -4,6 +4,7 @@
          (only-in congame/components/study
                   current-study-instance-id
                   current-study-stack)
+         db
          (prefix-in http: net/http-easy)
          racket/contract
          racket/format
@@ -19,8 +20,8 @@
   (-> symbol? any/c void?)
   (define u (current-user))
   (cond
-    [(and (user-identity-service-url u)
-          (user-identity-service-key u))
+    [(and (not (sql-null? (user-identity-service-url u)))
+          (not (sql-null? (user-identity-service-key u))))
      (define url
        (~a (user-identity-service-url u)
            (format "/api/v1/study-instances/~a/data?key=~a"
@@ -38,4 +39,4 @@
        (error 'put/identity "request failed~n  response: ~a" (http:response-body res)))]
 
     [else
-     (log-identity-warning 'put/identity "current user is not an identity user~n  username: ~a" (user-username u))]))
+     (log-identity-warning "failed to put/identity~n current user is not an identity user~n  username: ~a~n  key: ~a" (user-username u) key)]))
