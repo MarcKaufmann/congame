@@ -1,6 +1,8 @@
 #lang racket/base
 
-(require deta
+(require db
+         db/util/postgresql
+         deta
          gregor
          json
          koyo/database
@@ -32,21 +34,25 @@
   (->* (database?
         #:user-id id/c
         #:instance-id id/c
-        #:study-stack (vectorof symbol?)
+        #:study-stack (listof symbol?)
         #:key symbol?
         #:value jsexpr?)
        ()
        void?)
-  (define d
-    (make-study-instance-data
-     #:user-id user-id
-     #:instance-id instance-id
-     #:study-stack study-stack
-     #:key key
-     #:value value))
-  (void
-   (with-database-connection [conn db]
-     (with-handlers ([exn:fail:sql:constraint-violation?
-                      (lambda (_)
-                        (update-one! conn d))])
-       (insert-one! conn d)))))
+  (with-database-connection [conn db]
+    (query-exec conn #<<SQL
+INSERT INTO study_instance_data (
+  user_id, instance_id, study_stack, key, value, last_put_at
+) VALUES (
+  $1, $2, $3, $4, $5, CURRENT_TIMESTAMP
+) ON CONFLICT (
+  user_id, instance_id, study_stack, key
+) DO UPDATE SET
+  value = EXCLUDED.value,
+  last_put_at = CURRENT_TIMESTAMP
+SQL
+                user-id
+                instance-id
+                (list->pg-array (map symbol->string study-stack))
+                (symbol->string key)
+                value)))

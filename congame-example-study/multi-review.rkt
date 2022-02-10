@@ -292,7 +292,7 @@
    (list
     (make-step 'start (λ ()
                         ;; TODO(marc): This is just an example.  Change it to the real thing.
-                        (put/identity 'blah 42)
+                        (put/identity 'blah (hasheq 'n 42))
                         (page
                          (haml
                           (.container

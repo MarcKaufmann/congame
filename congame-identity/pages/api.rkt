@@ -32,7 +32,7 @@
              db
              #:user-id (user-id u)
              #:instance-id instance-id
-             #:study-stack (for/vector ([id (in-list (ref 'stack))])
+             #:study-stack (for/list ([id (in-list (ref 'stack))])
                              (string->symbol id))
              #:key (string->symbol (ref 'key))
              #:value (ref 'value))
