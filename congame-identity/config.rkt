@@ -93,3 +93,7 @@
           'company_address company-address
           'sender_name     support-name
           'support_email   support-email))
+
+;; For Sentry error tracking
+(define-option environment #:default "dev")
+(define-option sentry-dsn)
