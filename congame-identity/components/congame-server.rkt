@@ -3,6 +3,7 @@
 (require deta
          gregor
          koyo/database
+         koyo/url
          (prefix-in http: net/http-easy)
          racket/contract
          racket/format
@@ -81,7 +82,7 @@
                 #:json (hasheq
                         'instance-id instance-id
                         'identity-email (format "~a@~a" (user-display-name u) config:domain-name)
-                        'identity-domain config:domain-name
+                        'identity-domain (make-application-url)
                         'identity-key (user-api-key u)))
      'congame-server-enroll-user!))
   (congame-server-path cs (hash-ref data 'target-path)))

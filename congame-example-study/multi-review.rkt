@@ -2,9 +2,10 @@
 
 (require component
          congame/components/bot
+         congame/components/export
          congame/components/formular
          congame/components/study
-         congame/components/export
+         congame-web/components/identity
          gregor
          koyo/haml
          koyo/job
@@ -289,14 +290,17 @@
    #:requires '()
    #:provides '()
    (list
-    (make-step 'start (λ () (page
-                             (haml
-                              (.container
-                               (:h1 "Submission and Review")
-                               (:p "This is the start of the submission and review process.")
-                               (button
-                                void
-                                "Go to Submission"))))))
+    (make-step 'start (λ ()
+                        ;; TODO(marc): This is just an example.  Change it to the real thing.
+                        (put/identity 'blah 42)
+                        (page
+                         (haml
+                          (.container
+                           (:h1 "Submission and Review")
+                           (:p "This is the start of the submission and review process.")
+                           (button
+                            void
+                            "Go to Submission"))))))
     (make-step 'check-owner skip
      (λ ()
        (cond [(current-participant-owner?)

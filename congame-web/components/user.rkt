@@ -161,7 +161,7 @@
     (with-database-transaction [conn (user-manager-db um)]
       (insert-one! conn user))))
 
-(define/contract (user-manager-create-from-identity! um u username domain-name identity-key)
+(define/contract (user-manager-create-from-identity! um u username url key)
   (-> user-manager? user? string? string? string? user?)
   (define the-user
     (~> (make-user #:username username)
@@ -169,8 +169,8 @@
         (set-user-parent-id (user-id u))
         (set-user-password (user-manager-hasher um)
                            (generate-random-string))
-        (set-user-identity-service-url (format "https://~a" domain-name))
-        (set-user-identity-service-key identity-key)))
+        (set-user-identity-service-url url)
+        (set-user-identity-service-key key)))
 
   (with-database-connection [conn (user-manager-db um)]
     (with-handlers ([exn:fail:sql:constraint-violation?
