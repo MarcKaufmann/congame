@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require congame/components/study
+         congame/components/export
          json
          koyo/database
          koyo/url
@@ -98,4 +99,9 @@
 (define/contract ((tags db) req)
   (-> database? (-> request? response?))
   (response/jsexpr
-   (hash 'tags (map tag-name (list-tags db)))))
+   (->jsexpr
+    (hash
+     'tags
+     (for/hash ([t (list-tags db)])
+       (values (tag-id t)
+               (get-tag-instance-ids db (tag-id t))))))))

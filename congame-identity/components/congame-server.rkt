@@ -88,7 +88,7 @@
   (congame-server-path cs (hash-ref data 'target-path)))
 
 (define/contract (congame-server-tags cs)
-  (-> congame-server? (listof string?))
+  (-> congame-server? (hash/c any/c any/c))
   (define data
     (response-json/success
      (http:get (congame-server-path cs "/api/v1/tags.json")

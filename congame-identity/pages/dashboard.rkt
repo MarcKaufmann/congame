@@ -46,9 +46,9 @@
            (.section
             (:h4 "Tags")
             (:ul
-             ,@(for/list ([name (in-list tags)])
+             ,@(for/list ([(t instances) (in-hash tags)])
                  (haml
-                  (:li name)))))
+                  (:li (format "Tag: ~a Instances: ~a" t instances))))))
            (.section
             (:h4 "Studies")
             (:ul
