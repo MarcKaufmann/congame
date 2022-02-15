@@ -75,6 +75,10 @@
      [("signup")
       (signup-page auth mailer users)]
 
+     [("user")
+      #:roles (user)
+      (user-study-instance-data-page db)]
+
      [("tag" (integer-arg))
       #:roles (user)
       (tag-study-instances-page db)]

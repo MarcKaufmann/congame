@@ -10,4 +10,5 @@
  "auth.rkt"
  "common.rkt"
  "dashboard.rkt"
- "message.rkt")
+ "message.rkt"
+ "user.rkt")

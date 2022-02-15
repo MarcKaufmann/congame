@@ -1,11 +1,12 @@
 ((nav-dashboard             . "Dashboard")
- (nav-identity-dashboard    . "Identity Dashboard")
+ (nav-identity-dashboard    . "Studies/Assignments")
  (nav-log-in                . "Log in")
  (nav-log-out               . "Log out")
  (nav-messages              . "Messages")
  (nav-sign-up               . "Sign up")
  (nav-admin                 . "Admin")
  (nav-jobs                  . "Jobs")
+ (nav-user-data             . "User Data")
 
  (subtitle-file-too-large         . "File is too large")
  (subtitle-not-found              . "Page Not Found")

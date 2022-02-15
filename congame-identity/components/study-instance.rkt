@@ -6,10 +6,13 @@
          gregor
          json
          koyo/database
-         racket/contract)
+         racket/contract
+         racket/sequence
+         threading)
 
 (provide
  (schema-out study-instance-data)
+ list-all-study-instance-data/user
  put-study-instance-data)
 
 (define-schema study-instance-data
@@ -56,3 +59,12 @@ SQL
                 (list->pg-array (map symbol->string study-stack))
                 (symbol->string key)
                 value)))
+
+(define/contract (list-all-study-instance-data/user db user-id)
+  (-> database? integer? (listof study-instance-data?))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn (~> (from study-instance-data #:as i)
+                           (where (= i.user-id ,user-id))
+                           (order-by ([i.instance-id #:desc]
+                                      [i.key #:asc])))))))

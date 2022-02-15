@@ -6,6 +6,7 @@
  (nav-sign-up               . "Înregistrare")
  (nav-admin                 . "Administrare")
  (nav-jobs                  . "Sarcini")
+ (nav-user-data             . "Datele utilizatorului")
 
  (subtitle-file-too-large         . "Fișierul este prea mare")
  (subtitle-not-found              . "Pagină inexistentă")
