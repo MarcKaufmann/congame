@@ -58,6 +58,14 @@
      [("logout")
       (logout-page auth)]
 
+     [("messages")
+      #:roles (user)
+      (messages-page db)]
+
+     [("messages" (integer-arg))
+      #:roles (user)
+      (message-page db)]
+
      [("password-reset")
       (request-password-reset-page flashes mailer users)]
 
@@ -67,16 +75,12 @@
      [("signup")
       (signup-page auth mailer users)]
 
+     [("tag" (integer-arg))
+      #:roles (user)
+      (tag-study-instances-page db)]
+
      [("verify" (integer-arg) (string-arg))
       (verify-page flashes users)]
-
-     [("messages")
-      #:roles (user)
-      (messages-page db)]
-
-     [("messages" (integer-arg))
-      #:roles (user)
-      (message-page db)]
 
      [("api" "v1" "study-instances" (integer-arg) "data")
       #:method "put"

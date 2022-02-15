@@ -94,7 +94,11 @@
      (http:get (congame-server-path cs "/api/v1/tags.json")
                #:auth (congame-server-auth cs))
      'congame-server-tags))
-  (hash-ref data 'tags))
+  ;; json does not allow numbers as hash keys, so that the data we receive has symbolic keys in the form of '|2| for the integer key 2. This converts them back to numbers.
+  (for/hash ([(key value) (in-hash (hash-ref data 'tags))])
+    (values (string->number
+             (symbol->string key))
+            value)))
 
 (define/contract (get-congame-server db id)
   (-> database? id/c (or/c #f congame-server?))

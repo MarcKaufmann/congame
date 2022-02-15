@@ -104,4 +104,5 @@
      'tags
      (for/hash ([t (list-tags db)])
        (values (tag-id t)
-               (get-tag-instance-ids db (tag-id t))))))))
+               (hash 'name (tag-name t)
+                     'instances (get-tag-instance-ids db (tag-id t)))))))))
