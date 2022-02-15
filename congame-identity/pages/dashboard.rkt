@@ -42,6 +42,7 @@
   (page
    (haml
     (.container
+     (:h1 "Studies and Assignments")
      ,@(for/list ([d (in-list (data-by-server db))])
          (match-define (data server tags _instances) d)
          (haml
