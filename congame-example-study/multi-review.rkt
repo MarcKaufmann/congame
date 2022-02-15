@@ -515,8 +515,8 @@
         (#:comments-on-review
          (input-textarea "Comments on Review:"))
         (#:review-score
-         (input-number "Review Score (-5 to +5): "
-                       #:min -5 #:max 5))
+         (input-number "Review Score (-1 to +1): "
+                       #:min -1 #:max 1))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (λ (#:comments-on-review comments-on-review
           #:review-score review-score)
@@ -592,23 +592,16 @@
   (define n (hash-count scores))
   (put/identity 'scores scores)
   (define score-display
-    (if (> n 0)
-        (haml
-         (:div
-          (:h3 "Reviews of your Submission by Reviewer")
-          (:ul
-           ,@(for/list ([(reviewer score) (in-hash scores)])
-               (haml
-                (:li (format "Reviewer ~a score: ~a" reviewer score)))))))
-        (haml
-         (:div
-          (:h3 "No Reviews of your Submission available")))))
+    (haml
+     (:div
+      (:p "Your total score is " (~a scores)) ".")))
   (define feedback
     (haml
      (:div
       (:h3 "Detailed Feedback")
       (:div
        ,@(for/list ([r (get-reviews-of-participant)])
+           (define reviewer (hash-ref r 'reviewer-id))
            (define valid? (hash-ref r 'valid-research-idea?))
            (define research-idea (hash-ref r 'research-idea))
            (define feedback (hash-ref r 'feedback))
@@ -616,6 +609,7 @@
             (.feedback
              (:p (:strong "Research Idea: ") research-idea)
              (:ul
+              (:li "Reviewer: " (~a reviewer))
               (:li "Feedback: " feedback)
               (:li "Valid: " (if valid? "Yes" "No"))))))))))
   (page
