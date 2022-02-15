@@ -16,10 +16,11 @@
 ;; user ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- (schema-out user))
+ (schema-out user)
+ user-manager-lookup/id)
 
 (define role/c
-  (or/c 'user 'admin))
+  (or/c 'user 'admin 'congame))
 
 (define-schema user
   ([id id/f #:primary-key #:auto-increment]
