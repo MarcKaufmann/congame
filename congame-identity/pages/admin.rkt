@@ -13,11 +13,11 @@
          "../components/study-instance.rkt"
          congame/components/export)
 
-(provide user-study-instance-data-page)
+(provide (prefix-out admin: users-study-instance-data-page))
 
-(define/contract ((user-study-instance-data-page db) _req)
+(define/contract ((users-study-instance-data-page db) _req)
   (-> database? (-> request? response?))
-  (define instances (list-all-study-instance-data/user db (user-id (current-user))))
+  (define instances (list-all-study-instance-data/admin db))
   (define instance-ids-with-data
     (remove-duplicates
      (map (λ (i)

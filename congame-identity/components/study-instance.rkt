@@ -12,7 +12,7 @@
 
 (provide
  (schema-out study-instance-data)
- list-all-study-instance-data/user
+ list-all-study-instance-data/admin
  put-study-instance-data)
 
 (define-schema study-instance-data
@@ -60,11 +60,11 @@ SQL
                 (symbol->string key)
                 value)))
 
-(define/contract (list-all-study-instance-data/user db user-id)
-  (-> database? integer? (listof study-instance-data?))
+(define/contract (list-all-study-instance-data/admin db)
+  (-> database? (listof study-instance-data?))
   (with-database-connection [conn db]
     (sequence->list
      (in-entities conn (~> (from study-instance-data #:as i)
-                           (where (= i.user-id ,user-id))
                            (order-by ([i.instance-id #:desc]
+                                      [i.user-id]
                                       [i.key #:asc])))))))

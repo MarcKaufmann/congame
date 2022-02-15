@@ -32,6 +32,7 @@
         'key (->jsexpr key)
         'stack (->jsexpr (current-study-stack))
         'value (->jsexpr value)))
+     ; FIXME: do authorization check based on an api user for congame server. use congame_servers table rather than users.
      (define res
        (http:put url #:json data))
      (log-identity-debug "put/identity~n  url: ~a~n  data: ~e" url data)

@@ -66,7 +66,7 @@
                (nav (nav-item (reverse-uri 'dashboard-page) (translate 'nav-identity-dashboard))
                     (nav-item (reverse-uri 'messages-page) (translate 'nav-messages))
                     (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out))
-                    (nav-item (reverse-uri 'user-study-instance-data-page) (translate 'nav-user-data)))
+                    #;(nav-item (reverse-uri 'admin:users-study-instance-data-page) (translate 'nav-user-data)))
                (nav (nav-item (reverse-uri 'dashboard-page) (translate 'nav-identity-dashboard))
                     (nav-item (reverse-uri 'login-page) (translate 'nav-log-in))
                     (nav-item (reverse-uri 'signup-page) (translate 'nav-sign-up)))))

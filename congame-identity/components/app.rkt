@@ -75,9 +75,10 @@
      [("signup")
       (signup-page auth mailer users)]
 
-     [("user")
-      #:roles (user)
-      (user-study-instance-data-page db)]
+     [("admin" "users")
+      ; FIXME: roles are currently not checked, so this is open for all!
+      #:roles (admin)
+      (admin:users-study-instance-data-page db)]
 
      [("tag" (integer-arg))
       #:roles (user)
@@ -88,6 +89,8 @@
 
      [("api" "v1" "study-instances" (integer-arg) "data")
       #:method "put"
+      ; FIXME: congame role not yet implemented -- different from general api user, although the mechanism should probably be the same except that api_key is checked on congame_servers.
+      #:roles (congame)
       (put-instance-page db users)]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
