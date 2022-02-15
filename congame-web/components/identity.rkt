@@ -39,4 +39,5 @@
        (error 'put/identity "request failed~n  response: ~a" (http:response-body res)))]
 
     [else
+     ; TODO: Is it a feature or a bug that non-identity users trigger this?
      (log-identity-warning "failed to put/identity~n current user is not an identity user~n  username: ~a~n  key: ~a" (user-username u) key)]))
