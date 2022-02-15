@@ -23,8 +23,8 @@
   (page
    (haml
     (.container
-     (:h1 "Homepage")
-     (:p "hello there")))))
+     (:h1 "Studies and Assignments")
+     (:p "Sign up " (:a ([:href (reverse-uri 'signup-page)]) "here" ) " if you have received an invitation to participate in one of our studies or in a course using our platform for assignments.")))))
 
 (struct data (server tags instances))
 
