@@ -80,8 +80,9 @@
   (with-study-transaction
     (define submissions (get/instance 'submissions (hash)))
     (cond
-      [(or (= (hash-count submissions) class-size)
-           (get/instance 'admin-triggers-assignments #f))
+      [#;(or (= (hash-count submissions) class-size)
+             (get/instance 'admin-triggers-assignments #f))
+       (get/instance 'admin-triggers-assignments #f)
        (define assignments (get/instance 'assignments #f))
        (cond
          [assignments #t]
@@ -104,7 +105,6 @@
 ;SCRIPT
 
 (define (lobby)
-  (matchmake)
   (define review-phase? (get/instance 'review-phase-started #f))
   (if review-phase?
       (page
@@ -291,8 +291,6 @@
    #:provides '()
    (list
     (make-step 'start (λ ()
-                        ;; TODO(marc): This is just an example.  Change it to the real thing.
-                        (put/identity 'blah (hasheq 'n 42))
                         (page
                          (haml
                           (.container
@@ -437,7 +435,7 @@
        (formular
         (haml
          (:div
-          (#:research-idea (input-text "Provide a research idea"))
+          (#:research-idea (input-textarea "Provide a research idea"))
           (:button.button.next-button ([:type "submit"]) "Submit")))
         (lambda (#:research-idea idea)
           (put 'research-ideas
@@ -592,6 +590,7 @@
 (define (research-ideas-final-page)
   (define scores (get 'scores))
   (define n (hash-count scores))
+  (put/identity 'scores scores)
   (define score-display
     (if (> n 0)
         (haml
