@@ -105,7 +105,7 @@
 ;SCRIPT
 
 (define (lobby)
-  (define review-phase? (get/instance 'review-phase-started #f))
+  (define review-phase? (equal? (get/instance 'phase) 'review))
   (if review-phase?
       (page
        (haml
@@ -200,10 +200,36 @@
                     (haml
                      (:li (~a r))))))))))))
 
+(define (phase-button when-phase next-phase text)
+  (parameterize ([current-study-stack '(*root*)])
+    (cond [(equal? (get/instance 'phase) when-phase)
+           (haml
+            (:div
+             (button
+              (λ ()
+                (parameterize ([current-study-stack '(*root*)])
+                  (put/instance 'phase next-phase)))
+              text)))]
+          [else
+           (haml
+            (:div))])))
+
 (define ((admin-interface-handler
-         #:submissions-interface (submissions-interface default-submissions-interface)
-         #:reviews-interface (reviews-interface default-reviews-interface)
-         #:self-review? [self-review? #t]))
+          #:submissions-interface (submissions-interface default-submissions-interface)
+          #:reviews-interface (reviews-interface default-reviews-interface)
+          #:self-review? [self-review? #t]))
+  (define phase-buttons
+    (parameterize ([current-study-stack '(*root*)])
+      (haml
+       (:div
+        (phase-button 'init 'submit "Go to Submit Phase")
+        (if (get/instance 'assignments #f)
+            (phase-button 'submit 'review "Go to Review Phase")
+            `(div))
+        (phase-button 'review 'over "Close Review Phase")
+        (phase-button 'review 'submit "Re-Open Submit Phase")
+        (phase-button 'over 'review "Re-Open Review Phase")))))
+
   (page
    (parameterize ([current-study-stack '(*root*)])
      (haml
@@ -213,20 +239,13 @@
        (submissions-interface)
        (reviews-interface)
 
-       (cond [(get/instance 'review-phase-started #f)
+       (cond [(member (get/instance 'phase) '(review done))
               (haml
                (:div
-                (:p "Review Phase has started -- cannot reassign reviews")
+                (:p "Submission phase is over -- cannot reassign reviews")))]
 
-                (:div
-                 (button
-                  (λ ()
-                    (parameterize ([current-study-stack '(*root*)])
-                      (put/instance 'review-phase-started #f)))
-                  "Go back to pre Review"))
-                ))]
-
-             [(not (get/instance 'assignments #f))
+             [(and (equal? (get/instance 'phase) 'submit)
+                   (not (get/instance 'assignments #f)))
               (button
                (λ ()
                  (parameterize ([current-study-stack '(*root*)])
@@ -234,7 +253,8 @@
                    (matchmake #:self-review? self-review?)))
                "Assign Reviews")]
 
-             [else
+             [(and (equal? (get/instance 'phase) 'submit)
+                   (get/instance 'assignments #f))
               (haml
                (:div
                 (:div
@@ -245,16 +265,15 @@
                       (put/instance 'assignments #f)
                       (matchmake)))
                   "Reassign Reviews"
-                  #:to-step-id 'admin))
+                  #:to-step-id 'admin))))]
 
-                (:div
-                 (button
-                  (λ ()
-                    (parameterize ([current-study-stack '(*root*)])
-                      (put/instance 'review-phase-started #t)
-                      (send-review-phase-notifications (current-study-instance-id))))
-                  "Start Review Phase"
-                  #:to-step-id 'admin))))]))))))
+             [else
+              (haml (:div))])
+       (:div
+        (:h4 "Change Phases")
+        phase-buttons))))))
+
+
 
 (define (default-admin-interface)
   (make-study
@@ -270,6 +289,18 @@
     (.container
      (:h1 "Thank you for participating")
      (:p "You are done.")))))
+
+(define (wait-submit-phase)
+  (case (get/instance 'phase 'none)
+    [(none init)    (page
+                     (haml
+                      (.container
+                       (:h1 "The study is not yet open. Come back later."))))]
+    [(submit)       (skip)]
+    [(review over)  (page
+                     (haml
+                      (.container
+                       (:h1 "The study is no longer open for submissions."))))]))
 
 (define (submit+review-study #:submission-study submission-study
                              #:review-study review-study
@@ -299,18 +330,23 @@
                            (:h1 "Submission and Review")
                            (:p "This is the start of the submission and review process.")
                            (button
-                            void
+                            (λ ()
+                              (unless (get/instance 'phase #f)
+                                (put/instance 'phase 'init)))
                             "Go to Submission"))))))
     (make-step 'check-owner skip
      (λ ()
        (cond [(current-participant-owner?)
               'admin-interface]
              [else
-              'submit])))
+              'wait-submit-phase])))
     (make-step/study 'admin-interface
                      admin-interface
                      (λ ()
                        'admin-interface))
+    (make-step
+     'wait-submit-phase
+     wait-submit-phase)
     (make-step/study 'submit submission-study
                      #:provide-bindings `([submission ,submission-key]))
     (make-step 'update-submissions update-submissions)
@@ -426,7 +462,7 @@
 
   (define review-phase?
     (parameterize ([current-study-stack '(*root*)])
-      (get/instance 'review-phase-started #f)))
+      (equal? (get/instance 'phase) 'review)))
 
   (define (submissions-interface)
     (haml
