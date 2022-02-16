@@ -132,12 +132,13 @@
          (:p "You have reached the end of the submission phase. Come back once the review phase has started."))))))
 
 (define/contract ((final compute-scores final-page))
-  ; FIXME: compute-score should return a hash of participant-id -> score. This should be checked upon creation of the study with a helpful error message.
-  (-> (-> (hash/c integer? number?)) (-> any) any)
+  ; FIXME: compute-score should return a hash of submission -> score. This should be checked upon creation of the study with a helpful error message.
+  (-> (-> (hash/c any/c any/c)) (-> any) any)
   ; FIXME: compute-scores gets called on every refresh, which can be costly.
   ; Recompute scores only if triggered in the admin interface or based on a
   ; timed job.
   (define scores (compute-scores))
+  (displayln (format "SCORES: ~a" scores))
   (put 'scores scores)
   (final-page))
 
@@ -577,24 +578,43 @@
           (get/instance 'reviews)))
 
 (define (compute-research-ideas-scores)
+  (define (mean los)
+    (/ (apply + los) (* 1.0 (length los))))
   (define (score r)
     (if (hash-ref r 'valid-research-idea?) 1 0))
-  (for/fold ([reviewer-scores (hash)])
-            ([r (get-reviews-of-participant)])
-    ; FIXME: Relies on reviews providing the correct keys. Write more defensive code: either disallow providing the wrong kind of reviews when creating a new review-study, or check here. The former is better.
-    (define reviewer (hash-ref r 'reviewer-id))
-    (hash-set reviewer-scores
-              reviewer
-              (+ (score r) (hash-ref reviewer-scores reviewer 0)))))
+  (define collect-by-idea
+    (for/fold ([reviewer-scores (hash)])
+              ([r (get-reviews-of-participant)])
+      (define research-idea (hash-ref r 'research-idea))
+      (hash-set reviewer-scores
+                research-idea
+                (cons (score r)
+                      (hash-ref reviewer-scores research-idea '())))))
+  (define submission-scores
+    (for/hash ([(idea scores) (in-hash collect-by-idea)])
+    (values idea
+            (mean scores))))
+  (hash 'total-score        (apply + (hash-values submission-scores))
+        'submission-scores  submission-scores))
 
 (define (research-ideas-final-page)
   (define scores (get 'scores))
-  (define n (hash-count scores))
   (put/identity 'scores scores)
   (define score-display
     (haml
      (:div
-      (:p "Your total score is " (~a scores)) ".")))
+      (:h4 "Total Score")
+      (:p (format "Your total score is: ~a" (hash-ref scores 'total-score)))
+
+      (:h4 "Score by research idea is:")
+      (:ul
+       ,@(for/list ([(idea score) (in-hash (hash-ref scores 'submission-scores))])
+           (haml
+            (:li (format "Research Idea: ~a" idea)
+             (:ul
+              (:li (format "Score: ~a" (~r score #:precision 2)))))))))))
+
+
   (define feedback
     (haml
      (:div
