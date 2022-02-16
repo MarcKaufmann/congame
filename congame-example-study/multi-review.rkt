@@ -512,11 +512,13 @@
              (:th t)))
         (:th "Comments on Review")
         (:th "Score of Review")
-        (:th "Review this Review"))
+        (:th "Review this Review")
+        (:th "Remove this Review"))
        (:tbody
         ,@(for/list ([r reviews])
             (match-define (hash-table ('submission submission)
                                       ('reviewer-id reviewer-id)
+                                      ('submission-id submission-id)
                                       ('submitter-id submitter-id))
               r)
             (haml
@@ -538,7 +540,17 @@
                     (if (hash-has-key? r 'comments-on-review)
                         "Edit Review of Review"
                         "Review the Review")
-                    #:to-step-id 'admin-review-review)))))))))))
+                    #:to-step-id 'admin-review-review)))
+              (:td
+               (button
+                (λ ()
+                  (parameterize ([current-study-stack '(*root*)])
+                    (define new-reviews
+                      (remove r reviews))
+                    (put/instance 'reviews new-reviews)
+                    (put/instance 'removed-reviews
+                                  (cons r (get 'removed-reviews '())))))
+                "Remove Review"))))))))))
 
   ((admin-interface-handler #:submissions-interface submissions-interface
                             #:reviews-interface submissions-reviews-interface
