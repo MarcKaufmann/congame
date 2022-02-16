@@ -34,8 +34,6 @@
  submit+review-pdf
  submit+review-research-ideas)
 
-(define class-size 3)
-
 ;; FIXME: the worst-case complexity here is really bad.  There must be
 ;; a way to do this without drawing randomly and retrying on failure.
 (define (assign-reviewers pids [n 2])
@@ -450,7 +448,7 @@
               id&submission)
             (haml
              (:tr
-              (:td (~a submitter-id))
+              (:td (~a (->jsexpr submitter-id)))
               (:td (~a submission-id))
               (:td (~a (->jsexpr submission)))
               (:td (cond [(hash-ref reviewed (list submitter-id submission-id) #f)
@@ -592,6 +590,20 @@
 (define (submit-pdf-submissions [n 2])
   (submit-submissions submit-single-pdf-submission n #:study-name "submit-pdf-submission"))
 
+(define (file-download/link submission-file text)
+  (haml
+   (:a
+    ([:href ((current-embed/url)
+             (lambda (_req)
+               (response/output
+                #:headers (list
+                           (or (headers-assq* #"content-type" (binding:file-headers submission-file))
+                               (make-header #"content-type" "application/octet-stream"))
+                           (make-header #"content-disposition" (string->bytes/utf-8 (format "attachment; filename=\"~a\"" (binding:file-filename submission-file)))))
+                (lambda (out)
+                  (write-bytes (binding:file-content submission-file) out)))))])
+    text)))
+
 (define (review-next-pdf-handler)
   (define r (car (get 'current-submissions)))
   (displayln (format "next submission: ~a" (->jsexpr r)))
@@ -602,18 +614,7 @@
    (haml
     (.container
      (:h1 (format "Review this PDF ~a (of ~a) for this submitter" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
-     (:p.submission
-      (:a
-       ([:href ((current-embed/url)
-                (lambda (_req)
-                  (response/output
-                   #:headers (list
-                              (or (headers-assq* #"content-type" (binding:file-headers submission-file))
-                                  (make-header #"content-type" "application/octet-stream"))
-                              (make-header #"content-disposition" (string->bytes/utf-8 (format "attachment; filename=\"~a\"" (binding:file-filename submission-file)))))
-                   (lambda (out)
-                     (write-bytes (binding:file-content submission-file) out)))))])
-       "Download"))
+     (:p.submission (file-download/link submission-file "Download"))
      (:div
       (:h3 "Rubric for PDF")
       (formular
@@ -652,8 +653,8 @@
 
      (.submission
       (:h3 "Original Submission and Review")
-      (:p (:strong "submitter id: ") submitter-id)
-      (:p (:strong "Submission: ") "(to be implemented as a button to pdf)"))
+      (:p (:strong "submitter id: ") (~a submitter-id))
+      (:p (:strong "Submission: ") (file-download/link submission "Download File")))
 
      (formular
       (haml
