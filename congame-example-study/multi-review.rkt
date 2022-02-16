@@ -336,6 +336,29 @@
 
 ;; helpers for admin-interface
 
+(define (submit-submissions submit-single-submission (n 2) #:study-name the-study-name)
+  ; Elicits `n` submissions
+  (define (initialize)
+    (put 'n n)
+    (put 'submissions '())
+    (skip))
+
+  (define (next-or-done/transition)
+    (cond [(< (length (get 'submissions))
+              (get 'n))
+           'submit]
+          [else
+           (put 'submissions (reverse (get 'submissions)))
+           done]))
+
+  (make-study
+   the-study-name
+   #:requires '()
+   #:provides '(submissions)
+   (list
+    (make-step 'initialize initialize next-or-done/transition)
+    (make-step 'submit submit-single-submission next-or-done/transition))))
+
 (define (get-reviews-of-participant)
   (filter (λ (r)
             (equal? (hash-ref r 'submitter-id) (current-participant-id)))
@@ -379,7 +402,7 @@
              [else
               'review-next-submission]))))))
 
-(define (submissions-admin-interface-handler names keys)
+(define (submissions-admin-interface-handler names keys #:self-review? self-review?)
 
   (define submissions
     (parameterize ([current-study-stack '(*root*)])
@@ -429,7 +452,7 @@
              (:tr
               (:td (~a submitter-id))
               (:td (~a submission-id))
-              (:td (~a submission))
+              (:td (~a (->jsexpr submission)))
               (:td (cond [(hash-ref reviewed (list submitter-id submission-id) #f)
                           "Yes"]
                          [else "No"]))
@@ -465,7 +488,7 @@
             (haml
              (:tr
               (:td (~a reviewer-id))
-              (:td (~a submission))
+              (:td (~a (->jsexpr submission)))
               ,@(for/list ([k keys])
                   (haml
                    (:td (~a (hash-ref r k)))))
@@ -485,7 +508,7 @@
 
   ((admin-interface-handler #:submissions-interface submissions-interface
                             #:reviews-interface submissions-reviews-interface
-                            #:self-review? #f)))
+                            #:self-review? self-review?)))
 
 (define (submissions-admin-interface
          submissions-admin-handler
@@ -549,7 +572,8 @@
        (ok b)
        (err "the file must be a PDF")))
 
-(define (provide-pdf-submission)
+; FIXME: Can be refactored modulo formular
+(define (submit-single-pdf-submission)
   (page
    (haml
     (.container
@@ -559,24 +583,25 @@
         (#:submission (input-file "Please provide a study submission" #:validators (list valid-pdf?)))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:submission submission)
-        (put 'submission submission)))))))
+        (put 'submissions
+             (cons (hash 'submission-id (get 'next-submission-id 0)
+                         'submission submission)
+                   (get 'submissions)))
+        (put 'next-submission-id (add1 (get 'next-submission-id 0)))))))))
 
-(define provide-pdf-submission/study
-  (make-study
-   "provide-pdf-submission"
-   #:requires '()
-   #:provides '(submission)
-   (list
-    (make-step 'provide-pdf-submission provide-pdf-submission))))
+(define (submit-pdf-submissions [n 2])
+  (submit-submissions submit-single-pdf-submission n #:study-name "submit-pdf-submission"))
 
-(define (review-pdf-handler)
-  (define assignments (get 'assignments))
-  (define submissions (get 'submissions))
-  (define submission-file (hash-ref submissions (car assignments))) ; FIXME: Treats file like a value, which works for now.
+(define (review-next-pdf-handler)
+  (define r (car (get 'current-submissions)))
+  (displayln (format "next submission: ~a" (->jsexpr r)))
+  (match-define (hash-table ('submission submission-file)
+                            ('submission-id submission-id))
+    r)
   (page
    (haml
     (.container
-     (:h1 "Review this Submission")
+     (:h1 (format "Review this PDF ~a (of ~a) for this submitter" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
      (:p.submission
       (:a
        ([:href ((current-embed/url)
@@ -596,28 +621,67 @@
         (:div
          (#:how-good-is-the-submission
           (input-number "On a scale from 0 (very bad) to 5 (very good), how good is the submission?"
-                         #:min 0 #:max 5))
+                        #:min 0 #:max 5))
          (:button.button.next-button ([:type "submit"]) "Submit")))
        (lambda (#:how-good-is-the-submission how-good-is-the-submission)
-         (put 'review (hash
-                       'submitter-id (car assignments)
-                       'reviewer-id (current-participant-id)
-                       'submission submission-file
-                       'how-good-is-the-submission how-good-is-the-submission)))))))))
+         (put 'reviews
+              (cons
+               (hash 'submitter-id           (get 'current-assignment)
+                     'reviewer-id            (current-participant-id)
+                     'submission             submission-file
+                     'submission-id          submission-id
+                     'how-good-is-the-submission how-good-is-the-submission)
+               (get 'reviews '()))))))))))
 
-(define review-pdf
-  (make-study
-   "review-pdf"
-   #:provides '()
-   #:requires '(assignments submissions)
-
-   (list
-    (make-step
-     'review-pdf
-     review-pdf-handler))))
+(define (review-pdf)
+  (review-submissions review-next-pdf-handler))
 
 (define (pdf-admin-interface-handler)
-  (submissions-admin-interface-handler '() '()))
+  (submissions-admin-interface-handler '() '() #:self-review? #t))
+
+(define (review-next-review-pdfs)
+  (define r (car (get 'current-submissions)))
+  (match-define (hash-table ('submission submission)
+                            ('reviewer-id reviewer-id)
+                            ('submitter-id submitter-id))
+    r)
+  (page
+   (haml
+    (.container
+     (:h1 "Review this Review")
+
+     (.submission
+      (:h3 "Original Submission and Review")
+      (:p (:strong "submitter id: ") submitter-id)
+      (:p (:strong "Submission: ") "(to be implemented as a button to pdf)"))
+
+     (formular
+      (haml
+       (:div
+        (#:comments-on-review
+         (input-textarea "Comments on Review:"))
+        (#:review-score
+         (input-number "Review Score (-1 to +1): "
+                       #:min -1 #:max 1))
+        (:button.button.next-button ([:type "submit"]) "Submit")))
+      (λ (#:comments-on-review comments-on-review
+          #:review-score review-score)
+        (put 'reviews
+             (cons
+              (hash-set
+               (hash-set r 'comments-on-review comments-on-review)
+               'review-score review-score)
+              (get 'reviews)))))))))
+
+(define (review-reviews-pdf)
+  (review-submissions review-next-review-pdfs))
+
+(define (pdf-full-admin-interface)
+  (submissions-admin-interface
+   pdf-admin-interface-handler
+   "PDF study"
+   review-pdf
+   review-reviews-pdf))
 
 (define (pdf-admin-interface)
   (make-study
@@ -628,51 +692,33 @@
     (make-step 'admin (admin-interface-handler) (λ () 'admin)))))
 
 (define submit+review-pdf
-  (submit+review-study #:submission-study provide-pdf-submission/study
-                       #:review-study review-pdf
-                       #:submission-key 'submission
-                       #:admin-interface (pdf-admin-interface)))
+  (submit+review-study #:submission-study (submit-pdf-submissions 2)
+                       #:review-study (review-pdf)
+                       #:submission-key 'submissions
+                       #:admin-interface (pdf-full-admin-interface)))
 
 ;;; SUBMIT+REVIEW-RESEARCH-IDEAS
 
+(define (submit-single-research-idea)
+  (page
+   (haml
+    (.container
+     (formular
+      (haml
+       (:div
+        (#:research-idea (input-textarea "Provide a research idea"))
+        (:button.button.next-button ([:type "submit"]) "Submit")))
+      (lambda (#:research-idea idea)
+        (put 'submissions
+             (cons (hash 'submission-id (get 'next-submission-id 0)
+                         'submission idea)
+                   (get 'submissions)))
+        (put 'next-submission-id (add1 (get 'next-submission-id 0)))))))))
+
 (define (submit-research-ideas [n 2])
-  ; Elicits `n` research ideas
-  (define (initialize)
-    (put 'n n)
-    (put 'research-ideas '())
-    (skip))
+  (submit-submissions submit-single-research-idea n #:study-name "research-ideas-study"))
 
-  (define (submit-research-idea)
-    (page
-     (haml
-      (.container
-       (formular
-        (haml
-         (:div
-          (#:research-idea (input-textarea "Provide a research idea"))
-          (:button.button.next-button ([:type "submit"]) "Submit")))
-        (lambda (#:research-idea idea)
-          (put 'research-ideas
-               (cons (hash 'submission-id (get 'next-submission-id 0)
-                           'submission idea)
-                     (get 'research-ideas)))
-          (put 'next-submission-id (add1 (get 'next-submission-id 0)))))))))
 
-  (define (next-or-done/transition)
-    (cond [(< (length (get 'research-ideas))
-              (get 'n))
-           'submit-research-idea]
-          [else
-           (put 'research-ideas (reverse (get 'research-ideas)))
-           done]))
-
-  (make-study
-   "research-ideas-study"
-   #:requires '()
-   #:provides '(research-ideas)
-   (list
-    (make-step 'initialize initialize next-or-done/transition)
-    (make-step 'submit-research-idea submit-research-idea next-or-done/transition))))
 
 (define (review-next-research-idea)
   (define research-ideas-examples-url "https://ceulearning.ceu.edu/mod/resource/view.php?id=405798")
@@ -830,7 +876,8 @@
 (define (research-ideas-admin-handler)
   (submissions-admin-interface-handler
    '("Valid Idea?" "Feedback")
-   '(valid-research-idea? feedback)))
+   '(valid-research-idea? feedback)
+   #:self-review? #f))
 
 (define (research-ideas-admin-interface)
   (submissions-admin-interface
@@ -845,7 +892,7 @@
 (define submit+review-research-ideas
   (submit+review-study #:submission-study (submit-research-ideas 4)
                        #:review-study (review-research-ideas)
-                       #:submission-key 'research-ideas
+                       #:submission-key 'submissions
                        #:compute-scores compute-research-ideas-scores
                        #:final-page research-ideas-final-page
                        #:admin-interface (research-ideas-admin-interface)))
