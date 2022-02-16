@@ -334,6 +334,213 @@
     (make-step 'final (final compute-scores final-page))
     )))
 
+;; helpers for admin-interface
+
+(define (get-reviews-of-participant)
+  (filter (λ (r)
+            (equal? (hash-ref r 'submitter-id) (current-participant-id)))
+          (get/instance 'reviews)))
+
+(define (review-submissions review-next-submission)
+
+  (define (initialize-review)
+    (define assignments (get 'assignments))
+    (define current-assignment (car assignments))
+    ; Clear reviews since last review. FIXME: Stateful stuff that is obnoxious
+    ; to deal with.
+    (put 'reviews '())
+    (put 'current-assignment current-assignment)
+    (define submissions (get 'submissions))
+    (define current-submissions (hash-ref submissions current-assignment))
+    (put 'current-submissions current-submissions)
+    (put 'n-reviewed-submissions 0)
+    (put 'n-total-submissions (length current-submissions))
+    (skip))
+
+  (make-study
+   "submission-review"
+   #:provides '(reviews)
+   #:requires '(assignments submissions)
+   (list
+    (make-step
+     'initialize-review
+     initialize-review
+     (λ ()
+       (if (empty? (get 'current-submissions)) done 'review-next-submission)))
+
+    (make-step
+     'review-next-submission
+     review-next-submission
+     (λ ()
+       (put 'current-submissions (cdr (get 'current-submissions)))
+       (put 'n-reviewed-submissions (add1 (get 'n-reviewed-submissions)))
+       (cond [(empty? (get 'current-submissions))
+              done]
+             [else
+              'review-next-submission]))))))
+
+(define (submissions-admin-interface-handler names keys)
+
+  (define submissions
+    (parameterize ([current-study-stack '(*root*)])
+      (get/instance 'submissions (hash))))
+
+  (define reviews
+    (parameterize ([current-study-stack '(*root*)])
+      (sort (get/instance 'reviews '())
+                        (λ (x y)
+                          (< (hash-ref x 'reviewer-id)
+                             (hash-ref y 'reviewer-id))))))
+
+  (define admin-reviews
+    (filter (λ (r)
+              (equal? (hash-ref r 'reviewer-id) (current-participant-id)))
+            reviews))
+
+  (define reviewed
+    (for/hash ([r admin-reviews])
+      (values (list (hash-ref r 'submitter-id)
+                    (hash-ref r 'submission-id))
+              r)))
+
+  (define review-phase?
+    (parameterize ([current-study-stack '(*root*)])
+      (get/instance 'review-phase-started #f)))
+
+  (define (submissions-interface)
+    (haml
+     (:div
+      (:h3 "Submissions")
+      (:table
+       (:thead
+        (:tr
+         (:th "Submitter ID")
+         (:th "Submission ID")
+         (:th "Submission")
+         (:th "Admin has reviewed?")
+         (:th "Review Submission")))
+       (:tbody
+        ,@(for*/list ([(submitter-id ids&submissions) (in-hash submissions)]
+                      [id&submission ids&submissions])
+            (match-define (hash-table ('submission submission)
+                                      ('submission-id submission-id))
+              id&submission)
+            (haml
+             (:tr
+              (:td (~a submitter-id))
+              (:td (~a submission-id))
+              (:td (~a submission))
+              (:td (cond [(hash-ref reviewed (list submitter-id submission-id) #f)
+                          "Yes"]
+                         [else "No"]))
+              (:td
+               (if (not review-phase?)
+                   "Submission phase -- cannot review"
+                   (button
+                    (λ ()
+                      (put 'next-submissions (hash submitter-id (list id&submission)))
+                      (put 'next-assignments (list submitter-id)))
+                    "Review this Submission"
+                    #:to-step-id 'admin-review)))))))))))
+
+  (define (submissions-reviews-interface)
+    (haml
+     (:div
+      (:table
+       (:thead
+        (:th "Reviewer ID")
+        (:th "Submission")
+        ,@(for/list ([t names])
+            (haml
+             (:th t)))
+        (:th "Comments on Review")
+        (:th "Score of Review")
+        (:th "Review this Review"))
+       (:tbody
+        ,@(for/list ([r reviews])
+            (match-define (hash-table ('submission submission)
+                                      ('reviewer-id reviewer-id)
+                                      ('submitter-id submitter-id))
+              r)
+            (haml
+             (:tr
+              (:td (~a reviewer-id))
+              (:td (~a submission))
+              ,@(for/list ([k keys])
+                  (haml
+                   (:td (~a (hash-ref r k)))))
+              (:td (~a (hash-ref r 'comments-on-review "")))
+              (:td (~a (hash-ref r 'review-score "")))
+              (:td
+               (if (not review-phase?)
+                   "Submission Phase -- cannot review"
+                   (button
+                    (λ ()
+                      (put 'next-submissions (hash reviewer-id (list r)))
+                      (put 'next-assignments (list reviewer-id)))
+                    (if (hash-has-key? r 'comments-on-review)
+                        "Edit Review of Review"
+                        "Review the Review")
+                    #:to-step-id 'admin-review-review)))))))))))
+
+  ((admin-interface-handler #:submissions-interface submissions-interface
+                            #:reviews-interface submissions-reviews-interface
+                            #:self-review? #f)))
+
+(define (submissions-admin-interface
+         submissions-admin-handler
+         the-study-name
+         review-submissions
+         review-reviews)
+
+  (define ((review-equal? r1) r2)
+    (define (equal-key? k)
+      (equal? (hash-ref r1 k) (hash-ref r2 k)))
+    (and (equal-key? 'submitter-id)
+         (equal-key? 'submission-id)
+         (equal-key? 'reviewer-id)))
+
+  (define (review-in-reviews? r rs)
+    (findf (review-equal? r) rs))
+
+  (define (update-admin-reviews new-reviews)
+    (with-study-transaction
+      (parameterize ([current-study-stack '(*root*)])
+        (define current-reviews (get/instance 'reviews))
+        (define rs
+          (filter (λ (r)
+                    (not (review-in-reviews? r new-reviews)))
+                  current-reviews))
+        (define updated-reviews
+          (append new-reviews rs))
+        (put/instance 'reviews updated-reviews))))
+
+  (make-study
+   the-study-name
+   #:provides '()
+   #:requires '()
+   (list
+    (make-step 'admin submissions-admin-handler (λ () 'admin))
+    (make-step/study
+     'admin-review
+     (review-submissions)
+     #:require-bindings '((assignments next-assignments)
+                          (submissions next-submissions))
+     #:provide-bindings '((next-reviews reviews))
+     (λ ()
+       (update-admin-reviews (get 'next-reviews))
+       'admin))
+    (make-step/study
+     'admin-review-review
+     (review-reviews)
+     #:require-bindings '((assignments next-assignments)
+                          (submissions next-submissions))
+     #:provide-bindings '((next-review-reviews reviews))
+     (λ ()
+       (update-admin-reviews (get 'next-review-reviews))
+       'admin))
+    (make-step 'done skip (λ () done)))))
+
 ;; SUBMIT+REVIEW-PDF
 
 (define (valid-pdf? b)
@@ -409,6 +616,9 @@
      'review-pdf
      review-pdf-handler))))
 
+(define (pdf-admin-interface-handler)
+  (submissions-admin-interface-handler '() '()))
+
 (define (pdf-admin-interface)
   (make-study
    "pdf-admin-interface"
@@ -443,7 +653,10 @@
           (:button.button.next-button ([:type "submit"]) "Submit")))
         (lambda (#:research-idea idea)
           (put 'research-ideas
-               (cons idea (get 'research-ideas)))))))))
+               (cons (hash 'submission-id (get 'next-submission-id 0)
+                           'submission idea)
+                     (get 'research-ideas)))
+          (put 'next-submission-id (add1 (get 'next-submission-id 0)))))))))
 
   (define (next-or-done/transition)
     (cond [(< (length (get 'research-ideas))
@@ -463,14 +676,16 @@
 
 (define (review-next-research-idea)
   (define research-ideas-examples-url "https://ceulearning.ceu.edu/mod/resource/view.php?id=405798")
-  (define next-research-idea (car (get 'current-submissions)))
+  (match-define (hash-table ('submission submission)
+                            ('submission-id submission-id))
+    (car (get 'current-submissions)))
   (page
    (haml
     (.container
      (:h1 (format "Review Research Idea ~a (of ~a)" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
      (.submission
       (:h3 "Submitted Research Idea")
-      (:p next-research-idea))
+      (:p submission))
 
      (:h3 "Rubric for Research Idea")
      (:p "See "(:a ((:href research-ideas-examples-url)) "Examples of Research Ideas") " for details. Only mark an idea as invalid if it cannot be interpreted as a research question OR if it is effectively a duplicate of another research question by this person. Ignore (for now) whether it is interesting or original; whether you like it; whether there is a way to answer it; ... . Those comments you can keep for constructive and kind feedback.")
@@ -490,15 +705,16 @@
              (cons
               (hash 'submitter-id           (get 'current-assignment)
                     'reviewer-id            (current-participant-id)
-                    'research-idea          next-research-idea
+                    'submission             submission
+                    'submission-id          submission-id
                     'valid-research-idea?   (string=? valid-research-idea? "yes")
                     'feedback               feedback)
               (get 'reviews '())))))))))
 
-(define (review-next-review)
+(define (review-next-review-research-ideas)
   (define r (car (get 'current-submissions)))
   (match-define (hash-table ('feedback feedback)
-                            ('research-idea research-idea)
+                            ('submission submission)
                             ('reviewer-id reviewer-id)
                             ('submitter-id submitter-id)
                             ('valid-research-idea? valid?))
@@ -510,7 +726,7 @@
 
      (.submission
       (:h3 "Original Submission and Review")
-      (:p (:strong "Submission: ") research-idea)
+      (:p (:strong "Submission: ") submission)
       (:p (:strong "Review: ") feedback))
 
      (formular
@@ -531,54 +747,11 @@
                'review-score review-score)
               (get 'reviews)))))))))
 
-(define (review-submissions review-next-submission)
-
-  (define (initialize-review)
-    (define assignments (get 'assignments))
-    (define current-assignment (car assignments))
-    ; Clear reviews since last review. FIXME: Stateful stuff that is obnoxious
-    ; to deal with.
-    (put 'reviews '())
-    (put 'current-assignment current-assignment)
-    (define submissions (get 'submissions))
-    (define current-submissions (hash-ref submissions current-assignment))
-    (put 'current-submissions current-submissions)
-    (put 'n-reviewed-submissions 0)
-    (put 'n-total-submissions (length current-submissions))
-    (skip))
-
-  (make-study
-   "submission-review"
-   #:provides '(reviews)
-   #:requires '(assignments submissions)
-   (list
-    (make-step
-     'initialize-review
-     initialize-review
-     (λ ()
-       (if (empty? (get 'current-submissions)) done 'review-next-submission)))
-
-    (make-step
-     'review-next-submission
-     review-next-submission
-     (λ ()
-       (put 'current-submissions (cdr (get 'current-submissions)))
-       (put 'n-reviewed-submissions (add1 (get 'n-reviewed-submissions)))
-       (cond [(empty? (get 'current-submissions))
-              done]
-             [else
-              'review-next-submission]))))))
-
 (define (review-research-ideas)
   (review-submissions review-next-research-idea))
 
-(define (review-reviews)
-  (review-submissions review-next-review))
-
-(define (get-reviews-of-participant)
-  (filter (λ (r)
-            (equal? (hash-ref r 'submitter-id) (current-participant-id)))
-          (get/instance 'reviews)))
+(define (review-reviews-research-ideas)
+  (review-submissions review-next-review-research-ideas))
 
 (define (compute-research-ideas-scores)
   (define (mean los)
@@ -588,7 +761,7 @@
   (define collect-by-idea
     (for/fold ([reviewer-scores (hash)])
               ([r (get-reviews-of-participant)])
-      (define research-idea (hash-ref r 'research-idea))
+      (define research-idea (hash-ref r 'submission))
       (hash-set reviewer-scores
                 research-idea
                 (cons (score r)
@@ -637,7 +810,7 @@
        ,@(for/list ([r participant-reviews])
            (define reviewer (hash-ref r 'reviewer-id))
            (define valid? (hash-ref r 'valid-research-idea?))
-           (define research-idea (hash-ref r 'research-idea))
+           (define research-idea (hash-ref r 'submission))
            (define feedback (hash-ref r 'feedback))
            (haml
             (.feedback
@@ -654,174 +827,17 @@
      score-display
      feedback))))
 
-(define (research-ideas-admin)
-
-  (define submissions
-    (parameterize ([current-study-stack '(*root*)])
-      (get/instance 'submissions (hash))))
-
-  (define reviews
-    (parameterize ([current-study-stack '(*root*)])
-      (sort (get/instance 'reviews '())
-                        (λ (x y)
-                          (< (hash-ref x 'reviewer-id)
-                             (hash-ref y 'reviewer-id))))))
-
-  (define admin-reviews
-    (filter (λ (r)
-              (equal? (hash-ref r 'reviewer-id) (current-participant-id)))
-            reviews))
-  (define reviewed
-    (for/hash ([r admin-reviews])
-      (values (list (hash-ref r 'submitter-id)
-                    (hash-ref r 'research-idea))
-              r)))
-
-  (define review-phase?
-    (parameterize ([current-study-stack '(*root*)])
-      (get/instance 'review-phase-started #f)))
-
-  (define (research-ideas-submissions-interface)
-    (haml
-     (:div
-      (:h3 "Research Ideas Submitted")
-      (:table
-       (:thead
-        (:tr
-         (:th "Submitter ID")
-         (:th "Research Idea")
-         (:th "Feedback Given")
-         (:th "Review Idea")))
-       (:tbody
-        ,@(for*/list ([(submitter-id ideas) (in-hash submissions)]
-                      [i ideas])
-            (haml
-             (:tr
-              (:td (~a submitter-id))
-              (:td (~a i))
-              (:td (cond [(hash-ref reviewed (list submitter-id i) #f) => (λ (x) (hash-ref x 'feedback ""))]
-                         [else ""]))
-              (:td
-               (if (not review-phase?)
-                   "Submission phase -- cannot review"
-                   (button
-                    (λ ()
-                      (put 'next-submissions (hash submitter-id (list i)))
-                      (put 'next-assignments (list submitter-id)))
-                    "Review this Idea"
-                    #:to-step-id 'admin-review)))))))))))
-
-  (define (research-ideas-reviews-interface)
-    (haml
-     (:div
-      (:table
-       (:thead
-        (:th "Reviewer ID")
-        (:th "Reviewed Idea")
-        (:th "Valid Idea?")
-        (:th "Reviewer Feedback")
-        (:th "Comments on Review")
-        (:th "Score of Review")
-        (:th "Review this Review"))
-       (:tbody
-        ,@(for/list ([r reviews])
-            (match-define (hash-table ('feedback feedback)
-                                      ('research-idea research-idea)
-                                      ('reviewer-id reviewer-id)
-                                      ('submitter-id submitter-id)
-                                      ('valid-research-idea? valid?))
-              r)
-            (haml
-             (:tr
-              (:td (~a reviewer-id))
-              (:td (~a research-idea))
-              (:td (~a valid?))
-              (:td (~a feedback))
-              (:td (~a (hash-ref r 'comments-on-review "")))
-              (:td (~a (hash-ref r 'review-score "")))
-              (:td
-               (if (not review-phase?)
-                   "Submission Phase -- cannot review"
-                   (button
-                    (λ ()
-                      (put 'next-submissions (hash reviewer-id (list r)))
-                      (put 'next-assignments (list reviewer-id)))
-                    (if (hash-has-key? r 'comments-on-review)
-                        "Edit Review of Review"
-                        "Review the Review")
-                    #:to-step-id 'admin-review-review)))))))))))
-
-  ((admin-interface-handler #:submissions-interface research-ideas-submissions-interface
-                            #:reviews-interface research-ideas-reviews-interface
-                            #:self-review? #f)))
-
-(define (admin-review-review)
-  (page
-   (haml
-    (.container
-     (:h1 "Admin Review Review")
-     (button void "Back to Admin Interface")))))
+(define (research-ideas-admin-handler)
+  (submissions-admin-interface-handler
+   '("Valid Idea?" "Feedback")
+   '(valid-research-idea? feedback)))
 
 (define (research-ideas-admin-interface)
-
-  (define (review-in? r rs)
-    (match-define (hash-table ('submitter-id s1)
-                              ('research-idea i1)
-                              ('reviewer-id rv1))
-      r)
-    (findf (λ (r2)
-             (match-define (hash-table ('submitter-id s2)
-                                       ('research-idea i2)
-                                       ('reviewer-id rv2))
-               r2)
-             (and (equal? s1 s2)
-                  (equal? i1 i2)
-                  (equal? rv1 rv2)))
-           rs))
-
-  (define (add-admin-reviews new-reviews)
-    (with-study-transaction
-      (parameterize ([current-study-stack '(*root*)])
-        (define reviews (get/instance 'reviews '()))
-        (define updated-reviews (append reviews new-reviews))
-        (put/instance 'reviews updated-reviews))))
-
-  (define (update-admin-reviews new-reviews)
-    (with-study-transaction
-      (parameterize ([current-study-stack '(*root*)])
-        (define rs
-          (filter (λ (r)
-                    (not (review-in? r new-reviews)))
-                  (get/instance 'reviews)))
-        (define updated-reviews
-          (append new-reviews rs))
-        (put/instance 'reviews updated-reviews))))
-
-  (make-study
+  (submissions-admin-interface
+   research-ideas-admin-handler
    "research-ideas-admin-interface"
-   #:provides '()
-   #:requires '()
-   (list
-    (make-step 'admin research-ideas-admin (λ () 'admin))
-    (make-step/study
-     'admin-review
-     (review-research-ideas)
-     #:require-bindings '((assignments next-assignments)
-                          (submissions next-submissions))
-     #:provide-bindings '((next-reviews reviews))
-     (λ ()
-       (update-admin-reviews (get 'next-reviews))
-       'admin))
-    (make-step/study
-     'admin-review-review
-     (review-reviews)
-     #:require-bindings '((assignments next-assignments)
-                          (submissions next-submissions))
-     #:provide-bindings '((next-review-reviews reviews))
-     (λ ()
-       (update-admin-reviews (get 'next-review-reviews))
-       'admin))
-    (make-step 'done skip (λ () done)))))
+   review-research-ideas
+   review-reviews-research-ideas))
 
 ;; FIXME: Design study so that the number of research ideas can be configured by
 ;; the admin after creating a study instance.
