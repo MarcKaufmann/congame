@@ -138,7 +138,6 @@
   ; Recompute scores only if triggered in the admin interface or based on a
   ; timed job.
   (define scores (compute-scores))
-  (displayln (format "SCORES: ~a" scores))
   (put 'scores scores)
   (final-page))
 
@@ -654,7 +653,6 @@
 
 (define (review-next-pdf-handler)
   (define r (car (get 'current-submissions)))
-  (displayln (format "next submission: ~a" (->jsexpr r)))
   (match-define (hash-table ('submission submission-file)
                             ('submission-id submission-id))
     r)
