@@ -16,6 +16,7 @@
          racket/match
          racket/random
          sentry
+         threading
          web-server/http
          "mail.rkt")
 
@@ -38,6 +39,7 @@
 ;; FIXME: the worst-case complexity here is really bad.  There must be
 ;; a way to do this without drawing randomly and retrying on failure.
 (define (assign-reviewers pids [n 2])
+  (put/instance 'number-of-other-reviewers n)
   (when (<= (length pids) n)
     (raise-arguments-error 'assign-reviewers "pids must be > n " "pids" pids "n" n))
   (define (help)
@@ -202,7 +204,8 @@
 
 (define ((admin-interface-handler
          #:submissions-interface (submissions-interface default-submissions-interface)
-         #:reviews-interface (reviews-interface default-reviews-interface)))
+         #:reviews-interface (reviews-interface default-reviews-interface)
+         #:self-review? [self-review? #t]))
   (page
    (parameterize ([current-study-stack '(*root*)])
      (haml
@@ -230,7 +233,7 @@
                (λ ()
                  (parameterize ([current-study-stack '(*root*)])
                    (put/instance 'admin-triggers-assignments #t)
-                   (matchmake)))
+                   (matchmake #:self-review? self-review?)))
                "Assign Reviews")]
 
              [else
@@ -459,7 +462,7 @@
     (make-step 'submit-research-idea submit-research-idea next-or-done/transition))))
 
 (define (review-next-research-idea)
-  (define research-ideas-rubric-url "https://trichotomy.xyz")
+  (define research-ideas-examples-url "https://ceulearning.ceu.edu/mod/resource/view.php?id=405798")
   (define next-research-idea (car (get 'current-submissions)))
   (page
    (haml
@@ -470,7 +473,7 @@
       (:p next-research-idea))
 
      (:h3 "Rubric for Research Idea")
-     (:p "See "(:a ((:href research-ideas-rubric-url)) "Explanations on Research Ideas") " for details.")
+     (:p "See "(:a ((:href research-ideas-examples-url)) "Examples of Research Ideas") " for details. Only mark an idea as invalid if it cannot be interpreted as a research question OR if it is effectively a duplicate of another research question by this person. Ignore (for now) whether it is interesting or original; whether you like it; whether there is a way to answer it; ... . Those comments you can keep for constructive and kind feedback.")
      (formular
       (haml
        (:div
@@ -479,7 +482,7 @@
           "Do you consider this a valid research idea?"
           '(("yes" . "Yes")
             ("no"  . "No"))))
-        (#:feedback (input-textarea "Provide a constructive suggestion how to improve this research question / turn it into a valid research question."))
+        (#:feedback (input-textarea "Provide a constructive suggestion how to improve this research question / turn it into a valid research question. Remember: be kind."))
         (:button.button.next-button ((:type "submit")) "Submit")))
       (lambda (#:valid-research-idea? valid-research-idea?
                #:feedback feedback)
@@ -600,11 +603,20 @@
 (define (research-ideas-final-page)
   (define scores (get 'scores))
   (put/identity 'scores scores)
+  (define participant-reviews (get-reviews-of-participant))
+  (define n-reviewers-total (get/instance 'number-of-other-reviewers))
+  (define n-reviewers-received
+    (~> participant-reviews
+        (map (λ (r)
+               (hash-ref r 'reviewer-id))
+             _)
+        remove-duplicates
+        length))
+
   (define score-display
     (haml
      (:div
-      (:h4 "Total Score")
-      (:p (format "Your total score is: ~a" (hash-ref scores 'total-score)))
+      (:h4 (format "Total Score: ~a" (hash-ref scores 'total-score)))
 
       (:h4 "Score by research idea is:")
       (:ul
@@ -618,9 +630,11 @@
   (define feedback
     (haml
      (:div
-      (:h3 "Detailed Feedback")
+      (:h3 (format "Detailed Reviews (~a received, ~a pending)"
+                   n-reviewers-received
+                   (- n-reviewers-total n-reviewers-received)))
       (:div
-       ,@(for/list ([r (get-reviews-of-participant)])
+       ,@(for/list ([r participant-reviews])
            (define reviewer (hash-ref r 'reviewer-id))
            (define valid? (hash-ref r 'valid-research-idea?))
            (define research-idea (hash-ref r 'research-idea))
@@ -738,7 +752,8 @@
                     #:to-step-id 'admin-review-review)))))))))))
 
   ((admin-interface-handler #:submissions-interface research-ideas-submissions-interface
-                            #:reviews-interface research-ideas-reviews-interface)))
+                            #:reviews-interface research-ideas-reviews-interface
+                            #:self-review? #f)))
 
 (define (admin-review-review)
   (page
@@ -810,8 +825,9 @@
 
 ;; FIXME: Design study so that the number of research ideas can be configured by
 ;; the admin after creating a study instance.
+;; FIXME: Refactor (e.g. number-of-submissions)
 (define submit+review-research-ideas
-  (submit+review-study #:submission-study (submit-research-ideas 2)
+  (submit+review-study #:submission-study (submit-research-ideas 4)
                        #:review-study (review-research-ideas)
                        #:submission-key 'research-ideas
                        #:compute-scores compute-research-ideas-scores
