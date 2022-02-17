@@ -63,28 +63,22 @@
       (-> (-> request? response?)
           (-> request? response?)))
 
-  (define (lookup-user)
+  (define maybe-u
     (and~>> (session-manager-ref (auth-manager-sessions am) session-key #f)
             (string->number)
             (user-manager-lookup/id (auth-manager-users am))))
+  (define maybe-role
+    (and~> maybe-u user-role))
 
   (with-timing 'auth "wrap-auth-required"
-    (define roles (req-roles req))
-    (cond
-      [(null? roles)
-       (handler req)]
-
-      [(equal? roles '(anon))
-       (parameterize ([current-user (lookup-user)])
-         (handler req))]
-
-      ;; NOTE: Roles are not actually checked beyond this point.  If you
-      ;; implement roles other than 'user then you're going to want to
-      ;; change this part of the code.
-      [(lookup-user)
-       => (lambda (user)
-            (parameterize ([current-user user])
-              (handler req)))]
-
-      [else
-       (redirect-to (reverse-uri 'login-page #:query `((return . ,(url->string (request-uri req))))))])))
+    (define roles
+      (req-roles req))
+    (define ok?
+      (or (null? roles)
+          (equal? roles '(anon))
+          (equal? maybe-role 'admin)
+          (memq maybe-role roles)))
+    (parameterize ([current-user maybe-u])
+      (if ok?
+          (handler req)
+          (redirect-to (reverse-uri 'login-page #:query `((return . ,(url->string (request-uri req))))))))))
