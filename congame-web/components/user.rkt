@@ -284,5 +284,4 @@
 
 (define/contract (user-enrolled-via-identity? u)
   (-> user? boolean?)
-  ; Using if to avoid leaking username
-  (if (regexp-match #px"id\\.\\d+\\..*" (user-username u)) #t #f))
+  (not (sql-null? (user-identity-service-url u))))

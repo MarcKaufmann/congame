@@ -44,10 +44,6 @@
             ((dashboard-page db) req)
             (homepage req)))]
 
-     #;[("dashboard")
-      #:roles (user)
-      (dashboard-page db)]
-
      [("enroll" (integer-arg) (integer-arg))
       #:roles (user)
       (enroll-or-resume-page db)]
@@ -89,9 +85,6 @@
 
      [("api" "v1" "study-instances" (integer-arg) "data")
       #:method "put"
-      ; FIXME: congame role not yet implemented -- different from general api user, although the mechanism should probably be the same except that api_key is checked on congame_servers.
-      ; commented out as it blows up the code, expecting some user
-      ; #:roles (congame)
       (put-instance-page db users)]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
