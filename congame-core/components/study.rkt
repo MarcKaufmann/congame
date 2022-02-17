@@ -356,6 +356,7 @@ QUERY
  when-bot
  page
  button
+ button/confirm
  form
  skip)
 
@@ -447,6 +448,33 @@ QUERY
                 (continue to-step-id)]
                [else
                 (continue)])))])
+    label)))
+
+(define/widget (button/confirm label
+                               #:id [id ""]
+                               #:cancel-id [cancel-id ""]
+                               #:confirm-id [confirm-id ""]
+                               #:confirm-xexpr [confirm-xexpr `(p "Are you sure?")]
+                               . action-widgets)
+  (haml
+   (:a.button.next-button
+    ([:data-widget-id (when-bot id)]
+     [:href
+      (embed
+       (lambda (_req)
+         (response/render
+          this-step
+          (lambda ()
+            (haml
+             (:div
+              confirm-xexpr
+              ,@(if (null? action-widgets)
+                    (list
+                     (haml
+                      (.buttons
+                       (button void "Cancel" #:id cancel-id #:to-step-id (step-id this-step))
+                       (button void "Continue" #:id confirm-id))))
+                    action-widgets)))))))])
     label)))
 
 (define/widget (form f action render #:id [id ""] #:enctype [enctype "multipart/form-data"])

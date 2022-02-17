@@ -22,9 +22,16 @@
 ;; Steps manage optional transitions, the default being `(next)'.
 
 (define (info)
-  `(div
-    (h1 "Welcome to the study.")
-    ,(button void "Continue")))
+  (page
+   `(div
+     (h1 "Welcome to the study.")
+     ,(button/confirm
+       "Continue with confirmation"
+       (button/confirm
+        "Layer 2"
+        (button/confirm
+         "Layer 3")))
+     ,(button void "Continue"))))
 
 ;; Steps wrap an id, a handler and a transition function.  The handler
 ;; must always produce an xexpression.  Actions within a handler are
