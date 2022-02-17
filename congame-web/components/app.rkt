@@ -27,6 +27,7 @@
          "prolific.rkt"
          "sentry.rkt"
          (prefix-in tpl: "template.rkt")
+         congame-web/components/upload
          congame-web/components/user)
 
 (provide
@@ -63,8 +64,8 @@
     (header-value)))
   (hdl req))
 
-(define/contract (make-app auth broker broker-admin db flashes mailer _migrator sessions users)
-  (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? session-manager? user-manager? app?)
+(define/contract (make-app auth broker broker-admin db flashes mailer _migrator sessions uploads users)
+  (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? session-manager? uploader? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
@@ -182,6 +183,7 @@
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)
     (~> handler
+        ((wrap-uploads uploads))
         (wrap-current-sentry-user)
         ((wrap-auth-required auth req-roles))
         ((wrap-browser-locale sessions))

@@ -20,6 +20,7 @@
          "components/app.rkt"
          congame-web/components/auth
          "components/mail.rkt"
+         congame-web/components/upload
          congame-web/components/user
          (prefix-in config: "config.rkt")
          web-server/safety-limits)
@@ -35,7 +36,7 @@
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth broker broker-admin db flashes mailer migrator sessions users) make-app]
+  [app (auth broker broker-admin db flashes mailer migrator sessions uploader users) make-app]
   [auth (sessions users) make-auth-manager]
   ;; TODO: Check this still holds.
   ;; Some of our jobs depend on the mailer so we need the explicit
@@ -70,6 +71,7 @@
                                           #:store (make-memory-session-store
                                                    #:ttl (* 1 86400)
                                                    #:file-path config:session-path))]
+  [uploader () (λ () (make-uploader config:uploads-dir))]
   [users (db hasher) make-user-manager]
   [worker (broker) (make-worker-factory)])
 

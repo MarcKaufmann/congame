@@ -6,6 +6,7 @@
          congame/components/formular
          congame/components/study
          congame-web/components/identity
+         (prefix-in upload: congame-web/components/upload)
          gregor
          koyo/haml
          koyo/job
@@ -14,6 +15,7 @@
          racket/format
          racket/list
          racket/match
+         racket/port
          racket/random
          sentry
          threading
@@ -479,14 +481,14 @@
        (:tbody
         ,@(for*/list ([(submitter-id ids&submissions) (in-hash submissions)]
                       [id&submission ids&submissions])
-            (match-define (hash-table ('submission submission)
+            (match-define (hash-table ('original-filename submission-filename)
                                       ('submission-id submission-id))
               id&submission)
             (haml
              (:tr
               (:td (~a (->jsexpr submitter-id)))
               (:td (~a submission-id))
-              (:td (~a (->jsexpr submission)))
+              (:td (~a (->jsexpr submission-filename)))
               (:td (cond [(hash-ref reviewed (list submitter-id submission-id) #f)
                           "Yes"]
                          [else "No"]))
@@ -516,7 +518,7 @@
         (:th "Remove this Review"))
        (:tbody
         ,@(for/list ([r reviews])
-            (match-define (hash-table ('submission submission)
+            (match-define (hash-table ('original-filename submission-filename)
                                       ('reviewer-id reviewer-id)
                                       ('submission-id submission-id)
                                       ('submitter-id submitter-id))
@@ -524,7 +526,7 @@
             (haml
              (:tr
               (:td (~a reviewer-id))
-              (:td (~a (->jsexpr submission)))
+              (:td (~a (->jsexpr submission-filename)))
               ,@(for/list ([k keys])
                   (haml
                    (:td (~a (hash-ref r k)))))
@@ -623,9 +625,13 @@
         (#:submission (input-file "Please provide your pdf submission" #:validators (list valid-pdf?)))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:submission submission)
+        (define upload-filename (upload:save-file! submission))
+        (define original-filename (binding:file-filename submission))
         (put 'submissions
              (cons (hash 'submission-id (get 'next-submission-id 0)
-                         'submission submission)
+                         'content-type "application/pdf"
+                         'upload-filename upload-filename
+                         'original-filename (bytes->string/utf-8 original-filename))
                    (get 'submissions)))
         (put 'next-submission-id (add1 (get 'next-submission-id 0)))))))))
 
@@ -634,14 +640,20 @@
 
 (define (review-next-pdf-handler)
   (define r (car (get 'current-submissions)))
-  (match-define (hash-table ('submission submission-file)
-                            ('submission-id submission-id))
+  (match-define (hash-table
+                 ('content-type submission-content-type)
+                 ('upload-filename submission-upload-filename)
+                 ('original-filename submission-filename)
+                 ('submission-id submission-id))
     r)
   (page
    (haml
     (.container
      (:h1 (format "Review this PDF ~a (of ~a) for this submitter" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
-     (:p.submission (file-download/link submission-file "Download"))
+     (:p.submission (file-download/link
+                     #:content-type submission-content-type
+                     #:filename submission-filename
+                     submission-upload-filename "Download"))
      (:div
       (:h3 "Rubric for PDF")
       (formular
@@ -654,11 +666,10 @@
        (lambda (#:how-good-is-the-submission how-good-is-the-submission)
          (put 'reviews
               (cons
-               (hash 'submitter-id           (get 'current-assignment)
-                     'reviewer-id            (current-participant-id)
-                     'submission             submission-file
-                     'submission-id          submission-id
-                     'how-good-is-the-submission how-good-is-the-submission)
+               (~> r
+                   (hash-set 'submitted-id (get 'current-assignment))
+                   (hash-set 'reviewer-id (current-participant-id))
+                   (hash-set 'how-good-is-the-submission how-good-is-the-submission))
                (get 'reviews '()))))))))))
 
 (define (review-pdf)
@@ -669,9 +680,12 @@
 
 (define (review-next-review-pdfs)
   (define r (car (get 'current-submissions)))
-  (match-define (hash-table ('submission submission)
-                            ('reviewer-id reviewer-id)
-                            ('submitter-id submitter-id))
+  (match-define (hash-table
+                 ('content-type submission-content-type)
+                 ('upload-filename submission-upload-filename)
+                 ('original-filename submission-filename)
+                 ('reviewer-id reviewer-id)
+                 ('submitter-id submitter-id))
     r)
   (page
    (haml
@@ -681,7 +695,11 @@
      (.submission
       (:h3 "Original Submission and Review")
       (:p (:strong "submitter id: ") (~a submitter-id))
-      (:p (:strong "Submission: ") (file-download/link submission "Download File")))
+      (:p (:strong "Submission: ")
+          (file-download/link
+           #:content-type submission-content-type
+           #:filename submission-filename
+           submission-upload-filename "Download File")))
 
      (formular
       (haml

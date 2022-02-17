@@ -105,3 +105,8 @@
 ;; For Sentry error tracking
 (define-option environment #:default "dev")
 (define-option sentry-dsn)
+
+(define-values (this-dir _name _must-be-dir?)
+  (split-path (syntax-source #'here)))
+(define-option uploads-dir
+  #:default (simplify-path (build-path this-dir 'up "uploads")))
