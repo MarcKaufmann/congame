@@ -294,12 +294,12 @@
     [(none init)    (page
                      (haml
                       (.container
-                       (:h1 "The study is not yet open. Come back later."))))]
+                       (:h1 "Submissions are not yet open. Come back later."))))]
     [(submit)       (skip)]
     [(review over)  (page
                      (haml
                       (.container
-                       (:h1 "The study is no longer open for submissions."))))]))
+                       (:h1 "Submissions are closed."))))]))
 
 (define (submit+review-study #:submission-study submission-study
                              #:review-study review-study
@@ -747,13 +747,15 @@
 ;;; SUBMIT+REVIEW-RESEARCH-IDEAS
 
 (define (submit-single-research-idea)
+  (define i (add1 (length (get 'submissions '()))))
+  (define n (get 'n))
   (page
    (haml
     (.container
      (formular
       (haml
        (:div
-        (#:research-idea (input-textarea "Provide a research idea"))
+        (#:research-idea (input-textarea (format "Provide research idea ~a of ~a" i n)))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:research-idea idea)
         (put 'submissions
