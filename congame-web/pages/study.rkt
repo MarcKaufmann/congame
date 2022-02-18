@@ -14,9 +14,10 @@
          congame-web/components/user)
 
 (provide
+ enroll
+ home-page
  study-instances-page
- study-page
- home-page)
+ study-page)
 
 (define ((study-instances-page db) _req)
   (cond [(user-enrolled-via-identity? (current-user))
@@ -70,12 +71,15 @@
        "Enroll"))))))
 
 ;; TODO: Add error
-(define ((enroll db i) req)
+(define ((enroll db i #:protect? [protect? #t]) req)
   (define uid (user-id (current-user)))
+  (displayln (format "UID: ~a" uid))
   (define iid (study-instance-id i))
   (define (do-enroll)
     (enroll-participant! db uid iid)
-    (redirect/get/forget/protect)
+    (if protect?
+        (redirect/get/forget/protect)
+        (redirect/get/forget))
     (redirect-to (reverse-uri 'study-page (study-instance-slug i))))
   (cond
     [(or (participant-enrolled? db uid iid)

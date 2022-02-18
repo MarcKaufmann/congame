@@ -12,7 +12,8 @@
          congame-web/components/auth
          "../components/tag.rkt"
          congame-web/components/user
-         "render.rkt")
+         "render.rkt"
+         "study.rkt")
 
 (provide
  studies
@@ -77,11 +78,11 @@
    (lambda (embed/url)
      (response/jsexpr
       (hasheq 'target-path (embed/url
-                            (lambda (_req)
+                            (lambda (req)
                               (auth-manager-login!/nopass auth the-user)
-                              (enroll-participant! db (user-id the-user) instance-id)
-                              (redirect/get/forget)
-                              (redirect-to (reverse-uri 'study-page (study-instance-slug the-instance))))))))))
+                              (displayln (format "current-user: ~a; the-user: ~a" (current-user) the-user ))
+                              (parameterize ([current-user the-user])
+                                ((enroll db the-instance #:protect? #f) req)))))))))
 
 (define (get-instances-json-by-study db study-id)
   (for/list ([i (in-list (list-study-instances db study-id))])
