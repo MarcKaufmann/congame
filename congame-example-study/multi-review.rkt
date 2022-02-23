@@ -18,7 +18,8 @@
          sentry
          threading
          web-server/http
-         "mail.rkt")
+         "mail.rkt"
+         "tools.rkt")
 
 ;; FIXME: refactor submit+review-study once we have used it some -- there is
 ;; quite some duplication of code across the main and the admin studies,
@@ -611,12 +612,6 @@
 
 ;; SUBMIT+REVIEW-PDF
 
-(define (valid-pdf? b)
-  (if  (and (binding:file? b)
-            (regexp-match? #rx#"^%PDF-" (binding:file-content b)))
-       (ok b)
-       (err "the file must be a PDF")))
-
 ; FIXME: Can be refactored modulo formular
 (define (submit-single-pdf-submission)
   (page
@@ -625,7 +620,7 @@
      (formular
       (haml
        (:div
-        (#:submission (input-file "Please provide a study submission" #:validators (list valid-pdf?)))
+        (#:submission (input-file "Please provide your pdf submission" #:validators (list valid-pdf?)))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:submission submission)
         (put 'submissions
@@ -636,20 +631,6 @@
 
 (define (submit-pdf-submissions [n 2])
   (submit-submissions submit-single-pdf-submission n #:study-name "submit-pdf-submission"))
-
-(define (file-download/link submission-file text)
-  (haml
-   (:a
-    ([:href ((current-embed/url)
-             (lambda (_req)
-               (response/output
-                #:headers (list
-                           (or (headers-assq* #"content-type" (binding:file-headers submission-file))
-                               (make-header #"content-type" "application/octet-stream"))
-                           (make-header #"content-disposition" (string->bytes/utf-8 (format "attachment; filename=\"~a\"" (binding:file-filename submission-file)))))
-                (lambda (out)
-                  (write-bytes (binding:file-content submission-file) out)))))])
-    text)))
 
 (define (review-next-pdf-handler)
   (define r (car (get 'current-submissions)))
