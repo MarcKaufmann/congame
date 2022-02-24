@@ -84,6 +84,7 @@ log "Restarting the container..."
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   mkdir -p "$IDENTITY_RUN_PATH"
   mkdir -p "$WEB_RUN_PATH"
+  mkdir -p "$WEB_RUN_PATH/uploads"
 EOF
 
 scp -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$IDENTITY_ENVIRONMENT_PATH" "$TARGET_HOST:$IDENTITY_RUN_PATH/env"
