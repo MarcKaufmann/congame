@@ -71,15 +71,12 @@
        "Enroll"))))))
 
 ;; TODO: Add error
-(define ((enroll db i #:protect? [protect? #t]) req)
+(define ((enroll db i) req)
   (define uid (user-id (current-user)))
-  (displayln (format "UID: ~a" uid))
   (define iid (study-instance-id i))
   (define (do-enroll)
     (enroll-participant! db uid iid)
-    (if protect?
-        (redirect/get/forget/protect)
-        (redirect/get/forget))
+    (redirect/get/forget/protect)
     (redirect-to (reverse-uri 'study-page (study-instance-slug i))))
   (cond
     [(or (participant-enrolled? db uid iid)
