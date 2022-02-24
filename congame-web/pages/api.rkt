@@ -3,6 +3,7 @@
 (require congame/components/study
          congame/components/export
          json
+         koyo/continuation
          koyo/database
          koyo/url
          racket/contract
@@ -78,11 +79,16 @@
    (lambda (embed/url)
      (response/jsexpr
       (hasheq 'target-path (embed/url
-                            (lambda (req)
-                              (auth-manager-login!/nopass auth the-user)
-                              (displayln (format "current-user: ~a; the-user: ~a" (current-user) the-user ))
-                              (parameterize ([current-user the-user])
-                                ((enroll db the-instance #:protect? #f) req)))))))))
+                            (lambda (_req)
+                              ;; FIXME: use a proper route instead of the wrap-protect hack.
+                              (define req-to-protect (redirect/get/forget))
+                              (define protected-handler
+                                (wrap-protect-continuations
+                                 (lambda (req)
+                                   (auth-manager-login!/nopass auth the-user)
+                                   (parameterize ([current-user the-user])
+                                     ((enroll db the-instance) req)))))
+                              (protected-handler req-to-protect))))))))
 
 (define (get-instances-json-by-study db study-id)
   (for/list ([i (in-list (list-study-instances db study-id))])
