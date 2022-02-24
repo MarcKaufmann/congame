@@ -80,7 +80,6 @@
      (response/jsexpr
       (hasheq 'target-path (embed/url
                             (lambda (_req)
-                              ;; FIXME: use a proper route instead of the wrap-protect hack.
                               (define req-to-protect (redirect/get/forget))
                               (define protected-handler
                                 (wrap-protect-continuations
