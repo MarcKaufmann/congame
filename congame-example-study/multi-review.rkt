@@ -625,13 +625,11 @@
         (#:submission (input-file "Please provide your pdf submission" #:validators (list valid-pdf?)))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:submission submission)
-        (define upload-filename (upload:save-file! submission))
-        (define original-filename (binding:file-filename submission))
+        (define submission-upload
+          (upload-file! submission))
         (put 'submissions
              (cons (hash 'submission-id (get 'next-submission-id 0)
-                         'content-type "application/pdf"
-                         'upload-filename upload-filename
-                         'original-filename (bytes->string/utf-8 original-filename))
+                         'submission submission-upload)
                    (get 'submissions)))
         (put 'next-submission-id (add1 (get 'next-submission-id 0)))))))))
 
@@ -641,19 +639,14 @@
 (define (review-next-pdf-handler)
   (define r (car (get 'current-submissions)))
   (match-define (hash-table
-                 ('content-type submission-content-type)
-                 ('upload-filename submission-upload-filename)
-                 ('original-filename submission-filename)
+                 ('submission submission-upload)
                  ('submission-id submission-id))
     r)
   (page
    (haml
     (.container
      (:h1 (format "Review this PDF ~a (of ~a) for this submitter" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
-     (:p.submission (file-download/link
-                     #:content-type submission-content-type
-                     #:filename submission-filename
-                     submission-upload-filename "Download"))
+     (:p.submission (file-download/link submission-upload "Download"))
      (:div
       (:h3 "Rubric for PDF")
       (formular
@@ -681,9 +674,7 @@
 (define (review-next-review-pdfs)
   (define r (car (get 'current-submissions)))
   (match-define (hash-table
-                 ('content-type submission-content-type)
-                 ('upload-filename submission-upload-filename)
-                 ('original-filename submission-filename)
+                 ('submission submission-upload)
                  ('reviewer-id reviewer-id)
                  ('submitter-id submitter-id))
     r)
@@ -696,10 +687,7 @@
       (:h3 "Original Submission and Review")
       (:p (:strong "submitter id: ") (~a submitter-id))
       (:p (:strong "Submission: ")
-          (file-download/link
-           #:content-type submission-content-type
-           #:filename submission-filename
-           submission-upload-filename "Download File")))
+          (file-download/link submission-upload "Download File")))
 
      (formular
       (haml

@@ -1,9 +1,11 @@
 #lang racket/base
 
-(require congame/components/study
-         congame/components/formular
+(require congame/components/formular
+         congame/components/study
          koyo/haml
          racket/format
+         threading
+         web-server/http
          "tools.rkt")
 
 (provide
@@ -29,12 +31,13 @@
          (error "No such phase")]))
 
 (define (submit)
-  (define instructions-file (get/instance 'instructions-file))
+  (define instructions-upload
+    (get/instance 'instructions-file))
   (page
    (haml
     (.container
      (:h3 "Instructions")
-     (file-download/link instructions-file "Instructions")
+     (file-download/link instructions-upload "Instructions")
 
      (:h3 "Submit your pdf")
      (formular
@@ -43,12 +46,14 @@
         (#:submission (input-file "Please provide your pdf submission" #:validators (list valid-pdf?)))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:submission submission)
-        (put 'submission submission)
+        (define upload
+          (upload-file! submission))
+        (put 'submission upload)
         (put/instance
          'submissions
          (hash-set (get/instance 'submissions (hash))
                    (current-participant-id)
-                   submission))))))))
+                   upload))))))))
 
 (define (final-page)
   (define pid (current-participant-id))
@@ -91,8 +96,10 @@
         (#:instructions-file (input-file "Provide the pdf with instructions for the students"))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:instructions-file instructions-file)
-        (put 'instructions-file instructions-file)
-        (put/instance 'instructions-file instructions-file)
+        (define uploaded-instructions
+          (upload-file! instructions-file))
+        (put 'instructions-file uploaded-instructions)
+        (put/instance 'instructions-file uploaded-instructions)
         (put/instance 'phase 'submission)))))))
 
 (define (admin)
@@ -183,9 +190,11 @@
         (#:graded-pdf (input-file "Provide graded PDF" #:validators (list valid-pdf?)))
         (:button.button.next-button ((:type "submit")) "Submit")))
       (lambda (#:graded-pdf graded-pdf)
+        (define uploaded-pdf
+          (upload-file! graded-pdf))
         (put/instance
          'graded-pdfs
-         (hash-set graded-pdfs pid graded-pdf))))))))
+         (hash-set graded-pdfs pid uploaded-pdf))))))))
 
 (define (admin-grader-email)
   (page
