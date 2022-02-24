@@ -61,17 +61,18 @@
     (hash-ref (get/instance 'scores (hash)) pid #f))
   (define graded-pdf
     (hash-ref (get/instance 'graded-pdfs (hash)) pid #f))
+  (define f (get 'submission))
   (page
    (haml
     (.container
      (:h1 "Submission Completed")
-     (:p "We have received your submission.")
+     (:p "We have have received " (file-download/link f "your submission."))
      (:h3 "Score and Grading")
      (cond [(and score graded-pdf)
             (haml
              (:div
               (:ul
-               (:li "Score: " (~a score))
+               (:li "Score out of: " (~a score))
                (:li (file-download/link graded-pdf "Comments/Marking")))))]
            [else
             (haml

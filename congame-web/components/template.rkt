@@ -58,6 +58,12 @@
       ([:crossorigin "anonymous"]
        [:src "https://js.sentry-cdn.com/fb877e2559424bf292eeb8331b8479b9.min.js"]))
      (:script
+      ([:src "https://polyfill.io/v3/polyfill.min.js?features=es6"]))
+     (:script
+      ([:id "MathJax-script"]
+       [:async ""]
+       [:src "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"]) )
+     (:script
       ([:src (static-uri "vendor/unpoly.min.js")]))
      (:script
       ([:src (static-uri "js/app.js")])))
