@@ -48,4 +48,5 @@
    [symbol?       (define ->jsexpr symbol->string)]
    [list?         (define ->jsexpr list->jsexpr)]
    [hash?         (define ->jsexpr hash->jsexpr)]
+   [bytes?        (define ->jsexpr bytes->string/utf-8)]
    [binding:file? (define ->jsexpr binding:file->jsexpr)]))
