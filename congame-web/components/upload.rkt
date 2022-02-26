@@ -33,7 +33,7 @@
   (begin0 filename
     (call-with-output-file filepath
       (lambda (out)
-        (copy-port (binding:file/port-in b) out)))))
+        (write-bytes (binding:file-content b) out)))))
 
 (define/contract (call-with-uploaded-file filename proc)
   (-> path-string? (-> input-port? any) any)
