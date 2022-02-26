@@ -36,6 +36,7 @@
 (provide
  submit+review-pdf
  submit+review-pdf/intro-R
+ submit+review-pdf/beliefs
  submit+review-research-ideas)
 
 ;; FIXME: the worst-case complexity here is really bad.  There must be
@@ -621,10 +622,11 @@
 
 ;; SUBMIT+REVIEW-PDF
 
-(define (submit-single-pdf-submission)
+(define ((submit-single-pdf-submission #:instructions [instructions #f]))
   (page
    (haml
     (.container
+     (if instructions instructions (haml (:div "")))
      (formular
       (haml
        (:div
@@ -639,8 +641,11 @@
                    (get 'submissions)))
         (put 'next-submission-id (add1 (get 'next-submission-id 0)))))))))
 
-(define (submit-pdf-submissions [n 2])
-  (submit-submissions submit-single-pdf-submission n #:study-name "submit-pdf-submission"))
+(define (submit-pdf-submissions [n 2] #:instructions [instructions #f])
+  (submit-submissions
+   (submit-single-pdf-submission #:instructions instructions)
+   n
+   #:study-name "submit-pdf-submission"))
 
 (define (review-next-pdf-handler)
   (define r (car (get 'current-submissions)))
@@ -856,7 +861,7 @@
    review-pdf
    review-reviews-pdf))
 
-(define (review-next-review/intro-R)
+(define ((review-next-review display-review))
   (define r (car (get 'current-submissions)))
   (match-define (hash-table
                  ('submission submission-upload)
@@ -873,7 +878,7 @@
       (:p (file-download/link (hash-ref r 'submission) "Submitted file")))
 
      (:h3 "Review")
-     (display-review/intro-R r)
+     (display-review r)
 
      (:h3 "Feedback on Review")
      (formular
@@ -895,7 +900,7 @@
               (get 'reviews '())))))))))
 
 (define (review-reviews/intro-R)
-  (review-submissions review-next-review/intro-R))
+  (review-submissions (review-next-review display-review/intro-R)))
 
 (define (pdf-admin-interface/intro-R)
   (submissions-admin-interface
@@ -916,6 +921,140 @@
                        #:submission-key 'submissions
                        #:admin-interface (pdf-admin-interface/intro-R)
                        #:final-page final-page/intro-R))
+
+(define (display-rubric/description)
+  (haml
+   (:div
+    (:h3 "Rubric for Research Proposal")
+    (:p "The research proposal will be evaluated along the following rouch guidelines. Notice that both a focus on research or on policy are acceptable. A research focus suggests a cleaner, narrower question that can potentially be answered well, but will not necessarily have direct policy implications. Causality, prediction, and understanding play a larger role. A policy focus suggests a more relevant, important, and sizeable effect, but is not necessarily as clean on causality, mechanism, and understanding. The potential impact on policy plays a larger role.")
+    (:ul
+     (:li "What is the research / policy question? (1-2 sentences)")
+     (:li "What (if any) are some relevant papers?")
+     (:li "What domain does this apply to? What is a concrete (ideally real-life) example that fits the description? (2-4 sentences)")
+     (:li "Describe what you plan on doing. For laboratory or field experiments, explain how you think you could identify the main parameter (and what that parameter is!); for theory, explain the simplest interesting setting you can think of working out.")
+     (:li "Why do you care (and why should other economists care)? (2 sentences. Don’t bullshit, say why you really care, not what you think readers want to hear.)")))))
+
+(define (review-pdf-handler/beliefs)
+  (define r (car (get 'current-submissions)))
+  (match-define (hash-table
+                 ('submission submission-upload)
+                 ('submission-id submission-id))
+    r)
+  (page
+   (haml
+    (.container
+     (:h1 "Review this PDF")
+     (:p.submission (file-download/link submission-upload "Download submission"))
+     (:div
+      (display-rubric/description)
+
+      (formular
+       (haml
+        (:div
+         (#:one-page-limit (radios
+                            "Does the proposal stay within the 1-page limit without resorting to tiny fonts or similar tricks?"
+                            '(("yes" . "Yes")
+                              ("no"  . "No"))))
+         (#:how-clear-question (input-number "How clearly is the research / policy question articulated from 0 (least clear) to 2 (most clear)?"
+                                             #:min 0 #:max 2))
+         (#:quality (input-number "What overall score between 0 (lowest) and 7 (highest) would you give this proposal?"
+                                  #:min 0 #:max 7))
+         (#:feedback (input-textarea "Provide comments for the overall score and give at least one constructive item of feedback: a suggestion how to improve one particular aspect of the proposal."))
+         (:button.button.next-button ((:type "submit")) "Submit")))
+       (lambda (#:one-page-limit one-page-limit
+                #:how-clear-question how-clear-question
+                #:quality quality
+                #:feedback feedback)
+         (define op (string=? "yes" one-page-limit))
+         (put 'reviews
+              (cons
+               (~> r
+                   (hash-set 'submitter-id (get 'current-assignment))
+                   (hash-set 'reviewer-id (current-participant-id))
+                   (hash-set 'one-page-limit op)
+                   (hash-set 'how-clear-question how-clear-question)
+                   (hash-set 'quality quality)
+                   (hash-set 'feedback feedback)
+                   (hash-set 'score (+ (if op 1 0) how-clear-question quality)))
+               (get 'reviews '()))))))))))
+
+(define (display-review/beliefs r)
+
+  (define rid (hash-ref r 'reviewer-id))
+  (haml
+   (:div
+    (:h3 (format "Score and Feedback by ~a ~a: ~a"
+                 rid
+                 (if (equal? (current-participant-id) rid)
+                     "(your self review)"
+                     "")
+                 (hash-ref r 'score)))
+    (:ul
+     ,@(for/list ([answer `((one-page-limit "One Page Limit")
+                            (how-clear-question "How clear was the research / policy question")
+                            (quality "What was the overall quality of the proposal? (out of 7)")
+                            (feedback "Feedback"))])
+         (haml
+          (haml
+           (:li
+            (~a (second answer)) ":" (~a (hash-ref r (first answer)))))))))))
+
+(define (final-page/beliefs)
+
+  (define participant-reviews (get-reviews-of-participant))
+
+  (define total-score
+    (for/sum ([r participant-reviews])
+      (hash-ref r 'score)))
+
+  (define n-other-reviewers-total (get/instance 'number-of-other-reviewers))
+  (define n-other-reviewers-received
+    (~> participant-reviews
+        (map (λ (r)
+               (hash-ref r 'reviewer-id))
+             _)
+        remove-duplicates
+        (remove (current-participant-id) _)
+        length))
+  (define n-other-reviewers-pending
+    (- n-other-reviewers-total n-other-reviewers-received))
+
+  (page
+   (haml
+    (.container
+     (:h1 "You are done")
+
+     (:h4 (format "Total Score: ~a (~a reviews from others received, ~a reviews pending)"
+                  total-score
+                  n-other-reviewers-received
+                  n-other-reviewers-pending))
+     (:h3 "Scores and Feedback")
+
+     ,@(for/list ([r participant-reviews])
+         (display-review/beliefs r))))))
+
+(define (review-reviews/beliefs)
+  (review-submissions (review-next-review display-review/beliefs)))
+
+(define (pdf-admin-interface/beliefs)
+  (submissions-admin-interface
+   pdf-admin-interface-handler
+   "PDF reivew for Research Proposal"
+   review-pdf/beliefs
+   review-reviews/beliefs))
+
+(define (review-pdf/beliefs)
+  (review-submissions review-pdf-handler/beliefs))
+
+(define instructions/beliefs
+  (display-rubric/description))
+
+(define submit+review-pdf/beliefs
+  (submit+review-study #:submission-study (submit-pdf-submissions 1 #:instructions instructions/beliefs)
+                       #:review-study (review-pdf/beliefs)
+                       #:submission-key 'submissions
+                       #:final-page final-page/beliefs
+                       #:admin-interface (pdf-admin-interface/beliefs)))
 
 ;;; SUBMIT+REVIEW-RESEARCH-IDEAS
 
