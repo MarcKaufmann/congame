@@ -114,7 +114,7 @@
 
   (define all-answers
     (parameterize ([current-study-stack '(*root*)])
-      (get/instance 'quiz-answers '())))
+      (get/instance 'quiz-answers (hash))))
 
   (define (all-answers-for key)
     (for/hash ([(id answers) (in-hash all-answers)]
@@ -183,7 +183,8 @@
      (:h1 "Quiz Admin")
      (display-table 'comparative-statics)
      (display-table 'first-wft)
-     ))))
+     (display-table 'different-patience)
+     (display-table 'information-rent)))))
 
 (define quiz-admin/study
   (make-study
