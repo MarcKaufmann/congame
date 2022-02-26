@@ -690,10 +690,10 @@
          (#:genuine-attempt
           (radios
            "Is this assignment a genuine attempt?"
-           '(("0" . "No assignment submitted, or it contains barely anything different from the default template provided in class.")
-             ("1" . "Half or more of the exercises were not attempted.")
-             ("2" . "75% of all parts were attempted in a meaningful way.")
-             ("3" . "All parts were attempted in a meaningful way."))))
+           '(("0" . "(0 points) No assignment submitted, or it contains barely anything different from the default template provided in class.")
+             ("1" . "(1 point) Half or more of the exercises were not attempted.")
+             ("2" . "(2 points) 75% of all parts were attempted in a meaningful way.")
+             ("3" . "(3 points) All parts were attempted in a meaningful way."))))
 
          (#:genuine-attempt-explanation
           (input-textarea "In one sentence, explain your score whether this submission is a genuine attempt. E.g. \"While all parts were attempted, half of them do little more than restate the exercise and do not solve it.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"You should say why you chose the particular functions you used. In exercise 2, for example, you use both `geom_col` and `geom_bar` without even briefly saying what each of them does."))
@@ -701,10 +701,10 @@
          (#:where-got-stuck
           (radios
            "For incomplete problems, did the person highlight clearly why they got stuck?"
-           '(("0" . "There is no code example included for any of the problems that occurred, no explanation given for why something wasn't achieved, no attempt at resolving issues that the person encountered.")
-             ("1" . "Whenever a problem was encountered, the author simply states that they couldn't get any further and didn't know how to solve it. They didn't post questions about these issues on Discourse (or they did so less than 24 hours before the deadline).")
-             ("2" . "For most problems, the person states clearly what part of the code they think is the issue, and describe it well enough that you can understand what went wrong. Most of the time, you can replicate the problem.")
-             ("3" . "Either the person never got stuck. Or for every problem encountered, the person clearly states where things went wrong, what they tried (google searches, Slack questions, R help). You can see what went wrong, even if the diagnosis of the problem may itself be wrong. "))))
+           '(("0" . "(0 points) There is no code example included for any of the problems that occurred, no explanation given for why something wasn't achieved, no attempt at resolving issues that the person encountered.")
+             ("1" . "(1 point) Whenever a problem was encountered, the author simply states that they couldn't get any further and didn't know how to solve it. They didn't post questions about these issues on Discourse (or they did so less than 24 hours before the deadline).")
+             ("2" . "(2 points) For most problems, the person states clearly what part of the code they think is the issue, and describe it well enough that you can understand what went wrong. Most of the time, you can replicate the problem.")
+             ("3" . "(3 points) Either the person never got stuck. Or for every problem encountered, the person clearly states where things went wrong, what they tried (google searches, Slack questions, R help). You can see what went wrong, even if the diagnosis of the problem may itself be wrong. "))))
 
          (#:where-got-stuck-explanation
           (input-textarea "In one sentence, explain your score on incomplete problems and how clearly the person highlighted where they got stuck. E.g. \"Whenever you got stuck, you simply seem to have stopped without saying why you stopped or what you tried yet failed to work.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"For exercise 3, it seems that you simply mistyped the variable name (it is missing an underscore '_'). If so, you should have said that you ran the code and what error you hit.\""))
@@ -712,10 +712,10 @@
          (#:clear-presentation
           (radios
            "How clear is the writing and presentation? Take into account that an incorrect answer is likely to be less clear and more confusing, but try not to penalize again for this. Thus if the person writes clearly what they did (even if wrong), you should give high score."
-           '(("0" . "The document is an incomprehensible jumble of things. It is hard to know which graph belongs to what, the goal and intent of the code and graphs is not explained.")
-             ("1" . "While code and graphs are described, it is quite hard for you to follow what is going on without putting in some effort.")
-             ("2" . "Most code and graphs are well described, they are well referenced, and you are rarely confused.")
-             ("3" . "The document is clearly written, graphs and code well described, and the document is as easy to understand as the material allows."))))
+           '(("0" . "(0 points) The document is an incomprehensible jumble of things. It is hard to know which graph belongs to what, the goal and intent of the code and graphs is not explained.")
+             ("1" . "(1 point) While code and graphs are described, it is quite hard for you to follow what is going on without putting in some effort.")
+             ("2" . "(2 points) Most code and graphs are well described, they are well referenced, and you are rarely confused.")
+             ("3" . "(3 points) The document is clearly written, graphs and code well described, and the document is as easy to understand as the material allows."))))
 
          (#:clear-presentation-explanation
           (input-textarea "Explain your score on presentation in one sentence (e.g. \"I had to spend a lot of time to figure out which graph/which chunk of code belonged to which exercise\"). Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"For exercise 4, I suggest to split the code across several lines and to add a comment why you chose the method 'gam' rather than 'lm'.\" No more than 2 sentences."))
