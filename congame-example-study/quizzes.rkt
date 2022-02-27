@@ -102,7 +102,12 @@
                  (:h4 "Suggested Answer")
                  (answer-haml-for key)))
                (haml
-                (:div ""))))))))))
+                (:div
+                 (button
+                  (λ ()
+                    (put 'question-to-change (list (list key (quiz-question-text answer) ""))))
+                  "Change your Answer"
+                  #:to-step-id 'change-answer)))))))))))
 
 (define (question-for key)
   (cdr (findf (λ (q)
@@ -216,8 +221,11 @@
       (car remaining-questions))
     (define maybe-answer
       (parameterize ([current-study-stack '(*root*)])
-        (quiz-question-answer
-         (hash-ref (get 'quiz-answers (hash)) next-key #f))))
+        (define answer?
+          (hash-ref (get 'quiz-answers (hash)) next-key #f))
+        (if answer?
+            (quiz-question-answer answer?)
+            #f)))
     (page
      (haml
       (.container
@@ -258,27 +266,6 @@
    (list
     (next-question-step))))
 
-(define (confirm-quiz)
-  (page
-   (haml
-    (.container
-     (:h3 "Your answers so far")
-     ,@(for/list ([(key answer) (in-hash (get 'quiz-answers))])
-         (haml
-          (:div.quiz
-           (:ul
-            (:li (:strong "Question: ") (quiz-question-text answer))
-            (:li (:strong "Your Answer: ") (quiz-question-answer answer)))
-           (button
-            (λ ()
-              (put 'question-to-change (list (list key (quiz-question-text answer) ""))))
-            "Change your Answer"
-            #:to-step-id 'change-answer))))
-     (:p "If you are happy with your answers, submit the quiz.")
-     (button
-      void
-      "Submit the Quiz")))))
-
 (define (make-quiz-study questions)
   (make-study
    "quiz-study"
@@ -297,10 +284,6 @@
      quiz-study
      #:provide-bindings '((quiz-answers quiz-answers))
      #:require-bindings '((quiz-questions quiz-questions))
-     (λ () 'confirm-quiz))
-    (make-step
-     'confirm-quiz
-     confirm-quiz
      (λ ()
        (put/instance
         'quiz-answers
@@ -318,10 +301,16 @@
        (displayln (format "QUESTION TO CHANGE: ~a" (get 'changed-quiz-answers)))
        (define new-answers
          (for/fold ([new-quiz-answers (get 'quiz-answers)])
-                 ([(key answer) (in-hash (get 'changed-quiz-answers))])
+                   ([(key answer) (in-hash (get 'changed-quiz-answers))])
            (hash-set new-quiz-answers key answer)))
        (put 'quiz-answers new-answers)
-       'confirm-quiz))
+       (put/instance
+        'quiz-answers
+        (hash-set
+         (get/instance 'quiz-answers (hash))
+         (current-participant-id)
+         (get 'quiz-answers)))
+       'final-page))
     (make-step 'final-page final-page)
     (make-step/study
      'quiz-admin
