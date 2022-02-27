@@ -203,7 +203,14 @@
         (parameterize ([current-study-stack '(*root*)])
           (put/instance 'phase-show-answers #t)))
       "Release Answers to Participants"
-      #:to-step-id 'admin)))))
+      #:to-step-id 'admin)
+     (button
+      (λ ()
+        (parameterize ([current-study-stack '(*root*)])
+          (put/instance 'phase-show-answers #f)))
+      "Hide Answers from Participants"
+      #:to-step-id 'admin)
+     ))))
 
 (define quiz-admin/study
   (make-study
