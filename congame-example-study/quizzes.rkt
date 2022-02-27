@@ -86,7 +86,7 @@
      (:h3 (format "Total Score: ~a" total-score))
      (:p "Your score will be updated as your questions are graded")
 
-     (:h3 "Answers")
+     (:h3 "Overview")
      ,@(for/list ([(key answer) (in-hash (hash-ref (get/instance 'quiz-answers) (current-participant-id)))])
          (define q-score
            (quiz-question-score answer))
@@ -94,9 +94,15 @@
           (:div.quiz
            (:ul
             (:li (:strong "Question: ") (quiz-question-text answer))
-            (:li (:strong "Your Score: ") (if q-score (~a q-score) "Not graded)")))
-           (:h4 "Suggested Answer")
-           (answer-haml-for key))))))))
+            (:li (:strong "Your Score: ") (if q-score (~a q-score) "(Not graded)"))
+            (:li (:strong "Your Answer: ") (quiz-question-answer answer)))
+           (if (get/instance 'phase-show-answers #f)
+               (haml
+                (:div
+                 (:h4 "Suggested Answer")
+                 (answer-haml-for key)))
+               (haml
+                (:div ""))))))))))
 
 (define (question-for key)
   (cdr (findf (λ (q)
@@ -184,7 +190,15 @@
      (display-table 'comparative-statics)
      (display-table 'first-wft)
      (display-table 'different-patience)
-     (display-table 'information-rent)))))
+     (display-table 'information-rent)
+
+     (:h3 "Actions")
+     (button
+      (λ ()
+        (parameterize ([current-study-stack '(*root*)])
+          (put/instance 'phase-show-answers #t)))
+      "Release Answers to Participants"
+      #:to-step-id 'admin)))))
 
 (define quiz-admin/study
   (make-study
@@ -197,12 +211,24 @@
 (define (next-question-step)
   (define (handler)
     (define remaining-questions (get 'quiz-questions))
+    (displayln (car remaining-questions))
     (match-define (list next-key q-text _)
       (car remaining-questions))
+    (define maybe-answer
+      (parameterize ([current-study-stack '(*root*)])
+        (quiz-question-answer
+         (hash-ref (get 'quiz-answers (hash)) next-key #f))))
     (page
      (haml
       (.container
        (:h3 "Question")
+       (if maybe-answer
+           (haml
+            (:div
+             (:p (:strong "Your previous answer: ") maybe-answer)))
+           (haml
+            (:div
+             "")))
        (formular
         (haml
          (:div
@@ -232,6 +258,27 @@
    (list
     (next-question-step))))
 
+(define (confirm-quiz)
+  (page
+   (haml
+    (.container
+     (:h3 "Your answers so far")
+     ,@(for/list ([(key answer) (in-hash (get 'quiz-answers))])
+         (haml
+          (:div.quiz
+           (:ul
+            (:li (:strong "Question: ") (quiz-question-text answer))
+            (:li (:strong "Your Answer: ") (quiz-question-answer answer)))
+           (button
+            (λ ()
+              (put 'question-to-change (list (list key (quiz-question-text answer) ""))))
+            "Change your Answer"
+            #:to-step-id 'change-answer))))
+     (:p "If you are happy with your answers, submit the quiz.")
+     (button
+      void
+      "Submit the Quiz")))))
+
 (define (make-quiz-study questions)
   (make-study
    "quiz-study"
@@ -250,6 +297,10 @@
      quiz-study
      #:provide-bindings '((quiz-answers quiz-answers))
      #:require-bindings '((quiz-questions quiz-questions))
+     (λ () 'confirm-quiz))
+    (make-step
+     'confirm-quiz
+     confirm-quiz
      (λ ()
        (put/instance
         'quiz-answers
@@ -258,6 +309,19 @@
          (current-participant-id)
          (get 'quiz-answers)))
        'final-page))
+    (make-step/study
+     'change-answer
+     quiz-study
+     #:provide-bindings '((changed-quiz-answers quiz-answers))
+     #:require-bindings '((quiz-questions question-to-change))
+     (λ ()
+       (displayln (format "QUESTION TO CHANGE: ~a" (get 'changed-quiz-answers)))
+       (define new-answers
+         (for/fold ([new-quiz-answers (get 'quiz-answers)])
+                 ([(key answer) (in-hash (get 'changed-quiz-answers))])
+           (hash-set new-quiz-answers key answer)))
+       (put 'quiz-answers new-answers)
+       'confirm-quiz))
     (make-step 'final-page final-page)
     (make-step/study
      'quiz-admin
