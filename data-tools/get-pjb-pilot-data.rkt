@@ -45,9 +45,9 @@
     (last (hash-ref p 'vars)) 'id)
    "completion-code"))
 
-(define (get-participants-data instance-id)
+(define (get-participants-data study-id instance-id)
   (define instance-data
-    (let ([res (get-instance-participant-data 1 instance-id)])
+    (let ([res (get-instance-participant-data study-id instance-id)])
       (and (equal? #"HTTP/1.1 200 OK" (response-status-line res))
            (response-json res))))
   (for/list ([p (hash-ref instance-data 'participants)])
@@ -117,8 +117,8 @@
               (not (empty? k)))
          ((get-participant-data ((get-participant-data p) (car k))) (cdr k))]))
 
-(define (get-clean-data instance-id)
-  (for/list ([p (get-participants-data instance-id)])
+(define (get-clean-data study-id instance-id)
+  (for/list ([p (get-participants-data study-id instance-id)])
     (map (get-participant-data p) vars-to-keep)))
 
 
@@ -131,10 +131,10 @@
         [(and (list? a) (empty? a)) "NA"]
         [else (~a a)]))
 
-(define (get-all-instances-data)
+(define (get-all-instances-data study-id)
   (for/fold ([all-data '()])
             ([iid pjb-pilot-instance-ids])
-    (append (get-clean-data iid) all-data)))
+    (append (get-clean-data study-id iid) all-data)))
 
 (define/contract (dash->underscore s)
   (-> string? string?)
