@@ -7,12 +7,15 @@
          racket/list
          racket/string)
 
+;; FIXME: Should this functionality not be broken in its own package that can be used outside of congame?
 ;; FIXME: We fail to set some information on the participant for export that we need, such as the status
 ;; For now, assume that the steps are in order (FIXME: check this -- is there ambiguity with respect to first-put and last-put?) and check if final step has 'id "completion-code"
 ;; FIXME: Get the anonymized username for debugging
 ;; FIXME: csv output is not reliable, since some feels may be merged when not escaping characters properly, which is error prone. Move to exporting to a sqlite DB in long run.
 
 (provide
+ current-api-url
+ get-instance-participant-data
  get-all-instances-data
  get-and-write-data
  write-data)
