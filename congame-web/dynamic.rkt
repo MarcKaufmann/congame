@@ -63,7 +63,7 @@
                                       #:port config:http-port
                                       #:limits (make-safety-limits
                                                 #:max-form-data-file-length config:http-max-file-size
-                                                #:form-data-file-memory-threshold (* 1 1024 1024)))
+                                                #:form-data-file-memory-threshold (* 25 1024 1024)))
                  app-dispatcher)]
   [sessions (make-session-manager-factory #:cookie-name config:session-cookie-name
                                           #:cookie-secure? #f
