@@ -1,11 +1,4 @@
-FROM congame-source:latest AS build
+FROM ghcr.io/marckaufmann/congame-deploy:latest
 
-WORKDIR /src/congame
-RUN raco exe -o smtp-proxy congame-smtp-proxy/main.rkt
-RUN raco dist dist smtp-proxy
-
-
-FROM ghcr.io/marckaufmann/congame-deploy:latest AS deploy
-
-COPY --from=build /src/congame/dist /opt/congame
+COPY build/smtp-proxy /opt/congame
 ENTRYPOINT ["dumb-init", "/opt/congame/bin/smtp-proxy"]
