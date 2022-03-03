@@ -134,7 +134,11 @@
        (haml
         (.container
          (:h1 "Waiting for Review Phase to Start")
-         (:p "You have reached the end of the submission phase. Come back once the review phase has started."))))))
+         (:p "You have reached the end of the submission phase. Come back once the review phase has started.")
+         (button
+          void
+          "Replace your submissions"
+          #:to-step-id 'submit))))))
 
 (define/contract ((final compute-scores final-page))
   ; FIXME: compute-score should return a hash of submission -> score. This should be checked upon creation of the study with a helpful error message.
