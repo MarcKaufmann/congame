@@ -73,4 +73,5 @@
 
 (module+ test
   (require rackunit/text-ui)
-  (run-tests bot-tests))
+  (unless (getenv "GITHUB_WORKSPACE")
+    (run-tests bot-tests)))
