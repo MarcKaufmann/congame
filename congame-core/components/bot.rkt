@@ -111,6 +111,7 @@
          void?)
     (call-with-marionette/browser/page!
      #:headless? headless?
+     #:timeout 30
      #:port port
      (lambda (p)
        (parameterize ([current-page p]
