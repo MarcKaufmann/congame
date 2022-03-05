@@ -12,6 +12,7 @@
 
 (provide
  info-econ-quiz1
+ info-econ-quiz2
  #;(struct-out quiz-question)
  )
 
@@ -123,6 +124,10 @@
 
 (define (quiz-admin-handler)
 
+  (define quiz-question-names
+    (for/list ([q (get 'quiz-questions)])
+      (car q)))
+
   (define all-answers
     (parameterize ([current-study-stack '(*root*)])
       (get/instance 'quiz-answers (hash))))
@@ -192,10 +197,8 @@
    (haml
     (.container
      (:h1 "Quiz Admin")
-     (display-table 'comparative-statics)
-     (display-table 'first-wft)
-     (display-table 'different-patience)
-     (display-table 'information-rent)
+     ,@(for/list ([n quiz-question-names])
+         (display-table n))
 
      (:h3 "Actions")
      (button
@@ -358,3 +361,49 @@
 
 (define info-econ-quiz1
   (make-quiz-study info-econ-quiz1-questions))
+
+(define info-econ-quiz2-questions
+  (list
+   (list
+    'goods-market
+    "For a goods economy (such as for airline seats or apples), how does private information by customers affect the outcome in a competitive market?"
+    (haml
+     (:p "We simply have a competitive market equilibrium, so there is no distortion compared to full information.")))
+   (list
+    'insurance-market
+    "For an insurance market, how does private information by customers affect the outcome in a competitive market?"
+    (haml
+     (:p
+      "While there might be a market in which the high and the low types are separated, there might not be any separating equilibrium. There also is no pooling equilibrium. Thus there might not be any pure strategy equilibrium!")))
+   (list
+    'difference-goods-vs-insurance-market
+    "Why is there such a difference between the goods and the insurance market under competition but not for a monopoly? What is so different?"
+    (haml
+     (:p
+      "The cost of producing an apple or providing an airplane seat is fixed and known: it does not depend on the type of customer that buys the apple or airplane. The cost of insurance on the other hand " (:emph "does") " depend on the type of customer: some customers are more likely to fall ill or become unemployed. But which customer buys from one insurance depends not only on the contract offered by the insurance itself, but also on what contract /other/ insurances offer, since another insurance might attract (via a profitable deviation) the more profitable type, leaving the other insurance only the 'bad' customers.")))
+   (list
+    'screening-with-two-types-step-2
+    "Go to Step 2 of our derivation of the optimal screening contract. We claimed that we can increase \\(T\\) to \\(T + \\varepsilon\\) if the \\(IC_H\\) does not bind. But this might make the \\(IR_H\\) worse!
+
+1. State what \\(IC_H\\) and \\(IR_H\\) mean, both what the acronyms stand for, then what this acronym means in terms of economics.
+2. Did we make a mistake when we said that the firm can increase \\(T\\) to \\(T + \\varepsilon\\)? After all, by increasing \\(T\\) we might violate \\(IR_H\\). Why is this not a problem? (Hint: We would be in trouble if we had not yet done step 1.)"
+
+    (haml
+     (:p "See lecture notes for part 1. Part 2: Step 1 of the proof shows that as long as \\(IR_L\\) and \\(IC_H\\) hold, we know that \\(IR_H\\) holds. We assumed in Step 2 (to get started on our contradiction) that the \\(IC_H\\) does not bind. Therefore there is some \\(\\varepsilon\\) s.t. the \\(IC_H\\) still binds for \\(T + \\varepsilon\\). Moreover, setting the price to \\(T + \\varepsilon\\) does not affect \\(IR_L\\). Hence, both \\(IR_L\\) and \\(IC_H\\) still hold, so that by Step 1, \\(IR_H\\) also still holds.")))
+
+   (list
+    'competitive-insurance-indifference-curves
+    "In the example for competitive insurance companies, consider the indifference curve \\(I_H\\) of the high type through some bundle \\(C\\) -- high type means the one with a higher probability of loss. Consider the indifference curve \\(I_L\\) of the low type through this same bundle \\(C\\). The x-axis has the amount the person gets in the no-loss state, the y-axis the amount in the loss state. Consider a bundle \\(C'\\) on \\(I_H\\) that lies to the left of \\(C\\) (i.e. it yields less consumption in the no-loss state). Draw this diagram, and upload it as a pdf. Provide the argument why the curves are as you drew them, and why \\(C'\\) lies above or below (choose the correct one) \\(I_L\\)."
+    (haml
+     (:p "See notes.")))
+
+   (list
+    'compute-screening-bundles
+    "Consider a product that has only integer quality levels. There are two types of consumer: the high type values additional units of quality by 6, 5, 4, 3, 2, 1, and 0. That is, the first unit is worth 6, the second 5, and so on. The low type values units of quality by 4, 3, 2, 1, and 0. The marginal cost of increasing the quality of the product is 2.
+
+What are the optimal bundles the firm should produce if the firm wants to serve both customers at the highest quality level? I only want to be given the two bundles, i.e. \\(x, y\\) and \\(z, w\\) where \\(x\\), \\(y\\), \\(z\\), and \\(w\\) are integers. Specify the quality first, then the price."
+    (haml
+     (:p "\\( (4, 16) \\) and \\( (1, 4) \\). Another bundle is \\( (4, 18) \\) and \\( (0, 0) \\), but this does not provide the highest quality to the low type.")))))
+
+(define info-econ-quiz2
+  (make-quiz-study info-econ-quiz2-questions))
