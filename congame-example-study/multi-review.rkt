@@ -435,8 +435,9 @@
      'review-next-submission
      review-next-submission
      (λ ()
-       (put 'current-submissions (cdr (get 'current-submissions)))
-       (put 'n-reviewed-submissions (add1 (get 'n-reviewed-submissions)))
+       (when (not (empty? (get 'current-submissions)))
+         (put 'current-submissions (cdr (get 'current-submissions)))
+         (put 'n-reviewed-submissions (add1 (get 'n-reviewed-submissions))))
        (cond [(empty? (get 'current-submissions))
               done]
              [else
