@@ -439,9 +439,17 @@
          (put 'current-submissions (cdr (get 'current-submissions)))
          (put 'n-reviewed-submissions (add1 (get 'n-reviewed-submissions))))
        (cond [(empty? (get 'current-submissions))
-              done]
+              'finished]
              [else
-              'review-next-submission]))))))
+              'review-next-submission])))
+    (make-step
+     'finished
+     (λ ()
+       (page
+        (haml
+         (.container
+          (:h1 "You completed this Review")
+          (button void "Continue")))))))))
 
 (define (submissions-admin-interface-handler names keys #:self-review? self-review?)
 
