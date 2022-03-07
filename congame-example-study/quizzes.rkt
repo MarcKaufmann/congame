@@ -264,8 +264,15 @@
    handler
    (λ ()
      (if (null? (get 'quiz-questions))
-         done
+         'finished
          'question))))
+
+(define (finished-all-questions)
+  (page
+   (haml
+    (.container
+     (:h2 "You finished/updated all questions")
+     (button void "Continue")))))
 
 (define quiz-study
   ;; Should check that loq not empty, that seems a mistake always
@@ -274,7 +281,8 @@
    #:provides '(quiz-answers)
    #:requires '(quiz-questions)
    (list
-    (next-question-step))))
+    (next-question-step)
+    (make-step 'finished finished-all-questions))))
 
 (define (make-quiz-study questions)
   (make-study
