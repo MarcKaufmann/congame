@@ -130,8 +130,8 @@
              #:round [round-name (current-round-name)]
              #:group [group-name (current-group-name)])
   (log-study-debug
-   "put~n  stack: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  value: ~s"
-   (current-study-ids) round-name group-name k v)
+   "put~n  stack: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s"
+   (current-study-ids) round-name group-name k v (current-participant-id))
   (with-database-connection [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_data (
@@ -156,8 +156,8 @@ QUERY
              #:round [round-name (current-round-name)]
              #:group [group-name (current-group-name)])
   (log-study-debug
-   "get~n  stack: ~s~n  round: ~s~n  group: ~s~n  key: ~s"
-   (current-study-ids) round-name group-name k)
+   "get~n  stack: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  participant-id: ~s"
+   (current-study-ids) round-name group-name k (current-participant-id))
   (with-database-connection [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_data" #:as d)
@@ -199,7 +199,8 @@ QUERY
 (define (get/instance-file v) v)
 
 (define (put/instance k v)
-  (log-study-debug "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
+  (log-study-debug "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s"
+                   (current-study-ids) k v (current-participant-id))
   (with-database-transaction [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_instance_data(
@@ -219,7 +220,8 @@ QUERY
 
 (define (get/instance k [default (lambda ()
                                    (error 'get/instance "value not found for key ~.s" k))])
-  (log-study-debug "get/instance~n  stack: ~s~n  key: ~s" (current-study-ids) k)
+  (log-study-debug "get/instance~n  stack: ~s~n  key: ~s~n  participant-id: ~s"
+                   (current-study-ids) k (current-participant-id))
   (with-database-transaction [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_instance_data" #:as d)
@@ -235,7 +237,7 @@ QUERY
       [else default])))
 
 (define (put/group k v)
-  (log-study-debug "put/group~n  stack: ~s~n  key: ~s~n  value: ~s" (current-study-ids) k v)
+  (log-study-debug "put/group~n  stack: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s" (current-study-ids) k v (current-participant-id))
   (with-database-transaction [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_group_data (
@@ -258,7 +260,7 @@ QUERY
 
 (define (get/group k [default (lambda ()
                                 (error 'get/group "value not found for key ~.s" k))])
-  (log-study-debug "get/group~n  stack: ~s~n  key: ~s" (current-study-ids) k)
+  (log-study-debug "get/group~n  stack: ~s~n  key: ~s~n  participant-id: ~s" (current-study-ids) k (current-participant-id))
   (with-database-transaction [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_group_data" #:as d)
@@ -728,11 +730,12 @@ QUERY
         '(*root*)
         (cons (step-id (current-step))
               (current-study-stack))))
-  (log-study-debug "run study~n  name: ~e~n  steps: ~e~n  resume stack: ~e~n  new study stack: ~e"
+  (log-study-debug "run study~n  name: ~e~n  steps: ~e~n  resume stack: ~e~n  new study stack: ~e~n  participant-id: ~s"
                    (study-name s)
                    (map step-id (study-steps s))
                    resume-stack
-                   new-study-stack)
+                   new-study-stack
+                   (current-participant-id))
   (with-handlers ([exn:fail:study?
                    (lambda (e)
                      (define hdl (study-failure-handler s))
@@ -773,7 +776,7 @@ QUERY
              (redirect/get/forget/protect)))]))))
 
 (define (run-step req s the-step)
-  (log-study-debug "run step ~e" (step-id the-step))
+  (log-study-debug "run step ~e for participant ~s" (step-id the-step) (current-participant-id))
   (update-participant-progress! (step-id the-step))
   (define res
     (call-with-current-continuation
@@ -811,10 +814,11 @@ QUERY
     [_
      ;; Forget here to prevent users from going back and re-running the transition.
      (redirect/get/forget/protect)
-     (log-study-debug "running transition for step~n  id: ~e~n  study: ~e~n  resume stack: ~e"
+     (log-study-debug "running transition for step~n  id: ~e~n  study: ~e~n  resume stack: ~e~n  participant-id: ~s"
                       (step-id the-step)
                       (study-name s)
-                      (current-resume-stack))
+                      (current-resume-stack)
+                      (current-participant-id))
      (define next-step
        (match ((step-transition the-step))
          [(? done?) #f]
