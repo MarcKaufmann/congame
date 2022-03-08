@@ -722,7 +722,7 @@
           (radios
            "For incomplete problems, did the person highlight clearly why they got stuck?"
            '(("0" . "(0 points) There is no code example included for any of the problems that occurred, no explanation given for why something wasn't achieved, no attempt at resolving issues that the person encountered.")
-             ("1" . "(1 point) Whenever a problem was encountered, the author simply states that they couldn't get any further and didn't know how to solve it. They didn't post questions about these issues on Discourse (or they did so less than 24 hours before the deadline).")
+             ("1" . "(1 point) Whenever a problem was encountered, the author simply states that they couldn't get any further and didn't know how to solve it. They didn't post questions about these issues in the forum (or they did so less than 24 hours before the deadline).")
              ("2" . "(2 points) For most problems, the person states clearly what part of the code they think is the issue, and describe it well enough that you can understand what went wrong. Most of the time, you can replicate the problem.")
              ("3" . "(3 points) Either the person never got stuck. Or for every problem encountered, the person clearly states where things went wrong, what they tried (google searches, Slack questions, R help). You can see what went wrong, even if the diagnosis of the problem may itself be wrong. "))))
 
