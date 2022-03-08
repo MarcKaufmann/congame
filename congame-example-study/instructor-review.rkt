@@ -72,7 +72,7 @@
             (haml
              (:div
               (:ul
-               (:li "Score out of: " (~a score))
+               (:li "Score (out of 8): " (~a score))
                (:li (file-download/link graded-pdf "Comments/Marking")))))]
            [else
             (haml
@@ -168,7 +168,7 @@
       (haml
        (:div
         (#:score (input-number "What score do you give this submission?"
-                               #:min 0 #:max 10))
+                               #:min 0 #:max 8))
         (:button.button.next-button ((:type "submit")) "Submit")))
       (lambda (#:score score)
         (put/instance
