@@ -166,7 +166,7 @@
      (:div
       (:h3 (format "Question ~a" key))
       (question-haml-for key)
-      (:table
+      (:table.quiz-answers
        (:thead
         (:tr
          (:th "Participant")

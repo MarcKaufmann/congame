@@ -342,3 +342,15 @@ textarea {
     width: 25%;
   }
 }
+
+/* Tables in admin for quizzes */
+
+table.quiz-answers {
+  tr {
+    outline: thin solid;
+  }
+
+  td {
+    padding: 0.5rem 0rem;
+  }
+}
