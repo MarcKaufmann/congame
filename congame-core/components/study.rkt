@@ -663,6 +663,11 @@ QUERY
 (define current-resume-stack
   (make-parameter null))
 
+;; TODO: Try to merge current-resume-stack and current-resume-done?. This is an
+;; ugly solution.
+(define current-resume-done?
+  (make-parameter (box #t)))
+
 (define/contract (make-study name steps
                              #:requires [requires null]
                              #:provides [provides null]
@@ -723,7 +728,10 @@ QUERY
        (request?
         #:bindings (hash/c symbol? any/c))
        any)
-  (define resume-stack (current-resume-stack))
+  (define resume-stack
+    (if (unbox (current-resume-done?))
+        null
+        (current-resume-stack)))
   (define root? (not (current-step)))
   (define new-study-stack
     (if root?
@@ -771,9 +779,11 @@ QUERY
                             (car resume-stack)
                             (lambda ()
                               (error 'run-study "failed to resume step in study~n  study: ~e~n  resume stack: ~e" (study-name s) resume-stack))))
-         (parameterize ([current-resume-stack (cdr resume-stack)])
-           (begin0 (run-step req s the-step)
-             (redirect/get/forget/protect)))]))))
+         (begin0
+             (parameterize ([current-resume-stack (cdr resume-stack)])
+               (begin0 (run-step req s the-step)
+                 (redirect/get/forget/protect)))
+           (set-box! (current-resume-done?) #t))]))))
 
 (define (run-step req s the-step)
   (log-study-debug "run step ~e for participant ~s" (step-id the-step) (current-participant-id))
@@ -795,10 +805,6 @@ QUERY
             (response/step the-step)))))
      servlet-prompt))
 
-  ;; FIXME: Figure out a way to clear the resume stack after
-  ;; returning/continuing from a form. Currently, we only clear the
-  ;; stack for the form's "sub-continuation", but when the form returns
-  ;; we have the same stack and trying to continue then fails.
   (log-study-debug "step ~e returned ~e" (step-id the-step) res)
   (match res
     [(? response?)
@@ -1287,5 +1293,6 @@ QUERY
 (define/contract (call-with-study-manager mgr f)
   (-> study-manager? (-> any) any)
   (parameterize ([current-study-manager mgr]
-                 [current-resume-stack (current-participant-progress mgr)])
+                 [current-resume-stack (current-participant-progress mgr)]
+                 [current-resume-done? (box #f)])
     (f)))
