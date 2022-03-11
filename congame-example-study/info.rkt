@@ -21,4 +21,5 @@
     (congame-example-study/multi-review submit+review-pdf/beliefs)
     (congame-example-study/quizzes info-econ-quiz1)
     (congame-example-study/quizzes info-econ-quiz2)
+    (congame-example-study/quizzes info-econ-quiz3)
     (congame-example-study/instructor-review instructor-review/study)))

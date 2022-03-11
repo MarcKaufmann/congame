@@ -13,6 +13,7 @@
 (provide
  info-econ-quiz1
  info-econ-quiz2
+ info-econ-quiz3
  #;(struct-out quiz-question)
  )
 
@@ -415,3 +416,36 @@ What are the optimal bundles the firm should produce if the firm wants to serve 
 
 (define info-econ-quiz2
   (make-quiz-study info-econ-quiz2-questions))
+
+
+(define info-econ-quiz3-questions
+  (list
+   (list
+    'competitive-insurance-slope
+    "Consider again the competitive insurance market. Suppose the low type has initial wealth \\(100\\) and a probability \\(p_L = 0.2\\) of losing \\(20\\) of their wealth. What is the slope of the zero-profit line when serving only low types? (The slope should be negative, since the curve is downward sloping.)"
+    (haml
+     (:p "At all points on the zero-profit line, the expected wealth of the low type is the same. The expected profit of the low type is \\(0.8 \\cdot 100 + 0.2 \\cdot (100 - 20) = 80 + 16 = 96 \\). Hence we want the line of \\(x, y\\) s.t. $0.8 x + 0.2 y = 96$. We can solve this to get $0.2 y = 96 - 0.8 x \\implies y = 96 \\cdot 5 - 4 x$, so the slope is $-4$.")))
+
+   (list
+    'sell-the-firm-moral-hazard
+    "Consider moral hazard. Argue in words how selling the firm works when both the principal and agent are risk neutral."
+    (haml (:p "See class notes")))
+
+   (list
+    'deterministic-output-moral-hazard
+    "Suppose that output depends deterministically on effort -- i.e. there is no uncertainty about output conditional on effort. What is the optimal contract to induce high effort in that case under asymmetric information?"
+    (haml
+     (:p
+      "If low effort leads to deterministically low output, and high effort to high output, then the firm can in fact contract on effort -- after all, contracting on output is the same as contracting on effort. Thus by paying a sufficient salary for the high output and a sufficiently low salary (possibly negative) for low output, the firm can ensure the high output.")))
+
+   (list
+    'tax-maxing-moral-hazard
+    "Consider a government that wants to extract the maximum amount of tax. All its citizens are identical (!) and can exert high or low effort. If they exert high effort, they generate more income. The value of the outside option of not working at all (they emigrate) is 100 currency units. Low effort incurs a cost of 20 currency units, high effort a cost of 40 CI (currency units).
+
+Suppose that under low effort the income is uniformly distributed on $[100, 150]$ and under high effort there is a 20% chance that income is below 25, in which case it is uniformly distributed on $[100,125]$; and there is an 80% chance that it is above 25, in which case it is uniformly distributed on $[125, 150]$."
+    (haml
+     (:p
+      "Since the marginal cost of going from low to high effort is 20, and the marginal benefit is less (the expected income is 125 under low effort, and less than 137.5 under high effort), low effort will be optimal. Hence the government can simply allow the citizens to take away 120 currency units (their outside option plus cost of low effort) and take the rest. The government thus makes a revenue of 5 per citizen.")))))
+
+(define info-econ-quiz3
+  (make-quiz-study info-econ-quiz3-questions))
