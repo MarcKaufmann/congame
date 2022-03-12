@@ -81,7 +81,7 @@
 (define (matchmake #:self-review? [self-review? #t])
   (define (add-self-to-reviewers assignments)
     (for/hash ([(reviewer assignments) (in-hash assignments)])
-      (values reviewer (cons reviewer assignments))))
+      (values reviewer (shuffle (cons reviewer assignments)))))
   (with-study-transaction
     (define submissions (get/instance 'submissions (hash)))
     (cond
