@@ -572,7 +572,7 @@
                  (lambda (_req)
                    (auth-manager-impersonate! auth (study-participant/admin-user-id the-participant))
                    (redirect/get/forget/protect)
-                   (redirect-to (reverse-uri 'study-instances-page))))])
+                   (redirect-to (reverse-uri 'study-page (study-instance-slug the-instance)))))])
               "Impersonate User"))))
          (:table.table
           (:thead
