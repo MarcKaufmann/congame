@@ -439,17 +439,9 @@
          (put 'current-submissions (cdr (get 'current-submissions)))
          (put 'n-reviewed-submissions (add1 (get 'n-reviewed-submissions))))
        (cond [(empty? (get 'current-submissions))
-              'finished]
+              done]
              [else
-              'review-next-submission])))
-    (make-step
-     'finished
-     (λ ()
-       (page
-        (haml
-         (.container
-          (:h1 "You completed this Review")
-          (button void "Continue")))))))))
+              'review-next-submission]))))))
 
 (define (submissions-admin-interface-handler names keys #:self-review? self-review?)
 
@@ -460,9 +452,9 @@
   (define reviews
     (parameterize ([current-study-stack '(*root*)])
       (sort (get/instance 'reviews '())
-                        (λ (x y)
-                          (< (hash-ref x 'reviewer-id)
-                             (hash-ref y 'reviewer-id))))))
+            (λ (x y)
+              (< (hash-ref x 'reviewer-id)
+                 (hash-ref y 'reviewer-id))))))
 
   (define admin-reviews
     (filter (λ (r)
@@ -475,9 +467,11 @@
                     (hash-ref r 'submission-id))
               r)))
 
-  (define review-phase?
+  (define phase
     (parameterize ([current-study-stack '(*root*)])
-      (equal? (get/instance 'phase) 'review)))
+      (get/instance 'phase)))
+  (define review-phase?
+    (equal? phase 'review))
 
   (define (submissions-interface)
     (haml
@@ -509,14 +503,16 @@
                           "Yes"]
                          [else "No"]))
               (:td
-               (if (not review-phase?)
-                   "Submission phase -- cannot review"
-                   (button
-                    (λ ()
-                      (put 'next-submissions (hash submitter-id (list id&submission)))
-                      (put 'next-assignments (list submitter-id)))
-                    "Review this Submission"
-                    #:to-step-id 'admin-review)))))))))))
+               (case phase
+                 [(init submit)
+                  "Init/Submission phase -- cannot review"]
+                 [(review over)
+                  (button
+                   (λ ()
+                     (put 'next-submissions (hash submitter-id (list id&submission)))
+                     (put 'next-assignments (list submitter-id)))
+                   "Review this Submission"
+                   #:to-step-id 'admin-review)]))))))))))
 
   (define (submissions-reviews-interface)
     (haml
@@ -554,8 +550,10 @@
               (:td (~a (hash-ref r 'comments-on-review "")))
               (:td (~a (hash-ref r 'review-score "")))
               (:td
-               (if (not review-phase?)
-                   "Submission Phase -- cannot review"
+               (case phase
+                 [(init submit)
+                  "Submission Phase -- cannot review"]
+                 [(review over)
                    (button
                     (λ ()
                       (put 'next-submissions (hash reviewer-id (list r)))
@@ -563,7 +561,7 @@
                     (if (hash-has-key? r 'comments-on-review)
                         "Edit Review of Review"
                         "Review the Review")
-                    #:to-step-id 'admin-review-review)))
+                    #:to-step-id 'admin-review-review)]))
               (:td
                (button
                 (λ ()
