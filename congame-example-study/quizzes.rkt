@@ -85,6 +85,7 @@
     (.container
      (:h1 "Quiz Completed")
 
+     (:p (:strong "Your participant id: ") (~a (current-participant-id)))
      (:h3 (format "Total Score: ~a" total-score))
      (:p "Your score will be updated as your questions are graded")
 
@@ -241,6 +242,7 @@
      (haml
       (.container
        (:h3 "Question")
+       (:p (:strong "Your participant id: ") (~a (current-participant-id)))
        (if maybe-answer
            (haml
             (:div
@@ -402,7 +404,7 @@
 
    (list
     'competitive-insurance-indifference-curves
-    "In the example for competitive insurance companies, consider the indifference curve \\(I_H\\) of the high type through some bundle \\(C\\) -- high type means the one with a higher probability of loss. Consider the indifference curve \\(I_L\\) of the low type through this same bundle \\(C\\). The x-axis has the amount the person gets in the no-loss state, the y-axis the amount in the loss state. Consider a bundle \\(C'\\) on \\(I_H\\) that lies to the left of \\(C\\) (i.e. it yields less consumption in the no-loss state). Draw this diagram, and upload it as a pdf. Provide the argument why the curves are as you drew them, and why \\(C'\\) lies above or below (choose the correct one) \\(I_L\\)."
+    "In the example for competitive insurance companies, consider the indifference curve \\(I_H\\) of the high type through some bundle \\(C\\) -- high type means the one with a higher probability of loss. Consider the indifference curve \\(I_L\\) of the low type through this same bundle \\(C\\). The x-axis has the amount the person gets in the no-loss state, the y-axis the amount in the loss state. Consider a bundle \\(C'\\) on \\(I_H\\) that lies to the left of \\(C\\) (i.e. it yields less consumption in the no-loss state). Draw this diagram, and send it to me as a png/pdf in a private message on Slack and include your participant number (see above). Provide the argument why the curves are as you drew them, and why \\(C'\\) lies above or below (choose the correct one) \\(I_L\\)."
     (haml
      (:p "See notes.")))
 
