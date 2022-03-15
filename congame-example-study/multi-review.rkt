@@ -920,7 +920,7 @@
 (define (pdf-admin-interface/intro-R)
   (submissions-admin-interface
    pdf-admin-interface-handler
-   "PDF reivew for Intro R"
+   "PDF review for Intro R"
    review-pdf/intro-R
    review-reviews/intro-R))
 
