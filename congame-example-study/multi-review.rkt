@@ -404,6 +404,12 @@
             (equal? (hash-ref r 'submitter-id) (current-participant-id)))
           (get/instance 'reviews)))
 
+(define (get-reviews-by-participant)
+  (filter (λ (r)
+            (and (hash-has-key? r 'reviewer-id)
+                 (equal? (hash-ref r 'reviewer-id) (current-participant-id))))
+          (get/instance 'reviews)))
+
 (define (review-submissions review-next-submission)
 
   (define (initialize-review)
@@ -782,15 +788,38 @@
              (:li "Score: " (~a (hash-ref r (first answer))))
              (:li "Explanation/Feedback: " (~a (hash-ref r (third answer)))))))))))))
 
+(define (display-review-scores r)
+  (haml
+   (:div
+    (:p (format "Your review of ~a" (hash-ref r 'submitter-id)))
+    (:ul
+     (:li "Your Score:" (~a (hash-ref r 'review-score "(not reviewed = 0)")))
+     (:li "Comments: " (~a (hash-ref r 'comments-on-review "(not reviewed)")))))))
+
+(define display-review-scores/intro-R
+  display-review-scores)
+
+(define display-review-scores/beliefs
+  display-review-scores)
+
 (define (final-page/intro-R)
 
   (define participant-reviews (get-reviews-of-participant))
+  (define reviews-by-participant (get-reviews-by-participant))
+
+  (define reviewer-score
+    (for/sum ([r reviews-by-participant])
+      (hash-ref r 'review-score 0)))
+
+  (define submission-score
+    (+
+     (for/sum ([r participant-reviews])
+       (+ (hash-ref r 'genuine-attempt)
+          (hash-ref r 'where-got-stuck)
+          (hash-ref r 'clear-presentation)))))
 
   (define total-score
-    (for/sum ([r participant-reviews])
-      (+ (hash-ref r 'genuine-attempt)
-         (hash-ref r 'where-got-stuck)
-         (hash-ref r 'clear-presentation))))
+    (+ submission-score reviewer-score))
 
   (define n-other-reviewers-total (get/instance 'number-of-other-reviewers))
   (define n-other-reviewers-received
@@ -809,14 +838,20 @@
     (.container
      (:h1 "You are done")
 
-     (:h4 (format "Total Score: ~a (~a reviews from others received, ~a reviews pending)"
+     (:h4 (format "Total Score for submissions and reviews: ~a (~a reviews from others received, ~a reviews pending)"
                   total-score
                   n-other-reviewers-received
                   n-other-reviewers-pending))
      (:h3 "Scores and Feedback")
 
      ,@(for/list ([r participant-reviews])
-         (display-review/intro-R r))))))
+         (display-review/intro-R r))
+
+     (:h3 "Your Score for Your Reviews: " (~a reviewer-score))
+
+     ,@(for/list ([r reviews-by-participant])
+         (display-review-scores/intro-R r)
+         )))))
 
 (define (review-pdf)
   (review-submissions review-next-pdf-handler))
@@ -1014,10 +1049,17 @@
 (define (final-page/beliefs)
 
   (define participant-reviews (get-reviews-of-participant))
+  (define reviews-by-participant (get-reviews-by-participant))
 
-  (define total-score
+  (define submission-score
     (for/sum ([r participant-reviews])
       (hash-ref r 'score)))
+  (define review-score
+    (for/sum ([r reviews-by-participant])
+      (hash-ref r 'review-score 0)))
+
+  (define total-score
+    (+ submission-score review-score))
 
   (define n-other-reviewers-total (get/instance 'number-of-other-reviewers))
   (define n-other-reviewers-received
@@ -1043,7 +1085,12 @@
      (:h3 "Scores and Feedback")
 
      ,@(for/list ([r participant-reviews])
-         (display-review/beliefs r))))))
+         (display-review/beliefs r))
+
+     (:h3 "Scores for Reviews")
+
+     ,@(for/list ([r reviews-by-participant])
+         (display-review-scores/beliefs r))))))
 
 (define (review-reviews/beliefs)
   (review-submissions (review-next-review display-review/beliefs)))
