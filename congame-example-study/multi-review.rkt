@@ -689,29 +689,28 @@
 
 (define (review-R-intro-pdf-handler)
   (define subs (get 'current-submissions))
-  (cond [(not (empty? subs))
-         (define r (car subs))
-         (match-define (hash-table
-                        ('submission submission-upload)
-                        ('submission-id submission-id))
-           r)
-         (page
-          (haml
-           (.container
-            (:h1 "Review this PDF")
-            (:p.submission (file-download/link submission-upload "Download submission"))
-            (:div
-             (:h3 "Rubric for PDF")
-             (formular
-              (haml
-               (:div
-                (#:genuine-attempt
-                 (radios
-                  "Is this assignment a genuine attempt?"
-                  '(("0" . "(0 points) No assignment submitted, or it contains barely anything different from the default template provided in class.")
-                    ("1" . "(1 point) Half or more of the exercises were not attempted.")
-                    ("2" . "(2 points) 75% of all parts were attempted in a meaningful way.")
-                    ("3" . "(3 points) All parts were attempted in a meaningful way."))))
+  (define r (car subs))
+  (match-define (hash-table
+                 ('submission submission-upload)
+                 ('submission-id submission-id))
+    r)
+  (page
+   (haml
+    (.container
+     (:h1 "Review this PDF")
+     (:p.submission (file-download/link submission-upload "Download submission"))
+     (:div
+      (:h3 "Rubric for PDF")
+      (formular
+       (haml
+        (:div
+         (#:genuine-attempt
+          (radios
+           "Is this assignment a genuine attempt?"
+           '(("0" . "(0 points) No assignment submitted, or it contains barely anything different from the default template provided in class.")
+             ("1" . "(1 point) Half or more of the exercises were not attempted.")
+             ("2" . "(2 points) 75% of all parts were attempted in a meaningful way.")
+             ("3" . "(3 points) All parts were attempted in a meaningful way."))))
 
          (#:genuine-attempt-explanation
           (input-textarea "In one sentence, explain your score whether this submission is a genuine attempt. E.g. \"While all parts were attempted, half of them do little more than restate the exercise and do not solve it.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"You should say why you chose the particular functions you used. In exercise 2, for example, you use both `geom_col` and `geom_bar` without even briefly saying what each of them does."))
@@ -759,9 +758,7 @@
                    (hash-set 'clear-presentation clear-presentation/n)
                    (hash-set 'clear-presentation-explanation clear-presentation-explanation)
                    (hash-set 'score (+ genuine-attempt/n where-got-stuck/n clear-presentation/n)))
-               (get 'reviews '())))))))))]
-        [else
-         (skip)]))
+               (get 'reviews '()))))))))))
 
 (define (display-review/intro-R r)
   (define rid (hash-ref r 'reviewer-id))
