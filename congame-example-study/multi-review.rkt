@@ -813,10 +813,16 @@
 
   (define submission-score
     (+
-     (for/sum ([r participant-reviews])
-       (+ (hash-ref r 'genuine-attempt)
-          (hash-ref r 'where-got-stuck)
-          (hash-ref r 'clear-presentation)))))
+     (for/fold ([score 0.0]
+                [n 0]
+                #:result (/ score n))
+               ([r participant-reviews])
+       (values
+        (+ score
+           (hash-ref r 'genuine-attempt)
+           (hash-ref r 'where-got-stuck)
+           (hash-ref r 'clear-presentation))
+        (add1 n)))))
 
   (define total-score
     (+ submission-score reviewer-score))
@@ -1053,8 +1059,13 @@
   (define reviews-by-participant (get-reviews-by-participant))
 
   (define submission-score
-    (for/sum ([r participant-reviews])
-      (hash-ref r 'score)))
+    (for/fold ([score 0.0]
+               [n 0]
+               #:result (/ score n))
+              ([r participant-reviews])
+      (values (+ score (hash-ref r 'score))
+              (add1 n))))
+
   (define review-score
     (for/sum ([r reviews-by-participant])
       (hash-ref r 'review-score 0)))
