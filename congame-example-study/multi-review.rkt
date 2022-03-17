@@ -791,10 +791,14 @@
 (define (display-review-scores r)
   (haml
    (:div
-    (:p (format "Your review of participant ~a" (hash-ref r 'submitter-id)))
-    (:ul
-     (:li "Your Score:" (~a (hash-ref r 'review-score "(not reviewed = 0)")))
-     (:li "Comments: " (~a (hash-ref r 'comments-on-review "(not reviewed)")))))))
+    (:h4 (format "You reviewed participant ~a" (hash-ref r 'submitter-id)))
+    (if (hash-has-key? r 'review-score)
+        (haml
+         (:ul
+          (:li "Your Score:" (~a (hash-ref r 'review-score "(not reviewed = 0)")))
+          (:li "Comments: " (~a (hash-ref r 'comments-on-review "(not reviewed)")))))
+        (haml
+         (:p "This review was not reviewed."))))))
 
 (define display-review-scores/intro-R
   display-review-scores)
@@ -844,17 +848,19 @@
     (.container
      (:h1 "You are done")
 
-     (:h4 (format "Total Score for submissions and reviews: ~a (~a reviews from others received, ~a reviews pending)"
+     (:p (format "Total Score for submissions and reviews: ~a (~a reviews from others received, ~a reviews pending)"
                   total-score
                   n-other-reviewers-received
-                  n-other-reviewers-pending))
+                  n-other-reviewers-pending) " This sums up the score from your submission and from your reviews. See below for the breakdown.")
 
-     (:h2 "Scores and Feedback")
+     (:h2 "Detailed Scores and Feedback on Your Submission")
 
      ,@(for/list ([r participant-reviews])
          (display-review/intro-R r))
 
-     (:h3 "Your Score for Your Reviews: " (~a reviewer-score))
+     (:h2 "Bonus/Malus for Quality of Your Reviews: " (~a reviewer-score))
+
+     (:p "In addition to the score you receive for your submission, I (Marc) review the reviews each week. Unless your review is particularly good or bad, you will receive 0 -- otherwise a +1 or -1. If it says 'not reviewed', it means that I did not review your review, not that you did not submit it.")
 
      ,@(for/list ([r reviews-by-participant])
          (display-review-scores/intro-R r)
