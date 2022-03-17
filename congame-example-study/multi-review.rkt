@@ -308,7 +308,7 @@
                       (.container
                        (:h1 "Submissions are closed."))))]))
 
-(define ((wrap/check-review? s))
+(define ((wrapper/check-review? s))
   (define phase
     (parameterize ([current-study-stack '(*root*)])
       (get/instance 'phase)))
@@ -338,11 +338,10 @@
    "review-study"
    #:requires '()
    #:provides '()
-   #:failure-handler (λ (s e)
-                       (displayln "Got here, booya!")
+   #:failure-handler (λ (_s e)
                        (case e
                          [(not-in-review-phase-anymore)
-                          (displayln "Running final step after closing of review-phase.")
+                          (update-reviews)
                           'final]
                          [else (fail e)]))
    (list
@@ -358,11 +357,11 @@
                                 (put/instance 'phase 'init)))
                             "Go to Submission"))))))
     (make-step 'check-owner skip
-     (λ ()
-       (cond [(current-participant-owner?)
-              'admin-interface]
-             [else
-              'wait-submit-phase])))
+               (λ ()
+                 (cond [(current-participant-owner?)
+                        'admin-interface]
+                       [else
+                        'wait-submit-phase])))
     (make-step/study 'admin-interface
                      admin-interface
                      (λ ()
@@ -374,9 +373,9 @@
                      #:provide-bindings `([submission ,submission-key]))
     (make-step 'update-submissions update-submissions)
     (make-step 'lobby lobby)
-    (make-step 'show-next-review show-next-review)
+    (make-step 'show-next-review (wrapper/check-review? show-next-review))
     (make-step/study 'next-assignment-reviews
-                     review-study
+                     (wrap-sub-study review-study wrapper/check-review?)
                      (λ ()
                        (put 'participant-reviews (append (get 'participant-reviews '()) (get 'next-reviews)))
                        (put 'assignments (cdr (get 'assignments)))
