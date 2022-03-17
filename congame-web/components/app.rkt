@@ -215,7 +215,7 @@
   (current-xexpr-wrapper tpl:page/xexpr)
 
   (define manager
-    (make-threshold-LRU-manager (stack expired-page) (* 1024 1024 512)))
+    (make-threshold-LRU-manager (stack expired-page) (* 8 1024 1024 1024)))
 
   (app (sequencer:make
         (filter:make #rx"^/static/.+$" static-dispatcher)
