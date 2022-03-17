@@ -145,16 +145,12 @@ jobs:
     - name: Build Node assets
       run: npm run build
 
-    # FIXME: upgrade catalogs to get koyo dist -t fix
     - name: Build executables
       run: |
         mkdir build
-        raco koyo dist ++lang north congame-identity/dynamic.rkt
-        mv dist build/identity
-        raco koyo dist congame-smtp-proxy/main.rkt
-        mv dist build/smtp-proxy
-        raco koyo dist ++lang north congame-web/dynamic.rkt
-        mv dist build/web
+        raco koyo dist -t build/identity ++lang north congame-identity/dynamic.rkt
+        raco koyo dist -t build/smtp-proxy congame-smtp-proxy/main.rkt
+        raco koyo dist -t build/web ++lang north congame-web/dynamic.rkt
 
     - name: Log into GHCR
       run: |
