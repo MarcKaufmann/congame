@@ -308,6 +308,16 @@
                       (.container
                        (:h1 "Submissions are closed."))))]))
 
+(define ((wrap/check-review? s))
+  (define phase
+    (parameterize ([current-study-stack '(*root*)])
+      (get/instance 'phase)))
+  (cond [(equal? phase 'review)
+         (s)]
+        [else
+         (displayln "running faily faily...")
+         (fail 'not-in-review-phase-anymore)]))
+
 (define (submit+review-study #:submission-study submission-study
                              #:review-study review-study
                              #:submission-key submission-key
@@ -328,6 +338,13 @@
    "review-study"
    #:requires '()
    #:provides '()
+   #:failure-handler (λ (s e)
+                       (displayln "Got here, booya!")
+                       (case e
+                         [(not-in-review-phase-anymore)
+                          (displayln "Running final step after closing of review-phase.")
+                          'final]
+                         [else (fail e)]))
    (list
     (make-step 'start (λ ()
                         (page
@@ -819,7 +836,7 @@
     (+
      (for/fold ([score 0.0]
                 [n 0]
-                #:result (/ score n))
+                #:result (if (zero? n) 0 (/ score n)))
                ([r participant-reviews])
        (values
         (+ score
@@ -847,6 +864,8 @@
    (haml
     (.container
      (:h1 "You are done")
+
+     (:p "Your participation id is: " (~a (current-participant-id)))
 
      (:p (format "Total Score for submissions and reviews: ~a (~a reviews from others received, ~a reviews pending)"
                   total-score
@@ -1067,7 +1086,7 @@
   (define submission-score
     (for/fold ([score 0.0]
                [n 0]
-               #:result (/ score n))
+               #:result (if (zero? n) 0 (/ score n)))
               ([r participant-reviews])
       (values (+ score (hash-ref r 'score))
               (add1 n))))
@@ -1095,6 +1114,8 @@
    (haml
     (.container
      (:h1 "You are done")
+
+     (:p "Your participation number is: " (~a (current-participant-id)))
 
      (:h4 (format "Total Score: ~a (~a reviews from others received, ~a reviews pending)"
                   total-score
