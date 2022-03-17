@@ -791,7 +791,7 @@
 (define (display-review-scores r)
   (haml
    (:div
-    (:p (format "Your review of ~a" (hash-ref r 'submitter-id)))
+    (:p (format "Your review of participant ~a" (hash-ref r 'submitter-id)))
     (:ul
      (:li "Your Score:" (~a (hash-ref r 'review-score "(not reviewed = 0)")))
      (:li "Comments: " (~a (hash-ref r 'comments-on-review "(not reviewed)")))))))
@@ -842,7 +842,8 @@
                   total-score
                   n-other-reviewers-received
                   n-other-reviewers-pending))
-     (:h3 "Scores and Feedback")
+
+     (:h2 "Scores and Feedback")
 
      ,@(for/list ([r participant-reviews])
          (display-review/intro-R r))
