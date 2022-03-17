@@ -66,6 +66,14 @@
            (bot)])))))
 
 (module+ main
+  #;
+  (let ()
+    (define thds
+      (for/list ([_ (in-range 2)])
+        (run-bot
+         (make-multi-bot))))
+    (for-each thread-wait thds))
+
   (time
    (run-bot
     #:study-url "http://127.0.0.1:5100/study/pilot1"
