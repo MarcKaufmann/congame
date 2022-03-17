@@ -793,12 +793,22 @@ QUERY
      (lambda (return)
        (send/suspend/dispatch/protect
         (lambda (embed/url)
+          (define (embed/url/fail proc)
+            ;; Actions run inside `embed/url' request handlers, which
+            ;; means we have to trampoline any `(fail)' exns back over
+            ;; to our captured continuation s.t. they may be handled
+            ;; by exception handlers installed up-stack.
+            (embed/url
+             (lambda (embed-req)
+               (with-handlers ([exn:fail:study? return])
+                 (proc embed-req)))))
+
           ;; These parameterizations are closed-over and re-set by
           ;; `embed` within handlers when necessary because `call/cc`
           ;; above captures everything outside up to the
           ;; `servlet-prompt' (in our case up to
           ;; `wrap-protect-continuations').
-          (parameterize ([current-embed/url embed/url]
+          (parameterize ([current-embed/url embed/url/fail]
                          [current-request req]
                          [current-return return]
                          [current-step the-step])
@@ -807,6 +817,9 @@ QUERY
 
   (log-study-debug "step ~e returned ~e" (step-id the-step) res)
   (match res
+    [(? exn:fail:study?)
+     (raise res)]
+
     [(? response?)
      (send/back res)]
 
