@@ -21,6 +21,7 @@
   (key
    filename
    content-type)
+  #:transparent
   #:methods gen:jsexprable
   [(define (->jsexpr u)
      (hasheq
