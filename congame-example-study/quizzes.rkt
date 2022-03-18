@@ -414,7 +414,7 @@
 
 What are the optimal bundles the firm should produce if the firm wants to serve both customers at the highest quality level? I only want to be given the two bundles, i.e. \\(x, y\\) and \\(z, w\\) where \\(x\\), \\(y\\), \\(z\\), and \\(w\\) are integers. Specify the quality first, then the price."
     (haml
-     (:p "\\( (4, 16) \\) and \\( (1, 4) \\). Another bundle is \\( (4, 18) \\) and \\( (0, 0) \\), but this does not provide the highest quality to the low type.")))))
+     (:p "\\( (5, 18) \\) and \\( (1, 4) \\). Another bundle is \\( (5, 20) \\) and \\( (0, 0) \\), but this does not provide the highest quality to the low type.")))))
 
 (define info-econ-quiz2
   (make-quiz-study info-econ-quiz2-questions))
