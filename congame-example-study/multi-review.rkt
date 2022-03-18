@@ -81,7 +81,7 @@
 (define (matchmake #:self-review? [self-review? #t])
   (define (add-self-to-reviewers assignments)
     (for/hash ([(reviewer assignments) (in-hash assignments)])
-      (values reviewer (shuffle (cons reviewer assignments)))))
+      (values reviewer (append assignments (list reviewer)))))
   (with-study-transaction
     (define submissions (get/instance 'submissions (hash)))
     (cond
@@ -816,11 +816,51 @@
         (haml
          (:p "This review was not reviewed."))))))
 
-(define display-review-scores/intro-R
-  display-review-scores)
+(define (display-review-scores/intro-R r)
+  (haml
+   (.review-scores
+    (display-review-scores r)
 
-(define display-review-scores/beliefs
-  display-review-scores)
+    (:p "Here is the review you provided:")
+    (:table
+     (:thead
+      (:tr
+       (:th "Aspect")
+       (:th "Score")
+       (:th "Explanation")))
+     ,@(for/list ([d '(("Was this a genuine attempt?" genuine-attempt genuine-attempt-explanation)
+                                       ("Where did person get stuck?" where-got-stuck where-got-stuck-explanation)
+                                       ("Clear Presentation" clear-presentation clear-presentation-explanation))])
+         (haml
+          (:tr
+           (:td (first d))
+           (:td (~a (hash-ref r (second d) "<Error: Score not Found>")))
+           (:td (~a (hash-ref r (third d) "<Error: Explanation not Found>"))))))))))
+
+(define (display-review-scores/beliefs r)
+  (define (~display key)
+    (define a (hash-ref r key (format "#<Error: ~a not found>" key)))
+    (match a
+      [#f "No"]
+      [#t "Yes"]
+      [else (~a a)]))
+
+  (haml
+   (.review-scores
+    (display-review-scores r)
+    (:p "Here is the review you provided:")
+    (:table
+     (:thead
+      (:tr
+       (:th "One Page Limit")
+       (:th "How clear was question")
+       (:th "Quality")
+       (:th "Feedback")))
+     (:tr
+      (:td (~display 'one-page-limit))
+      (:td (~display 'how-clear-question))
+      (:td (~display 'quality))
+      (:td (~display 'feedback)))))))
 
 (define (final-page/intro-R)
 
@@ -1275,6 +1315,24 @@
   (hash 'total-score        (apply + (hash-values submission-scores))
         'submission-scores  submission-scores))
 
+(define (display-review-scores/research-ideas r)
+  (haml
+   (.review-scores
+    (display-review-scores r)
+
+    (:p "Here is the review you provided:")
+    (:table
+     (:thead
+      (:tr
+       (:th "Valid?")
+       (:th "Feedback")))
+     (:tr
+      (:td (match (hash-ref r 'valid-research-idea? "#<Error: not found>")
+             [#f "No"]
+             [#t "Yes"]
+             [else "#<Error: not found>"]))
+      (:td (~a (hash-ref r 'feedback "#<Error: not found>"))))))))
+
 (define (research-ideas-final-page)
   (define scores (get 'scores))
   (define participant-reviews (get-reviews-of-participant))
@@ -1306,8 +1364,10 @@
              (:ul
               (:li (format "Score: ~a" (~r score #:precision 2)))))))))))
 
+  (define reviews-by-participant
+    (get-reviews-by-participant))
 
-  (define feedback
+  (define submission-feedback
     (haml
      (:div
       (:h3 (format "Detailed Reviews (~a received, ~a pending)"
@@ -1332,7 +1392,12 @@
      (:h1 "End of Review Phase")
      (:p "Thanks for completing your reviews.")
      score-display
-     feedback))))
+     submission-feedback
+
+     (:h3 "Scores for Reviews")
+
+     ,@(for/list ([r reviews-by-participant])
+         (display-review-scores/research-ideas r))))))
 
 (define (research-ideas-admin-handler)
   (submissions-admin-interface-handler
