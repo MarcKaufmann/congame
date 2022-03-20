@@ -18,6 +18,7 @@
     (congame-example-study/multi-review submit+review-pdf)
     (congame-example-study/multi-review submit+review-research-ideas)
     (congame-example-study/multi-review submit+review-pdf/intro-R)
+    (congame-example-study/multi-review submit+review-pdf/intro-R-exercises)
     (congame-example-study/multi-review submit+review-pdf/beliefs)
     (congame-example-study/quizzes info-econ-quiz1)
     (congame-example-study/quizzes info-econ-quiz2)

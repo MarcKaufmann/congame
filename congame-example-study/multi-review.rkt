@@ -36,6 +36,7 @@
 (provide
  submit+review-pdf
  submit+review-pdf/intro-R
+ submit+review-pdf/intro-R-exercises
  submit+review-pdf/beliefs
  submit+review-research-ideas)
 
@@ -1422,3 +1423,200 @@
                        #:compute-scores compute-research-ideas-scores
                        #:final-page research-ideas-final-page
                        #:admin-interface (research-ideas-admin-interface)))
+
+;;;; R with review of individual exercises
+(define (review-R-intro-pdf-handler/exercises)
+  ; FIXME: Change this to store exercise points
+  (define subs (get 'current-submissions))
+  (define r (car subs))
+  (match-define (hash-table
+                 ('submission submission-upload)
+                 ('submission-id submission-id))
+    r)
+  (define (exercise-radios n)
+    (radios
+     (format "Score on exercise ~a -- from 0 to 5 (see explanation on grades above)" n)
+     '(("0" . "0")
+       ("1" . "1")
+       ("2" . "2")
+       ("3" . "3")
+       ("4" . "4")
+       ("5" . "5"))))
+  (page
+   (haml
+    (.container
+     (:h1 "Review this PDF")
+     (:p.submission (file-download/link submission-upload "Download submission"))
+     (:div
+      (:h3 "Rubric for PDF")
+      (:p "Each exercise should be scored from 0 to 5 and thus counts the same as every other exercise. At the end, the sum of scores gets rescaled to however much the current assignment is worth (15 or 25). The meaning of scores is as follows:")
+      (:ul
+       (:li "0: Not attempted/Wrong Exercise/Nothing of Value")
+       (:li "1: A minor point was achieved or the person at least stated why they got stuck (lack of time does not count).")
+       (:li "2: Some progress was made, or the person reports several meaningful attempts that failed (with code examples) that pointed in the right direction and explain why the person got stuck. (Lack of time still does not count.) Alternatively, the person describes how the problem could be approached conceptually and this is genuinely helpful to solve the problem.")
+       (:li "3: Same as 2, but with more progress. Alternatively, the person achieved almost the right solution but due to a bug the result is wrong in a major way (i.e. not just a typo or some minor oversight, but it does not work or provide the right output).")
+       (:li "4: The solution is close to complete. There is some minor detail missing, a minor bug (typo), some subtlety in forgetting to drop edge cases. Alternatively, the solution is correct and complete, but unclear, confusing, and with poor code.")
+       (:li "5: The solution is clear, correct, and complete."))
+      (formular
+       (haml
+        (:div
+         (#:exercise1
+          (exercise-radios 1))
+         (#:exercise1-explanation
+          (input-textarea "Explain your score for exercise 1 briefly."))
+         (#:exercise2
+          (exercise-radios 2))
+         (#:exercise2-explanation
+          (input-textarea "Explain your score for exercise 2 briefly."))
+         (#:exercise3
+          (exercise-radios 3))
+         (#:exercise3-explanation
+          (input-textarea "Explain your score for exercise 3 briefly."))
+         (#:exercise4
+          (exercise-radios 4))
+         (#:exercise4-explanation
+          (input-textarea "Explain your score for exercise 4 briefly."))
+         (#:exercise5
+          (exercise-radios 5))
+         (#:exercise5-explanation
+          (input-textarea "Explain your score for exercise 5 briefly."))
+         (#:exercise6
+          (exercise-radios 6))
+         (#:exercise6-explanation
+          (input-textarea "Explain your score for exercise 6 briefly."))
+         (:button.button.next-button ([:type "submit"]) "Submit")))
+       (lambda (#:exercise1 exercise1
+                #:exercise2 exercise2
+                #:exercise3 exercise3
+                #:exercise4 exercise4
+                #:exercise5 exercise5
+                #:exercise6 exercise6
+                #:exercise1-explanation exercise1-explanation
+                #:exercise2-explanation exercise2-explanation
+                #:exercise3-explanation exercise3-explanation
+                #:exercise4-explanation exercise4-explanation
+                #:exercise5-explanation exercise5-explanation
+                #:exercise6-explanation exercise6-explanation)
+         (define (make-exercise name score expl)
+           (hash 'name name
+                 'score (string->number score)
+                 'explanation expl))
+         (define exercises
+           (list
+            (make-exercise "Exercise 1" exercise1 exercise1-explanation)
+            (make-exercise "Exercise 2" exercise2 exercise2-explanation)
+            (make-exercise "Exercise 3" exercise3 exercise3-explanation)
+            (make-exercise "Exercise 4" exercise4 exercise4-explanation)
+            (make-exercise "Exercise 5" exercise5 exercise5-explanation)
+            (make-exercise "Exercise 6" exercise6 exercise6-explanation)))
+         (put 'reviews
+              (cons
+               (~> r
+                   (hash-set 'submitter-id (get 'current-assignment))
+                   (hash-set 'reviewer-id (current-participant-id))
+                   (hash-set 'exercises exercises))
+               (get 'reviews '()))))))))))
+
+(define (review-pdf/intro-R-exercises)
+  (review-submissions review-R-intro-pdf-handler/exercises))
+
+(define (display-review-of-exercises r)
+  (haml
+   (:ul
+    ,@(for/list ([exercise (hash-ref r 'exercises '())])
+        (haml
+         (haml
+          (:li
+           (hash-ref exercise 'name) ":"
+           (:ul
+            (:li "Score: " (~a (hash-ref exercise 'score "#<Error: not found>")))
+            (:li "Explanation/Feedback: " (~a (hash-ref exercise 'explanation "#<Error: not found>")))))))))))
+
+(define (display-review-scores/intro-R-exercises r)
+  (haml
+   (.review-scores
+    (display-review-scores r)
+
+    (:p "Here is the review you provided:")
+    (display-review-of-exercises r))))
+
+(define (display-review/intro-R-exercises r)
+  (define rid (hash-ref r 'reviewer-id))
+  (haml
+   (:div
+    (:h3 (format "Scores and Feedback by ~a ~a"
+                 rid
+                 (if (equal? (current-participant-id) rid)
+                     "(your self review)"
+                     "")))
+    (display-review-of-exercises r))))
+
+(define (final-page/intro-R-exercises)
+  ; FIXME: Change this to display the exercises and score based on exercises
+
+  (define participant-reviews (get-reviews-of-participant))
+  (define reviews-by-participant (get-reviews-by-participant))
+
+  (define reviewer-score
+    (for/sum ([r reviews-by-participant])
+      (hash-ref r 'review-score 0)))
+
+  (define (exercises-score r)
+    (define exs (hash-ref r 'exercises '()))
+    (for/sum ([ex exs])
+      (hash-ref ex 'score 0)))
+  (define submission-score
+    (+
+     (for/fold ([score 0.0]
+                [n 0]
+                #:result (if (zero? n) 0 (/ score n)))
+               ([r participant-reviews])
+       (values
+        (+ score (exercises-score r))
+        (add1 n)))))
+
+  (define total-score
+    (+ submission-score reviewer-score))
+
+  (define n-other-reviewers-total (get/instance 'number-of-other-reviewers))
+  (define n-other-reviewers-received
+    (~> participant-reviews
+        (map (λ (r)
+               (hash-ref r 'reviewer-id))
+             _)
+        remove-duplicates
+        (remove (current-participant-id) _)
+        length))
+  (define n-other-reviewers-pending
+    (- n-other-reviewers-total n-other-reviewers-received))
+
+  (page
+   (haml
+    (.container
+     (:h1 "You are done")
+
+     (:p "Your participation id is: " (~a (current-participant-id)))
+
+     (:p (format "Total Score for submissions and reviews: ~a (~a reviews from others received, ~a reviews pending)"
+                  total-score
+                  n-other-reviewers-received
+                  n-other-reviewers-pending) " This sums up the score from your submission and from your reviews. See below for the breakdown.")
+
+     (:h2 "Detailed Scores and Feedback on Your Submission")
+
+     ,@(for/list ([r participant-reviews])
+         (display-review/intro-R-exercises r))
+
+     (:h2 "Bonus/Malus for Quality of Your Reviews: " (~a reviewer-score))
+
+     (:p "In addition to the score you receive for your submission, I (Marc) review the reviews each week. Unless your review is particularly good or bad, you will receive 0 -- otherwise a +1 or -1. If it says 'not reviewed', it means that I did not review your review, not that you did not submit it.")
+
+     ,@(for/list ([r reviews-by-participant])
+         (display-review-scores/intro-R-exercises r))))))
+
+(define submit+review-pdf/intro-R-exercises
+  (submit+review-study #:submission-study (submit-pdf-submissions 1)
+                       #:review-study (review-pdf/intro-R-exercises)
+                       #:submission-key 'submissions
+                       #:admin-interface (pdf-admin-interface/intro-R)
+                       #:final-page final-page/intro-R-exercises))
