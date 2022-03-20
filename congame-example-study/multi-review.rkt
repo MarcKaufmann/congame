@@ -1614,9 +1614,19 @@
      ,@(for/list ([r reviews-by-participant])
          (display-review-scores/intro-R-exercises r))))))
 
+(define (review-reviews/intro-R-exercises)
+  (review-submissions (review-next-review display-review/intro-R-exercises)))
+
+(define (pdf-admin-interface/intro-R-exercises)
+  (submissions-admin-interface
+   pdf-admin-interface-handler
+   "PDF review for Intro R"
+   review-pdf/intro-R-exercises
+   review-reviews/intro-R-exercises))
+
 (define submit+review-pdf/intro-R-exercises
   (submit+review-study #:submission-study (submit-pdf-submissions 1)
                        #:review-study (review-pdf/intro-R-exercises)
                        #:submission-key 'submissions
-                       #:admin-interface (pdf-admin-interface/intro-R)
+                       #:admin-interface (pdf-admin-interface/intro-R-exercises)
                        #:final-page final-page/intro-R-exercises))
