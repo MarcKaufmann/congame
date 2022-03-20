@@ -14,6 +14,7 @@
  info-econ-quiz1
  info-econ-quiz2
  info-econ-quiz3
+ info-econ-quiz4
  #;(struct-out quiz-question)
  )
 
@@ -451,3 +452,30 @@ Suppose that under low effort the income is uniformly distributed on $[100, 150]
 
 (define info-econ-quiz3
   (make-quiz-study info-econ-quiz3-questions))
+
+(define info-econ-quiz4-questions
+  (list
+   (list
+    'career-concerns1
+    "In the career concerns model, list all the information that each side (principal and agent) holds and which they do not hold. State which information is not known by either agent or private to one of the agents."
+    (haml
+     (:p "In the career concerns model, list all the information that each side (principal and agent) holds and which they do not hold. State which information is not known by either agent or private to one of the agents.")))
+   (list
+    'career-concerns2
+    "Consider career concerns. Describe in your own words whether and why the person does / does not exert effort in the final period. (2-3 sentences)"
+    (haml
+     (:p
+      "Their payment is fixed. No matter what the output is, the employee receives no additional benefit this period nor in any future period (there are no future periods). So they do not exert any effort.")))
+   (list
+    'career-concerns3
+    "Consider career concerns. Describe in your own words whether and why the person does / does not exert effort in the second to last period. No need for maths, but describe the incentives. (2-3 sentences max)"
+    (haml
+     (:p "In equilibrium, each worker realizes that the other workers are going to exert some effort. They also know that the firm /expects/ them to exert some effort level \\(e^{*}\\). Consider what happens if they do not exert this level. Then their output is lower. The firm will take this as a signal that the worker is of low ability than they are, because the firm would believe that the worker exerted effort \\(e^{*}\\) rather than \\(0\\). Thus to the firm it would be surprising that the worker had such low output despite effort. Hence the firm would not be willing to pay the worker much in the final period. To avoid being paid little in the final period, the worker thus decides to exert effort \\(e^{*}\\).")))
+   (list
+    'BDM
+    "Consider the BDM mechanism, with the possible outcomes of prices being 1, 2, ... 10 -- each equally likely. Consider a buyer who does not trust the seller to actually pick each value with equal probability. Instead, the buyer expects that if they say price \\(p\\), the seller will draw randomly from all values with probability 5% instead of 10%, and choose value \\(p-1\\) with a probability 55%. Suppose that their value is uniformly distributed between 2 and 10 (only at integer values) and that they buy the good when the price is equal to their value. Intuitively (without deriving it fully), how will that affect what they actually report?"
+    (haml
+     (:p "The details are irrelevant. The buyer will want to report a lower bid, since if they report a lower bid, they are more likely to get a lower price. They are also less likely to get the good, sometimes missing out on it for prices that are below their reservation value -- but on average they are paying less conditional on paying.")))))
+
+(define info-econ-quiz4
+  (make-quiz-study info-econ-quiz4-questions))
