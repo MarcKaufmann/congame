@@ -445,7 +445,7 @@ What are the optimal bundles the firm should produce if the firm wants to serve 
     'tax-maxing-moral-hazard
     "Consider a government that wants to extract the maximum amount of tax. All its citizens are identical (!) and can exert high or low effort. If they exert high effort, they generate more income. The value of the outside option of not working at all (they emigrate) is 100 currency units. Low effort incurs a cost of 20 currency units, high effort a cost of 40 CI (currency units).
 
-Suppose that under low effort the income is uniformly distributed on $[100, 150]$ and under high effort there is a 20% chance that income is below 25, in which case it is uniformly distributed on $[100,125]$; and there is an 80% chance that it is above 25, in which case it is uniformly distributed on $[125, 150]$."
+Suppose that under low effort the income is uniformly distributed on $[100, 150]$ and under high effort there is a 20% chance that income is below 125, in which case it is uniformly distributed on $[100,125]$; and there is an 80% chance that it is above 125, in which case it is uniformly distributed on $[125, 150]$. What is the maximum amount of tax the government can extract -- and briefly explain how you derived this."
     (haml
      (:p
       "Since the marginal cost of going from low to high effort is 20, and the marginal benefit is less (the expected income is 125 under low effort, and less than 137.5 under high effort), low effort will be optimal. Hence the government can simply allow the citizens to take away 120 currency units (their outside option plus cost of low effort) and take the rest. The government thus makes a revenue of 5 per citizen.")))))
