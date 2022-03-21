@@ -1357,6 +1357,8 @@
                    n-other-reviewers-received
                    n-other-reviewers-pending))
 
+      (:p (format "Your participant id is ~a." (current-participant-id)))
+
       (:h4 "Score by research idea is:")
       (:ul
        ,@(for/list ([(idea score) (in-hash (hash-ref scores 'submission-scores))])
