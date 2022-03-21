@@ -38,10 +38,19 @@
        (ok b)
        (err "the file must be a PDF")))
 
-(define (upload-file! b)
+(define (upload-file! b #:prefix (pre #f))
+  (define base-filename
+    (binding:file-filename b))
+  (define fname
+    (if pre
+        (~> base-filename
+            bytes->string/utf-8
+            (string-append pre "-" _)
+            string->bytes/utf-8)
+        base-filename))
   (uploaded-file
    (upload:save-file! b)
-   (binding:file-filename b)
+   fname
    (or (and~>
         (binding:file-headers b)
         (headers-assq* #"content-type" _)

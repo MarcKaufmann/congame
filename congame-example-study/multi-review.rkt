@@ -668,7 +668,7 @@
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:submission submission)
         (define submission-upload
-          (upload-file! submission))
+          (upload-file! submission #:prefix (current-participant-id)))
         (put 'submissions
              (cons (hash 'submission-id (get 'next-submission-id 0)
                          'submission submission-upload)
