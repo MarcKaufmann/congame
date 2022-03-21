@@ -562,7 +562,9 @@
             (displayln (format "SUBMISSION: ~a" submission))
             (haml
              (:tr
-              (:td (~a reviewer-id))
+              (:td (if (equal? reviewer-id (current-participant-id))
+                       "Myself"
+                       (~a reviewer-id)))
               (:td (~a submitter-id))
               (:td (~a (->jsexpr (if (uploaded-file? submission)
                                      (uploaded-file-filename submission)
@@ -668,7 +670,7 @@
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:submission submission)
         (define submission-upload
-          (upload-file! submission #:prefix (current-participant-id)))
+          (upload-file! submission #:prefix (number->string (current-participant-id))))
         (put 'submissions
              (cons (hash 'submission-id (get 'next-submission-id 0)
                          'submission submission-upload)
@@ -1435,15 +1437,10 @@
                  ('submission submission-upload)
                  ('submission-id submission-id))
     r)
-  (define (exercise-radios n)
-    (radios
+  (define (input-exercise-score n)
+    (input-number
      (format "Score on exercise ~a -- from 0 to 5 (see explanation on grades above)" n)
-     '(("0" . "0")
-       ("1" . "1")
-       ("2" . "2")
-       ("3" . "3")
-       ("4" . "4")
-       ("5" . "5"))))
+     #:min 0 #:max 5))
   (page
    (haml
     (.container
@@ -1463,30 +1460,31 @@
        (haml
         (:div
          (#:exercise1
-          (exercise-radios 1))
+          (input-exercise-score 1))
          (#:exercise1-explanation
           (input-textarea "Explain your score for exercise 1 briefly."))
          (#:exercise2
-          (exercise-radios 2))
+          (input-exercise-score 2))
          (#:exercise2-explanation
           (input-textarea "Explain your score for exercise 2 briefly."))
          (#:exercise3
-          (exercise-radios 3))
+          (input-exercise-score 3))
          (#:exercise3-explanation
           (input-textarea "Explain your score for exercise 3 briefly."))
          (#:exercise4
-          (exercise-radios 4))
+          (input-exercise-score 4))
          (#:exercise4-explanation
           (input-textarea "Explain your score for exercise 4 briefly."))
          (#:exercise5
-          (exercise-radios 5))
+          (input-exercise-score 5))
          (#:exercise5-explanation
           (input-textarea "Explain your score for exercise 5 briefly."))
          (#:exercise6
-          (exercise-radios 6))
+          (input-exercise-score 6))
          (#:exercise6-explanation
           (input-textarea "Explain your score for exercise 6 briefly."))
-         (:button.button.next-button ([:type "submit"]) "Submit")))
+         (:button.button.next-button ([:type "submit"]) "Submit")
+         (display-admin-cancel-button)))
        (lambda (#:exercise1 exercise1
                 #:exercise2 exercise2
                 #:exercise3 exercise3
@@ -1501,7 +1499,7 @@
                 #:exercise6-explanation exercise6-explanation)
          (define (make-exercise name score expl)
            (hash 'name name
-                 'score (string->number score)
+                 'score score
                  'explanation expl))
          (define exercises
            (list
