@@ -1483,8 +1483,7 @@
           (input-exercise-score 6))
          (#:exercise6-explanation
           (input-textarea "Explain your score for exercise 6 briefly."))
-         (:button.button.next-button ([:type "submit"]) "Submit")
-         (display-admin-cancel-button)))
+         (:button.button.next-button ([:type "submit"]) "Submit")))
        (lambda (#:exercise1 exercise1
                 #:exercise2 exercise2
                 #:exercise3 exercise3
