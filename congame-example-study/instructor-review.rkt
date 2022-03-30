@@ -2,6 +2,7 @@
 
 (require congame/components/formular
          congame/components/study
+         congame-web/components/identity
          koyo/haml
          racket/format
          threading
