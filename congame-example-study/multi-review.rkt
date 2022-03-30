@@ -889,6 +889,7 @@
 
   (define total-score
     (+ submission-score reviewer-score))
+  (put/identity 'total-score total-score)
 
   (define n-other-reviewers-total (get/instance 'number-of-other-reviewers))
   (define n-other-reviewers-received
@@ -1152,6 +1153,8 @@
   (define n-other-reviewers-pending
     (- n-other-reviewers-total n-other-reviewers-received))
 
+  (put/identity 'total-score total-score)
+
   (page
    (haml
     (.container
@@ -1372,6 +1375,12 @@
   (define reviews-by-participant
     (get-reviews-by-participant))
 
+  (define review-score
+    (for/sum ([r reviews-by-participant])
+      (hash-ref r 'review-score)))
+
+  (put/identity 'total-score (+ (hash-ref scores 'total-score) review-score))
+
   (define submission-feedback
     (haml
      (:div
@@ -1391,6 +1400,7 @@
               (:li "Reviewer: " (~a reviewer))
               (:li "Feedback: " feedback)
               (:li "Valid: " (if valid? "Yes" "No"))))))))))
+
   (page
    (haml
     (.container
@@ -1551,7 +1561,6 @@
     (display-review-of-exercises r))))
 
 (define (final-page/intro-R-exercises)
-  ; FIXME: Change this to display the exercises and score based on exercises
 
   (define participant-reviews (get-reviews-of-participant))
   (define reviews-by-participant (get-reviews-by-participant))
@@ -1588,6 +1597,8 @@
         length))
   (define n-other-reviewers-pending
     (- n-other-reviewers-total n-other-reviewers-received))
+
+  (put/identity 'total-score total-score)
 
   (page
    (haml

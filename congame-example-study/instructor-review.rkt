@@ -62,6 +62,7 @@
   (define graded-pdf
     (hash-ref (get/instance 'graded-pdfs (hash)) pid #f))
   (define f (get 'submission))
+  (put/identity 'total-score score)
   (page
    (haml
     (.container
