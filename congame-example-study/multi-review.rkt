@@ -1377,7 +1377,7 @@
 
   (define review-score
     (for/sum ([r reviews-by-participant])
-      (hash-ref r 'review-score)))
+      (hash-ref r 'review-score 0)))
 
   (put/identity 'total-score (+ (hash-ref scores 'total-score) review-score))
 
