@@ -29,19 +29,21 @@
      (:h1 "Study data")
      ,@(for/list ([id instance-ids-with-data])
          (haml
-          (:table.table
-           (:thead
-            (:tr
-             (:th "Study")
-             (:th "Stack")
-             (:th "Key")
-             (:th "Value")))
-           (:tbody
-            ,@(for/list ([i instances])
-                (displayln (format "Value: ~a" (study-instance-data-value i)))
-                (haml
-                 (:tr
-                  (:td (~a (study-instance-data-instance-id i)))
-                  (:td (~a (study-instance-data-study-stack i)))
-                  (:td (~a (study-instance-data-key i)))
-                  (:td (~a (study-instance-data-value i))))))))))))))
+          (:div
+           (:table.table
+            (:caption "Study Instance" (~a id))
+            (:thead
+             (:tr
+              (:th "User")
+              (:th "Stack")
+              (:th "Key")
+              (:th "Value")))
+            (:tbody
+             ,@(for/list ([i instances]
+                          #:when (equal? (study-instance-data-instance-id i) id))
+                 (haml
+                  (:tr
+                   (:td (~a (study-instance-data-user-id i)))
+                   (:td (~a (study-instance-data-study-stack i)))
+                   (:td (~a (study-instance-data-key i)))
+                   (:td (~a (study-instance-data-value i)))))))))))))))
