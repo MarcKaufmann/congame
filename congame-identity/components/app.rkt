@@ -72,7 +72,6 @@
       (signup-page auth mailer users)]
 
      [("admin" "users")
-      ; FIXME: roles are currently not checked, so this is open for all!
       #:roles (admin)
       (admin:users-study-instance-data-page db)]
 
