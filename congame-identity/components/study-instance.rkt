@@ -22,6 +22,7 @@
    [study-stack (array/f symbol/f)]
    [key symbol/f]
    [value jsonb/f]
+   [congame-url string/f]
    [(last-put-at (now/moment)) datetime-tz/f]
    [(first-put-at (now/moment)) datetime-tz/f])
   #:pre-persist-hook
@@ -33,21 +34,24 @@
                                           #:instance-id instance-id
                                           #:study-stack study-stack
                                           #:key key
-                                          #:value value)
+                                          #:value value
+                                          #:congame-url congame-url)
   (->* (database?
         #:user-id id/c
         #:instance-id id/c
         #:study-stack (listof symbol?)
         #:key symbol?
-        #:value jsexpr?)
+        #:value jsexpr?
+        #:congame-url string?)
        ()
        void?)
+  ; FIXME: The constraint needs to be updated to check for the congame server
   (with-database-connection [conn db]
     (query-exec conn #<<SQL
 INSERT INTO study_instance_data (
-  user_id, instance_id, study_stack, key, value, last_put_at
+  user_id, instance_id, congame_url, study_stack, key, value, last_put_at
 ) VALUES (
-  $1, $2, $3, $4, $5, CURRENT_TIMESTAMP
+  $1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP
 ) ON CONFLICT (
   user_id, instance_id, study_stack, key
 ) DO UPDATE SET
@@ -56,6 +60,7 @@ INSERT INTO study_instance_data (
 SQL
                 user-id
                 instance-id
+                congame-url
                 (list->pg-array (map symbol->string study-stack))
                 (symbol->string key)
                 value)))

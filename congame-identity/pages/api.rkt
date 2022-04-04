@@ -35,7 +35,8 @@
              #:study-stack (for/list ([id (in-list (ref 'stack))])
                              (string->symbol id))
              #:key (string->symbol (ref 'key))
-             #:value (ref 'value))
+             #:value (ref 'value)
+             #:congame-url (ref 'congame-url))
             (response/json
              #:code 201
              (hasheq 'ok "ok"))))]

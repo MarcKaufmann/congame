@@ -68,6 +68,8 @@
  exn:fail:user-manager?
  exn:fail:user-manager:username-taken?
 
+ list-all-usernames-and-ids
+
  make-user-manager
  user-manager?
  user-manager-lookup/id
@@ -221,3 +223,13 @@
   (query-exec conn (~> (from password-reset #:as pr)
                        (where (= pr.user-id ,user-id))
                        (delete))))
+
+; FIXME: Is this a good way to get this data given we have a user-manager?
+(define/contract (list-all-usernames-and-ids db)
+  (-> database? (hash/c integer? string?))
+  (with-database-connection [conn db]
+    (define users
+      (in-entities conn (~> (from user #:as u)
+                            (order-by ([u.id #:asc])))))
+    (for/hash ([u users])
+      (values (user-id u) (user-username u)))))

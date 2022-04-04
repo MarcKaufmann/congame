@@ -5,6 +5,7 @@
                   current-study-instance-id
                   current-study-stack)
          db
+         koyo/url
          (prefix-in http: net/http-easy)
          racket/contract
          racket/format
@@ -29,6 +30,7 @@
                    (user-identity-service-key u))))
      (define data
        (hasheq
+        'congame-url (->jsexpr (make-application-url))
         'key (->jsexpr key)
         'stack (->jsexpr (current-study-stack))
         'value (->jsexpr value)))
