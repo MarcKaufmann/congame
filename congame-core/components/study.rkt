@@ -663,8 +663,6 @@ QUERY
 (define current-resume-stack
   (make-parameter null))
 
-;; TODO: Try to merge current-resume-stack and current-resume-done?. This is an
-;; ugly solution.
 (define current-resume-done?
   (make-parameter (box #t)))
 
