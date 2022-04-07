@@ -511,6 +511,7 @@ QUERY
  make-step/study
  step-id
  step-page?
+ wrap-page
  study-transitions)
 
 (module+ private
@@ -527,6 +528,12 @@ QUERY
 
 (struct step-page (renderer)
   #:transparent)
+
+(define/contract (wrap-page p proc)
+  (-> step-page? (-> xexpr? xexpr?) step-page?)
+  (page
+   (proc
+    ((step-page-renderer p)))))
 
 (struct study (name requires provides transitions steps failure-handler)
   #:transparent)

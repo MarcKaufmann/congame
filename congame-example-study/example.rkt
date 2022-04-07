@@ -8,7 +8,8 @@
 
 (provide
  consent-study
- simple-study)
+ simple-study
+ wrapped-simple-study)
 
 ;; Directory resources:
 (define-static-resource songs "songs")
@@ -143,6 +144,21 @@
     (make-step 'simple-info-2 simple-info-2)
     (make-step/study 'deep (wrap-sub-study deep-study echo-wrapper))
     (make-step 'done done-step))))
+
+(define wrapped-simple-study
+  (wrap-sub-study
+   simple-study
+   (lambda (hdl)
+     (lambda ()
+       (define p (hdl))
+       (wrap-page p (lambda (xepr)
+                      `(div
+                        (h1 "This is our wrapper!")
+                        ,xepr
+                        ,(button
+                          void
+                          #:to-step-id 'done
+                          "End"))))))))
 
 (define consent-study
   (make-study
