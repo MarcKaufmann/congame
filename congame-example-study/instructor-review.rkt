@@ -170,7 +170,7 @@
       (haml
        (:div
         (#:score (input-number "What score do you give this submission?"
-                               #:min 0 #:max 20))
+                               #:min 0 #:max 30))
         (:button.button.next-button ((:type "submit")) "Submit")))
       (lambda (#:score score)
         (put/instance
