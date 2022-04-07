@@ -10,8 +10,9 @@
          racket/sequence
          racket/string
          threading
-         "user.rkt"
-         (prefix-in config: "../config.rkt"))
+         (prefix-in config: "../config.rkt")
+         "shadow.rkt"
+         "user.rkt")
 
 (provide
  (schema-out congame-server)
@@ -57,12 +58,11 @@
         [else
          (error api-name "API error: ~a" (hash-ref data 'error))]))
 
-(define/contract (congame-server-study-instances cs u)
-  (-> congame-server? user? (listof study-instance?))
+(define/contract (congame-server-study-instances cs)
+  (-> congame-server? (listof study-instance?))
   (define res
     (http:get (congame-server-path cs "/api/v1/studies.json")
-              #:auth (congame-server-auth cs)
-              #:params `((user-display-name . ,(user-display-name u)))))
+              #:auth (congame-server-auth cs)))
   (define data
     (response-json/success res 'congame-server-study-instances))
   (for*/list ([study-data (in-list (hash-ref data 'studies))]
@@ -73,17 +73,30 @@
      #:name (hash-ref instance-data 'name)
      #:status (string->symbol (hash-ref instance-data 'status)))))
 
-(define/contract (congame-server-enroll-user! cs u instance-id)
-  (-> congame-server? user? id/c string?)
+(define/contract (congame-server-enroll-user! db cs u instance-id)
+  (-> database? congame-server? user? id/c string?)
+  (define the-shadow
+    (with-database-transaction [conn db]
+      (define maybe-shadow
+        (lookup conn (~> (from shadow #:as s)
+                         (where (and (= s.user-id ,(user-id u))
+                                     (= s.server-id ,(congame-server-id cs))
+                                     (= s.instance-id ,instance-id))))))
+      (or maybe-shadow
+          (insert-one! conn (make-shadow
+                             #:user-id (user-id u)
+                             #:server-id (congame-server-id cs)
+                             #:instance-id instance-id)))))
+
   (define data
     (response-json/success
      (http:post (congame-server-path cs "/api/v1/study-participants-with-identity")
                 #:auth (congame-server-auth cs)
                 #:json (hasheq
                         'instance-id instance-id
-                        'identity-email (format "~a@~a" (user-display-name u) config:domain-name)
+                        'identity-email (format "~a@~a" (shadow-display-name the-shadow) config:domain-name)
                         'identity-domain (make-application-url)
-                        'identity-key (user-api-key u)))
+                        'identity-key (shadow-api-key the-shadow)))
      'congame-server-enroll-user!))
   (congame-server-path cs (hash-ref data 'target-path)))
 

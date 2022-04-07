@@ -34,7 +34,7 @@
    (for/list ([server (in-list (get-congame-servers db))])
      (data server
            (congame-server-tags server)
-           (congame-server-study-instances server (current-user))))
+           (congame-server-study-instances server)))
    #:key (compose1 congame-server-name data-server) string<?))
 
 (define/contract ((dashboard-page db) _req)
@@ -90,7 +90,7 @@
   (unless server
     (next-dispatcher))
   (define target-url
-    (congame-server-enroll-user! server (current-user) instance-id))
+    (congame-server-enroll-user! db server (current-user) instance-id))
   (displayln target-url)
   (flush-output)
   (redirect-to target-url))

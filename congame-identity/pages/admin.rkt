@@ -24,7 +24,7 @@
   (define study-instance-info
     (for/hash ([server (in-list (get-congame-servers db))])
       (values (congame-server-url server)
-              (congame-server-study-instances server (current-user)))))
+              (congame-server-study-instances server))))
   (define instance-ids-with-data
     (remove-duplicates
      (map (λ (i)

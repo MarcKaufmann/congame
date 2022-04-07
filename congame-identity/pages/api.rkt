@@ -10,6 +10,8 @@
 (provide
  put-instance-page)
 
+;; TODO: Look up congame-server and instance ids off of the shadow and
+;; store them with the instance data.
 (define ((put-instance-page db users) req instance-id)
   (cond
     [(user-manager-lookup/key users (bindings-ref (request-bindings/raw req) 'key ""))

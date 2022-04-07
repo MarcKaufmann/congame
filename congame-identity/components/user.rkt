@@ -11,7 +11,8 @@
          racket/contract
          racket/match
          racket/string
-         threading)
+         threading
+         "shadow.rkt")
 
 ;; user ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -25,12 +26,10 @@
 (define-schema user
   ([id id/f #:primary-key #:auto-increment]
    [(role 'user) symbol/f #:contract role/c]
-   [(display-name (generate-random-display-name)) string/f #:contract non-empty-string? #:wrapper string-downcase]
    [username string/f #:contract non-empty-string? #:wrapper string-downcase]
    [(password-hash "") string/f]
    [(verified? #f) boolean/f]
    [(verification-code (generate-random-string)) string/f #:contract non-empty-string?]
-   [(api-key (generate-api-key)) string/f #:nullable]
    [(created-at (now/moment)) datetime-tz/f]
    [(updated-at (now/moment)) datetime-tz/f])
 
@@ -44,11 +43,6 @@
 (define (password-valid? um u p)
   (hasher-hash-matches? (user-manager-hasher um) (user-password-hash u) p))
 
-(define (generate-random-display-name)
-  (format "u.~a" (buid)))
-
-(define (generate-api-key)
-  (generate-random-string 48))
 
 
 ;; password reset ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -163,14 +157,16 @@
   (with-timing 'user-manager (format "(user-manager-lookup/display-name ~v)" display-name)
     (with-database-connection [conn (user-manager-db um)]
       (lookup conn (~> (from user #:as u)
-                       (where (= u.display-name ,display-name)))))))
+                       (join shadow #:as s #:on (= u.id s.user-id))
+                       (where (= s.display-name ,display-name)))))))
 
 (define/contract (user-manager-lookup/key um key)
   (-> user-manager? string? (or/c false/c user?))
   (with-timing 'user-manager (format "(user-manager-lookup/key ~v)" key)
     (with-database-connection [conn (user-manager-db um)]
       (lookup conn (~> (from user #:as u)
-                       (where (= u.api-key ,(string-downcase key))))))))
+                       (join shadow #:as s #:on (= u.id s.user-id))
+                       (where (= s.api-key ,(string-downcase key))))))))
 
 (define/contract (user-manager-login um username password)
   (-> user-manager? string? string? (or/c false/c user?))
