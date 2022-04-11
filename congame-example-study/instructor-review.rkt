@@ -28,6 +28,11 @@
             (button
              void
              "Go to Instructions and Submission"))))]
+        [(equal? phase 'review)
+         (page
+          (haml
+           (.container
+            (:h1 "Study is no longer open"))))]
         [else
          (error "No such phase")]))
 
