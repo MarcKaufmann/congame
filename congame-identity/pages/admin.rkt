@@ -67,7 +67,7 @@
                    (study-instances-for-url c-url))))
                (haml
                 (:div
-                 (:h3 "Study Instance: " (~a instance-name))
+                 (:h3 "Study Instance: " (~a instance-name) (format " (ID: ~a)" id))
                  (:table.table
                   (:thead
                    (:tr
