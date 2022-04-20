@@ -18,11 +18,11 @@
 (define-schema study-instance-data
   #:table "study_instance_data"
   ([user-id id/f]
+   [server-id id/f]
    [instance-id id/f]
    [study-stack (array/f symbol/f)]
    [key symbol/f]
    [value jsonb/f]
-   [congame-url string/f]
    [(last-put-at (now/moment)) datetime-tz/f]
    [(first-put-at (now/moment)) datetime-tz/f])
   #:pre-persist-hook
@@ -31,36 +31,34 @@
 
 (define/contract (put-study-instance-data db
                                           #:user-id user-id
+                                          #:server-id server-id
                                           #:instance-id instance-id
                                           #:study-stack study-stack
                                           #:key key
-                                          #:value value
-                                          #:congame-url congame-url)
-  (->* (database?
-        #:user-id id/c
-        #:instance-id id/c
-        #:study-stack (listof symbol?)
-        #:key symbol?
-        #:value jsexpr?
-        #:congame-url string?)
-       ()
-       void?)
-  ; FIXME: The constraint needs to be updated to check for the congame server
+                                          #:value value)
+  (-> database?
+      #:user-id id/c
+      #:server-id id/c
+      #:instance-id id/c
+      #:study-stack (listof symbol?)
+      #:key symbol?
+      #:value jsexpr?
+      void?)
   (with-database-connection [conn db]
     (query-exec conn #<<SQL
 INSERT INTO study_instance_data (
-  user_id, instance_id, congame_url, study_stack, key, value, last_put_at
+  user_id, server_id, instance_id, study_stack, key, value
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP
+  $1, $2, $3, $4, $5, $6
 ) ON CONFLICT (
-  user_id, instance_id, study_stack, key
+  user_id, server_id, instance_id, study_stack, key
 ) DO UPDATE SET
   value = EXCLUDED.value,
   last_put_at = CURRENT_TIMESTAMP
 SQL
                 user-id
+                server-id
                 instance-id
-                congame-url
                 (list->pg-array (map symbol->string study-stack))
                 (symbol->string key)
                 value)))

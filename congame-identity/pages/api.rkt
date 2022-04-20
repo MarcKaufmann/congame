@@ -10,8 +10,6 @@
 (provide
  put-instance-page)
 
-;; TODO: Look up congame-server and instance ids off of the shadow and
-;; store them with the instance data.
 (define ((put-instance-page db) req instance-id)
   (let/ec esc
     (define the-shadow
@@ -41,7 +39,8 @@
       (put-study-instance-data
        db
        #:user-id (shadow-user-id the-shadow)
-       #:instance-id instance-id
+       #:server-id (shadow-server-id the-shadow)
+       #:instance-id (shadow-instance-id the-shadow)
        #:study-stack (for/list ([id (in-list (ref 'stack))])
                        (string->symbol id))
        #:key (string->symbol (ref 'key))
