@@ -4,70 +4,54 @@
          koyo/haml
          racket/contract
          racket/format
-         racket/list
-         racket/string
          web-server/http
-         "../components/auth.rkt"
          "../components/congame-server.rkt"
          "../components/study-instance.rkt"
          "../components/template.rkt"
-         "../components/user.rkt"
-         congame/components/export)
+         "../components/user.rkt")
 
-(provide (prefix-out admin: users-study-instance-data-page))
+(provide
+ (prefix-out admin: users-study-instance-data-page))
 
 (define/contract ((users-study-instance-data-page db) _req)
   (-> database? (-> request? response?))
-  (define instances (list-all-study-instance-data/admin db))
   (define users (list-all-usernames-and-ids db))
-  ; FIXME: Getting the data each time is problematic. Bad performance, if study name changes on congame side it changes here, if study is inactive, we might not see it. On the other hand, it works for now.
-  (define study-instance-info
-    (for/hash ([server (in-list (get-congame-servers db))])
-      (values (congame-server-url server)
+  ; (server-id instance-id) -> data
+  (define grouped-data
+    (for/fold ([res (hash)]
+               #:result (for/hash ([(k v) (in-hash res)])
+                          (values k (reverse v))))
+              ([data (in-list (list-all-study-instance-data/admin db))])
+      (define k
+        (cons
+         (study-instance-data-server-id data)
+         (study-instance-data-instance-id data)))
+      (hash-update res k (λ (ds) (cons data ds)) null)))
+  (define servers-by-id
+    (for/hash ([s (in-list (get-congame-servers db))])
+      (values (congame-server-id s) s)))
+  (define study-instances-by-server-id
+    (for/hash ([server (in-hash-values servers-by-id)])
+      (values (congame-server-id server)
               (congame-server-study-instances server))))
-  (define instance-ids-with-data
-    (remove-duplicates
-     (map (λ (i)
-            (study-instance-data-instance-id i))
-          instances)))
-  (define congame-urls-with-data
-    (remove-duplicates
-     (map (λ (i)
-            (study-instance-data-congame-url i))
-          instances)))
-  ; FIXME: display inefficiently runs through all instances for each server and instance id.
-  (define (study-instances-for-url url)
-    (define url1 url)
-    (define url2 (string-replace url "127.0.0.1" "localhost"))
-    (define url3 (string-replace url "localhost" "127.0.0.1"))
-    (cond [(findf (λ (u)
-                    (hash-has-key? study-instance-info u))
-                  (list url1 url2 url3))
-           => (λ (x) (hash-ref study-instance-info x))]
-          [else
-           (error "none of the following keys found: " (list url1 url2 url3))]))
-
+  (define congame-servers-with-data
+    (map car (hash-keys grouped-data)))
   (page
    (haml
     (.container
      (:h1 "Study data")
-     ,@(for*/list ([c-url congame-urls-with-data])
+     ,@(for*/list ([id (in-list congame-servers-with-data)]
+                   [server (in-value (hash-ref servers-by-id id))])
          (haml
           (:div
-           (:h2 "Congame Server: " (~a c-url))
-           ,@(for/list ([id instance-ids-with-data])
-               ; FIXME: Instance name will still print headers for instances
-               ; that don't exist for this congame server. Deal gracefully with
-               ; multiple congame servers.
-               (define instance-name
-                 (study-instance-name
-                  (findf
-                   (λ (i)
-                     (equal? (study-instance-id i) id))
-                   (study-instances-for-url c-url))))
+           (:h2 "Congame Server: " (congame-server-name server))
+           ,@(for*/list ([the-instance (in-list (hash-ref study-instances-by-server-id id null))]
+                         [k (in-value (cons id (study-instance-id the-instance)))]
+                         [data (in-value (hash-ref grouped-data k null))]
+                         #:unless (null? data))
                (haml
                 (:div
-                 (:h3 "Study Instance: " (~a instance-name) (format " (ID: ~a)" id))
+                 (:h3 "Study Instance: " (~a (study-instance-name the-instance)))
                  (:table.table
                   (:thead
                    (:tr
@@ -77,15 +61,12 @@
                     (:th "Key")
                     (:th "Value")))
                   (:tbody
-                   ,@(for/list ([i instances]
-                                #:when (and
-                                        (equal? (study-instance-data-instance-id i) id)
-                                        (equal? (study-instance-data-congame-url i) c-url)))
-                       (define uid (study-instance-data-user-id i))
+                   ,@(for/list ([d (in-list data)])
+                       (define uid (study-instance-data-user-id d))
                        (haml
                         (:tr
                          (:td (~a uid))
                          (:td (~a (hash-ref users uid "#<Error: no user with this id found>")))
-                         (:td (~a (study-instance-data-study-stack i)))
-                         (:td (~a (study-instance-data-key i)))
-                         (:td (~a (study-instance-data-value i))))))))))))))))))
+                         (:td (~a (study-instance-data-study-stack d)))
+                         (:td (~a (study-instance-data-key d)))
+                         (:td (~a (study-instance-data-value d))))))))))))))))))
