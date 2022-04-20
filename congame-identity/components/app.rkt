@@ -84,7 +84,7 @@
 
      [("api" "v1" "study-instances" (integer-arg) "data")
       #:method "put"
-      (put-instance-page db users)]))
+      (put-instance-page db)]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)

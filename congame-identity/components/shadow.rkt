@@ -3,11 +3,16 @@
 (require buid
          deta
          gregor
+         koyo/database
+         koyo/profiler
          koyo/random
-         racket/string)
+         racket/contract
+         racket/string
+         threading)
 
 (provide
- (schema-out shadow))
+ (schema-out shadow)
+ lookup-shadow/key)
 
 (define-schema shadow
   #:table "user_shadows"
@@ -28,3 +33,10 @@
 
 (define (generate-api-key)
   (generate-random-string 48))
+
+(define/contract (lookup-shadow/key db key)
+  (-> database? string? (or/c #f shadow?))
+  (with-timing 'shadow (format "(lookup-shadow/key ~v)" key)
+    (with-database-connection [conn db]
+      (lookup conn (~> (from shadow #:as s)
+                       (where (= s.api-key ,(string-downcase key))))))))
