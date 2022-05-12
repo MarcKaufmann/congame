@@ -418,10 +418,10 @@ QUERY
                           [continue
                            (syntax-parser
                              [(_)
-                              #'(return 'continue)]
+                              #'(return `(continue ,(current-parameterization)))]
 
                              [(_ to:id)
-                              #'(return (cons 'to-step to))])]
+                              #'(return `(to-step ,to ,(current-parameterization)))])]
 
                           [this-request
                            (lambda (stx)
@@ -794,7 +794,7 @@ QUERY
   (log-study-debug "run step ~e for participant ~s" (step-id the-step) (current-participant-id))
   (update-participant-progress! (step-id the-step))
   (define res
-    (call-with-current-continuation
+    (call-with-composable-continuation
      (lambda (return)
        (send/suspend/dispatch/protect
         (lambda (embed/url)
@@ -828,37 +828,53 @@ QUERY
     [(? response?)
      (send/back res)]
 
-    [(cons 'to-step to-step-id)
-     (define new-req (redirect/get/forget/protect))
-     (define next-step
-       (study-find-step s to-step-id (lambda ()
-                                       (error 'run-step "skipped to a nonexistent step: ~s~n  current step: ~.s~n  current study: ~.s" to-step-id the-step s))))
-     (run-step new-req s next-step)]
+    [`(to-step ,to-step-id ,paramz)
+     (call-with-parameterization
+      paramz
+      (lambda ()
+        (goto-step s the-step to-step-id)))]
 
-    [_
-     ;; Forget here to prevent users from going back and re-running the transition.
-     (redirect/get/forget/protect)
-     (log-study-debug "running transition for step~n  id: ~e~n  study: ~e~n  resume stack: ~e~n  participant-id: ~s"
-                      (step-id the-step)
-                      (study-name s)
-                      (current-resume-stack)
-                      (current-participant-id))
-     (define next-step
-       (match ((step-transition the-step))
-         [(? done?) #f]
-         [(? next?) (study-find-next-step s (step-id the-step))]
-         [next-step-id (study-find-step s next-step-id (lambda ()
-                                                         (error 'run-step "transitioned to a nonexistent step: ~.s~n  current step: ~.s~n  current study: ~.s" next-step-id (step-id the-step) s)))]))
+    [`(continue ,paramz)
+     (call-with-parameterization
+      paramz
+      (lambda ()
+        (goto-next-step s the-step)))]))
 
-     ;; Forget here to prevent refreshing from re-running the transition.
-     (define new-req (redirect/get/forget/protect))
-     (cond
-       [next-step => (lambda (the-next-step)
-                       (run-step new-req s the-next-step))]
-       [else
-        (for/hasheq ([id (in-list (study-provides s))])
-          (values id (get id (lambda ()
-                               (error 'run-study "study did not 'put' provided variable: ~s" id)))))])]))
+(define (goto-step the-study the-step to-step-id)
+  (define req (redirect/get/forget/protect))
+  (define next-step
+    (study-find-step
+     the-study to-step-id
+     (lambda ()
+       (error 'run-step "skipped to a nonexistent step: ~s~n  current step: ~.s~n  current study: ~.s" to-step-id the-step the-study))))
+  (run-step req the-study next-step))
+
+(define (goto-next-step the-study the-step)
+  ;; Forget here to prevent users from going back and re-running the transition.
+  (redirect/get/forget/protect)
+  (log-study-debug "running transition for step~n  id: ~e~n  study: ~e~n  resume stack: ~e~n  participant-id: ~s"
+                   (step-id the-step)
+                   (study-name the-study)
+                   (current-resume-stack)
+                   (current-participant-id))
+  (define next-step
+    (match ((step-transition the-step))
+      [(? done?) #f]
+      [(? next?) (study-find-next-step the-study (step-id the-step))]
+      [next-step-id (study-find-step
+                     the-study next-step-id
+                     (lambda ()
+                       (error 'run-step "transitioned to a nonexistent step: ~.s~n  current step: ~.s~n  current study: ~.s" next-step-id (step-id the-step) the-study)))]))
+
+  ;; Forget here to prevent refreshing from re-running the transition.
+  (define req (redirect/get/forget/protect))
+  (cond
+    [next-step => (lambda (the-next-step)
+                    (run-step req the-study the-next-step))]
+    [else
+     (for/hasheq ([id (in-list (study-provides the-study))])
+       (values id (get id (lambda ()
+                            (error 'run-study "study did not 'put' provided variable: ~s" id)))))]))
 
 (define (study-next-step s)
   (car (study-steps s)))

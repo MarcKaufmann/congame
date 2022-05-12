@@ -183,6 +183,7 @@
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)
     (~> handler
+        (wrap-protect-continuations)
         ((wrap-uploads uploads))
         (wrap-current-sentry-user)
         ((wrap-auth-required auth req-roles))
@@ -194,7 +195,6 @@
         ((wrap-errors config:debug))
         ((wrap-flash flashes))
         ((wrap-session sessions))
-        (wrap-protect-continuations)
         (wrap-preload)
         (wrap-cors)
         (wrap-profiler)

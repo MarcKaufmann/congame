@@ -111,8 +111,7 @@
              #:database db
              #:participant participant)
             (lambda ()
-              (run-study s req)))
-           (raise-user-error 'study-page "reached past the end of the study~n  user-id: ~a~n  slug: ~a" uid slug)])]
+              (run-study s req)))])]
 
     [else
      (next-dispatcher)]))
