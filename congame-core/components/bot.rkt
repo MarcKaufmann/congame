@@ -217,7 +217,7 @@
           (format "[data-widget-id=~a]" id)
           "[data-widget-id]"))
     (define maybe-element
-      (page-wait-for! (current-page) selector #:timeout 5))
+      (page-query-selector! (current-page) selector))
     (unless maybe-element
       (raise-bot-error "could not find widget with selector ~s" selector))
     maybe-element))
