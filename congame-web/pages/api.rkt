@@ -1,18 +1,17 @@
 #lang racket/base
 
-(require congame/components/study
+(require congame-web/components/auth
+         congame-web/components/user
          congame/components/export
+         congame/components/study
          json
          koyo/continuation
          koyo/database
-         koyo/url
          racket/contract
          racket/port
          web-server/dispatchers/dispatch
          web-server/servlet
-         congame-web/components/auth
          "../components/tag.rkt"
-         congame-web/components/user
          "render.rkt"
          "study.rkt")
 
@@ -102,7 +101,7 @@
 (provide
  tags)
 
-(define/contract ((tags db) req)
+(define/contract ((tags db) _req)
   (-> database? (-> request? response?))
   (response/jsexpr
    (->jsexpr
