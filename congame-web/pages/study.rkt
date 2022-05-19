@@ -76,7 +76,6 @@
   (define iid (study-instance-id i))
   (define (do-enroll)
     (enroll-participant! db uid iid)
-    (redirect/get/forget/protect)
     (redirect-to (reverse-uri 'study-page (study-instance-slug i))))
   (cond
     [(or (participant-enrolled? db uid iid)
