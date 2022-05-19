@@ -784,11 +784,12 @@ QUERY
                             (car resume-stack)
                             (lambda ()
                               (error 'run-study "failed to resume step in study~n  study: ~e~n  resume stack: ~e" (study-name s) resume-stack))))
-         (begin0
-             (parameterize ([current-resume-stack (cdr resume-stack)])
-               (begin0 (run-step req s the-step)
-                 (redirect/get/forget/protect)))
-           (set-box! (current-resume-done?) #t))]))))
+         (define new-resume-stack (cdr resume-stack))
+         (parameterize ([current-resume-stack new-resume-stack])
+           (when (null? new-resume-stack)
+             (set-box! (current-resume-done?) #t))
+           (begin0 (run-step req s the-step)
+             (redirect/get/forget/protect)))]))))
 
 (define (run-step req s the-step)
   (log-study-debug "run step ~e for participant ~s" (step-id the-step) (current-participant-id))
