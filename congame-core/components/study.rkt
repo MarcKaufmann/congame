@@ -1004,6 +1004,7 @@ QUERY
   #:virtual
   ([id integer/f]
    [user-id integer/f]
+   [instance-id integer/f]
    [email string/f]
    [roles (array/f symbol/f)]
    [progress (array/f string/f)]
@@ -1144,7 +1145,7 @@ QUERY
           (join user #:as u #:on (= u.id p.user-id))
           (where (= p.instance-id ,instance-id))
           (order-by ([p.enrolled-at #:desc]))
-          (select p.id u.id u.username u.roles p.progress p.current-round-name p.current-group-name p.enrolled-at)
+          (select p.id u.id p.instance-id u.username u.roles p.progress p.current-round-name p.current-group-name p.enrolled-at)
           (project-onto study-participant/admin-schema)))
 
     (sequence->list
@@ -1269,16 +1270,20 @@ QUERY
     (lookup conn (~> (from study-participant #:as p)
                      (join user #:as u #:on (= u.id p.user-id))
                      (where (= p.id ,participant-id))
-                     (select p.id u.id u.username u.roles p.progress p.current-round-name p.current-group-name p.enrolled-at)
+                     (select p.id u.id p.instance-id u.username u.roles p.progress p.current-round-name p.current-group-name p.enrolled-at)
                      (project-onto study-participant/admin-schema)))))
 
-;; FIXME: Needs to deal with emails for users signed up via identity
 (define/contract (participant-email pid)
   (-> id/c string?)
-  (study-participant/admin-email
-   (lookup-study-participant/admin
-    (study-manager-db (current-study-manager))
-    pid)))
+  (define the-participant
+    (lookup-study-participant/admin
+     (study-manager-db (current-study-manager))
+     pid))
+  (unless (eqv? (study-participant/admin-instance-id the-participant)
+                (current-study-instance-id))
+    (error 'participant-email "pid ~a is not a member of study instance ~a" pid (current-study-instance-id)))
+
+  (study-participant/admin-email the-participant))
 
 (define/contract (lookup-study-vars db participant-id)
   (-> database? id/c (listof study-var?))
