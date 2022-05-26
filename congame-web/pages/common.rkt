@@ -6,6 +6,7 @@
          koyo/l10n
          net/url
          racket/contract
+         racket/string
          web-server/http
          "../components/template.rkt"
          (prefix-in config: "../config.rkt"))
@@ -26,8 +27,21 @@
 
 (define/contract (expired-page req)
   (-> request? response?)
-  (flash 'warning (translate 'message-session-expired))
-  (redirect-to (url->string (url-scrub (request-uri req)))))
+  (define the-uri (url-scrub (request-uri req)))
+  (define the-path (path->string (url->path the-uri)))
+  (cond
+    [(string-prefix? the-path "/study/")
+     (page
+      (haml
+       (.container
+        (:h1 "Page Expired")
+        (:p "You've already moved on from this step."
+            (:a.button
+             ([:href (url->string the-uri)])
+             "Click here to resume the study.")))))]
+    [else
+     (flash 'warning (translate 'message-session-expired))
+     (redirect-to (url->string the-uri))]))
 
 (define/contract ((error-413-page) _req)
   (-> (-> request? response?))
