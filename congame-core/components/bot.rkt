@@ -98,34 +98,42 @@
                             #:study-url url
                             #:username username
                             #:password password
-                            #:headless? [headless? #t]
                             #:delay [delay 0]
+                            #:browser [browser #f]
+                            #:headless? [headless? #t]
                             #:port [port #f])
     (->* (bot?
           #:study-url string?
           #:username string?
           #:password string?)
-         (#:headless? boolean?
-          #:delay real?
+         (#:delay real?
+          #:browser (or/c browser? #f)
+          #:headless? boolean?
           #:port (or/c #f (integer-in 0 65535)))
          void?)
-    (call-with-marionette/browser/page!
-     #:headless? headless?
-     #:timeout 30
-     #:port port
-     (lambda (p)
-       (parameterize ([current-page p]
-                      [current-delay delay])
-         (page-goto! p url)
-         (maybe-log-in! username password)
-         (execute! b)))))
+    (define (do-run-bot p)
+      (parameterize ([current-page p]
+                     [current-delay delay])
+        (page-goto! p url)
+        (maybe-log-in! username password)
+        (execute! b)))
+
+    (if browser
+        (do-run-bot (make-browser-page! browser))
+        (call-with-marionette/browser/page!
+         #:headless? headless?
+         #:timeout 30
+         #:port port
+         do-run-bot)))
 
   (define (maybe-log-in! username password)
-    (define form (page-wait-for! (current-page) ".form--login"))
-    (when form
-      (element-type! (find "[name=username]") username)
-      (element-type! (find "[name=password]") password)
-      (element-click! (find "button[type=submit]"))))
+    (when (equal? (url->path (page-url (current-page)))
+                  (string->path "/login"))
+      (define form (page-wait-for! (current-page) ".form--login"))
+      (when form
+        (element-type! (find "[name=username]") username)
+        (element-type! (find "[name=password]") password)
+        (element-click! (find "button[type=submit]")))))
 
   (define (execute! b [previous-paths null])
     (when (>= (count-path-run previous-paths) INFINITE-LOOP-THRESHOLD)

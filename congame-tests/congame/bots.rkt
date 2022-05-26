@@ -11,6 +11,7 @@
          deta
          koyo/database
          koyo/logging
+         marionette
          racket/match
          rackunit
          "common.rkt"
@@ -19,11 +20,15 @@
 (define stop-logger void)
 (define test-system
   (system-replace prod-system 'db make-test-database))
+(define stop-shared-marionette #f)
+(define shared-browser #f)
 (define bot-tests
   (test-suite
    "bots"
    #:before
    (lambda ()
+     (set! stop-shared-marionette (start-marionette!))
+     (set! shared-browser (browser-connect!))
      (set! stop-logger
            (start-logger
             #:levels `((app                  . debug)
@@ -69,7 +74,12 @@
      (add-study&instance&enroll! 'test-substudy-failing))
    #:after
    (lambda ()
-     (system-stop test-system))
+     (dynamic-wind
+       void
+       (λ () (system-stop test-system))
+       (λ ()
+         (browser-disconnect! shared-browser)
+         (stop-shared-marionette))))
 
    (test-suite
     "pjb-pilot-bot"
@@ -78,7 +88,7 @@
      #:study-url "http://127.0.0.1:8000/study/pjb-pilot-study"
      #:username "bot@example.com"
      #:password "password"
-     #:headless? #t
+     #:browser shared-browser
      (make-pjb-pilot-bot pjb-pilot-bot-model)))
 
    (test-suite
@@ -94,7 +104,7 @@
      #:study-url "http://127.0.0.1:8000/study/test-substudy-failing"
      #:username "bot@example.com"
      #:password "password"
-     #:headless? #t
+     #:browser shared-browser
      (make-test-substudy-failing-bot
       (λ (id bot)
         (match id
@@ -106,7 +116,7 @@
      #:study-url "http://127.0.0.1:8000/study/test-substudy-failing"
      #:username "bot@example.com"
      #:password "password"
-     #:headless? #t
+     #:browser shared-browser
      (make-test-substudy-failing-bot
       (λ (id bot)
         (match id
