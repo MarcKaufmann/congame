@@ -1,0 +1,41 @@
+#lang racket/base
+
+(require congame/components/bot-maker
+         congame/components/study
+         koyo/haml)
+
+(provide
+ test-looping-failures
+ make-test-looping-failures-bot)
+
+(define (cont)
+  (page (button void "Continue")))
+
+(define (done)
+  (page (haml (:p "Done."))))
+
+(define fail-count 0)
+(define (maybe-fail)
+  (when (< fail-count 2)
+    (set! fail-count (add1 fail-count))
+    (fail 'expected-failure))
+  (page (button void "Continue")))
+
+(define test-looping-failures-child
+  (make-study
+   "test-looping-failures-child"
+   (list
+    (make-step 'fail maybe-fail))))
+
+(define test-looping-failures
+  (make-study
+   "test-looping-failures"
+   #:failure-handler (λ (_the-step _err)
+                       'child)
+   (list
+    (make-step 'cont cont)
+    (make-step/study 'child test-looping-failures-child)
+    (make-step 'done done))))
+
+(define make-test-looping-failures-bot
+  (study->bot test-looping-failures))

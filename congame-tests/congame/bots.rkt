@@ -15,6 +15,7 @@
          racket/match
          rackunit
          "common.rkt"
+         "studies/test-looping-failures.rkt"
          "studies/test-substudy-failing.rkt")
 
 (define stop-logger void)
@@ -71,6 +72,7 @@
                             (study-instance-id the-instance)))
 
      (add-study&instance&enroll! 'pjb-pilot-study)
+     (add-study&instance&enroll! 'test-looping-failures)
      (add-study&instance&enroll! 'test-substudy-failing))
    #:after
    (lambda ()
@@ -123,7 +125,21 @@
           [`(*root* done) (bot:completer)]
           [_ (bot)]))))
 
-    (check-equal? (cdr (unbox test-substudy-failing-failed-step)) 'expected-failure))))
+    (check-equal? (cdr (unbox test-substudy-failing-failed-step)) 'expected-failure))
+
+   (test-suite
+    "test-looping-failures"
+
+    (run-bot
+     #:study-url "http://127.0.0.1:8000/study/test-looping-failures"
+     #:username "bot@example.com"
+     #:password "password"
+     #:browser shared-browser
+     (make-test-looping-failures-bot
+      (λ (id bot)
+        (match id
+          [`(*root* done) (bot:completer)]
+          [_ (bot)])))))))
 
 (module+ test
   (require rackunit/text-ui)
