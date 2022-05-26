@@ -18,6 +18,11 @@
          "studies/test-looping-failures.rkt"
          "studies/test-substudy-failing.rkt")
 
+;; Adding new tests:
+;;   * write the study under `studies/`
+;;   * add the study to the instance list in `../info.rkt`
+;;   * recompile everything/bust the study cache
+
 (define stop-logger void)
 (define test-system
   (system-replace prod-system 'db make-test-database))
