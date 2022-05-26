@@ -146,7 +146,7 @@
   (user-manager db hasher))
 
 (define/contract (user-manager-create! um username password [roles #(user)])
-  (->* (user-manager? string? string?) ((non-empty-vectorof (or/c 'admin 'researcher 'bot 'user))) user?)
+  (->* (user-manager? string? string?) ((non-empty-vectorof (or/c 'admin 'api 'researcher 'bot 'user))) user?)
 
   (define user
     (~> (make-user #:username username

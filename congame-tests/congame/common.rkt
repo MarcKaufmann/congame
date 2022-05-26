@@ -77,5 +77,5 @@
 (define (make-test-user! users
                          [username "bogdan@example.com"]
                          [password "hunter2"]
-                         #:bot? [bot? #f])
-  (user-manager-create! users username password (if bot? #(bot) #(user))))
+                         #:roles [roles #(user)])
+  (user-manager-create! users username password roles))

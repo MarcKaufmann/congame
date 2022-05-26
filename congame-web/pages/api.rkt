@@ -73,6 +73,7 @@
     (lookup-study-instance db instance-id))
   (unless the-instance
     (next-dispatcher))
+  (enroll-participant! db (user-id the-user) (study-instance-id the-instance))
   (define the-token
     (create-auth-token! db (user-id the-user)))
   (define target-path

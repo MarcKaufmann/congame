@@ -52,7 +52,7 @@
        (query-exec conn "TRUNCATE users, study_participants, study_instances, studies CASCADE;"))
      (define users (system-ref test-system 'users))
      (define bot-user
-       (make-test-user! users "bot@example.com" "password" #:bot? #t))
+       (make-test-user! users "bot@example.com" "password" #:roles #(bot)))
      (user-manager-verify! users (user-id bot-user) (user-verification-code bot-user))
 
      (define (add-study&instance&enroll! racket-id)
