@@ -5,15 +5,15 @@
          congame/components/export
          congame/components/study
          json
-         koyo/continuation
          koyo/database
+         koyo/url
          racket/contract
          racket/port
          web-server/dispatchers/dispatch
          web-server/servlet
+         "../components/auth-token.rkt"
          "../components/tag.rkt"
-         "render.rkt"
-         "study.rkt")
+         "render.rkt")
 
 (provide
  studies
@@ -60,8 +60,8 @@
     (response/jsexpr
      (study-instance->jsexpr db study-id study-instance-id vars participants))))
 
-(define/contract ((enroll-participant-from-identity db auth users) req)
-  (-> database? auth-manager? user-manager? (-> request? response?))
+(define/contract ((enroll-participant-from-identity db users) req)
+  (-> database? user-manager? (-> request? response?))
   (define data (call-with-input-bytes (request-post-data/raw req) read-json))
   (define instance-id (hash-ref data 'instance-id))
   (define username (hash-ref data 'identity-email))
@@ -73,20 +73,15 @@
     (lookup-study-instance db instance-id))
   (unless the-instance
     (next-dispatcher))
+  (define the-token
+    (create-auth-token! db (user-id the-user)))
+  (define target-path
+    (reverse-uri
+     #:query `((return-url . ,(reverse-uri 'study-page (study-instance-slug the-instance))))
+     'token-login-page the-token))
 
-  (send/suspend/dispatch
-   (lambda (embed/url)
-     (response/jsexpr
-      (hasheq 'target-path (embed/url
-                            (lambda (_req)
-                              (define req-to-protect (redirect/get/forget))
-                              (define protected-handler
-                                (wrap-protect-continuations
-                                 (lambda (req)
-                                   (auth-manager-login!/nopass auth the-user)
-                                   (parameterize ([current-user the-user])
-                                     ((enroll db the-instance) req)))))
-                              (protected-handler req-to-protect))))))))
+  (response/jsexpr
+   (hasheq 'target-path target-path)))
 
 (define (get-instances-json-by-study db study-id)
   (for/list ([i (in-list (list-study-instances db study-id))])

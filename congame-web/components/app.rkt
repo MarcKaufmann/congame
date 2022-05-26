@@ -143,7 +143,7 @@
      [("api" "v1" "study-participants-with-identity")
       #:roles (api)
       #:method "post"
-      (api:enroll-participant-from-identity db auth users)]
+      (api:enroll-participant-from-identity db users)]
 
      [("api" "v1" "tags.json")
       #:roles (api)
@@ -155,6 +155,9 @@
      [("study" (string-arg))
       #:roles (user)
       (study-page db)]
+
+     [("_token-login" (string-arg))
+      (token-login-page auth db)]
 
      [("login")
       (login-page auth)]

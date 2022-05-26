@@ -12,13 +12,28 @@
          racket/match
          racket/string
          threading
+         web-server/dispatchers/dispatch
          web-server/servlet
          congame-web/components/auth
+         "../components/auth-token.rkt"
          "../components/mail.rkt"
          "../components/prolific.rkt"
          "../components/template.rkt"
          congame-web/components/user
          "forms.rkt")
+
+(provide
+ token-login-page)
+
+(define/contract ((token-login-page auth db) req token)
+  (-> auth-manager? database? (-> request? string? response?))
+  (define bindings (request-bindings/raw req))
+  (define maybe-user
+    (lookup-user-by-auth-token db token))
+  (unless maybe-user
+    (next-dispatcher))
+  (auth-manager-login!/nopass auth maybe-user)
+  (redirect-to (bindings-ref bindings 'return-url)))
 
 ;; login & logout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

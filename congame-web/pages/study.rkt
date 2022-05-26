@@ -7,14 +7,12 @@
          koyo/url
          racket/match
          web-server/dispatchers/dispatch
-         web-server/http
          web-server/servlet
          congame-web/components/auth
          (prefix-in tpl: "../components/template.rkt")
          congame-web/components/user)
 
 (provide
- enroll
  home-page
  study-instances-page
  study-page)
