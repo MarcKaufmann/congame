@@ -1,10 +1,10 @@
 #lang racket/base
 
-(require koyo/mail
+(require congame-web/components/user
+         koyo/mail
          koyo/url
          racket/contract
-         racket/string
-         congame-web/components/user)
+         racket/string)
 
 (provide
  (all-from-out koyo/mail)

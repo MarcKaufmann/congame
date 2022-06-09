@@ -4,12 +4,11 @@
          (prefix-in forms: (only-in forms form))
          racket/contract
          racket/format
-         racket/random
          marionette
          koyo/haml
-         (prefix-in config: congame/config)
-         congame/components/study
-         (prefix-in bot: (submod congame/components/bot actions)))
+         (prefix-in bot: (submod "components/bot.rkt" actions))
+         "components/study.rkt"
+         (prefix-in config: "config.rkt"))
 
 (provide
  make-completion-code

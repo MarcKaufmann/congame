@@ -1,9 +1,9 @@
 #lang racket/base
 
-(require koyo/haml
+(require congame-web/components/template
+         koyo/haml
          racket/contract
-         web-server/http
-         "../components/template.rkt")
+         web-server/http)
 
 (provide
  dashboard-page)

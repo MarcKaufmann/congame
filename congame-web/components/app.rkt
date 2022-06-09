@@ -1,6 +1,14 @@
 #lang racket/base
 
 (require (for-syntax racket/base)
+         congame-web/components/auth
+         congame-web/components/prolific
+         congame-web/components/sentry
+         (prefix-in tpl: congame-web/components/template)
+         congame-web/components/upload
+         congame-web/components/user
+         (prefix-in config: congame-web/config)
+         congame-web/pages/all
          congame/components/resource
          congame/components/study
          koyo
@@ -19,16 +27,7 @@
          web-server/dispatchers/filesystem-map
          web-server/http
          web-server/managers/lru
-         web-server/servlet-dispatch
-         (prefix-in config: "../config.rkt")
-         "../pages/all.rkt"
-         congame-web/components/auth
-         "mail.rkt"
-         "prolific.rkt"
-         "sentry.rkt"
-         (prefix-in tpl: "template.rkt")
-         congame-web/components/upload
-         congame-web/components/user)
+         web-server/servlet-dispatch)
 
 (provide
  make-app

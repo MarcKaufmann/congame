@@ -1,16 +1,16 @@
 #lang racket/base
 
-(require congame/components/study
+(require congame-web/components/auth
+         congame-web/components/user
+         (prefix-in tpl: congame-web/components/template)
+         congame/components/study
          (except-in forms form)
          koyo/continuation
          koyo/haml
          koyo/url
          racket/match
          web-server/dispatchers/dispatch
-         web-server/servlet
-         congame-web/components/auth
-         (prefix-in tpl: "../components/template.rkt")
-         congame-web/components/user)
+         web-server/servlet)
 
 (provide
  home-page

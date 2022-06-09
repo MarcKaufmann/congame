@@ -1,10 +1,10 @@
 #lang racket/base
 
-(require racket/contract
+(require congame-web/components/auth
+         congame-web/components/user
+         racket/contract
          sentry
-         web-server/http
-         congame-web/components/auth
-         congame-web/components/user)
+         web-server/http)
 
 (provide
  with-sentry

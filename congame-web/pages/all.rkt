@@ -17,15 +17,15 @@
 
 
 (reprovide
- "auth.rkt"
- "common.rkt"
- "dashboard.rkt"
- "error.rkt"
- "resource.rkt"
- "study.rkt")
+ congame-web/pages/auth
+ congame-web/pages/common
+ congame-web/pages/dashboard
+ congame-web/pages/error
+ congame-web/pages/resource
+ congame-web/pages/study)
 
 (reprovide/admin
- "admin.rkt")
+ congame-web/pages/admin)
 
 (reprovide/api
- "api.rkt")
+ congame-web/pages/api)

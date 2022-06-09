@@ -1,6 +1,9 @@
 #lang racket/base
 
-(require koyo/flash
+(require congame-web/components/auth
+         (only-in congame-web/components/user user-admin-like?)
+         (prefix-in config: congame-web/config)
+         koyo/flash
          koyo/haml
          koyo/l10n
          koyo/preload
@@ -8,10 +11,7 @@
          koyo/url
          racket/format
          web-server/http
-         xml
-         (prefix-in config: "../config.rkt")
-         congame-web/components/auth
-         (only-in congame-web/components/user user-admin-like?))
+         xml)
 
 (provide
  static-uri

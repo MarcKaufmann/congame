@@ -1,7 +1,14 @@
 #lang racket/base
 
-(require (for-syntax racket/base)
-         (submod congame/components/bot actions)
+(require (submod congame/components/bot actions)
+         congame-web/components/auth
+         congame-web/components/bot-set
+         congame-web/components/prolific
+         congame-web/components/tag
+         (prefix-in tpl: congame-web/components/template)
+         congame-web/components/user
+         congame-web/pages/render
+         congame-web/studies/all ;; required for its effects
          congame/components/export
          congame/components/registry
          congame/components/study
@@ -9,13 +16,7 @@
          deta
          file/zip
          gregor
-         json
-         koyo/continuation
-         koyo/database
-         koyo/haml
-         koyo/json
-         koyo/random
-         koyo/url
+         koyo
          (except-in forms form)
          racket/contract
          racket/file
@@ -28,15 +29,7 @@
          racket/vector
          threading
          web-server/dispatchers/dispatch
-         web-server/http
-         congame-web/components/auth
-         "../components/bot-set.rkt"
-         "../components/prolific.rkt"
-         "../components/tag.rkt"
-         (prefix-in tpl: "../components/template.rkt")
-         congame-web/components/user
-         "../studies/all.rkt"
-         "render.rkt")
+         web-server/http)
 
 (provide
  studies-page

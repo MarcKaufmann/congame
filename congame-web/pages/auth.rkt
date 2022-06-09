@@ -1,6 +1,13 @@
 #lang racket/base
 
-(require forms
+(require congame-web/components/auth
+         congame-web/components/auth-token
+         congame-web/components/mail
+         congame-web/components/prolific
+         congame-web/components/template
+         congame-web/components/user
+         congame-web/pages/forms
+         forms
          koyo/continuation
          koyo/database
          koyo/flash
@@ -13,14 +20,7 @@
          racket/string
          threading
          web-server/dispatchers/dispatch
-         web-server/servlet
-         congame-web/components/auth
-         "../components/auth-token.rkt"
-         "../components/mail.rkt"
-         "../components/prolific.rkt"
-         "../components/template.rkt"
-         congame-web/components/user
-         "forms.rkt")
+         web-server/servlet)
 
 (provide
  token-login-page)

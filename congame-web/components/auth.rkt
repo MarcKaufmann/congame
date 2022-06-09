@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base)
-         component
+         congame-web/components/user
          congame/components/bot
          koyo/database
          koyo/json
@@ -13,8 +13,7 @@
          racket/match
          racket/string
          threading
-         web-server/http
-         congame-web/components/user)
+         web-server/http)
 
 ;; auth-manager ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -44,8 +43,7 @@
 (struct exn:fail:auth-manager exn:fail ())
 (struct exn:fail:auth-manager:unverified exn:fail:auth-manager ())
 
-(struct auth-manager (sessions users)
-  #:methods gen:component [])
+(struct auth-manager (sessions users))
 
 (define/contract (make-auth-manager sessions users)
   (-> session-manager? user-manager? auth-manager?)

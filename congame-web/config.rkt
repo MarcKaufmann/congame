@@ -1,12 +1,12 @@
 #lang racket/base
 
 (require (for-syntax racket/base)
+         congame/config
          koyo/config
          koyo/database-url
          koyo/l10n
          koyo/profiler
          koyo/url
-         congame/config
          racket/runtime-path
          web-server/http/id-cookie)
 

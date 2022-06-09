@@ -1,7 +1,6 @@
 #lang racket/base
 
-(require component
-         db
+(require db
          deta
          file/sha1
          gregor
@@ -10,7 +9,6 @@
          koyo/profiler
          koyo/random
          racket/contract
-         racket/format
          racket/random
          racket/string
          racket/vector
@@ -138,8 +136,7 @@
 (struct exn:fail:user-manager:username-taken exn:fail:user-manager ())
 
 (struct user-manager (db hasher)
-  #:transparent
-  #:methods gen:component [])
+  #:transparent)
 
 (define/contract (make-user-manager db hasher)
   (-> database? hasher? user-manager?)

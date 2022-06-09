@@ -1,15 +1,15 @@
 #lang racket/base
 
-(require koyo/flash
+(require congame-web/components/template
+         (prefix-in config: congame-web/config)
+         koyo/flash
          koyo/haml
          koyo/http
          koyo/l10n
          net/url
          racket/contract
          racket/string
-         web-server/http
-         "../components/template.rkt"
-         (prefix-in config: "../config.rkt"))
+         web-server/http)
 
 (provide
  error-413-page

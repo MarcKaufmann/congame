@@ -2,6 +2,12 @@
 
 (require (for-syntax racket/base)
          component
+         congame-web/components/app
+         congame-web/components/auth
+         congame-web/components/mail
+         congame-web/components/upload
+         congame-web/components/user
+         (prefix-in config: congame-web/config)
          congame/components/registry
          db
          deta/reflect
@@ -17,12 +23,6 @@
          racket/contract
          racket/runtime-path
          sentry
-         "components/app.rkt"
-         congame-web/components/auth
-         "components/mail.rkt"
-         congame-web/components/upload
-         congame-web/components/user
-         (prefix-in config: "config.rkt")
          web-server/safety-limits)
 
 ;; System ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -1,14 +1,14 @@
 #lang racket/base
 
-(require congame/components/study
+(require congame-web/components/user
+         congame/components/study
          db
          deta
          gregor
          koyo/database
          koyo/random
          racket/contract
-         threading
-         congame-web/components/user)
+         threading)
 
 (provide
  (schema-out bot-set)

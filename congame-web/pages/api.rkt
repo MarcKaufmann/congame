@@ -1,7 +1,10 @@
 #lang racket/base
 
 (require congame-web/components/auth
+         congame-web/components/auth-token
+         congame-web/components/tag
          congame-web/components/user
+         congame-web/pages/render
          congame/components/export
          congame/components/study
          json
@@ -10,10 +13,7 @@
          racket/contract
          racket/port
          web-server/dispatchers/dispatch
-         web-server/servlet
-         "../components/auth-token.rkt"
-         "../components/tag.rkt"
-         "render.rkt")
+         web-server/servlet)
 
 (provide
  studies

@@ -1,6 +1,8 @@
 #lang racket/base
 
-(require congame/components/export
+(require congame-web/components/auth
+         congame-web/components/user
+         congame/components/export
          (only-in congame/components/study
                   current-study-instance-id
                   current-study-stack)
@@ -8,9 +10,7 @@
          koyo/url
          (prefix-in http: net/http-easy)
          racket/contract
-         racket/format
-         congame-web/components/auth
-         congame-web/components/user)
+         racket/format)
 
 (provide
  put/identity)

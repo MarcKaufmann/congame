@@ -1,10 +1,10 @@
 #lang racket/base
 
-(require koyo/haml
+(require congame-web/components/template
+         koyo/haml
          koyo/http
          net/url
-         web-server/http
-         "../components/template.rkt")
+         web-server/http)
 
 (provide
  production-error-page)

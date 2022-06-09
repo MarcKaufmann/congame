@@ -1,13 +1,13 @@
 #lang racket/base
 
-(require db
+(require congame-web/components/user
+         db
          deta
          gregor
          koyo/database
          koyo/random
          racket/contract
-         threading
-         "user.rkt")
+         threading)
 
 (provide
  create-auth-token!
