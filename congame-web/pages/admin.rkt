@@ -90,7 +90,7 @@
 (define create-study-form
   (form* ([name (ensure binding/text (required))]
           [slug (ensure binding/text)]
-          [study-id (ensure binding/text (required) (one-of (for/list ([id (in-hash-keys (get-registered-studies))])
+          [study-id (ensure binding/text (required) (one-of (for/list ([id (in-list (get-registered-studies))])
                                                               (cons (~a id) id))))])
     (list name (or slug (slugify name)) study-id)))
 
@@ -110,7 +110,7 @@
     (rw "study-id" (field-group "Study ID"
                                 (widget-select (cons
                                                 (cons "" "Please select a study")
-                                                (for/list ([id (in-hash-keys (get-registered-studies))])
+                                                (for/list ([id (in-list (get-registered-studies))])
                                                   (cons (~a id) (~a id)))))))
     (:button
      ([:type "submit"])
