@@ -30,7 +30,8 @@
          "bot.rkt"
          (prefix-in bot: (submod "bot.rkt" actions))
          "export.rkt"
-         "registry.rkt")
+         "registry.rkt"
+         "xexpr.rkt")
 
 
 ;; canaries ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -623,12 +624,11 @@ QUERY
                                     (wrapper (step-handler a-step))
                                     (step-transition a-step))]))]))
 
-(define/contract current-xexpr-wrapper
-  (parameter/c (-> xexpr? xexpr?))
+(define current-xexpr-wrapper
   (make-parameter values))
 
 (define (response/render s r)
-  (response/xexpr
+  (response/xexpr*
    ((current-xexpr-wrapper)
     (haml
      (:div.step
