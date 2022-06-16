@@ -21,8 +21,10 @@
          koyo/server
          koyo/session
          racket/contract
+         racket/file
          racket/runtime-path
          sentry
+         setup/getinfo
          web-server/safety-limits)
 
 ;; System ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -123,9 +125,23 @@
     (stop-logger)))
 
 (define (before-reload)
+  ;; To avoid needing to manually bust caches when adding new studies,
+  ;; we check if the set of registered studies has changed and then
+  ;; delete the compiled code for `congame-web/studies/all` and
+  ;; trigger a full restart of the development server `(exit 0)'.
+  (unless (equal? (get-registered-studies) *known-registered-studies*)
+    (delete-directory/files "congame-web/studies/compiled")
+    (exit 0))
   (study-registry-allow-conflicts? #t)
   (schema-registry-allow-conflicts? #t))
 
+(define (get-registered-studies)
+  (for*/list ([path (find-relevant-directories '(congame-studies))]
+              [desc (in-list ((get-info/full path) 'congame-studies))])
+    desc))
+
+(define *known-registered-studies*
+  (get-registered-studies))
 
 (module+ main
   (define stop (start))
