@@ -1,13 +1,14 @@
 #lang racket/base
 
-(require racket/contract
-         racket/promise)
+(require
+ racket/contract)
 
 (provide
  study-registry-allow-conflicts?
 
  register-study!
  get-registered-studies
+ get-registered-bots
  lookup-registered-study
 
  (struct-out bot-info)
@@ -35,25 +36,29 @@
     (raise-user-error 'register-study! "a study with id ~s is already registered" id))
   (hash-set! *study-registry* id s))
 
-(define/contract (register-bot! id for-study info)
-  (-> symbol? symbol? (promise/c bot-info?) void?)
+(define/contract (register-bot! id for-study bot models)
+  (-> symbol? symbol? any/c (listof procedure?) void?)
   (hash-update! *bot-registry*
                 for-study
                 (lambda (bots-for-study)
                   (when (and (hash-has-key? bots-for-study id)
                              (not (study-registry-allow-conflicts?)))
                     (raise-user-error 'register-bot! "a bot with id ~s is already registered with study ~s" id for-study))
-                  (hash-set bots-for-study id info))
+                  (hash-set bots-for-study id (bot-info id bot (for/hash ([m (in-list models)])
+                                                                 (values (object-name m) m)))))
                 hasheq))
 
 (define/contract (get-registered-studies)
-  (-> (listof symbol?))
-  (hash-keys *study-registry*))
+  (-> (hash/c symbol? any/c))
+  (hash-copy *study-registry*))
+
+(define/contract (get-registered-bots)
+  (-> (hash/c symbol? any/c))
+  (hash-copy *bot-registry*))
 
 (define/contract (get-bot-infos-for-study id)
   (-> symbol? (hash/c symbol? bot-info?))
-  (for/hasheq ([(k p) (in-hash (hash-ref *bot-registry* id hasheq))])
-    (values k (force p))))
+  (hash-ref *bot-registry* id hasheq))
 
 (define/contract (lookup-registered-study id [failure-thunk (lambda (_id) #f)])
   (->* (symbol?)
@@ -61,6 +66,4 @@
        (or/c #f any/c))
   (define st
     (hash-ref *study-registry* id #f))
-  (if st
-      (force st)
-      (failure-thunk id)))
+  (or st (failure-thunk id)))
