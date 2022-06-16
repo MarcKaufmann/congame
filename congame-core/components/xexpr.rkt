@@ -7,7 +7,9 @@
          (only-in web-server/http/xexpr response/xexpr)
          (only-in xml valid-char?))
 
-(provide response/xexpr*)
+(provide
+ response/xexpr*
+ validate-xexpr)
 
 (define (validate-xexpr e
                         #:on-attr-err [on-attr-err (λ (invalid-attr ctxt)
@@ -49,7 +51,7 @@
        (on-xexpr-err e ctxt)]))
   (help e))
 
-(define (response/xexpr* e [validator validate-xexpr])
+(define (response/xexpr* e #:validator [validator validate-xexpr])
   (with-handlers ([exn:fail:xexpr? (λ (_e) (response/xexpr (validator e)))])
     (response/xexpr e)))
 

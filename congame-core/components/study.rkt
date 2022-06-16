@@ -375,12 +375,13 @@ QUERY
 (define current-renderer
   (make-parameter 'no-renderer))
 
-(define-syntax-rule (page e)
-  (letrec ([render
-            (lambda ()
-              (parameterize ([current-renderer render])
-                e))])
-    (step-page render)))
+(define-syntax-parser page
+  [(_ {~optional {~seq #:validator validator-expr:expr}} e)
+   #'(letrec ([render
+               (lambda ()
+                 (parameterize ([current-renderer render])
+                   e))])
+       (step-page render {~? validator-expr validate-xexpr}))])
 
 (define-syntax-rule (define-widget-stxparams id ...)
   (begin
@@ -527,11 +528,11 @@ QUERY
 (struct step/study step (study)
   #:transparent)
 
-(struct step-page (renderer)
+(struct step-page (renderer xexpr-validator)
   #:transparent)
 
 (define/contract (wrap-page p proc)
-  (-> step-page? (-> xexpr? xexpr?) step-page?)
+  (-> step-page? procedure? step-page?)
   (page
    (proc
     ((step-page-renderer p)))))
@@ -627,8 +628,9 @@ QUERY
 (define current-xexpr-wrapper
   (make-parameter values))
 
-(define (response/render s r)
+(define (response/render s r [validator validate-xexpr])
   (response/xexpr*
+   #:validator validator
    ((current-xexpr-wrapper)
     (haml
      (:div.step
@@ -640,7 +642,9 @@ QUERY
       (r))))))
 
 (define (response/step s)
-  (response/render s (step-page-renderer ((step-handler s)))))
+  (match-define (step-page renderer validator)
+    ((step-handler s)))
+  (response/render s renderer validator))
 
 (define-syntax-rule (when-bot e)
   (if (current-user-bot?) (~a e) ""))
