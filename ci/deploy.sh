@@ -26,6 +26,7 @@ case "$1" in
         IDENTITY_RUN_PATH="/opt/congame/identity-production"
         WEB_CONTAINER_NAME="congame-production"
         WEB_CONTAINER_PORT="8000"
+        WEB_DEBUGGING_PORT="9011"
         WEB_ENVIRONMENT_PATH="$BASEPATH/production.env"
         WEB_RUN_PATH="/opt/congame/production"
     ;;
@@ -36,6 +37,7 @@ case "$1" in
         IDENTITY_RUN_PATH="/opt/congame/identity-staging"
         WEB_CONTAINER_NAME="congame-staging"
         WEB_CONTAINER_PORT="9000"
+        WEB_DEBUGGING_PORT="9012"
         WEB_ENVIRONMENT_PATH="$BASEPATH/staging.env"
         WEB_RUN_PATH="/opt/congame/staging"
     ;;
@@ -127,6 +129,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     --env-file "$WEB_RUN_PATH/env" \
     -v "$WEB_RUN_PATH":"$WEB_RUN_PATH" \
     -p "127.0.0.1:$WEB_CONTAINER_PORT":"$WEB_CONTAINER_PORT" \
+    -p "127.0.0.1:$WEB_DEBUGGING_PORT":"9011" \
     -d \
     "$WEB_IMAGE_NAME"
 
