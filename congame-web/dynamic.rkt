@@ -10,6 +10,7 @@
          (prefix-in config: congame-web/config)
          congame/components/registry
          db
+         (prefix-in dbg: debugging/server)
          deta/reflect
          koyo/database
          koyo/database/migrator
@@ -90,6 +91,7 @@
 (define/contract (start)
   (-> (-> void?))
 
+  (define dbg:stop (dbg:serve))
   (define stop-logger
     (start-logger
      #:levels `((app                  . ,config:log-level)
@@ -122,7 +124,8 @@
 
   (lambda ()
     (system-stop prod-system)
-    (stop-logger)))
+    (stop-logger)
+    (dbg:stop)))
 
 (define (before-reload)
   ;; To avoid needing to manually bust caches when adding new studies,

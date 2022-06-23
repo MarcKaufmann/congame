@@ -6,6 +6,7 @@
                "congame-core"
                "crypto-lib"
                "db-lib"
+               "dbg"
                "deta-lib"
                "forms-lib"
                "gregor-lib"
