@@ -12,7 +12,10 @@
                "koyo-lib"
                "koyo-north"
                "koyo-postmark"
+               "koyo-sentry"
                "libargon2"
+               "net-lib"
+               "sentry-lib"
                "smtp-server"
                "threading-lib"
                "web-server-lib"))

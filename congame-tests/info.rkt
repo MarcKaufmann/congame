@@ -10,8 +10,10 @@
                      "congame-web"
                      "db-lib"
                      "deta-lib"
+                     "http-easy"
                      "koyo-lib"
                      "koyo-north"
+                     "marionette-lib"
                      "threading-lib"
                      "rackunit-lib"))
 
