@@ -5,6 +5,7 @@
          congame-web/components/app
          congame-web/components/auth
          congame-web/components/mail
+         congame-web/components/replication
          congame-web/components/upload
          congame-web/components/user
          (prefix-in config: congame-web/config)
@@ -61,6 +62,8 @@
                                #:sender config:support-email
                                #:common-variables config:common-mail-variables)]
   [migrator (db) (make-migrator-factory migrations-path)]
+  [replications (db hasher) (λ (db hasher)
+                              (make-replication-manager db hasher migrations-path))]
   [server (app) (compose1
                  (make-server-factory #:host config:http-host
                                       #:port config:http-port

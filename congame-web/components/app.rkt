@@ -79,6 +79,10 @@
       #:roles (admin)
       (admin:studies-page db)]
 
+     [("admin" "replications" "new")
+      #:roles (admin)
+      (admin:create-replication-page db)]
+
      [("admin" "studies" "new")
       #:roles (admin)
       (admin:create-study-page db)]

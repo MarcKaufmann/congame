@@ -41,7 +41,8 @@
  view-study-participant-page
  create-study-instance-bot-sets-page
  view-study-instance-bot-set-page
- stop-impersonation-page)
+ stop-impersonation-page
+ create-replication-page)
 
 (define datetime-format
   "YYYY-MM-dd HH:mm:ss")
@@ -67,6 +68,12 @@
               (:a
                ([:href (reverse-uri 'admin:view-study-page (study-meta-id s))])
                (study-meta-name s)) (format "(~a)" (study-meta-racket-id s)))))))
+      (:section.replications
+       (:h1 "Replications")
+       (:h4
+        (:a
+         ([:href (reverse-uri 'admin:create-replication-page)])
+         "New Replication")))
       (:section.tags
        (:h1 "Tags")
        (:h4
@@ -907,3 +914,74 @@
                (:button
                 ([:type "submit"])
                 "Save"))))))])))))
+
+(define replication-form
+  (form* ([slug (ensure binding/text (required))]
+          [git-sha (ensure binding/text (required))]
+          [admin-username (ensure binding/text (required))]
+          [admin-password (ensure binding/text (required))]
+          [instance-ids (ensure binding/text (required))])
+    (list slug git-sha admin-username admin-password instance-ids)))
+
+(define/contract ((create-replication-page db) req)
+  (-> database? (-> request? response?))
+  (let loop ([req req])
+    (send/suspend/dispatch/protect
+     (lambda (embed/url)
+       (match (form-run replication-form req)
+         [`(passed (,slug ,git-sha ,_instance-ids ,admin-username ,admin-password) ,_)
+          (void)]
+
+         [`(,_ ,_ ,rw)
+          (define studies (list-studies db))
+          (define study-instances-by-study
+            (for/fold ([instances (hasheqv)])
+                      ([i (in-list (list-all-study-instances db))])
+              (hash-update
+               instances
+               (study-instance-study-id i)
+               (λ (is) (cons i is))
+               null)))
+          (tpl:page
+           (tpl:container
+            (haml
+             (:section
+              (:h1 "Create Replication")
+              (:form
+               ([:action (embed/url loop)]
+                [:method "POST"])
+               (:label
+                (:p "Slug")
+                (rw "slug" (widget-text))
+                ,@(rw "slug" (widget-errors)))
+               (:label
+                (:p "Git SHA")
+                (rw "git-sha" (widget-text))
+                ,@(rw "git-sha" (widget-errors)))
+               (:label
+                (:p "Admin Username")
+                (rw "admin-username" (widget-text))
+                ,@(rw "admin-username" (widget-errors)))
+               (:label
+                (:p "Admin Password")
+                (rw "admin-password" (widget-password))
+                ,@(rw "admin-username" (widget-errors)))
+               (:label
+                (:p "Instances")
+                (:select
+                 ([:name "instance-ids"]
+                  [:multiple ""]
+                  [:size "24"])
+                 ,@(for/list ([s (in-list studies)])
+                     (haml
+                      (:optgroup
+                       ([:label (study-meta-name s)])
+                       ,@(for/list ([i (in-list (hash-ref study-instances-by-study (study-meta-id s) null))])
+                           (haml
+                            (:option
+                             ([:value (~a (study-instance-id i))])
+                             (study-instance-name i)))))))))
+               (:br)
+               (:button
+                ([:type "submit"])
+                "Create Replication"))))))])))))
