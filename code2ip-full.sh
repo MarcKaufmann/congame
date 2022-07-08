@@ -17,7 +17,7 @@ for f in README.md features-current-and-future.md congame-doc/LICENSE Dockerfile
 do 
     echo "########## START OF FILE: ${f} (only part of file included) ##########"
     echo " "
-    cat ${f} | head -n 40
+    cat ${f} 
     echo " "
     echo "########## END OF FILE ${f}  ##########"
 done
