@@ -40,7 +40,7 @@
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth broker broker-admin db flashes mailer migrator sessions uploader users) make-app]
+  [app (auth broker broker-admin db flashes mailer migrator replications sessions uploader users) make-app]
   [auth (sessions users) make-auth-manager]
   ;; TODO: Check this still holds.
   ;; Some of our jobs depend on the mailer so we need the explicit

@@ -3,6 +3,7 @@
 (require (for-syntax racket/base)
          congame-web/components/auth
          congame-web/components/prolific
+         congame-web/components/replication
          congame-web/components/sentry
          (prefix-in tpl: congame-web/components/template)
          congame-web/components/upload
@@ -63,8 +64,8 @@
     (header-value)))
   (hdl req))
 
-(define/contract (make-app auth broker broker-admin db flashes mailer _migrator sessions uploads users)
-  (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? session-manager? uploader? user-manager? app?)
+(define/contract (make-app auth broker broker-admin db flashes mailer _migrator reps sessions uploads users)
+  (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? replication-manager? session-manager? uploader? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
@@ -81,7 +82,7 @@
 
      [("admin" "replications" "new")
       #:roles (admin)
-      (admin:create-replication-page db)]
+      (admin:create-replication-page db reps)]
 
      [("admin" "studies" "new")
       #:roles (admin)

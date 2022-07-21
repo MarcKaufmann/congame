@@ -71,24 +71,21 @@
      #:admin-username admin-username
      #:admin-password admin-password
      #:instance-ids instance-ids)
-    rep
-    #;
-    (let ()
-      (define container-port (+ 9500 (replication-id rep))) ;; FIXME: needs to be unique across deployment types
-      (define container-name (~a "congame_replication_" (replication-id rep)))
-      (define container-image (~a "ghcr.io/marckaufmann/congame-web:" git-sha))
-      (define container-env null) ;; FIXME
-      (define container-ports (hash container-port container-port))
-      (define container-volumes (hash))
-      (define container-id
-        (launch-container!
-         container-name container-image
-         #:env container-env
-         #:ports container-ports
-         #:volumes container-volumes))
-      (update-one! conn (~> rep
-                            (set-replication-docker-container-port _ container-port)
-                            (set-replication-docker-container-id _ container-id))))))
+    (define container-port (+ 9500 (replication-id rep))) ;; FIXME: needs to be unique across deployment types
+    (define container-name (~a "congame_replication_" (replication-id rep)))
+    (define container-image (~a "ghcr.io/marckaufmann/congame-web:" git-sha))
+    (define container-env null) ;; FIXME
+    (define container-ports (hash container-port container-port))
+    (define container-volumes (hash))
+    (define container-id
+      (launch-container!
+       container-name container-image
+       #:env container-env
+       #:ports container-ports
+       #:volumes container-volumes))
+    (update-one! conn (~> rep
+                          (set-replication-docker-container-port _ container-port)
+                          (set-replication-docker-container-id _ container-id)))))
 
 (define (create&replicate-db! manager
                               #:database-name name
@@ -234,20 +231,22 @@
                            #:ports [ports (hash)]
                            #:volumes [volumes (hash)]
                            #:network [network 'congame])
+  (define data
+    (hasheq
+     'Image image
+     'Env env
+     'Volumes volumes
+     'HostConfig (hasheq
+                  'PortBindings (for/hasheq ([(host-port container-port) (in-hash ports)])
+                                  (values
+                                   (string->symbol (~a container-port))
+                                   (list (hasheq 'HostPort (~a host-port))))))
+     'NetworkingConfig (hasheq 'EndpointsConfig (hasheq network (hasheq)))))
   (define res
     (http:post
      (docker-uri "/containers/create")
      #:params `((name . ,name))
-     #:json (hasheq
-             'Image image
-             'Env env
-             'Volumes volumes
-             'HostConfig (hasheq
-                          'PortBindings (for/hasheq ([(host-port container-port) (in-hash ports)])
-                                          (values
-                                           (string->symbol (~a container-port))
-                                           (hasheq 'HostPort (~a host-port)))))
-             'NetworkingConfig (hasheq 'EndpointsConfig (hasheq network (hasheq))))))
+     #:json data))
   (unless (= (http:response-status-code res) 201)
     (error 'launch-container!
            "failed to launch container~n status code: ~a~n message: ~a"

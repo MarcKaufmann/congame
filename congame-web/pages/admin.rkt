@@ -4,6 +4,7 @@
          congame-web/components/auth
          congame-web/components/bot-set
          congame-web/components/prolific
+         congame-web/components/replication
          congame-web/components/tag
          (prefix-in tpl: congame-web/components/template)
          congame-web/components/user
@@ -923,14 +924,24 @@
           [instance-ids (ensure binding/text (required))])
     (list slug git-sha admin-username admin-password instance-ids)))
 
-(define/contract ((create-replication-page db) req)
-  (-> database? (-> request? response?))
+(define/contract ((create-replication-page db reps) req)
+  (-> database? replication-manager? (-> request? response?))
   (let loop ([req req])
     (send/suspend/dispatch/protect
      (lambda (embed/url)
        (match (form-run replication-form req)
-         [`(passed (,slug ,git-sha ,_instance-ids ,admin-username ,admin-password) ,_)
-          (void)]
+         [`(passed (,slug ,git-sha ,admin-username ,admin-password ,_instance-ids) ,_)
+          (define rep
+            (create-replication!
+             reps
+             #:slug slug
+             #:git-sha git-sha
+             #:admin-username admin-username
+             #:admin-password admin-password
+             #:instance-ids (~> (request-bindings/raw req)
+                                (bindings-assq-all #"instance-ids" _)
+                                (map (compose1 string->number bytes->string/utf-8 binding:form-value) _))))
+          (redirect-to (reverse-uri 'admin:create-replication-page))]
 
          [`(,_ ,_ ,rw)
           (define studies (list-studies db))
