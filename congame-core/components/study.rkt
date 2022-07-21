@@ -66,11 +66,9 @@
  put
  put/instance
  put/instance-file
- put/group
  get
  get/instance
- get/instance-file
- get/group)
+ get/instance-file)
 
 (define/contract current-git-sha
   (parameter/c (or/c #f string?))
@@ -199,6 +197,13 @@ QUERY
 (define (put/instance-file v) v)
 (define (get/instance-file v) v)
 
+;; TODO: We may eventually want a way to share data across studies or
+;; study instances.  Eg. having a correlated treatment across studies
+;; for the same individual.
+;;
+;; Additionally, we may want a variant of {put,get}/instance that
+;; makes it easy to get & store group-level data, implemented on top
+;; of {put,get}/instance.
 (define (put/instance k v)
   (log-study-debug "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s"
                    (current-study-ids) k v (current-participant-id))
@@ -229,46 +234,6 @@ QUERY
                                   (select d.value)
                                   (where (and
                                           (= d.instance-id ,(current-study-instance-id))
-                                          (= d.study-stack ,(current-study-array))
-                                          (= d.key ,(symbol->string k)))))))
-
-    (cond
-      [maybe-value => deserialize*]
-      [(procedure? default) (default)]
-      [else default])))
-
-(define (put/group k v)
-  (log-study-debug "put/group~n  stack: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s" (current-study-ids) k v (current-participant-id))
-  (with-database-transaction [conn (current-database)]
-    (query-exec conn #<<QUERY
-INSERT INTO study_group_data (
-  round_name, group_name, study_stack, key, value, git_sha, last_put_by
-) VALUES (
-  $1, $2, $3, $4, $5, $6, $7
-) ON CONFLICT ON CONSTRAINT study_group_data_pkey DO UPDATE SET
-  value = EXCLUDED.value,
-  git_sha = EXCLUDED.git_sha,
-  last_put_by = EXCLUDED.last_put_by,
-  last_put_at = CURRENT_TIMESTAMP
-QUERY
-                (current-round-name)
-                (current-group-name)
-                (current-study-array)
-                (symbol->string k)
-                (serialize* v)
-                (current-git-sha)
-                (current-participant-id))))
-
-(define (get/group k [default (lambda ()
-                                (error 'get/group "value not found for key ~.s" k))])
-  (log-study-debug "get/group~n  stack: ~s~n  key: ~s~n  participant-id: ~s" (current-study-ids) k (current-participant-id))
-  (with-database-transaction [conn (current-database)]
-    (define maybe-value
-      (query-maybe-value conn (~> (from "study_group_data" #:as d)
-                                  (select d.value)
-                                  (where (and
-                                          (= d.round-name ,(current-round-name))
-                                          (= d.group-name ,(current-group-name))
                                           (= d.study-stack ,(current-study-array))
                                           (= d.key ,(symbol->string k)))))))
 
