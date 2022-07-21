@@ -74,9 +74,37 @@
     (define container-port (+ 9500 (replication-id rep))) ;; FIXME: needs to be unique across deployment types
     (define container-name (~a "congame_replication_" (replication-id rep)))
     (define container-image (~a "ghcr.io/marckaufmann/congame-web:" git-sha))
-    (define container-env null) ;; FIXME
-    (define container-ports (hash container-port container-port))
-    (define container-volumes (hash))
+    (define (env id)
+      (and~> (getenv id)
+             (format "~a=~a" id _)))
+    (define container-env
+      (filter
+       values
+       (list
+        "CONGAME_LOG_LEVEL=debug"
+        "CONGAME_URL_SCHEME=https"
+        (format "CONGAME_URL_HOST=replication-~a.totalinsightmanagement.com" (replication-id rep))
+        "CONGAME_URL_PORT=443"
+        "CONGAME_HTTP_HOST=0.0.0.0"
+        "CONGAME_HTTP_PORT=8000"
+        (env "CONGAME_DB_HOST")
+        (env "CONGAME_DB_NAME")
+        (env "CONGAME_DB_USERNAME")
+        (env "CONGAME_DB_PASSWORD")
+        "CONGAME_ENVIRONMENT=replication"
+        "CONGAME_PRODUCT_NAME=totalinsightmanagement.com"
+        "CONGAME_SUPPORT_NAME=\"Marc Kaufmann\""
+        "CONGAME_SUPPORT_EMAIL=admin@totalinsightmanagement.com"
+        "CONGAME_IDENTITY_URL=identity.totalinsightmanagement.com"
+        (env "CONGAME_UPLOADS_DIR")
+        "PLTSTDERR=error debug@GC")))
+    (define container-ports (hash container-port "8000"))
+    (define container-volumes
+      (filter
+       values
+       (list
+        (let ([uploads-path (getenv "CONGAME_UPLOADS_DIR")])
+          (and uploads-path (~a uploads-path ":" uploads-path))))))
     (define container-id
       (launch-container!
        container-name container-image
@@ -229,14 +257,14 @@
 (define (launch-container! name image
                            #:env [env null]
                            #:ports [ports (hash)]
-                           #:volumes [volumes (hash)]
+                           #:volumes [volumes null]
                            #:network [network 'congame])
   (define data
     (hasheq
      'Image image
      'Env env
-     'Volumes volumes
      'HostConfig (hasheq
+                  'Binds volumes
                   'PortBindings (for/hasheq ([(host-port container-port) (in-hash ports)])
                                   (values
                                    (string->symbol (~a container-port))
