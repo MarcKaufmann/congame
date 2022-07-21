@@ -4,6 +4,7 @@
          congame-web/components/user
          congame/components/study
          db
+         db/util/postgresql
          deta
          gregor
          koyo/database
@@ -109,10 +110,17 @@
               #:user name
               #:password password))))))
       (parameterize ([current-database-connection #f])  ;; ditto
+        ;; NOTE: Migrations might be backwards-incompatible with old shas.
         (component-start ((make-migrator-factory (replication-manager-migrations-path manager)) dst-db))
         (with-database-transaction [dst-conn dst-db]
           (define users (make-user-manager dst-db (replication-manager-hasher manager)))
-          (define admin-user (user-manager-create! users admin-username admin-password #(admin)))
+          (define admin-user
+            (let ([id (query-value src-conn "SELECT last_value + 1 FROM users_id_seq")]
+                  [u (user-manager-create! users admin-username admin-password #(admin))])
+              (query-exec dst-conn "UPDATE users SET id = $1, is_verified = TRUE WHERE id = $2" id (user-id u))
+              (lookup dst-conn (~> (from user #:as u)
+                                   (where (= u.id ,id))))))
+
           (define (copy-rows! table-name id-accessor id-setter query [proc values])
             (define seq-name (format "~a_id_seq" table-name))
             (define src-data
@@ -127,16 +135,13 @@
                   [dst-e (in-list dst-data)])
               (query-exec dst-conn
                           (format "UPDATE ~a SET id = $1 WHERE id = $2" table-name)
-                          (+ (id-accessor src-e) (* 1 1000 1000))
+                          (- (id-accessor src-e))
                           (id-accessor dst-e)))
-            (query-exec dst-conn
-                        (format "UPDATE ~a SET id = id - $1 WHERE id = ANY($2)" table-name)
-                        (* 1 1000 1000)
-                        (map (λ (e) (+ (id-accessor e) (* 1 1000 1000))) src-data))
+            (query-exec dst-conn (format "UPDATE ~a SET id = -id WHERE id < 0" table-name))
             (query-exec dst-conn
                         (format "SELECT setval('~a', $1)" seq-name)
-                        (query-value src-conn (format "SELECT last_value FROM ~a" seq-name))))
-          (println name)
+                        (query-value src-conn (format "SELECT last_value + 1 FROM ~a" seq-name))))
+
           ;; copy studies
           (copy-rows!
            "studies"
@@ -177,13 +182,52 @@
                  (set-user-api-key _ ""))))
 
           ;; copy participants
-          #;
           (copy-rows!
            "study_participants"
            study-participant-id
            set-study-participant-id
            (~> (from study-participant #:as p)
-               (where (in p.instance-id ,@instance-ids)))))))))
+               (where (and (in p.instance-id ,@instance-ids)
+                           (not (is p.user-id null))))))
+
+          ;; copy participant data
+          (sequence-for-each
+           (λ columns
+             (apply query-exec
+                    dst-conn
+                    (~a "INSERT INTO study_data("
+                        "  participant_id, study_stack, key, value, git_sha, last_put_at, first_put_at, round_name, group_name"
+                        ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)")
+                    columns))
+           (in-query src-conn
+                     (~a "SELECT"
+                         "  participant_id, study_stack, key, value, git_sha, last_put_at, first_put_at, round_name, group_name"
+                         " FROM"
+                         "  study_data"
+                         " WHERE"
+                         "  participant_id = ANY($1)")
+                     (list->pg-array
+                      (query-list dst-conn
+                                  (~> (from "study_participants" #:as p)
+                                      (select p.id))))))
+
+          ;; copy participant instance data
+          (sequence-for-each
+           (λ columns
+             (apply query-exec
+                    dst-conn
+                    (~a "INSERT INTO study_instance_data("
+                        "  instance_id, study_stack, key, value, git_sha, last_put_at, first_put_at"
+                        ") VALUES ($1, $2, $3, $4, $5, $6, $7)")
+                    columns))
+           (in-query src-conn
+                     (~a "SELECT"
+                         "  instance_id, study_stack, key, value, git_sha, last_put_at, first_put_at"
+                         " FROM"
+                         "  study_instance_data"
+                         " WHERE "
+                         "  instance_id = ANY($1)")
+                     (list->pg-array instance-ids))))))))
 
 (define (launch-container! name image
                            #:env [env null]
