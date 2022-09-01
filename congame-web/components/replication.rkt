@@ -62,7 +62,10 @@
                     #:instance-ids (list->vector instance-ids)
                     #:docker-container-port 0
                     #:docker-container-id "")))
-    (define db-name (~a "congame_replication_" (replication-id rep)))
+    (define environment (getenv "CONGAME_ENVIRONMENT"))
+    (define staging? (equal? environment "staging"))
+    (define environment-prefix (if staging? "staging-" ""))
+    (define db-name (~a environment-prefix "congame_replication_" (replication-id rep)))
     (define db-password (generate-random-string))
     (create&replicate-db!
      manager
@@ -73,8 +76,6 @@
      #:admin-username admin-username
      #:admin-password admin-password
      #:instance-ids instance-ids)
-    (define environment (getenv "CONGAME_ENVIRONMENT"))
-    (define staging? (equal? environment "staging"))
     (define container-port
       (+ 9500 (+ (* (replication-id rep) 2) (if staging? 1 0))))
     (define container-name (~a "congame_replication_" (replication-id rep)))
@@ -89,7 +90,7 @@
         "CONGAME_LOG_LEVEL=debug"
         "CONGAME_URL_SCHEME=https"
         (format "CONGAME_URL_HOST=~areplication-~a.totalinsightmanagement.com"
-                (if staging? "staging-" "")
+                environment-prefix
                 (replication-id rep))
         "CONGAME_URL_PORT=443"
         "CONGAME_HTTP_HOST=0.0.0.0"
