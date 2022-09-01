@@ -66,6 +66,8 @@
     (define db-password (generate-random-string))
     (create&replicate-db!
      manager
+     #:database-host (or (getenv "CONGAME_DB_HOST") "127.0.0.1")
+     #:database-port (string->number (or (getenv "CONGAME_DB_PORT") "5432"))
      #:database-name db-name
      #:database-password db-password
      #:admin-username admin-username
@@ -93,6 +95,7 @@
         "CONGAME_HTTP_HOST=0.0.0.0"
         "CONGAME_HTTP_PORT=8000"
         (env "CONGAME_DB_HOST")
+        (env "CONGAME_DB_PORT")
         (env "CONGAME_DB_NAME")
         (env "CONGAME_DB_USERNAME")
         (env "CONGAME_DB_PASSWORD")
@@ -126,6 +129,8 @@
                           (set-replication-docker-container-id _ container-id)))))
 
 (define (create&replicate-db! manager
+                              #:database-host database-host
+                              #:database-port database-port
                               #:database-name name
                               #:database-password password
                               #:admin-username admin-username
@@ -141,6 +146,8 @@
          ((make-database-factory
            (λ ()
              (postgresql-connect
+              #:server database-host
+              #:port database-port
               #:database name
               #:user name
               #:password password))))))
