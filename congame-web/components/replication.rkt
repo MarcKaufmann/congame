@@ -288,7 +288,9 @@
                   'PortBindings (for/hasheq ([(host-port container-port) (in-hash ports)])
                                   (values
                                    (string->symbol (~a container-port))
-                                   (list (hasheq 'HostPort (~a host-port))))))
+                                   (list (hasheq
+                                          'HostIp "127.0.0.1"
+                                          'HostPort (~a host-port))))))
      'NetworkingConfig (hasheq 'EndpointsConfig (hasheq network (hasheq)))))
   (define res
     (http:post
