@@ -15,6 +15,7 @@
          racket/contract
          racket/format
          racket/sequence
+         racket/string
          threading)
 
 (provide
@@ -64,7 +65,7 @@
                     #:docker-container-id "")))
     (define environment (getenv "CONGAME_ENVIRONMENT"))
     (define staging? (equal? environment "staging"))
-    (define environment-prefix (if staging? "staging-" ""))
+    (define environment-prefix (if staging? "staging_" ""))
     (define db-name (~a environment-prefix "congame_replication_" (replication-id rep)))
     (define db-password (generate-random-string))
     (create&replicate-db!
@@ -78,7 +79,7 @@
      #:instance-ids instance-ids)
     (define container-port
       (+ 9500 (+ (* (replication-id rep) 2) (if staging? 1 0))))
-    (define container-name (~a "congame_replication_" (replication-id rep)))
+    (define container-name (~a "congame_" environment-prefix "replication_" (replication-id rep)))
     (define container-image (~a "ghcr.io/marckaufmann/congame-web:" git-sha))
     (define (env id)
       (and~> (getenv id)
@@ -90,7 +91,7 @@
         "CONGAME_LOG_LEVEL=debug"
         "CONGAME_URL_SCHEME=https"
         (format "CONGAME_URL_HOST=~areplication-~a.totalinsightmanagement.com"
-                environment-prefix
+                (string-replace environment-prefix "_" "-")
                 (replication-id rep))
         "CONGAME_URL_PORT=443"
         "CONGAME_HTTP_HOST=0.0.0.0"
