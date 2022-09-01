@@ -71,7 +71,9 @@
      #:admin-username admin-username
      #:admin-password admin-password
      #:instance-ids instance-ids)
-    (define container-port (+ 9500 (replication-id rep))) ;; FIXME: needs to be unique across deployment types
+    (define container-port
+      (let ([staging? (equal? (getenv "CONGAME_ENVIRONMENT") "staging")])
+        (+ 9500 (+ (* (replication-id rep) 2) (if staging? 1 0)))))
     (define container-name (~a "congame_replication_" (replication-id rep)))
     (define container-image (~a "ghcr.io/marckaufmann/congame-web:" git-sha))
     (define (env id)
@@ -110,7 +112,12 @@
        container-name container-image
        #:env container-env
        #:ports container-ports
-       #:volumes container-volumes))
+       #:volumes container-volumes
+       #:links (case (getenv "CONGAME_ENVIRONMENT")
+                 [("staging" "production")
+                  (list (getenv "CONGAME_DB_HOST"))]
+                 [else
+                  null])))
     (update-one! conn (~> rep
                           (set-replication-docker-container-port _ container-port)
                           (set-replication-docker-container-id _ container-id)))))
@@ -256,6 +263,7 @@
 
 (define (launch-container! name image
                            #:env [env null]
+                           #:links [links null]
                            #:ports [ports (hash)]
                            #:volumes [volumes null]
                            #:network [network 'congame])
@@ -265,6 +273,7 @@
      'Env env
      'HostConfig (hasheq
                   'Binds volumes
+                  'Links links
                   'PortBindings (for/hasheq ([(host-port container-port) (in-hash ports)])
                                   (values
                                    (string->symbol (~a container-port))
