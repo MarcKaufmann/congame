@@ -127,6 +127,7 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
     --name "$WEB_CONTAINER_NAME" \
     --network congame \
     --env-file "$WEB_RUN_PATH/env" \
+    -v /var/run/docker.sock:/var/run/docker.sock \
     -v "$WEB_RUN_PATH":"$WEB_RUN_PATH" \
     -p "127.0.0.1:$WEB_CONTAINER_PORT":"$WEB_CONTAINER_PORT" \
     -p "127.0.0.1:$WEB_DEBUGGING_PORT":"9011" \
