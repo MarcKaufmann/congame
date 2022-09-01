@@ -7,6 +7,7 @@
          congame-web/components/template
          congame-web/components/user
          congame-web/pages/forms
+         (prefix-in core: congame/components/study)
          forms
          koyo/continuation
          koyo/database
@@ -23,6 +24,23 @@
          web-server/servlet)
 
 (provide
+ anon-login-page)
+
+(define/contract ((anon-login-page auth db users) _req slug)
+  (-> auth-manager? database? user-manager? (-> request? string? response?))
+  (define the-instance (core:lookup-study-instance/by-slug db slug))
+  (unless the-instance
+    (next-dispatcher))
+  (define the-user
+    (user-manager-create-anon! users))
+  (auth-manager-login!/nopass auth the-user)
+  (core:enroll-participant! db (user-id the-user) (core:study-instance-id the-instance))
+  (redirect-to (reverse-uri 'study-page slug)))
+
+
+;; token login ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
  token-login-page)
 
 (define/contract ((token-login-page auth db) req token)
@@ -34,6 +52,7 @@
     (next-dispatcher))
   (auth-manager-login!/nopass auth maybe-user)
   (redirect-to (bindings-ref bindings 'return-url)))
+
 
 ;; login & logout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -946,6 +946,7 @@ QUERY
  lookup-study
  lookup-study-meta
  lookup-study-instance
+ lookup-study-instance/by-slug
  lookup-study-instance-for-researcher
  lookup-study-participant/admin
  lookup-study-vars)
@@ -1261,6 +1262,12 @@ QUERY
   (with-database-connection [conn db]
     (lookup conn (~> (from study-instance #:as i)
                      (where (= i.id ,instance-id))))))
+
+(define/contract (lookup-study-instance/by-slug db slug)
+  (-> database? string? (or/c #f study-instance?))
+  (with-database-connection [conn db]
+    (lookup conn (~> (from study-instance #:as i)
+                     (where (= i.slug ,slug))))))
 
 (define/contract (lookup-study-instance-for-researcher db instance-id researcher-id)
   (-> database? id/c id/c (or/c #f study-instance?))

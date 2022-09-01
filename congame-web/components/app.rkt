@@ -155,6 +155,9 @@
       #:roles (user)
       (study-page db)]
 
+     [("_anon-login" (string-arg))
+      (anon-login-page auth db users)]
+
      [("_token-login" (string-arg))
       (token-login-page auth db)]
 

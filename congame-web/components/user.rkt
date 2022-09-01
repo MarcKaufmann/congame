@@ -127,6 +127,7 @@
  user-manager-lookup/username
  user-manager-create!
  user-manager-create-from-identity!
+ user-manager-create-anon!
  user-manager-create-reset-token!
  user-manager-login
  user-manager-verify!
@@ -174,6 +175,21 @@
                      (lambda (_e)
                        (lookup conn (~> (from user #:as u)
                                         (where (= u.username ,username)))))])
+      (insert-one! conn the-user))))
+
+(define/contract (user-manager-create-anon! um)
+  (-> user-manager? user?)
+  (define username
+    (format "~a@anon.congame" (generate-random-string)))
+  (define the-user
+    (~> (make-user #:username username)
+        (set-user-verified? #t)
+        (set-user-password (user-manager-hasher um)
+                           (generate-random-string))))
+  (with-database-connection [conn (user-manager-db um)]
+    (with-handlers ([exn:fail:sql:constraint-violation?
+                     (lambda (_e)
+                       (user-manager-create-anon! um))])
       (insert-one! conn the-user))))
 
 (define/contract (user-manager-create-reset-token! um
