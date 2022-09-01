@@ -71,9 +71,10 @@
      #:admin-username admin-username
      #:admin-password admin-password
      #:instance-ids instance-ids)
+    (define environment (getenv "CONGAME_ENVIRONMENT"))
+    (define staging? (equal? environment "staging"))
     (define container-port
-      (let ([staging? (equal? (getenv "CONGAME_ENVIRONMENT") "staging")])
-        (+ 9500 (+ (* (replication-id rep) 2) (if staging? 1 0)))))
+      (+ 9500 (+ (* (replication-id rep) 2) (if staging? 1 0))))
     (define container-name (~a "congame_replication_" (replication-id rep)))
     (define container-image (~a "ghcr.io/marckaufmann/congame-web:" git-sha))
     (define (env id)
@@ -85,7 +86,9 @@
        (list
         "CONGAME_LOG_LEVEL=debug"
         "CONGAME_URL_SCHEME=https"
-        (format "CONGAME_URL_HOST=replication-~a.totalinsightmanagement.com" (replication-id rep))
+        (format "CONGAME_URL_HOST=~areplication-~a.totalinsightmanagement.com"
+                (if staging? "staging-" "")
+                (replication-id rep))
         "CONGAME_URL_PORT=443"
         "CONGAME_HTTP_HOST=0.0.0.0"
         "CONGAME_HTTP_PORT=8000"
@@ -113,7 +116,7 @@
        #:env container-env
        #:ports container-ports
        #:volumes container-volumes
-       #:links (case (getenv "CONGAME_ENVIRONMENT")
+       #:links (case environment
                  [("staging" "production")
                   (list (getenv "CONGAME_DB_HOST"))]
                  [else
