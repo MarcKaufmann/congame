@@ -288,7 +288,7 @@
                   'Links links
                   'PortBindings (for/hasheq ([(host-port container-port) (in-hash ports)])
                                   (values
-                                   (string->symbol (~a container-port))
+                                   (string->symbol (~a container-port "/tcp"))
                                    (list (hasheq
                                           'HostIp "127.0.0.1"
                                           'HostPort (~a host-port))))))
