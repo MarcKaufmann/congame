@@ -283,6 +283,10 @@
     (hasheq
      'Image image
      'Env env
+     'ExposedPorts (for/hasheq ([(_host-port container-port) (in-hash ports)])
+                     (values
+                      (string->symbol (~a container-port "/tcp"))
+                      (hasheq)))
      'HostConfig (hasheq
                   'Binds volumes
                   'Links links
