@@ -2,7 +2,8 @@
 
 (require congame/components/study
          congame/components/formular
-         koyo/haml)
+         koyo/haml
+         racket/format)
 
 (provide edpb-survey)
 
@@ -76,7 +77,7 @@
   (define (mean k)
     (define v (get/instance k '()))
     (if (not (null? v))
-        (/ (apply + v) (* 1.0 (length v)))
+        (~r (/ (apply + v) (* 1.0 (length v))) #:precision '(= 2))
         "no answers found"))
   (page
    (haml
