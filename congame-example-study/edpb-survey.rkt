@@ -87,8 +87,8 @@
       (:li (format "Mean belief 'present bias is real': ~a " (mean 'sb-pb)))
       (:li (format "Mean belief 'excuses increase present bias': ~a " (mean 'sb-excuses-increase-pb)))
       (:li (format "Mean belief 'replicable but not excuses': ~a " (mean 'sb-replicable-but-not-excuses)))
-      (:li (format "Mean belief 'present bias is real': ~a " (mean 'sb-our-design-elicits-edpb)))
-      (:li (format "Mean belief 'present bias is real': ~a " (mean 'sb-lucky-first-run)))
+      (:li (format "Mean belief 'our design elicits excuses': ~a " (mean 'sb-our-design-elicits-edpb)))
+      (:li (format "Mean belief 'lucky first run': ~a " (mean 'sb-lucky-first-run)))
       )))))
 
 (define edpb-survey
