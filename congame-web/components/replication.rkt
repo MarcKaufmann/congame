@@ -98,9 +98,9 @@
         "CONGAME_HTTP_PORT=8000"
         (env "CONGAME_DB_HOST")
         (env "CONGAME_DB_PORT")
-        (env "CONGAME_DB_NAME")
-        (env "CONGAME_DB_USERNAME")
-        (env "CONGAME_DB_PASSWORD")
+        (format "CONGAME_DB_NAME=~a" db-name)
+        (format "CONGAME_DB_USERNAME=~a" db-name)
+        (format "CONGAME_DB_PASSWORD=~a" db-password)
         "CONGAME_ENVIRONMENT=replication"
         "CONGAME_PRODUCT_NAME=totalinsightmanagement.com"
         "CONGAME_SUPPORT_NAME=\"Marc Kaufmann\""
