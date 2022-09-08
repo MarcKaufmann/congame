@@ -22,7 +22,13 @@
  replication-manager?
  make-replication-manager
  (schema-out replication)
- create-replication!)
+ create-replication!
+ list-replications
+ delete-replication!)
+
+(define environment (getenv "CONGAME_ENVIRONMENT"))
+(define staging? (equal? environment "staging"))
+(define environment-prefix (if staging? "staging_" ""))
 
 (struct replication-manager (db hasher migrations-path)
   #:transparent)
@@ -40,6 +46,12 @@
    [docker-container-port integer/f #:contract (integer-in 0 65535)]
    [docker-container-id string/f]
    [(created-at (now/moment)) datetime-tz/f]))
+
+(define (replication-container-name r)
+  (~a "congame_" environment-prefix "replication_" (replication-id r)))
+
+(define (replication-database-name r)
+  (~a environment-prefix "congame_replication_" (replication-id r)))
 
 (define/contract (create-replication! manager
                                       #:slug slug
@@ -63,10 +75,7 @@
                     #:instance-ids (list->vector instance-ids)
                     #:docker-container-port 0
                     #:docker-container-id "")))
-    (define environment (getenv "CONGAME_ENVIRONMENT"))
-    (define staging? (equal? environment "staging"))
-    (define environment-prefix (if staging? "staging_" ""))
-    (define db-name (~a environment-prefix "congame_replication_" (replication-id rep)))
+    (define db-name (replication-database-name rep))
     (define db-password (generate-random-string))
     (create&replicate-db!
      manager
@@ -79,7 +88,7 @@
      #:instance-ids instance-ids)
     (define container-port
       (+ 9500 (+ (* (replication-id rep) 2) (if staging? 1 0))))
-    (define container-name (~a "congame_" environment-prefix "replication_" (replication-id rep)))
+    (define container-name (replication-container-name rep))
     (define container-image (~a "ghcr.io/marckaufmann/congame-web:" git-sha))
     (define (env id)
       (and~> (getenv id)
@@ -130,6 +139,27 @@
                           (set-replication-docker-container-port _ container-port)
                           (set-replication-docker-container-id _ container-id)))))
 
+(define/contract (list-replications db)
+  (-> database? (listof replication?))
+  (with-database-connection [conn db]
+    (for/list ([rep (in-entities conn (from replication #:as r))])
+      rep)))
+
+(define/contract (delete-replication! db r)
+  (-> database? replication? void?)
+  (define container-name (replication-container-name r))
+  (unless (remove-container! container-name)
+    (log-warning "failed to delete container ~a (might already have been deleted)" container-name))
+  (with-database-connection [conn db]
+    (define db-name (replication-database-name r))
+    (query-exec conn (format "DROP DATABASE ~a WITH (FORCE)" db-name))
+    (query-exec conn (format "DROP ROLE ~a" db-name))
+    (query-exec conn (~> (from replication #:as r)
+                         (where (= r.id ,(replication-id r)))
+                         (delete)))))
+
+;; helpers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define (create&replicate-db! manager
                               #:database-host database-host
                               #:database-port database-port
@@ -155,124 +185,132 @@
               #:password password))))))
       (parameterize ([current-database-connection #f])  ;; ditto
         ;; NOTE: Migrations might be backwards-incompatible with old shas.
-        (component-start ((make-migrator-factory (replication-manager-migrations-path manager)) dst-db))
-        (with-database-transaction [dst-conn dst-db]
-          (define users (make-user-manager dst-db (replication-manager-hasher manager)))
-          (define admin-user
-            (let ([id (query-value src-conn "SELECT last_value + 1 FROM users_id_seq")]
-                  [u (user-manager-create! users admin-username admin-password #(admin))])
-              (query-exec dst-conn "UPDATE users SET id = $1, is_verified = TRUE WHERE id = $2" id (user-id u))
-              (lookup dst-conn (~> (from user #:as u)
-                                   (where (= u.id ,id))))))
+        (define migrations
+          ((make-migrator-factory (replication-manager-migrations-path manager)) dst-db))
+        (dynamic-wind
+          void
+          (lambda ()
+            (component-start migrations)
+            (with-database-transaction [dst-conn dst-db]
+              (define users (make-user-manager dst-db (replication-manager-hasher manager)))
+              (define admin-user
+                (let ([id (query-value src-conn "SELECT last_value + 1 FROM users_id_seq")]
+                      [u (user-manager-create! users admin-username admin-password #(admin))])
+                  (query-exec dst-conn "UPDATE users SET id = $1, is_verified = TRUE WHERE id = $2" id (user-id u))
+                  (lookup dst-conn (~> (from user #:as u)
+                                       (where (= u.id ,id))))))
 
-          (define (copy-rows! table-name id-accessor id-setter query [proc values])
-            (define seq-name (format "~a_id_seq" table-name))
-            (define src-data
-              (sequence->list
-               (in-entities src-conn query)))
-            (define dst-data
-              (apply insert! dst-conn (for/list ([e (in-list src-data)])
-                                        ;; Force the dirty flag to be set on the
-                                        ;; entity so that deta will insert it.
-                                        (proc (id-setter e (id-accessor e))))))
-            (for ([src-e (in-list src-data)]
-                  [dst-e (in-list dst-data)])
-              (query-exec dst-conn
-                          (format "UPDATE ~a SET id = $1 WHERE id = $2" table-name)
-                          (- (id-accessor src-e))
-                          (id-accessor dst-e)))
-            (query-exec dst-conn (format "UPDATE ~a SET id = -id WHERE id < 0" table-name))
-            (query-exec dst-conn
-                        (format "SELECT setval('~a', $1)" seq-name)
-                        (query-value src-conn (format "SELECT last_value + 1 FROM ~a" seq-name))))
+              (define (copy-rows! table-name id-accessor id-setter query [proc values])
+                (define seq-name (format "~a_id_seq" table-name))
+                (define src-data
+                  (sequence->list
+                   (in-entities src-conn query)))
+                (define dst-data
+                  (apply insert! dst-conn (for/list ([e (in-list src-data)])
+                                            ;; Force the dirty flag to be set on the
+                                            ;; entity so that deta will insert it.
+                                            (proc (id-setter e (id-accessor e))))))
+                (for ([src-e (in-list src-data)]
+                      [dst-e (in-list dst-data)])
+                  (query-exec dst-conn
+                              (format "UPDATE ~a SET id = $1 WHERE id = $2" table-name)
+                              (- (id-accessor src-e))
+                              (id-accessor dst-e)))
+                (query-exec dst-conn (format "UPDATE ~a SET id = -id WHERE id < 0" table-name))
+                (query-exec dst-conn
+                            (format "SELECT setval('~a', $1)" seq-name)
+                            (query-value src-conn (format "SELECT last_value + 1 FROM ~a" seq-name))))
 
-          ;; copy studies
-          (copy-rows!
-           "studies"
-           study-meta-id
-           set-study-meta-id
-           (~> (from study-meta #:as s)
-               (where (in s.id (subquery
-                                (~> (from "study_instances" #:as si)
-                                    (select si.study-id)
-                                    (where (in si.id ,@instance-ids))))))))
+              ;; copy studies
+              (copy-rows!
+               "studies"
+               study-meta-id
+               set-study-meta-id
+               (~> (from study-meta #:as s)
+                   (where (in s.id (subquery
+                                    (~> (from "study_instances" #:as si)
+                                        (select si.study-id)
+                                        (where (in si.id ,@instance-ids))))))))
 
-          ;; copy study-instances
-          (copy-rows!
-           "study_instances"
-           study-instance-id
-           set-study-instance-id
-           (~> (from study-instance #:as si)
-               (where (in si.id ,@instance-ids)))
-           (lambda (i)
-             (set-study-instance-owner-id i (user-id admin-user))))
+              ;; copy study-instances
+              (copy-rows!
+               "study_instances"
+               study-instance-id
+               set-study-instance-id
+               (~> (from study-instance #:as si)
+                   (where (in si.id ,@instance-ids)))
+               (lambda (i)
+                 (set-study-instance-owner-id i (user-id admin-user))))
 
-          ;; copy participant users
-          (copy-rows!
-           "users"
-           user-id
-           set-user-id
-           (~> (from user #:as u)
-               (where (in u.id (subquery
-                                (~> (from "study_participants" #:as p)
-                                    (select p.user-id)
-                                    (where (in p.instance-id ,@instance-ids)))))))
-           (lambda (u)
-             (~> (set-user-roles u #(user))
-                 (set-user-username _ (generate-random-string))
-                 (set-user-password-hash _ "")
-                 (set-user-verification-code _ (generate-random-string))
-                 (set-user-bot-set-id _ sql-null)
-                 (set-user-api-key _ "")
-                 (set-user-parent-id _ sql-null))))
+              ;; copy participant users
+              (copy-rows!
+               "users"
+               user-id
+               set-user-id
+               (~> (from user #:as u)
+                   (where (in u.id (subquery
+                                    (~> (from "study_participants" #:as p)
+                                        (select p.user-id)
+                                        (where (in p.instance-id ,@instance-ids)))))))
+               (lambda (u)
+                 (~> (set-user-roles u #(user))
+                     (set-user-username _ (generate-random-string))
+                     (set-user-password-hash _ "")
+                     (set-user-verification-code _ (generate-random-string))
+                     (set-user-bot-set-id _ sql-null)
+                     (set-user-api-key _ "")
+                     (set-user-parent-id _ sql-null))))
 
-          ;; copy participants
-          (copy-rows!
-           "study_participants"
-           study-participant-id
-           set-study-participant-id
-           (~> (from study-participant #:as p)
-               (where (and (in p.instance-id ,@instance-ids)
-                           (not (is p.user-id null))))))
+              ;; copy participants
+              (copy-rows!
+               "study_participants"
+               study-participant-id
+               set-study-participant-id
+               (~> (from study-participant #:as p)
+                   (where (and (in p.instance-id ,@instance-ids)
+                               (not (is p.user-id null))))))
 
-          ;; copy participant data
-          (sequence-for-each
-           (λ columns
-             (apply query-exec
-                    dst-conn
-                    (~a "INSERT INTO study_data("
-                        "  participant_id, study_stack, key, value, git_sha, last_put_at, first_put_at, round_name, group_name"
-                        ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)")
-                    columns))
-           (in-query src-conn
-                     (~a "SELECT"
-                         "  participant_id, study_stack, key, value, git_sha, last_put_at, first_put_at, round_name, group_name"
-                         " FROM"
-                         "  study_data"
-                         " WHERE"
-                         "  participant_id = ANY($1)")
-                     (list->pg-array
-                      (query-list dst-conn
-                                  (~> (from "study_participants" #:as p)
-                                      (select p.id))))))
+              ;; copy participant data
+              (sequence-for-each
+               (λ columns
+                 (apply query-exec
+                        dst-conn
+                        (~a "INSERT INTO study_data("
+                            "  participant_id, study_stack, key, value, git_sha, last_put_at, first_put_at, round_name, group_name"
+                            ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)")
+                        columns))
+               (in-query src-conn
+                         (~a "SELECT"
+                             "  participant_id, study_stack, key, value, git_sha, last_put_at, first_put_at, round_name, group_name"
+                             " FROM"
+                             "  study_data"
+                             " WHERE"
+                             "  participant_id = ANY($1)")
+                         (list->pg-array
+                          (query-list dst-conn
+                                      (~> (from "study_participants" #:as p)
+                                          (select p.id))))))
 
-          ;; copy participant instance data
-          (sequence-for-each
-           (λ columns
-             (apply query-exec
-                    dst-conn
-                    (~a "INSERT INTO study_instance_data("
-                        "  instance_id, study_stack, key, value, git_sha, last_put_at, first_put_at"
-                        ") VALUES ($1, $2, $3, $4, $5, $6, $7)")
-                    columns))
-           (in-query src-conn
-                     (~a "SELECT"
-                         "  instance_id, study_stack, key, value, git_sha, last_put_at, first_put_at"
-                         " FROM"
-                         "  study_instance_data"
-                         " WHERE "
-                         "  instance_id = ANY($1)")
-                     (list->pg-array instance-ids))))))))
+              ;; copy participant instance data
+              (sequence-for-each
+               (λ columns
+                 (apply query-exec
+                        dst-conn
+                        (~a "INSERT INTO study_instance_data("
+                            "  instance_id, study_stack, key, value, git_sha, last_put_at, first_put_at"
+                            ") VALUES ($1, $2, $3, $4, $5, $6, $7)")
+                        columns))
+               (in-query src-conn
+                         (~a "SELECT"
+                             "  instance_id, study_stack, key, value, git_sha, last_put_at, first_put_at"
+                             " FROM"
+                             "  study_instance_data"
+                             " WHERE "
+                             "  instance_id = ANY($1)")
+                         (list->pg-array instance-ids)))))
+          (lambda ()
+            (component-stop migrations)
+            (component-stop dst-db)))))))
 
 (define (launch-container! name image
                            #:env [env null]
@@ -322,6 +360,25 @@
            "failed to start container~n status code: ~a~n message: ~a"
            (http:response-status-code res)
            (hash-ref (http:response-json res) 'message))))
+
+(define (remove-container! id)
+  (let/ec esc
+    (define stop-res
+      (http:post
+       #:params '((t . "5"))
+       (docker-uri (format "/containers/~a/stop" id))))
+    (unless (memv (http:response-status-code stop-res) '(204 304))
+      (esc #f))
+    (define delete-res
+      (http:delete
+       (docker-uri (format "/containers/~a" id))))
+    (unless (= (http:response-status-code delete-res) 204)
+      (esc #f))
+    (define block-res
+      (http:post
+       #:params '((condition . "removed"))
+       (docker-uri (format "/containers/~a/wait" id))))
+    (= (http:response-status-code block-res) 200)))
 
 (define (docker-uri path)
   (~a "http+unix://%2Fvar%2Frun%2Fdocker.sock/v1.41" path))

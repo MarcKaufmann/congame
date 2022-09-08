@@ -51,43 +51,58 @@
 (define/contract ((studies-page db) _req)
   (-> database? (-> request? response?))
   (define studies (list-studies db))
+  (define replications (list-replications db))
   (define tags (list-tags db))
-  (tpl:page
-   (tpl:container
-    (haml
-     (:div
-      (:section.studies
-       (:h1 "Studies")
-       (:h4
-        (:a
-         ([:href (reverse-uri 'admin:create-study-page)])
-         "New Study"))
-       (:ul.study-list
-        ,@(for/list ([s (in-list studies)])
-            (haml
-             (:li
-              (:a
-               ([:href (reverse-uri 'admin:view-study-page (study-meta-id s))])
-               (study-meta-name s)) (format "(~a)" (study-meta-racket-id s)))))))
-      (:section.replications
-       (:h1 "Replications")
-       (:h4
-        (:a
-         ([:href (reverse-uri 'admin:create-replication-page)])
-         "New Replication")))
-      (:section.tags
-       (:h1 "Tags")
-       (:h4
-        (:a
-         ([:href (reverse-uri 'admin:create-tag-page)])
-         "New Tag")
-        (:ul.tag-list
-         ,@(for/list ([t (in-list tags)])
-             (haml
-              (:li
-               (:a
-                ([:href (reverse-uri 'admin:view-tag-page (tag-id t))])
-                (tag-name t)))))))))))))
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (tpl:page
+      (tpl:container
+       (haml
+        (:div
+         (:section.studies
+          (:h1 "Studies")
+          (:h4
+           (:a
+            ([:href (reverse-uri 'admin:create-study-page)])
+            "New Study"))
+          (:ul.study-list
+           ,@(for/list ([s (in-list studies)])
+               (haml
+                (:li
+                 (:a
+                  ([:href (reverse-uri 'admin:view-study-page (study-meta-id s))])
+                  (study-meta-name s)) (format "(~a)" (study-meta-racket-id s)))))))
+         (:section.replications
+          (:h1 "Replications")
+          (:h4
+           (:a
+            ([:href (reverse-uri 'admin:create-replication-page)])
+            "New Replication"))
+          (:ul.replication-list
+           ,@(for/list ([r (in-list replications)])
+               (haml
+                (:li
+                 (replication-slug r) " (" (replication-git-sha r) ") "
+                 (:a
+                  ([:onclick "return confirm('Are you sure?')"]
+                   [:href (embed/url
+                           (lambda (_req)
+                             (delete-replication! db r)
+                             (redirect-to (reverse-uri 'admin:studies-page))))])
+                  "Delete"))))))
+         (:section.tags
+          (:h1 "Tags")
+          (:h4
+           (:a
+            ([:href (reverse-uri 'admin:create-tag-page)])
+            "New Tag")
+           (:ul.tag-list
+            ,@(for/list ([t (in-list tags)])
+                (haml
+                 (:li
+                  (:a
+                   ([:href (reverse-uri 'admin:view-tag-page (tag-id t))])
+                   (tag-name t)))))))))))))))
 
 (define (slugify s)
   (~> s
@@ -931,17 +946,16 @@
      (lambda (embed/url)
        (match (form-run replication-form req)
          [`(passed (,slug ,git-sha ,admin-username ,admin-password ,_instance-ids) ,_)
-          (define rep
-            (create-replication!
-             reps
-             #:slug slug
-             #:git-sha git-sha
-             #:admin-username admin-username
-             #:admin-password admin-password
-             #:instance-ids (~> (request-bindings/raw req)
-                                (bindings-assq-all #"instance-ids" _)
-                                (map (compose1 string->number bytes->string/utf-8 binding:form-value) _))))
-          (redirect-to (reverse-uri 'admin:create-replication-page))]
+          (create-replication!
+           reps
+           #:slug slug
+           #:git-sha git-sha
+           #:admin-username admin-username
+           #:admin-password admin-password
+           #:instance-ids (~> (request-bindings/raw req)
+                              (bindings-assq-all #"instance-ids" _)
+                              (map (compose1 string->number bytes->string/utf-8 binding:form-value) _)))
+          (redirect-to (reverse-uri 'admin:studies-page))]
 
          [`(,_ ,_ ,rw)
           (define studies (list-studies db))
