@@ -223,7 +223,8 @@
                  (set-user-password-hash _ "")
                  (set-user-verification-code _ (generate-random-string))
                  (set-user-bot-set-id _ sql-null)
-                 (set-user-api-key _ ""))))
+                 (set-user-api-key _ "")
+                 (set-user-parent-id _ sql-null))))
 
           ;; copy participants
           (copy-rows!
