@@ -268,6 +268,8 @@ QUERY
 ; FIXME: The other schemas are later, but for the contract I need
 ; `study-payment?`
 
+;; XXX: This predates put/instance, and seems redundant now.
+;; Eventually, we should rip it out.
 (define-schema study-payment
   #:table "payments"
   ([participant-id integer/f]
