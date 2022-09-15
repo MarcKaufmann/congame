@@ -82,6 +82,7 @@
   (-> auth-manager? void?)
   (session-remove! session-key))
 
+;; XXX: The next time this changes, add tests.
 (define/contract (((wrap-auth-required am req-roles) handler) req)
   (-> auth-manager?
       (-> request? (listof symbol?))
