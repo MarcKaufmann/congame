@@ -45,26 +45,27 @@
      (formular
       (haml
        (:div
-        (:div
+        #;(:div
          (#:sb-pb (input-sb "present bias is real")))
-        (:div
+        #;(:div
          (#:sb-excuses-increase-pb (input-sb "excuses increase present bias")))
-        (:div
+        #;(:div
          (#:sb-our-design-elicits-edpb (input-sb "our design elicits excuse-driven present bias")))
-        (:div
+        #;(:div
          (#:sb-replicable-but-not-excuses (input-sb "we are picking up something replicabel but it is not excuses")))
         (:div
          (#:sb-lucky-first-run (input-sb "we got 'lucky' in the first run and got a spurious result i.e. the null result is real")))
         (:button.button.next-button ([:type "submit"]) "Next")))
-      (lambda (#:sb-pb sb-pb
-               #:sb-excuses-increase-pb sb-excuses-increase-pb
-               #:sb-replicable-but-not-excuses sb-replicable-but-not-excuses
-               #:sb-our-design-elicits-edpb sb-our-design-elicits-edpb
-               #:sb-lucky-first-run sb-lucky-first-run)
-        (put-self+instance 'sb-pb sb-pb)
-        (put-self+instance 'sb-excuses-increase-pb sb-excuses-increase-pb)
-        (put-self+instance 'sb-replicable-but-not-excuses sb-replicable-but-not-excuses)
-        (put-self+instance 'sb-our-design-elicits-edpb sb-our-design-elicits-edpb)
+      (lambda (;#:sb-pb sb-pb
+               ;#:sb-excuses-increase-pb sb-excuses-increase-pb
+               ;#:sb-replicable-but-not-excuses sb-replicable-but-not-excuses
+               ;#:sb-our-design-elicits-edpb sb-our-design-elicits-edpb
+               #:sb-lucky-first-run sb-lucky-first-run
+               )
+        ;(put-self+instance 'sb-pb sb-pb)
+        ;(put-self+instance 'sb-excuses-increase-pb sb-excuses-increase-pb)
+        ;(put-self+instance 'sb-replicable-but-not-excuses sb-replicable-but-not-excuses)
+        ;(put-self+instance 'sb-our-design-elicits-edpb sb-our-design-elicits-edpb)
         (put-self+instance 'sb-lucky-first-run sb-lucky-first-run)))))))
 
 (define (done)
@@ -79,17 +80,29 @@
     (if (not (null? v))
         (~r (/ (apply + v) (* 1.0 (length v))) #:precision '(= 2))
         "no answers found"))
+
+  (define (display-answers k title)
+    (haml
+     (:div
+      (:h3 title)
+      (:ul
+       ,@(for/list ([a (get/instance k '())])
+           (haml
+            (:li a)))))))
   (page
    (haml
     (.container
      (:h1 "Admin Page")
      (:ul
-      (:li (format "Mean belief 'present bias is real': ~a " (mean 'sb-pb)))
-      (:li (format "Mean belief 'excuses increase present bias': ~a " (mean 'sb-excuses-increase-pb)))
-      (:li (format "Mean belief 'replicable but not excuses': ~a " (mean 'sb-replicable-but-not-excuses)))
-      (:li (format "Mean belief 'our design elicits excuses': ~a " (mean 'sb-our-design-elicits-edpb)))
+      ;(:li (format "Mean belief 'present bias is real': ~a " (mean 'sb-pb)))
+      ;(:li (format "Mean belief 'excuses increase present bias': ~a " (mean 'sb-excuses-increase-pb)))
+      ;(:li (format "Mean belief 'replicable but not excuses': ~a " (mean 'sb-replicable-but-not-excuses)))
+      ;(:li (format "Mean belief 'our design elicits excuses': ~a " (mean 'sb-our-design-elicits-edpb)))
       (:li (format "Mean belief 'lucky first run': ~a " (mean 'sb-lucky-first-run)))
-      )))))
+
+      (display-answers 'plausible-explanation "Most Plausible Explanation")
+      (display-answers 'other-explanations "Other Explanations")
+      (display-answers 'other-excuses "Other Excuses"))))))
 
 (define edpb-survey
   (make-study
