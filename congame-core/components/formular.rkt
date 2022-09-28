@@ -16,6 +16,7 @@
  formular-autofill
  checkbox
  radios
+ input-date
  input-file
  input-number
  input-text
@@ -236,4 +237,20 @@
        (haml
         (.group
          (:label label ((widget-text) name value errors))
+         ,@((widget-errors) name value errors))))]))
+
+; FIXME: Move this to `forms` package
+(define (widget-date #:attributes [attributes null])
+  (widget-input #:type "date"
+                #:attributes attributes))
+
+(define ((input-date label #:validators [validators null]) meth)
+  (match meth
+    ['validator
+     (apply ensure binding/text (required) validators)]
+    ['widget
+     (lambda (name value errors)
+       (haml
+        (.group
+         (:label label ((widget-date) name value errors))
          ,@((widget-errors) name value errors))))]))
