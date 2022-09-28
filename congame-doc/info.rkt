@@ -10,4 +10,5 @@
                      "scribble-lib"
                      "web-server-lib"
                      "web-server-doc"))
-(define scribblings '(("congame.scrbl")))
+(define scribblings '(("congame.scrbl")
+                      ("formular.scrbl")))
