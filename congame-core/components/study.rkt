@@ -914,6 +914,7 @@ QUERY
  lookup-study-instance/by-slug
  lookup-study-instance-for-researcher
  lookup-study-participant/admin
+ lookup-study-participant/by-id
  lookup-study-vars)
 
 (define-schema study-meta
@@ -1249,6 +1250,12 @@ QUERY
                      (where (= p.id ,participant-id))
                      (select p.id u.id p.instance-id u.username u.roles p.progress p.current-round-name p.current-group-name p.enrolled-at)
                      (project-onto study-participant/admin-schema)))))
+
+(define/contract (lookup-study-participant/by-id db participant-id)
+  (-> database? id/c (or/c #f study-participant?))
+  (with-database-connection [conn db]
+    (lookup conn (~> (from study-participant #:as p)
+                     (where (= p.id ,participant-id))))))
 
 (define/contract (participant-email pid)
   (-> id/c string?)
