@@ -44,7 +44,7 @@
          (#:fall-asleep-date (input-date "")))
         (:div
          (#:wake-up-time (input-time "When did you wake up last night?"))
-         (#:fall-asleep-date (input-date "")))
+         (#:wake-up-date (input-date "")))
         (:div
          (#:awake-in-between (input-number "How long were you awake in between (in hours)?" #:min 0)))
         (:button.button.next-button ([:type "submit"]) "Submit")))

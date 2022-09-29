@@ -61,6 +61,19 @@
 
          [e #'e]))
 
+     (define maybe-dupe-kwd
+       (for/fold ([counts (hash)]
+                  [dupe-stx #f]
+                  #:result dupe-stx)
+                 ([kwd-stx (in-list (syntax-e #'(kwd ...)))])
+         #:break dupe-stx
+         (define kwd (syntax-e kwd-stx))
+         (define counts*
+           (hash-update counts kwd add1 0))
+         (values counts* (and (> (hash-ref counts* kwd) 1) kwd-stx))))
+     (when maybe-dupe-kwd
+       (raise-syntax-error 'formular "duplicate field" stx maybe-dupe-kwd))
+
      (when (attribute bot-id)
        (define fld-kwds (sort (map syntax->datum (syntax-e #'(kwd ...))) keyword<?))
        (for ([bot-id-stx (in-list (syntax-e #'(bot-id ...)))]
