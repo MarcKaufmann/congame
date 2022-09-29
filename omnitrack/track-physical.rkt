@@ -45,7 +45,12 @@
   (with-study-transaction
     (parameterize ([current-study-stack null])
       (define nonces (get/instance 'nonces hasheqv))
-      (put/instance 'nonces (hash-set nonces (current-participant-id) nonce))))
+      (put/instance 'nonces (hash-set nonces (current-participant-id) nonce))
+      (schedule-at
+       (+minutes (now/moment) 1)
+       (request-update
+        (current-participant-id)
+        nonce))))
 
   (page
    (haml
@@ -69,31 +74,22 @@
           #:wake-up-time wake-up-time
           #:wake-up-date wake-up-date
           #:awake-in-between awake-in-between)
-        (displayln (list fall-asleep-time))
-        (put 'fall-asleep-time fall-asleep-time)
-        (displayln (list fall-asleep-date fall-asleep-time))
         (define fall-asleep
           (combine-date+time
-           (today)
-           (parse-time fall-asleep-time "HH:mm")
-           ; FIXME: Once I know what the data looks like from input-date
-           ))
+           (parse-date fall-asleep-date "yyyy-MM-dd")
+           (parse-time fall-asleep-time "HH:mm")))
         (define wake-up
           (combine-date+time
-           (+days (today) 1)
-           (parse-time wake-up-time "HH:mm")
-           ; FIXME: Once I know what the data looks like from input-date
-           ))
+           (parse-date wake-up-date "yyyy-MM-dd")
+           (parse-time wake-up-time "HH:mm")))
         (put 'sleep-records
-             ; FIXME: Once this runs
-             (cons (sleep fall-asleep wake-up 0 0)
+             (cons (sleep fall-asleep wake-up awake-in-between (/ (seconds-between fall-asleep wake-up) 3600.0))
                    (get 'sleep-records '())))
-        (put 'fall-asleep-date fall-asleep-date)
-        (schedule-at
-         (+minutes (now/moment) 1)
-         (request-update
-          (current-participant-id)
-          nonce))))))))
+        (put 'fall-asleep-date fall-asleep-date)))))))
+
+(define (send-email-reminder pid nonce)
+  ; FIXME
+  (println `(emailing ,pid ,nonce)))
 
 (define-job (request-update pid nonce)
   (call-with-study-manager
@@ -106,16 +102,37 @@
        (parameterize ([current-study-stack null])
          (get/instance 'nonces hasheqv)))
      (when (equal? (hash-ref nonces pid) nonce)
-       (println `(emailing ,pid ,nonce))
+       (send-email-reminder pid nonce)
        (schedule-at
         (+minutes (now/moment) 1)
         (request-update pid nonce))))))
 
+;; TODO: Why not change the nonce when `request-update` is called and the email has been sent? Then I don't need the code in multiple places.
+;; TODO: Only add a new email request if the person still is subscribed
+;; TODO: Add button to unsubscribe both to the overview page, and eventually to the email.
+;; TODO: After unsubscribing, delete the pending job. Currently that functionality may not yet be exposed in koyo/job.
 (define (overview-page)
+  (define subscribed?
+    (get 'subscribed #f))
   (page
    (haml
     (.container
      (:h1 "Overview Page")
+     (unless subscribed?
+       (button
+        (λ ()
+          (with-study-transaction
+            (put 'subscribed #t)
+            (parameterize ([current-study-stack null])
+              (define nonce (generate-random-string))
+              (define nonces (get/instance 'nonces (hasheqv)))
+              (put/instance 'nonces (hash-set nonces (current-participant-id) nonce))
+              (schedule-at
+               (+minutes (now/moment) 1)
+               (request-update
+                (current-participant-id)
+                nonce)))))
+       "Subscribe to daily tracking reminders" #:to-step-id 'overview-page))
      (button void "Enter Sleep Data" #:to-step-id 'sleep-question)))))
 
 (define sleep-tracker
