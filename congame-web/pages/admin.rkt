@@ -255,10 +255,21 @@
            "New Instance"))
          (when (eq? 'dsl (study-meta-type meta))
            (haml
-            (:h4
-             (:a
-              ([:href (reverse-uri 'admin:edit-study-dsl-page study-id)])
-              "Edit DSL"))))
+            (:div
+             (:h4
+              (:a
+               ([:href (reverse-uri 'admin:edit-study-dsl-page study-id)])
+               "Edit DSL"))
+             (:h4
+              (:a
+               ([:href (embed/url
+                        (lambda (_req)
+                          (response/output
+                           #:mime-type #"text/plain"
+                           #:headers (list (make-header #"content-disposition" #"attachment; filename=\"study.scrbl\""))
+                           (lambda (out)
+                             (write-string (study-meta-dsl-source meta) out)))))])
+               "Download DSL Source")))))
          instances-xexpr
          (:br)
          (:a
