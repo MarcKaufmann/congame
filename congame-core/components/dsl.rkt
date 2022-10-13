@@ -9,6 +9,10 @@
          syntax/parse
          (only-in "study.rkt" page))
 
+;; Next time:
+;;  * hook everything up in the db
+;;  * add support for @import
+;;  * add support for @form[]s
 (define (dsl-require s id)
   (define in (open-input-string s))
   (port-count-lines! in)
@@ -21,6 +25,19 @@
 
 (define (read-syntax what in)
   (s:read-syntax-inside what in))
+
+
+;; compiler ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-syntax-rule (define-literals set-id [id ...])
+  (begin
+    (define-syntax (id stx)
+      (raise-syntax-error 'id "may only be usde inside DSL" stx)) ...
+    (define-literal-set set-id
+      (id ...))))
+
+(define-literals dsl-literals
+  [:p :br])
 
 (define (compile-module stx)
   (syntax-parse stx
@@ -51,6 +68,36 @@
           (list
            (make-step 'step-id step-id) ...)))]))
 
+(define (compile-expr stx)
+  (syntax-parse stx
+    #:datum-literals (button h1 h2 h3)
+    #:literal-sets (dsl-literals)
+    [(button text0:string text:string ...)
+     #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
+     #'(button void joined-text)]
+
+    [({~and {~or h1 h2 h3} tag} text0 text ...)
+     #:with tag-id (format-id #'tag ":~a" #'tag)
+     (unless (string? (syntax-e #'text0))
+       (raise-syntax-error 'tag "expected text" stx))
+     #'(tag-id text0 text ...)]
+
+    [(:p body ...)
+     #:with (compiled-body ...) (map compile-expr (syntax-e #'(body ...)))
+     #'(:p compiled-body ...)]
+
+    [(:br)
+     #'(:br)]
+
+    [(rator rand ...)
+     (raise-syntax-error 'dsl "invalid expression" stx)]
+
+    [e
+     (datum->syntax #'here (syntax->datum #'e))]))
+
+
+;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;; invariant: never two strings next to each other where one isn't "\n"
 (define (group-by-paragraph stx)
   (define (swallow? stx)
@@ -80,17 +127,6 @@
          ;; a string
          [else
           (loop (cdr stxs) (cons stx pending) res)])])))
-
-(define-syntax-rule (define-literals set-id [id ...])
-  (begin
-    (define-syntax (id stx)
-      (raise-syntax-error 'id "may only be usde inside DSL" stx))
-    ...
-    (define-literal-set set-id
-      (id ...))))
-
-(define-literals dsl-literals
-  [:p :br])
 
 (define (expand-paragraphs pending)
   (let loop ([pending pending]
@@ -133,33 +169,6 @@
                               (#,@(car paras) #,stx))
                             (cdr paras)))]))
        (loop (cdr pending) new-depth new-paras)])))
-
-(define (compile-expr stx)
-  (syntax-parse stx
-    #:datum-literals (button h1 h2 h3)
-    #:literal-sets (dsl-literals)
-    [(button text0:string text:string ...)
-     #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
-     #'(button void joined-text)]
-
-    [({~and {~or h1 h2 h3} tag} text0 text ...)
-     #:with tag-id (format-id #'tag ":~a" #'tag)
-     (unless (string? (syntax-e #'text0))
-       (raise-syntax-error 'tag "expected text" stx))
-     #'(tag-id text0 text ...)]
-
-    [(:p body ...)
-     #:with (compiled-body ...) (map compile-expr (syntax-e #'(body ...)))
-     #'(:p compiled-body ...)]
-
-    [(:br)
-     #'(:br)]
-
-    [(rator rand ...)
-     (raise-syntax-error 'dsl "invalid expression" stx)]
-
-    [e
-     (datum->syntax #'here (syntax->datum #'e))]))
 
 (module+ test
   (require rackunit)
