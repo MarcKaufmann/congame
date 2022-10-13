@@ -113,9 +113,25 @@
 (define create-study-form
   (form* ([name (ensure binding/text (required))]
           [slug (ensure binding/text)]
-          [study-id (ensure binding/text (required) (one-of (for/list ([id (in-hash-keys (get-registered-studies))])
-                                                              (cons (~a id) id))))])
-    (list name (or slug (slugify name)) study-id)))
+          [type (ensure binding/text (required) (one-of '(("racket" . racket)
+                                                          ("dsl" . dsl))))]
+          [study-id (ensure binding/text (one-of (for/list ([id (in-hash-keys (get-registered-studies))])
+                                                   (cons (~a id) id))))]
+          [dsl-id (ensure binding/symbol)]
+          [dsl-source (ensure binding/text)])
+    (let ([slug (or slug (slugify name))])
+      (case type
+        [(racket)
+         (if (not study-id)
+             (err '((study-id . "required for Racket-based studies")))
+             (ok (list name slug type study-id "")))]
+        [(dsl)
+         (if (and dsl-id dsl-source)
+             (ok (list name slug type dsl-id dsl-source))
+             (err (filter
+                   cdr
+                   `((dsl-id . ,(and (not dsl-id) "required for DSL-based studies"))
+                     (dsl-source . ,(and (not dsl-source) "required for DSL-based studies"))))))]))))
 
 (define ((field-group label [w (widget-text)]) name value errors)
   (haml
@@ -130,11 +146,16 @@
      [:method "POST"])
     (rw "name" (field-group "Name"))
     (rw "slug" (field-group "Slug"))
+    (rw "type" (field-group "Type" (widget-select
+                                    `(("racket" . "Racket")
+                                      ("dsl" . "DSL")))))
     (rw "study-id" (field-group "Study ID"
                                 (widget-select (cons
                                                 (cons "" "Please select a study")
                                                 (for/list ([id (in-hash-keys (get-registered-studies))])
                                                   (cons (~a id) (~a id)))))))
+    (rw "dsl-id" (field-group "DSL ID" (widget-text)))
+    (rw "dsl-source" (field-group "DSL Source" (widget-textarea)))
     (:button
      ([:type "submit"])
      "Create"))))
@@ -145,13 +166,15 @@
     (send/suspend/dispatch/protect
      (lambda (embed/url)
        (match (form-run create-study-form req)
-         [`(passed (,name ,slug ,id) ,_)
+         [`(passed (,name ,slug ,type ,id ,dsl-source) ,_)
           (define the-study
             (with-database-connection [conn db]
               (insert-one! conn (make-study-meta
                                  #:name name
                                  #:slug slug
-                                 #:racket-id id))))
+                                 #:type type
+                                 #:racket-id id
+                                 #:dsl-source dsl-source))))
 
           (redirect-to (reverse-uri 'admin:view-study-page (study-meta-id the-study)))]
 

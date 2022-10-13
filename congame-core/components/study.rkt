@@ -923,8 +923,10 @@ QUERY
   #:table "studies"
   ([id integer/f #:primary-key #:auto-increment]
    [name string/f #:contract non-empty-string?]
+   [type symbol/f #:contract (or/c 'racket 'dsl)]
    [slug string/f #:contract non-empty-string?]
    [racket-id symbol/f]
+   [(dsl-source "") string/f #:contract string?]
    [(created-at (now/moment)) datetime-tz/f]))
 
 (define-schema study-instance
