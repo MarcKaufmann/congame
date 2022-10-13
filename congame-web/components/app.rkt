@@ -92,6 +92,10 @@
       #:roles (admin)
       (admin:view-study-page db)]
 
+     [("admin" "studies" (integer-arg) "edit")
+      #:roles (admin)
+      (admin:edit-study-dsl-page db)]
+
      [("admin" "studies" (integer-arg) "instances" "new")
       #:roles (admin)
       (admin:create-study-instance-page db)]

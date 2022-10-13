@@ -36,6 +36,7 @@
  studies-page
  create-study-page
  view-study-page
+ edit-study-dsl-page
  create-study-instance-page
  edit-study-instance-page
  view-study-instance-page
@@ -252,6 +253,12 @@
           (:a
            ([:href (reverse-uri 'admin:create-study-instance-page study-id)])
            "New Instance"))
+         (when (eq? 'dsl (study-meta-type meta))
+           (haml
+            (:h4
+             (:a
+              ([:href (reverse-uri 'admin:edit-study-dsl-page study-id)])
+              "Edit DSL"))))
          instances-xexpr
          (:br)
          (:a
@@ -290,6 +297,52 @@
                            #:path-prefix "transition-graphs"
                            filenames out))))))])
           "Generate transition graph"))))))))
+
+(define edit-study-dsl-form
+  (form* ([dsl-id (ensure binding/symbol (required))]
+          [dsl-source (ensure binding/file (required))])
+    (list dsl-id (bytes->string/utf-8 (binding:file-content dsl-source)))))
+
+(define (render-edit-study-dsl-form target rw)
+  (haml
+   (:form
+    ([:action target]
+     [:method "POST"]
+     [:enctype "multipart/form-data"])
+    (rw "dsl-id" (field-group "DSL ID"))
+    (rw "dsl-source" (field-group "DSL Source" (widget-file)))
+    (:button
+     ([:type "submit"])
+     "Update"))))
+
+(define/contract ((edit-study-dsl-page db) req study-id)
+  (-> database? (-> request? id/c response?))
+  (define meta
+    (lookup-study-meta db study-id))
+  (unless meta
+    (next-dispatcher))
+
+  (let loop ([req req])
+    (send/suspend/dispatch/protect
+     (lambda (embed/url)
+       (define defaults
+         (hash "dsl-id" (~a (study-meta-racket-id meta))))
+
+       (match (form-run edit-study-dsl-form req #:defaults defaults)
+         [(list 'passed (list dsl-id dsl-source) _)
+          (with-database-connection [conn db]
+            (update-one! conn (~> meta
+                                  (set-study-meta-racket-id _ dsl-id)
+                                  (set-study-meta-dsl-source _ dsl-source))))
+          (redirect-to (reverse-uri 'admin:view-study-page study-id))]
+
+         [(list _ _ rw)
+          (tpl:page
+           (tpl:container
+            (haml
+             (:section.create-study
+              (:h1 "Edit DSL Source")
+              (render-edit-study-dsl-form (embed/url loop) rw)))))])))))
 
 (define study-instance-form
   (form* ([name (ensure binding/text (required))]
