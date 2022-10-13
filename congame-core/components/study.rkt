@@ -16,6 +16,7 @@
          racket/fasl
          racket/format
          racket/generic
+         racket/lazy-require
          racket/match
          racket/port
          racket/sequence
@@ -32,6 +33,9 @@
          "export.rkt"
          "registry.rkt"
          "xexpr.rkt")
+
+(lazy-require
+ ["dsl.rkt" (dsl-require)])
 
 
 ;; canaries ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1212,12 +1216,20 @@ QUERY
                                       (= p.instance-id ,(study-instance-id i)))))))
 
             (and participant
-                 (list
-                  (lookup-registered-study
-                   (study-meta-racket-id meta)
-                   (lambda (id)
-                     (error 'lookup-registered-study "No such registered study: ~s~n. Did you install the necessary congame-studies?" id)))
-                  participant)))]
+                 (case (study-meta-type meta)
+                   [(racket)
+                    (list
+                     (lookup-registered-study
+                      (study-meta-racket-id meta)
+                      (lambda (id)
+                        (error 'lookup-registered-study "No such registered study: ~s~n. Did you install the necessary congame-studies?" id)))
+                     participant)]
+                   [(dsl)
+                    (list
+                     (dsl-require
+                      (study-meta-dsl-source meta)
+                      (study-meta-racket-id meta))
+                     participant)])))]
 
       [else #f])))
 
