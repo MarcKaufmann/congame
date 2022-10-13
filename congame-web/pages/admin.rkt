@@ -10,6 +10,7 @@
          congame-web/components/user
          congame-web/pages/render
          congame-web/studies/all ;; required for its effects
+         (prefix-in dsl: congame/components/dsl)
          congame/components/export
          congame/components/registry
          congame/components/study
@@ -269,7 +270,22 @@
                            #:headers (list (make-header #"content-disposition" #"attachment; filename=\"study.scrbl\""))
                            (lambda (out)
                              (write-string (study-meta-dsl-source meta) out)))))])
-               "Download DSL Source")))))
+               "Download DSL Source"))
+             (:h4
+              (:a
+               ([:href (embed/url
+                        (lambda (_req)
+                          (response/output
+                           #:mime-type #"text/plain"
+                           #:headers (list (make-header #"content-disposition" #"attachment; filename=\"study.rkt\""))
+                           (lambda (out)
+                             (define stmts
+                               (dsl:read-syntax+compile
+                                (study-meta-name meta)
+                                (open-input-string (study-meta-dsl-source meta))))
+                             (for ([stmt (in-list (syntax->datum stmts))])
+                               (pretty-write stmt out))))))])
+               "Download DSL Source as Racket")))))
          instances-xexpr
          (:br)
          (:a

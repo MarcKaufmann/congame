@@ -12,7 +12,8 @@
          "transition-graph.rkt")
 
 (provide
- dsl-require)
+ dsl-require
+ read-syntax+compile)
 
 (define attached-mods
   '(congame/components/study
@@ -20,8 +21,8 @@
     koyo/haml))
 
 ;; Next time:
-;;  * add support for @import
 ;;  * add support for @form[]s
+;;  * add support for @import
 (define (dsl-require s id)
   (define in (open-input-string s))
   (port-count-lines! in)
@@ -36,6 +37,9 @@
 
 (define (read-syntax what in)
   (s:read-syntax-inside what in))
+
+(define (read-syntax+compile what in)
+  (compile-module (read-syntax what in)))
 
 
 ;; compiler ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
