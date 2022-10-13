@@ -124,7 +124,7 @@
         [(racket)
          (if (not study-id)
              (err '((study-id . "required for Racket-based studies")))
-             (ok (list name slug type study-id "")))]
+             (ok (list name slug type study-id #f)))]
         [(dsl)
          (if (and dsl-id dsl-source)
              (ok (list name slug type dsl-id dsl-source))
@@ -169,13 +169,16 @@
        (match (form-run create-study-form req)
          [`(passed (,name ,slug ,type ,id ,dsl-source) ,_)
           (define the-study
-            (with-database-connection [conn db]
-              (insert-one! conn (make-study-meta
-                                 #:name name
-                                 #:slug slug
-                                 #:type type
-                                 #:racket-id id
-                                 #:dsl-source (bytes->string/utf-8 (binding:file-content dsl-source))))))
+            (let ([dsl-source (if dsl-source
+                                  (bytes->string/utf-8 (binding:file-content dsl-source))
+                                  "")])
+              (with-database-connection [conn db]
+                (insert-one! conn (make-study-meta
+                                   #:name name
+                                   #:slug slug
+                                   #:type type
+                                   #:racket-id id
+                                   #:dsl-source dsl-source)))))
 
           (redirect-to (reverse-uri 'admin:view-study-page (study-meta-id the-study)))]
 
