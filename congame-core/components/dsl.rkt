@@ -15,9 +15,9 @@
  dsl-require)
 
 (define attached-mods
-  '((congame/components/study
-     congame/componetns/transition-graph
-     koyo/yaml)))
+  '(congame/components/study
+    congame/components/transition-graph
+    koyo/haml))
 
 ;; Next time:
 ;;  * add support for @import
