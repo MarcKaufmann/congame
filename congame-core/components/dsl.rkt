@@ -2,24 +2,35 @@
 
 (require (for-syntax racket/base)
          koyo/haml
-         (prefix-in s: scribble/reader)
          racket/list
          racket/string
          racket/syntax
+         (prefix-in s: scribble/reader)
          syntax/parse
-         (only-in "study.rkt" page))
+
+         "study.rkt"
+         "transition-graph.rkt")
+
+(provide
+ dsl-require)
+
+(define attached-mods
+  '((congame/components/study
+     congame/componetns/transition-graph
+     koyo/yaml)))
 
 ;; Next time:
-;;  * hook everything up in the db
 ;;  * add support for @import
 ;;  * add support for @form[]s
 (define (dsl-require s id)
   (define in (open-input-string s))
   (port-count-lines! in)
+  (define ns (current-namespace))
   (parameterize ([current-namespace (make-base-namespace)])
-    (namespace-require 'congame/components/study)
-    (namespace-require 'congame/components/transition-graph)
-    (namespace-require 'koyo/haml)
+    (for ([mod (in-list attached-mods)])
+      (namespace-attach-module ns mod))
+    (for ([mod (in-list attached-mods)])
+      (eval `(require ,mod)))
     (for-each eval (syntax->datum (compile-module (read-syntax 'dsl in))))
     (namespace-variable-value id)))
 
@@ -56,15 +67,21 @@
             (haml
              (.container
               compiled-content ...)))))]
-    [(study study-id:id #:transitions [transition-entry:id ...])
+    [(study study-id:id #:transitions [transition-entry:id ...] ...+)
      #:with study-id-str (datum->syntax #'study-id (symbol->string (syntax->datum #'study-id)))
-     #:with (step-id ...) (for/list ([id-stx (in-list (syntax-e #'(transition-entry ...)))]
-                                     #:unless (eq? (syntax-e id-stx) '-->))
-                            id-stx)
+     #:with (step-id ...) (for*/fold ([stxes null]
+                                      [seen-ids (hasheq)]
+                                      #:result (reverse stxes))
+                                     ([id-stx (in-list (syntax-e #'(transition-entry ... ...)))]
+                                      [id (in-value (syntax->datum id-stx))]
+                                      #:unless (eq? (syntax-e id-stx) '-->)
+                                      #:unless (hash-has-key? seen-ids id))
+                            (values (cons id-stx stxes)
+                                    (hash-set seen-ids id #t)))
      #'(define study-id
          (make-study
           study-id-str
-          #:transitions [transition-graph [transition-entry ...]]
+          #:transitions (transition-graph [transition-entry ...] ...)
           (list
            (make-step 'step-id step-id) ...)))]))
 
@@ -230,7 +247,9 @@ DSL
      (define hello-study
        (make-study
         "hello-study"
-        #:transitions (transition-graph (hello --> done))
+        #:transitions (transition-graph
+                       [hello --> done]
+                       [done --> done])
         (list
          (make-step 'hello hello)
          (make-step 'done done)))))
@@ -247,7 +266,9 @@ DSL
 
 @study[
   hello-study
-  #:transitions [hello --> done]
+  #:transitions
+  [hello --> done]
+  [done --> done]
 ]
 DSL
 ))))
