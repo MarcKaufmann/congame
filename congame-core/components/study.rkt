@@ -915,6 +915,7 @@ QUERY
  participant-enrolled?
  enroll-participant!
  lookup-study
+ lookup-study*
  lookup-study-meta
  lookup-study-instance
  lookup-study-instance/by-slug
@@ -1215,23 +1216,22 @@ QUERY
                           (where (and (= p.user-id ,user-id)
                                       (= p.instance-id ,(study-instance-id i)))))))
 
-            (and participant
-                 (case (study-meta-type meta)
-                   [(racket)
-                    (list
-                     (lookup-registered-study
-                      (study-meta-racket-id meta)
-                      (lambda (id)
-                        (error 'lookup-registered-study "No such registered study: ~s~n. Did you install the necessary congame-studies?" id)))
-                     participant)]
-                   [(dsl)
-                    (list
-                     (dsl-require
-                      (study-meta-dsl-source meta)
-                      (study-meta-racket-id meta))
-                     participant)])))]
+            (and participant (list (lookup-study* meta) participant)))]
 
       [else #f])))
+
+(define/contract (lookup-study* meta)
+  (-> study-meta? study?)
+  (case (study-meta-type meta)
+    [(racket)
+     (lookup-registered-study
+      (study-meta-racket-id meta)
+      (lambda (id)
+        (error 'lookup-registered-study "No such registered study: ~s~n. Did you install the necessary congame-studies?" id)))]
+    [(dsl)
+     (dsl-require
+      (study-meta-dsl-source meta)
+      (study-meta-racket-id meta))]))
 
 (define/contract (lookup-study-meta db study-id)
   (-> database? id/c (or/c #f study-meta?))

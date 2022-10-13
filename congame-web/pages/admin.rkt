@@ -255,8 +255,7 @@
           ([:href (embed/url
                    (λ (_req)
                      (define the-study
-                       (lookup-registered-study
-                        (study-meta-racket-id meta)))
+                       (lookup-study* meta))
                      (define temp-dir
                        (make-temporary-file (~a (study-meta-name meta) "~a") 'directory))
                      (define pdfs
