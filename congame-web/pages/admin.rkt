@@ -118,7 +118,7 @@
           [study-id (ensure binding/text (one-of (for/list ([id (in-hash-keys (get-registered-studies))])
                                                    (cons (~a id) id))))]
           [dsl-id (ensure binding/symbol)]
-          [dsl-source (ensure binding/text)])
+          [dsl-source (ensure binding/file)])
     (let ([slug (or slug (slugify name))])
       (case type
         [(racket)
@@ -143,7 +143,8 @@
   (haml
    (:form
     ([:action target]
-     [:method "POST"])
+     [:method "POST"]
+     [:enctype "multipart/form-data"])
     (rw "name" (field-group "Name"))
     (rw "slug" (field-group "Slug"))
     (rw "type" (field-group "Type" (widget-select
@@ -155,7 +156,7 @@
                                                 (for/list ([id (in-hash-keys (get-registered-studies))])
                                                   (cons (~a id) (~a id)))))))
     (rw "dsl-id" (field-group "DSL ID" (widget-text)))
-    (rw "dsl-source" (field-group "DSL Source" (widget-textarea)))
+    (rw "dsl-source" (field-group "DSL Source" (widget-file)))
     (:button
      ([:type "submit"])
      "Create"))))
@@ -174,7 +175,7 @@
                                  #:slug slug
                                  #:type type
                                  #:racket-id id
-                                 #:dsl-source dsl-source))))
+                                 #:dsl-source (bytes->string/utf-8 (binding:file-content dsl-source))))))
 
           (redirect-to (reverse-uri 'admin:view-study-page (study-meta-id the-study)))]
 
