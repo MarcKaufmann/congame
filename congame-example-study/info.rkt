@@ -13,7 +13,8 @@
                "web-server-lib"))
 (define build-deps '())
 (define congame-studies
-  '((congame-example-study/edpb-survey edpb-survey)
+  '((congame-example-study/edpb-survey briq-study)
+    (congame-example-study/edpb-survey edpb-survey)
     (congame-example-study/example consent-study)
     (congame-example-study/example simple-study)
     (congame-example-study/example wrapped-simple-study)
