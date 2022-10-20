@@ -269,8 +269,12 @@ DSL
                        [hello --> done]
                        [done --> done])
         (list
-         (make-step 'hello hello)
-         (make-step 'done done)))))
+         (if (study? hello)
+             (make-step/study 'hello hello)
+             (make-step 'hello hello))
+         (if (study? done)
+             (make-step/study 'done done)
+             (make-step 'done done))))))
    (syntax->datum
     (read+compile #<<DSL
 @step[hello]{
