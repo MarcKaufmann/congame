@@ -8,6 +8,8 @@
          (prefix-in s: scribble/reader)
          syntax/parse
 
+         "dsl-runtime.rkt"
+         "formular.rkt"
          "registry.rkt"
          "study.rkt"
          "transition-graph.rkt")
@@ -17,7 +19,9 @@
  read-syntax+compile)
 
 (define attached-mods
-  '(congame/components/registry
+  '(congame/components/dsl-runtime
+    congame/components/formular
+    congame/components/registry
     congame/components/study
     congame/components/transition-graph
     koyo/haml))
@@ -103,9 +107,10 @@
     [(import mod-path:id id:id)
      #'(define id (study-mod-require 'mod-path 'id))]))
 
+(require racket/pretty)
 (define (compile-expr stx)
   (syntax-parse stx
-    #:datum-literals (button h1 h2 h3)
+    #:datum-literals (button h1 h2 h3 form)
     #:literal-sets (dsl-literals)
     [(button text0:string text:string ...)
      #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
@@ -124,11 +129,39 @@
     [(:br)
      #'(:br)]
 
+    [(form body ...)
+     #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e #'(body ...)))
+     #'(formular
+        (haml
+         (:div
+          compiled-body ... ...))
+        put-all-keywords)]
+
     [(rator rand ...)
      (raise-syntax-error 'dsl "invalid expression" stx)]
 
     [e
      (datum->syntax #'here (syntax->datum #'e))]))
+
+(define (compile-form-expr stx)
+  (syntax-parse stx
+    #:datum-literals (input-text submit-button)
+    [(input-text name:id label-expr)
+     #:with name-kwd (datum->syntax #'name (string->keyword (symbol->string (syntax-e #'name))))
+     #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
+     #'((name-kwd
+         (input-text
+          (haml compiled-label-expr))))]
+
+    [(input-text name:id label-expr ...+)
+     (compile-form-expr #'(input-text name (:div label-expr ...)))]
+
+    [(submit-button)
+     #'((:button.button.next-button ([:type "submit"]) "Submit"))]
+
+    [e
+     #:with compiled-expr (compile-expr #'e)
+     #'(compiled-expr)]))
 
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -293,12 +326,45 @@ DSL
   [done --> done]
 ]
 DSL
-)))
+                  )))
 
   (check-equal?
    '((define b (study-mod-require 'a 'b)))
    (syntax->datum
     (read+compile #<<DSL
 @import[a b]
+DSL
+                  )))
+
+  (check-equal?
+   '((define (form-step)
+       (page
+        (haml
+         (.container
+          (formular
+           (haml
+            (:div
+             (:h1 "Section 1")
+             "\n"
+             (#:name
+              (input-text
+               (haml "What is your name?")))
+             "\n"
+             (:h1 "Section 2")
+             "\n"
+             (:button.button.next-button
+              ([:type "submit"])
+              "Submit")))
+           put-all-keywords))))))
+   (syntax->datum
+    (read+compile #<<DSL
+@step[form-step]{
+  @form{
+    @h1{Section 1}
+    @input-text[name]{What is your name?}
+    @h1{Section 2}
+    @submit-button[]
+  }
+}
 DSL
                   ))))
