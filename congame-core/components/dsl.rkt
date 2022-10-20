@@ -129,8 +129,10 @@
     [(:br)
      #'(:br)]
 
+    ;; NOTE: For block-style tags, it's the tag's responibility to
+    ;; call group-by-paragraph on its exprs.
     [(form body ...)
-     #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e #'(body ...)))
+     #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e (group-by-paragraph #'(body ...))))
      #'(formular
         (haml
          (:div
@@ -145,16 +147,30 @@
 
 (define (compile-form-expr stx)
   (syntax-parse stx
-    #:datum-literals (input-text submit-button)
-    [(input-text name:id label-expr)
+    #:datum-literals (input-text input-number textarea submit-button)
+    [({~and {~or input-text input-number textarea} widget-id} name:id label-expr)
      #:with name-kwd (datum->syntax #'name (string->keyword (symbol->string (syntax-e #'name))))
      #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
      #'((name-kwd
-         (input-text
+         (widget-id
           (haml compiled-label-expr))))]
 
-    [(input-text name:id label-expr ...+)
-     (compile-form-expr #'(input-text name (:div label-expr ...)))]
+    [(input-number name:id
+                   ~!
+                   {~alt
+                    {~optional {~seq #:min min-expr:number}}
+                    {~optional {~seq #:max max-expr:number}}} ...
+                   label-expr)
+     #:with name-kwd (datum->syntax #'name (string->keyword (symbol->string (syntax-e #'name))))
+     #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
+     #'((name-kwd
+         (input-number
+          {~? {~@ #:min min-expr}}
+          {~? {~@ #:max max-expr}}
+          (haml compiled-label-expr))))]
+
+    [({~and {~or input-text input-number textarea} widget-id} name:id label-expr ...+)
+     (compile-form-expr #'(widget-id name (:div label-expr ...)))]
 
     [(submit-button)
      #'((:button.button.next-button ([:type "submit"]) "Submit"))]
@@ -179,7 +195,7 @@
     ; "hello" (:h1 "title") "there"
     (cond
       [(null? stxs)
-       (datum->syntax stx (append (reverse res) (expand-paragraphs (reverse pending))))]
+       (datum->syntax stx (append res (expand-paragraphs (reverse pending))))]
       [else
        (define stx (car stxs))
        (define stx-str? (string? (syntax-e stx)))
@@ -190,7 +206,9 @@
 
          ;; not a string and can't be swallowed
          [(not stx-str?)
-          (loop (cdr stxs) null (cons stx (append (expand-paragraphs (reverse pending)) res)))]
+          (loop (cdr stxs) null (append res
+                                        (expand-paragraphs (reverse pending))
+                                        (list stx)))]
 
          ;; a string
          [else
@@ -262,15 +280,79 @@
                 '((:h1 "Page title")
                   (:p "hello" (:br) "there")
                   (:p "friend")))
+  (check-equal? (syntax->datum (group-by-paragraph #'("a" "\n" "b" "\n" "\n" "c" "\n" (:h1 "d"))))
+                '((:p "a" (:br) "b")
+                  (:p "c")
+                  (:h1 "d")))
 
   (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[a]{
+  a
+  b
+
+  c
+}
+DSL
+                  ))
    '((define (a)
        (page
         (haml
          (.container
-          (:h1 "Hello, world!")
-          (:p "How's it going?" (:br) "Pretty good?")
-          (:p "Yeah, good."))))))
+          (:p "a" (:br) "b")
+          (:p "c")))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[a]{
+  a
+  b
+
+  c
+
+  @h1{Heading}
+}
+DSL
+                  ))
+   '((define (a)
+       (page
+        (haml
+         (.container
+          (:p "a" (:br) "b")
+          (:p "c")
+          (:h1 "Heading")))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[a]{
+  a
+  b
+
+  c
+
+  @h1{Heading}
+
+  d
+  e
+
+  f
+}
+DSL
+                  ))
+   '((define (a)
+       (page
+        (haml
+         (.container
+          (:p "a" (:br) "b")
+          (:p "c")
+          (:h1 "Heading")
+          (:p "d" (:br) "e")
+          (:p "f")))))))
+
+  (check-equal?
    (syntax->datum
     (read+compile #<<DSL
 @step[a]{
@@ -281,9 +363,35 @@
   Yeah, good.
 }
 DSL
-                  )))
+                  ))
+   '((define (a)
+       (page
+        (haml
+         (.container
+          (:h1 "Hello, world!")
+          (:p "How's it going?" (:br) "Pretty good?")
+          (:p "Yeah, good.")))))))
 
   (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[hello]{
+  @h1{Hello!}
+  @button{Continue...}
+}
+
+@step[done]{
+  You're done!
+}
+
+@study[
+  hello-study
+  #:transitions
+  [hello --> done]
+  [done --> done]
+]
+DSL
+                  ))
    '((define (hello)
        (page
         (haml
@@ -307,36 +415,30 @@ DSL
              (make-step 'hello hello))
          (if (study? done)
              (make-step/study 'done done)
-             (make-step 'done done))))))
-   (syntax->datum
-    (read+compile #<<DSL
-@step[hello]{
-  @h1{Hello!}
-  @button{Continue...}
-}
-
-@step[done]{
-  You're done!
-}
-
-@study[
-  hello-study
-  #:transitions
-  [hello --> done]
-  [done --> done]
-]
-DSL
-                  )))
+             (make-step 'done done)))))))
 
   (check-equal?
-   '((define b (study-mod-require 'a 'b)))
    (syntax->datum
     (read+compile #<<DSL
 @import[a b]
 DSL
-                  )))
+                  ))
+   '((define b (study-mod-require 'a 'b))))
 
   (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[form-step]{
+  @form{
+    @h1{Section 1}
+    @input-text[name]{What is your name?}
+    @h1{Section 2}
+    @input-number[age #:max 100 #:min 1]{How old are you?}
+    @submit-button[]
+  }
+}
+DSL
+                  ))
    '((define (form-step)
        (page
         (haml
@@ -345,26 +447,16 @@ DSL
            (haml
             (:div
              (:h1 "Section 1")
-             "\n"
              (#:name
               (input-text
                (haml "What is your name?")))
-             "\n"
              (:h1 "Section 2")
-             "\n"
+             (#:age
+              (input-number
+               #:min 1
+               #:max 100
+               (haml "How old are you?")))
              (:button.button.next-button
               ([:type "submit"])
               "Submit")))
-           put-all-keywords))))))
-   (syntax->datum
-    (read+compile #<<DSL
-@step[form-step]{
-  @form{
-    @h1{Section 1}
-    @input-text[name]{What is your name?}
-    @h1{Section 2}
-    @submit-button[]
-  }
-}
-DSL
-                  ))))
+           put-all-keywords))))))))
