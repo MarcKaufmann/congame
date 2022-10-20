@@ -145,10 +145,13 @@
      (datum->syntax #'here (syntax->datum #'e))]))
 
 (define (compile-form-expr stx)
+  (define (stx->keyword-stx stx)
+    (datum->syntax stx (string->keyword (symbol->string (syntax-e stx)))))
+
   (syntax-parse stx
-    #:datum-literals (input-text input-number textarea submit-button)
-    [({~and {~or input-text input-number textarea} widget-id} name:id label-expr)
-     #:with name-kwd (datum->syntax #'name (string->keyword (symbol->string (syntax-e #'name))))
+    #:datum-literals (input-date input-text input-number textarea submit-button)
+    [({~and {~or input-date input-text input-number textarea} widget-id} name:id label-expr)
+     #:with name-kwd (stx->keyword-stx #'name)
      #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
      #'((name-kwd
          (widget-id
@@ -160,7 +163,7 @@
                     {~optional {~seq #:min min-expr:number}}
                     {~optional {~seq #:max max-expr:number}}} ...
                    label-expr)
-     #:with name-kwd (datum->syntax #'name (string->keyword (symbol->string (syntax-e #'name))))
+     #:with name-kwd (stx->keyword-stx #'name)
      #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
      #'((name-kwd
          (input-number
@@ -168,7 +171,7 @@
           {~? {~@ #:max max-expr}}
           (haml compiled-label-expr))))]
 
-    [({~and {~or input-text input-number textarea} widget-id} name:id label-expr ...+)
+    [({~and {~or input-date input-text input-number textarea} widget-id} ~! name:id label-expr ...+)
      (compile-form-expr #'(widget-id name (:div label-expr ...)))]
 
     [(submit-button)
