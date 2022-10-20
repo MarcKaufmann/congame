@@ -8,6 +8,7 @@
          (prefix-in s: scribble/reader)
          syntax/parse
 
+         "registry.rkt"
          "study.rkt"
          "transition-graph.rkt")
 
@@ -16,21 +17,27 @@
  read-syntax+compile)
 
 (define attached-mods
-  '(congame/components/study
+  '(congame/components/registry
+    congame/components/study
     congame/components/transition-graph
     koyo/haml))
 
 ;; Next time:
 ;;  * add support for @form[]s
-;;  * add support for @import
+;;  * maybe add caching?
+;;  * dynamic transitions (@cond)
 (define (dsl-require s id)
   (define in (open-input-string s))
   (port-count-lines! in)
   (define ns (current-namespace))
+  (define mods-to-attach
+    (append attached-mods (map module-path-index-resolve (registered-study-mod-path-indexes))))
+  (define mods-to-require
+    (append attached-mods (registered-study-mod-paths)))
   (parameterize ([current-namespace (make-base-namespace)])
-    (for ([mod (in-list attached-mods)])
+    (for ([mod (in-list mods-to-attach)])
       (namespace-attach-module ns mod))
-    (for ([mod (in-list attached-mods)])
+    (for ([mod (in-list mods-to-require)])
       (eval `(require ,mod)))
     (for-each eval (syntax->datum (compile-module (read-syntax 'dsl in))))
     (namespace-variable-value id)))
@@ -62,8 +69,9 @@
 
 (define (compile-stmt stx)
   (syntax-parse stx
-    #:datum-literals (step study)
+    #:datum-literals (step study import)
     [{~or " " "\n"} #f]
+
     [(step name:id content ...+)
      (with-syntax ([(compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))])
        #'(define (name)
@@ -71,6 +79,7 @@
             (haml
              (.container
               compiled-content ...)))))]
+
     [(study study-id:id #:transitions [transition-entry:id ...] ...+)
      #:with study-id-str (datum->syntax #'study-id (symbol->string (syntax->datum #'study-id)))
      #:with (step-id ...) (for*/fold ([stxes null]
@@ -87,7 +96,12 @@
           study-id-str
           #:transitions (transition-graph [transition-entry ...] ...)
           (list
-           (make-step 'step-id step-id) ...)))]))
+           (if (study? step-id)
+               (make-step/study 'step-id step-id)
+               (make-step 'step-id step-id)) ...)))]
+
+    [(import mod-path:id id:id)
+     #'(define id (study-mod-require 'mod-path 'id))]))
 
 (define (compile-expr stx)
   (syntax-parse stx
@@ -275,4 +289,12 @@ DSL
   [done --> done]
 ]
 DSL
-))))
+)))
+
+  (check-equal?
+   '((define b (study-mod-require 'a 'b)))
+   (syntax->datum
+    (read+compile #<<DSL
+@import[a b]
+DSL
+                  ))))

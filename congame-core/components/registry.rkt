@@ -1,10 +1,15 @@
 #lang racket/base
 
-(require
- racket/contract)
+(require racket/contract
+         racket/list)
 
 (provide
  study-registry-allow-conflicts?
+
+ register-study-mod!
+ registered-study-mod-paths
+ registered-study-mod-path-indexes
+ study-mod-require
 
  register-study!
  get-registered-studies
@@ -18,6 +23,26 @@
 (struct bot-info (id bot models)
   #:transparent)
 
+(define *study-mod-registry*
+  (make-hasheq))
+
+(define/contract (registered-study-mod-paths)
+  (-> (listof symbol?))
+  (hash-keys *study-mod-registry*))
+
+(define/contract (registered-study-mod-path-indexes)
+  (-> (listof module-path-index?))
+  (remove-duplicates (hash-values *study-mod-registry*)))
+
+(define/contract (study-mod-require mod-path id)
+  (-> symbol? symbol? any/c)
+  (define (fail-mod)
+    (error 'import (format "module not found: ~a" mod-path)))
+  (define (fail-id)
+    (error 'import (format "module ~a does not provide ~a" mod-path id)))
+  (println `(,mod-path ,id))
+  (dynamic-require (hash-ref *study-mod-registry* mod-path fail-mod) id fail-id))
+
 (define *study-registry*
   (make-hasheq))
 
@@ -28,6 +53,10 @@
 (define/contract study-registry-allow-conflicts?
   (parameter/c boolean?)
   (make-parameter #f))
+
+(define/contract (register-study-mod! quoted-mod-path mod-path)
+  (-> symbol? module-path-index? void?)
+  (hash-set! *study-mod-registry* quoted-mod-path mod-path))
 
 (define/contract (register-study! id s)
   (-> symbol? any/c void?)

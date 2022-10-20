@@ -2,9 +2,11 @@
 
 (require (for-syntax racket/base
                      racket/match
+                     racket/syntax
                      setup/getinfo
                      syntax/parse)
-         congame/components/registry)
+         congame/components/registry
+         racket/runtime-path)
 
 (define-syntax-rule (reprovide mod ...)
   (begin
@@ -28,8 +30,16 @@
      #:with (req-spec ...) (for/list ([desc (in-list study-descriptions)])
                              #`(only-in #,(car desc) #,(cadr desc)))
      #:with (reg-spec ...) (for/list ([desc (in-list study-descriptions)])
-                             (define id (cadr desc))
-                             #`(register-study! (quote #,id) #,id))
+                             (define mod-path (car desc))
+                             (define study-id (cadr desc))
+                             (with-syntax ([mod-id (format-id stx "mod-~a" study-id)]
+                                           [mod-path #`(quote #,mod-path)]
+                                           [quoted-study-id #`(quote #,study-id)]
+                                           [study-id study-id])
+                               #'(begin
+                                   (define-runtime-module-path-index mod-id mod-path)
+                                   (register-study-mod! mod-path mod-id)
+                                   (register-study! quoted-study-id study-id))))
      #'(begin
          (require req-spec ...)
          reg-spec ...)]))
