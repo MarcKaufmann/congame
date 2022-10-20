@@ -107,7 +107,6 @@
     [(import mod-path:id id:id)
      #'(define id (study-mod-require 'mod-path 'id))]))
 
-(require racket/pretty)
 (define (compile-expr stx)
   (syntax-parse stx
     #:datum-literals (button h1 h2 h3 form)
