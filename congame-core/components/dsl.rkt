@@ -27,7 +27,6 @@
     koyo/haml))
 
 ;; Next time:
-;;  * add support for @form[]s
 ;;  * maybe add caching?
 ;;  * dynamic transitions (@cond)
 (define (dsl-require s id)
@@ -108,29 +107,39 @@
      #'(define id (study-mod-require 'mod-path 'id))]))
 
 (define (compile-expr stx)
+  (define-syntax-class body
+    (pattern body #:with compiled (compile-expr #'body)))
+
+  (define-syntax-class list-item
+    #:datum-literals (li)
+    #:attributes ([xexpr 1])
+    (pattern "\n"
+             #:with (xexpr ...) null)
+    (pattern (li body:body ...+)
+             #:with (xexpr ...) #'((:li body.compiled ...))))
+
+  ;; NOTE: For block-style tags, it's the tag's responibility to call
+  ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (button h1 h2 h3 form)
+    #:datum-literals (a button div em form h1 h2 h3 img span strong ol ul)
     #:literal-sets (dsl-literals)
+    [str:string #'str]
+
+    [(a url:string body:body ...+)
+     #'(:a ([:href url]) body.compiled ...)]
+
     [(button text0:string text:string ...)
      #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
      #'(button void joined-text)]
 
-    [({~and {~or h1 h2 h3} tag} text0 text ...)
-     #:with tag-id (format-id #'tag ":~a" #'tag)
-     (unless (string? (syntax-e #'text0))
-       (raise-syntax-error 'tag "expected text" stx))
-     #'(tag-id text0 text ...)]
+    [(div {~optional {~seq #:class class:string}} body ...+)
+     #:with (compiled-body ...) (map compile-expr (syntax-e (group-by-paragraph #'(body ...))))
+     #'(:div {~? ({~@ [:class class]})} compiled-body ...)]
 
-    [(:p body ...)
-     #:with (compiled-body ...) (map compile-expr (syntax-e #'(body ...)))
-     #'(:p compiled-body ...)]
+    [(em body:body ...+)
+     #'(:em body.compiled ...)]
 
-    [(:br)
-     #'(:br)]
-
-    ;; NOTE: For block-style tags, it's the tag's responibility to
-    ;; call group-by-paragraph on its exprs.
-    [(form body ...)
+    [(form body ...+)
      #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e (group-by-paragraph #'(body ...))))
      #'(formular
         (haml
@@ -138,11 +147,32 @@
           compiled-body ... ...))
         put-all-keywords)]
 
-    [(rator rand ...)
-     (raise-syntax-error 'dsl "invalid expression" stx)]
+    [({~and {~or h1 h2 h3} tag} text0 text ...)
+     #:with tag-id (format-id #'tag ":~a" #'tag)
+     (unless (string? (syntax-e #'text0))
+       (raise-syntax-error 'tag "expected text" stx))
+     #'(tag-id text0 text ...)]
 
-    [e
-     (datum->syntax #'here (syntax->datum #'e))]))
+    [(img url:string)
+     #'(:img ([:href url]))]
+
+    [(span {~optional {~seq #:class class:string}} body:body ...+)
+     #'(:span {~? ({~@ [:class class]})} body.compiled ...)]
+
+    [(strong body:body ...+)
+     #'(:strong body.compiled ...)]
+
+    [(ol item:list-item ...+)
+     #'(:ol item.xexpr ... ...)]
+
+    [(ul item:list-item ...+)
+     #'(:ul item.xexpr ... ...)]
+
+    [(:p body:body ...)
+     #'(:p body.compiled ...)]
+
+    [(:br)
+     #'(:br)]))
 
 (define (compile-form-expr stx)
   (define (stx->keyword-stx stx)
@@ -461,4 +491,152 @@ DSL
              (:button.button.next-button
               ([:type "submit"])
               "Submit")))
-           put-all-keywords))))))))
+           put-all-keywords)))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[example-step]{
+  @ol{
+    @li{Test}
+    @li{Foo}
+  }
+}
+DSL
+                  ))
+   '((define (example-step)
+       (page
+        (haml
+         (.container
+          (:ol
+           (:li "Test")
+           (:li "Foo"))))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[example-step]{
+  @ul{
+    @li{Test}
+    @li{Foo}
+  }
+}
+DSL
+                  ))
+   '((define (example-step)
+       (page
+        (haml
+         (.container
+          (:ul
+           (:li "Test")
+           (:li "Foo"))))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[example-step]{
+  @ul{
+    @li{
+      @ul{
+        @li{Nested 1}
+        @li{Nested 2}
+      }
+    }
+    @li{Foo}
+  }
+}
+DSL
+                  ))
+   '((define (example-step)
+       (page
+        (haml
+         (.container
+          (:ul
+           (:li
+            (:ul
+             (:li "Nested 1")
+             (:li "Nested 2")))
+           (:li "Foo"))))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[example-step]{
+  @a["http://example.com"]{example.com}
+}
+DSL
+                  ))
+   '((define (example-step)
+       (page
+        (haml
+         (.container
+          (:a ([:href "http://example.com"]) "example.com")))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[example-step]{
+  @strong{Hello @em{world}!}
+}
+DSL
+                  ))
+   '((define (example-step)
+       (page
+        (haml
+         (.container
+          (:strong "Hello " (:em "world") "!")))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[example-step]{
+  @div{Hello @em{world}!}
+}
+DSL
+                  ))
+   '((define (example-step)
+       (page
+        (haml
+         (.container
+          (:div (:p "Hello " (:em "world") "!"))))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[example-step]{
+  @div{
+   Hello
+
+   @em{world}!
+  }
+}
+DSL
+                  ))
+   '((define (example-step)
+       (page
+        (haml
+         (.container
+          (:div
+           (:p "Hello")
+           (:p (:em "world") "!"))))))))
+
+    (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[example-step]{
+  @div[#:class "example"]{
+   Hello
+
+   @em{world}!
+  }
+}
+DSL
+                  ))
+   '((define (example-step)
+       (page
+        (haml
+         (.container
+          (:div
+           ([:class "example"])
+           (:p "Hello")
+           (:p (:em "world") "!")))))))))
