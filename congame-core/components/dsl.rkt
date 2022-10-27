@@ -28,7 +28,6 @@
 
 ;; Next time:
 ;;  * maybe add caching?
-;;  * dynamic transitions (@cond)
 (define (dsl-require s id)
   (define in (open-input-string s))
   (port-count-lines! in)
@@ -71,6 +70,23 @@
        #'(compiled-stmt ...))]))
 
 (define (compile-stmt stx)
+  (define-syntax-class transition-entry
+    #:datum-literals (--> cond else)
+    (pattern -->
+             #:attr id #f
+             #:with compiled this-syntax)
+    (pattern id:id
+             #:with compiled this-syntax)
+    (pattern (cond [clause-expr clause-id:id] ...+
+                   [else else-id:id])
+             #:attr id #f
+             #:with (compiled-clause-expr ...) (map compile-cond-expr (syntax-e #'(clause-expr ...)))
+             #:with compiled #'(unquote
+                                (λ ()
+                                  (cond
+                                    [compiled-clause-expr (goto clause-id)] ...
+                                    [else (goto else-id)])))))
+
   (syntax-parse stx
     #:datum-literals (step study import)
     [{~or " " "\n"} #f]
@@ -83,21 +99,20 @@
              (.container
               compiled-content ...)))))]
 
-    [(study study-id:id #:transitions [transition-entry:id ...] ...+)
+    [(study study-id:id #:transitions [transition-entry:transition-entry ...] ...+)
      #:with study-id-str (datum->syntax #'study-id (symbol->string (syntax->datum #'study-id)))
      #:with (step-id ...) (for*/fold ([stxes null]
                                       [seen-ids (hasheq)]
                                       #:result (reverse stxes))
-                                     ([id-stx (in-list (syntax-e #'(transition-entry ... ...)))]
+                                     ([id-stx (in-list (syntax-e #'({~? transition-entry.id} ... ...)))]
                                       [id (in-value (syntax->datum id-stx))]
-                                      #:unless (eq? (syntax-e id-stx) '-->)
                                       #:unless (hash-has-key? seen-ids id))
                             (values (cons id-stx stxes)
                                     (hash-set seen-ids id #t)))
      #'(define study-id
          (make-study
           study-id-str
-          #:transitions (transition-graph [transition-entry ...] ...)
+          #:transitions (transition-graph [transition-entry.compiled ...] ...)
           (list
            (if (study? step-id)
                (make-step/study 'step-id step-id)
@@ -173,6 +188,18 @@
 
     [(:br)
      #'(:br)]))
+
+(define (compile-cond-expr stx)
+  (syntax-parse stx
+    #:datum-literals (= get)
+    [num:number #'num]
+    [str:string #'str]
+    [(= e0 e1)
+     #:with compiled-e0 (compile-cond-expr #'e0)
+     #:with compiled-e1 (compile-cond-expr #'e1)
+     #'(equal? compiled-e0 compiled-e1)]
+    [(get id:id)
+     #'(get 'id)]))
 
 (define (compile-form-expr stx)
   (define (stx->keyword-stx stx)
@@ -620,7 +647,7 @@ DSL
            (:p "Hello")
            (:p (:em "world") "!"))))))))
 
-    (check-equal?
+  (check-equal?
    (syntax->datum
     (read+compile #<<DSL
 @step[example-step]{
@@ -639,4 +666,54 @@ DSL
           (:div
            ([:class "example"])
            (:p "Hello")
-           (:p (:em "world") "!")))))))))
+           (:p (:em "world") "!"))))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[step0]{@button{Continue}}
+@step[step1]{@button{Continue}}
+@step[step2]{@button{Continue}}
+@step[done]{You're done.}
+
+@study[
+  hello-study
+  #:transitions
+  [step0 --> @cond[[@=[@get[some-var] "agree"] step1]
+                   [@else step2]]]
+  [step1 --> done]
+  [step2 --> done]
+  [done --> done]
+]
+DSL
+                  ))
+   '((define (step0) (page (haml (.container (button void "Continue")))))
+     (define (step1) (page (haml (.container (button void "Continue")))))
+     (define (step2) (page (haml (.container (button void "Continue")))))
+     (define (done) (page (haml (.container (:p "You're done.")))))
+     (define hello-study
+       (make-study
+        "hello-study"
+        #:transitions (transition-graph
+                       [step0 --> ,(λ ()
+                                     (cond
+                                       [(equal? (get 'some-var) "agree")
+                                        (goto step1)]
+                                       [else
+                                        (goto step2)]))]
+                       [step1 --> done]
+                       [step2 --> done]
+                       [done --> done])
+        (list
+         (if (study? step0)
+             (make-step/study 'step0 step0)
+             (make-step 'step0 step0))
+         (if (study? step1)
+             (make-step/study 'step1 step1)
+             (make-step 'step1 step1))
+         (if (study? done)
+             (make-step/study 'done done)
+             (make-step 'done done))
+         (if (study? step2)
+             (make-step/study 'step2 step2)
+             (make-step 'step2 step2))))))))
