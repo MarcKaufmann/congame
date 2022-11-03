@@ -1,61 +1,61 @@
-@step[general-excuse]{
-  @h1{Excuse}
+@step[introduction]{
+    @h1{The Study}
 
-  Think of a situation that you witnessed where a person made an excuse for some action or event. Make sure to describe each of the following points (not necessarily in that order):
+    Thank you for participating in this research study exploring the role of excuses in people's decisions. The survey should take ~10 minutes and you will receive $3 if you complete it.
 
+    The research is conducted by Luca Flóra Drucker and Marc Kaufmann, and financed by the Central European University. It has been approved by the Ethics Review Committee of the Central European University (CEU). Your participation is voluntary and you may withdraw at any time. Participation in the study is not associated with any forseeable risks and or benefits beyond the monetary compensation.
+
+    Please contact the principal investigator, Marc Kaufmann, at kaufmannm@"@"ceu.edu or by direct message via the platform if you have any concerns or questions. Report any technical problems you encounter to admin@"@"totalinsightmanagement.com.
+
+    @button{Start Survey}
+}
+
+@template[excuse-list]{
   @ol{
-    @li{What was the situation?}
-    @li{Who was making an excuse? (Do not tell us the name, but the role of the person to understand the situation: colleague, employee, brother, parent, boss, ...)}
-    @li{To whom did they make an excuse? (Same, no need to tell us the name, just tell us the role of the person to us.)}
-    @li{What action or behavior did the person excuse?}
-    @li{What excuse did they use -- what did they say (or do)?}
-    @li{Why do you think they did excuse their behavior?}
-    @li{Do you consider that an excuse was necessary in that situation?}
-    @li{Were you convinced by the excuse -- do you consider it a good or a poor excuse?}}
+    @li{Who was making an excuse and to whom?}
+    @li{What action or behavior was the excuse for?}
+    @li{Why do you think the person felt the need for an excuse?}
+    @li{What was the excuse?}
+    @li{Did you find the excuse convincing or not?}}
+}
+
+
+@step[general-excuse]{
+
+  @h1{Excuses}
+
+  Think of a situation that you witnessed where someone made an excuse for some behavior. Describe the situation, making sure to mention the following aspects:
+
+  @template[excuse-list]{for some behavior}
 
   @form{
     @textarea[general-excuse]{Describe the situation and excuse:}
     @submit-button[]}
 }
 
-@step[pb-excuse]{
-  @h1{Excuses for Being Late}
+@step[procrastination-excuse]{
 
-  Now think of @strong{a different situation} where a person made an excuse for @strong{not completing something on time}. As a reminder, make sure to describe each of the following points (not necessarily in that order):
+  @h1{Excuses for procrastinating}
 
-  @ol{
-    @li{What was the situation?}
-    @li{Who was making an excuse? (Do not tell us the name, but the role of the person to understand the situation: colleague, employee, brother, parent, boss, ...)}
-    @li{To whom did they make an excuse? (Same, no need to tell us the name, just tell us the role of the person to us.)}
-    @li{What action or behavior did the person excuse?}
-    @li{What excuse did they use -- what did they say (or do)?}
-    @li{Why do you think they did excuse their behavior?}
-    @li{Do you consider that an excuse was necessary in that situation?}
-    @li{Were you convinced by the excuse -- do you consider it a good or a poor excuse?}}
+  Think of a situation that you witnessed where someone made an excuse for procrastinating. Describe the situation, making sure to mention the following aspects:
+
+  @template[excuse-list]{for procrastinating}
 
   @form{
-    @textarea[pb-excuse]{Describe the situation and excuse:}
-
+    @textarea[procrastination-excuse]{Describe the situation and excuse:}
     @submit-button[]}
 }
 
 @step[work-excuse]{
-  @h1{Excuses for Achieving Little}
 
-  Now think of @strong{a different situation} where a person made an excuse for @strong{achieving little}. As a reminder, make sure to describe each of the following points (not necessarily in that order):
+  @h1{Excuses for working too little}
 
-  @ol{
-    @li{What was the situation?}
-    @li{Who was making an excuse? (Do not tell us the name, but the role of the person to understand the situation: colleague, employee, brother, parent, boss, ...)}
-    @li{To whom did they make an excuse? (Same, no need to tell us the name, just tell us the role of the person to us.)}
-    @li{What action or behavior did the person excuse?}
-    @li{What excuse did they use -- what did they say (or do)?}
-    @li{Why do you think they did excuse their behavior?}
-    @li{Do you consider that an excuse was necessary in that situation?}
-    @li{Were you convinced by the excuse -- do you consider it a good or a poor excuse?}}
+  Think of a situation that you witnessed where someone made an excuse for procrastinating. Describe the situation, making sure to mention the following aspects:
+
+  @template[excuse-list]{for working too little}
 
   @form{
-    @textarea[work-excuse]{Describe the situation and excuse:}
+    @textarea[working-little-excuse]{Describe the situation and excuse:}
     @submit-button[]}
 }
 
@@ -63,11 +63,15 @@
   @h1{Thank You!}
 
   Thank you for your answers. You are done.
+
+  @h2{Completion Code: DISCODE}
+
+  Provide the above code on prolific to complete the study.
 }
 
 @study[
   excuses
   #:transitions
-  [general-excuse --> pb-excuse --> work-excuse --> done]
+  [introduction --> general-excuse --> procrastination-excuse --> work-excuse --> done]
   [done --> done]
 ]
