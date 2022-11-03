@@ -261,10 +261,13 @@
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(define paragraph-tags
+  '(a em span strong))
+
 ;; invariant: never two strings next to each other where one isn't "\n"
 (define (group-by-paragraph stx)
   (define (swallow? stx)
-    (member (syntax-e (car (syntax-e stx))) '(bold em)))
+    (member (syntax-e (car (syntax-e stx))) paragraph-tags))
 
   ;; TODO: make it so swallowed things can't have newlines in them
   (let loop ([stxs (syntax-e stx)]
@@ -279,7 +282,7 @@
        (define stx (car stxs))
        (define stx-str? (string? (syntax-e stx)))
        (cond
-         ;; not a string but can be swalloed (eg @bold)
+         ;; not a string but can be swallowed (eg @strong)
          [(and (not stx-str?) (swallow? stx))
           (loop (cdr stxs) (cons stx pending) res)]
 
@@ -617,7 +620,7 @@ DSL
        (page
         (haml
          (.container
-          (:a ([:href "http://example.com"]) "example.com")))))))
+          (:p (:a ([:href "http://example.com"]) "example.com"))))))))
 
   (check-equal?
    (syntax->datum
@@ -631,7 +634,25 @@ DSL
        (page
         (haml
          (.container
-          (:strong "Hello " (:em "world") "!")))))))
+          (:p
+           (:strong "Hello " (:em "world") "!"))))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[example-step]{
+  Hello @strong{world}!
+}
+DSL
+                  ))
+   '((define (example-step)
+       (page
+        (haml
+         (.container
+          (:p
+           "Hello "
+           (:strong "world")
+           "!")))))))
 
   (check-equal?
    (syntax->datum
