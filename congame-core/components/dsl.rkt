@@ -63,31 +63,38 @@
 (define-literals dsl-literals
   [:p :br])
 
+;; TODO: Refactor into Environment object.
 (define known-actions
   (make-parameter null))
 (define known-imports
   (make-parameter null))
+(define known-templates
+  (make-parameter null))
 
 (define (collect-imports&actions stxs)
   (for/fold ([actions null]
-             [imports null])
+             [imports null]
+             [templates null])
             ([stx (in-list stxs)])
     (syntax-parse stx
-      #:datum-literals (action import)
+      #:datum-literals (action import template)
       [(action id:id _ ...)
-       (values (cons (syntax->datum #'id) actions) imports)]
+       (values (cons (syntax->datum #'id) actions) imports templates)]
       [(import _ id:id)
-       (values actions (cons (syntax->datum #'id) imports))]
+       (values actions (cons (syntax->datum #'id) imports) templates)]
+      [(template id:id _ ...)
+       (values actions imports (cons (syntax->datum #'id) templates))]
       [_
-       (values actions imports)])))
+       (values actions imports templates)])))
 
 (define (compile-module stx)
   (syntax-parse stx
     [(statement ...)
-     (define-values (actions imports)
+     (define-values (actions imports templates)
        (collect-imports&actions (syntax-e #'(statement ...))))
      (parameterize ([known-actions actions]
-                    [known-imports imports])
+                    [known-imports imports]
+                    [known-templates templates])
        (with-syntax ([(compiled-stmt ...) (filter-map compile-stmt (syntax-e #'(statement ...)))])
          #'(compiled-stmt ...)))]))
 
@@ -132,13 +139,16 @@
                                   cond-expr.compiled))))
 
   (syntax-parse stx
-    #:datum-literals (action step study import)
+    #:datum-literals (action import step study template)
     [{~or " " "\n"} #f]
 
     [(action name:id content ...+)
      #:with (compiled-content ...) (map compile-action-expr (syntax-e #'(content ...)))
      #'(define (name)
          compiled-content ...)]
+
+    [(import mod-path:id id:id)
+     #'(define id (study-mod-require 'mod-path 'id))]
 
     [(step name:id content ...+)
      #:with (compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))
@@ -167,8 +177,10 @@
                (make-step/study 'step-id step-id)
                (make-step 'step-id step-id)) ...)))]
 
-    [(import mod-path:id id:id)
-     #'(define id (study-mod-require 'mod-path 'id))]))
+    [(template template-id:id content ...+)
+     #:with (compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))
+     #'(define (template-id content-proc)
+         (haml (:div compiled-content ...)))]))
 
 (define (compile-expr stx)
   (define-syntax-class body
@@ -185,7 +197,7 @@
   ;; NOTE: For block-style tags, it's the tag's responibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (a button call div em form h1 h2 h3 img span strong ol ul)
+    #:datum-literals (a button call div em form h1 h2 h3 img template span strong ol ul yield)
     #:literal-sets (dsl-literals)
     [str:string #'str]
 
@@ -194,7 +206,7 @@
 
     [(button {~optional {~seq #:action action:id}} text0:string text:string ...)
      #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
-     (check-action-id #'{~? action #f})
+     (check-action-id 'button #'{~? action #f})
      #'(button {~? action void} joined-text)]
 
     [(call _id:id _e ...)
@@ -209,7 +221,7 @@
 
     [(form {~optional {~seq #:action action:id}} body ...+)
      #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e (group-by-paragraph #'(body ...))))
-     (check-action-id #'{~? action #f})
+     (check-action-id 'form #'{~? action #f})
      #'(formular
         (haml
          (:div
@@ -236,6 +248,18 @@
 
     [(ul item:list-item ...+)
      #'(:ul item.xexpr ... ...)]
+
+    [(template id:id content ...+)
+     #:with (compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))
+     (unless (member (syntax-e #'id) (known-templates))
+       (raise-syntax-error 'template (format "~a is not a known template" (syntax-e #'id)) stx #'id))
+     #'(id (λ () (haml compiled-content ...)))]
+
+    [(template id:id)
+     #'(id (λ () (error 'template "yielded without content")))]
+
+    [(yield) ;; TODO: check that we're in a template
+     #'(unquote-splicing (content-proc))]
 
     [(:p body:body ...)
      #'(:p body.compiled ...)]
@@ -306,11 +330,11 @@
      #:with compiled-expr (compile-expr #'e)
      #'(compiled-expr)]))
 
-(define (check-action-id stx)
+(define (check-action-id who stx)
   (unless (or (not (syntax-e stx))
               (memv (syntax->datum stx)
                     (known-actions)))
-    (raise-syntax-error 'button (format "~a is not a known action" (syntax-e stx)) stx)))
+    (raise-syntax-error who (format "~a is not a known action" (syntax-e stx)) stx)))
 
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -831,7 +855,6 @@ DSL
      (define (quit) (println "hello"))
      (define (hello) (page (haml (.container (button quit "Quit")))))))
 
-
   (check-equal?
    (syntax->datum
     (read+compile #<<DSL
@@ -886,4 +909,31 @@ DSL
              (make-step 'done done))
          (if (study? step2)
              (make-step/study 'step2 step2)
-             (make-step 'step2 step2))))))))
+             (make-step 'step2 step2)))))))
+
+    (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@template[a]{
+  @h1{Hello}
+  @yield[]
+}
+@template[b]{
+  @template[a]{
+    Hi world!
+  }
+}
+
+@step[hello]{
+  @template[b]
+}
+DSL
+                  ))
+   '((define (a content-proc)
+       (haml
+        (:div
+         (:h1 "Hello")
+         ,@(content-proc))))
+     (define (b content-proc)
+       (haml (:div (a (λ () (haml (:p "Hi world!")))))))
+     (define (hello) (page (haml (.container (b (λ () (error 'template "yielded without content"))))))))))
