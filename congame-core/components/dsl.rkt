@@ -63,11 +63,25 @@
 (define-literals dsl-literals
   [:p :br])
 
+(define known-imports
+  (make-parameter null))
+
+(define (collect-imports stxs)
+  (for/fold ([imports null])
+            ([stx (in-list stxs)])
+    (syntax-parse stx
+      #:datum-literals (import)
+      [(import _ id:id)
+       (cons (syntax->datum #'id) imports)]
+      [_
+       imports])))
+
 (define (compile-module stx)
   (syntax-parse stx
     [(statement ...)
-     (with-syntax ([(compiled-stmt ...) (filter-map compile-stmt (syntax-e #'(statement ...)))])
-       #'(compiled-stmt ...))]))
+     (parameterize ([known-imports (collect-imports (syntax-e #'(statement ...)))])
+       (with-syntax ([(compiled-stmt ...) (filter-map compile-stmt (syntax-e #'(statement ...)))])
+         #'(compiled-stmt ...)))]))
 
 (define (compile-stmt stx)
   (define-syntax-class transition-entry
@@ -136,7 +150,7 @@
   ;; NOTE: For block-style tags, it's the tag's responibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (a button div em form h1 h2 h3 img span strong ol ul)
+    #:datum-literals (a button call div em form h1 h2 h3 img span strong ol ul)
     #:literal-sets (dsl-literals)
     [str:string #'str]
 
@@ -146,6 +160,12 @@
     [(button text0:string text:string ...)
      #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
      #'(button void joined-text)]
+
+    [(call id:id e ...)
+     (define the-id (syntax->datum #'id))
+     (unless (member the-id (known-imports))
+       (raise-syntax-error 'call (format "unknown procedure ~a; did you forget to import it?" the-id) stx))
+     #'(id e ...)]
 
     [(div {~optional {~seq #:class class:string}} body ...+)
      #:with (compiled-body ...) (map compile-expr (syntax-e (group-by-paragraph #'(body ...))))
