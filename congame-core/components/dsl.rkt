@@ -63,55 +63,90 @@
 (define-literals dsl-literals
   [:p :br])
 
+(define known-actions
+  (make-parameter null))
 (define known-imports
   (make-parameter null))
 
-(define (collect-imports stxs)
-  (for/fold ([imports null])
+(define (collect-imports&actions stxs)
+  (for/fold ([actions null]
+             [imports null])
             ([stx (in-list stxs)])
     (syntax-parse stx
-      #:datum-literals (import)
+      #:datum-literals (action import)
+      [(action id:id _ ...)
+       (values (cons (syntax->datum #'id) actions) imports)]
       [(import _ id:id)
-       (cons (syntax->datum #'id) imports)]
+       (values actions (cons (syntax->datum #'id) imports))]
       [_
-       imports])))
+       (values actions imports)])))
 
 (define (compile-module stx)
   (syntax-parse stx
     [(statement ...)
-     (parameterize ([known-imports (collect-imports (syntax-e #'(statement ...)))])
+     (define-values (actions imports)
+       (collect-imports&actions (syntax-e #'(statement ...))))
+     (parameterize ([known-actions actions]
+                    [known-imports imports])
        (with-syntax ([(compiled-stmt ...) (filter-map compile-stmt (syntax-e #'(statement ...)))])
          #'(compiled-stmt ...)))]))
 
 (define (compile-stmt stx)
-  (define-syntax-class transition-entry
-    #:datum-literals (--> cond else)
-    (pattern -->
-             #:attr id #f
-             #:with compiled this-syntax)
-    (pattern id:id
-             #:with compiled this-syntax)
+  (define-syntax-class cond-expr
+    #:datum-literals (cond else)
     (pattern (cond [clause-expr clause-id:id] ...+
                    [else else-id:id])
              #:attr id #f
              #:with (compiled-clause-expr ...) (map compile-cond-expr (syntax-e #'(clause-expr ...)))
+             #:with compiled #'(cond
+                                 [compiled-clause-expr (goto clause-id)] ...
+                                 [else (goto else-id)])))
+
+  (define-syntax-class transition-entry
+    #:datum-literals (--> cond else lambda)
+    (pattern -->
+             #:attr id #f
+             #:with compiled this-syntax)
+
+    (pattern id:id
+             #:with compiled this-syntax)
+
+    (pattern {~and (cond _ ...) e:cond-expr}
+             #:attr id #f
+             #:with compiled #'(unquote (λ () e.compiled)))
+
+    (pattern (lambda action-expr ... target-id:id)
+             #:attr id #f
+             #:with (compiled-action-expr ...) (map compile-action-expr (syntax-e #'(action-expr ...)))
              #:with compiled #'(unquote
                                 (λ ()
-                                  (cond
-                                    [compiled-clause-expr (goto clause-id)] ...
-                                    [else (goto else-id)])))))
+                                  compiled-action-expr ...
+                                  (goto target-id))))
+
+    (pattern (lambda action-expr ... {~and (cond _ ...) cond-expr:cond-expr})
+             #:attr id #f
+             #:with (compiled-action-expr ...) (map compile-action-expr (syntax-e #'(action-expr ...)))
+             #:with compiled #'(unquote
+                                (λ ()
+                                  compiled-action-expr ...
+                                  cond-expr.compiled))))
 
   (syntax-parse stx
-    #:datum-literals (step study import)
+    #:datum-literals (action step study import)
     [{~or " " "\n"} #f]
 
+    [(action name:id content ...+)
+     #:with (compiled-content ...) (map compile-action-expr (syntax-e #'(content ...)))
+     #'(define (name)
+         compiled-content ...)]
+
     [(step name:id content ...+)
-     (with-syntax ([(compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))])
-       #'(define (name)
-           (page
-            (haml
-             (.container
-              compiled-content ...)))))]
+     #:with (compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))
+     #'(define (name)
+         (page
+          (haml
+           (.container
+            compiled-content ...))))]
 
     [(study study-id:id #:transitions [transition-entry:transition-entry ...] ...+)
      #:with study-id-str (datum->syntax #'study-id (symbol->string (syntax->datum #'study-id)))
@@ -157,15 +192,13 @@
     [(a url:string body:body ...+)
      #'(:a ([:href url]) body.compiled ...)]
 
-    [(button text0:string text:string ...)
+    [(button {~optional {~seq #:action action:id}} text0:string text:string ...)
      #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
-     #'(button void joined-text)]
+     (check-action-id #'{~? action #f})
+     #'(button {~? action void} joined-text)]
 
-    [(call id:id e ...)
-     (define the-id (syntax->datum #'id))
-     (unless (member the-id (known-imports))
-       (raise-syntax-error 'call (format "unknown procedure ~a; did you forget to import it?" the-id) stx))
-     #'(id e ...)]
+    [(call _id:id _e ...)
+     (compile-call-expr stx)]
 
     [(div {~optional {~seq #:class class:string}} body ...+)
      #:with (compiled-body ...) (map compile-expr (syntax-e (group-by-paragraph #'(body ...))))
@@ -174,13 +207,14 @@
     [(em body:body ...+)
      #'(:em body.compiled ...)]
 
-    [(form body ...+)
+    [(form {~optional {~seq #:action action:id}} body ...+)
      #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e (group-by-paragraph #'(body ...))))
+     (check-action-id #'{~? action #f})
      #'(formular
         (haml
          (:div
           compiled-body ... ...))
-        put-all-keywords)]
+        (make-put-all-keywords {~? action void}))]
 
     [({~and {~or h1 h2 h3} tag} text0 text ...)
      #:with tag-id (format-id #'tag ":~a" #'tag)
@@ -208,6 +242,20 @@
 
     [(:br)
      #'(:br)]))
+
+(define (compile-call-expr stx)
+  (syntax-parse stx
+    [(_ id:id e ...)
+     (define the-id (syntax->datum #'id))
+     (unless (member the-id (known-imports))
+       (raise-syntax-error 'call (format "unknown procedure ~a; did you forget to import it?" the-id) stx))
+     #'(id e ...)]))
+
+(define (compile-action-expr stx)
+  (syntax-parse stx
+    #:datum-literals (call)
+    [(call _id:id _e ...)
+     (compile-call-expr stx)]))
 
 (define (compile-cond-expr stx)
   (syntax-parse stx
@@ -257,6 +305,12 @@
     [e
      #:with compiled-expr (compile-expr #'e)
      #'(compiled-expr)]))
+
+(define (check-action-id stx)
+  (unless (or (not (syntax-e stx))
+              (memv (syntax->datum stx)
+                    (known-actions)))
+    (raise-syntax-error 'button (format "~a is not a known action" (syntax-e stx)) stx)))
 
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -541,7 +595,7 @@ DSL
              (:button.button.next-button
               ([:type "submit"])
               "Submit")))
-           put-all-keywords)))))))
+           (make-put-all-keywords void))))))))
 
   (check-equal?
    (syntax->datum
@@ -737,6 +791,81 @@ DSL
         "hello-study"
         #:transitions (transition-graph
                        [step0 --> ,(λ ()
+                                     (cond
+                                       [(equal? (get 'some-var) "agree")
+                                        (goto step1)]
+                                       [else
+                                        (goto step2)]))]
+                       [step1 --> done]
+                       [step2 --> done]
+                       [done --> done])
+        (list
+         (if (study? step0)
+             (make-step/study 'step0 step0)
+             (make-step 'step0 step0))
+         (if (study? step1)
+             (make-step/study 'step1 step1)
+             (make-step 'step1 step1))
+         (if (study? done)
+             (make-step/study 'done done)
+             (make-step 'done done))
+         (if (study? step2)
+             (make-step/study 'step2 step2)
+             (make-step 'step2 step2)))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@import[racket/base println]
+
+@action[quit]{
+  @call[println "hello"]
+}
+
+@step[hello]{
+  @button[#:action quit]{Quit}
+}
+DSL
+                  ))
+   '((define println (study-mod-require 'racket/base 'println))
+     (define (quit) (println "hello"))
+     (define (hello) (page (haml (.container (button quit "Quit")))))))
+
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@import[racket/base println]
+
+@step[step0]{@button{Continue}}
+@step[step1]{@button{Continue}}
+@step[step2]{@button{Continue}}
+@step[done]{You're done.}
+
+@study[
+  hello-study
+  #:transitions
+  [step0 --> @lambda[
+               @call[println "hello"]
+               @cond[[@=[@get[some-var] "agree"] step1]
+                     [@else step2]]]]
+  [step1 --> done]
+  [step2 --> done]
+  [done --> done]
+]
+DSL
+                  ))
+   '((define println (study-mod-require 'racket/base 'println))
+     (define (step0) (page (haml (.container (button void "Continue")))))
+     (define (step1) (page (haml (.container (button void "Continue")))))
+     (define (step2) (page (haml (.container (button void "Continue")))))
+     (define (done) (page (haml (.container (:p "You're done.")))))
+     (define hello-study
+       (make-study
+        "hello-study"
+        #:transitions (transition-graph
+                       [step0 --> ,(λ ()
+                                     (println "hello")
                                      (cond
                                        [(equal? (get 'some-var) "agree")
                                         (goto step1)]
