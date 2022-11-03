@@ -22,11 +22,11 @@
       (haml
        (:div
         (:div
-         (#:plausible-explanation (input-textarea "What do you think explains both the significant result and the failed replication?")))
+         (#:plausible-explanation (textarea "What do you think explains both the significant result and the failed replication?")))
         (:div
-         (#:other-explanations (input-textarea "What do you think are some other (less likely but possible) explanations?")))
+         (#:other-explanations (textarea "What do you think are some other (less likely but possible) explanations?")))
         (:div
-         (#:other-excuses (input-textarea "What else can serve as an excuse (whether other alternatives, or other treatments)?")))
+         (#:other-excuses (textarea "What else can serve as an excuse (whether other alternatives, or other treatments)?")))
         (:button.button.next-button ([:type "submit"]) "Next")))
       (lambda (#:plausible-explanation plausible-explanation
                #:other-explanations other-explanations
@@ -131,7 +131,7 @@
      (formular
       (haml
        (:div
-        (#:thoughts-on-excuses (input-textarea "How would you identify excuses? Which paper comes to mind?"))
+        (#:thoughts-on-excuses (textarea "How would you identify excuses? Which paper comes to mind?"))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (λ (#:thoughts-on-excuses thoughts-on-excuses)
         (put-self+instance 'thoughts-on-excuses thoughts-on-excuses)))))))

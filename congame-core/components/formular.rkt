@@ -20,8 +20,8 @@
  input-file
  input-number
  input-text
- input-textarea
- input-time)
+ input-time
+ textarea)
 
 ;; Building up an intermediate representation of formualrs would allow
 ;; us to compose smaller formulars into larger ones.  We may want to
@@ -230,7 +230,7 @@
           ((widget-text) name value errors) label)
          ,@((widget-errors) name value errors))))]))
 
-(define ((input-textarea label #:validators [validators null]) meth)
+(define ((textarea label #:validators [validators null]) meth)
   (match meth
     ['validator
      (apply ensure binding/text (required) validators)]

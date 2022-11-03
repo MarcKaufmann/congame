@@ -254,7 +254,7 @@
        (formular
         (haml
          (:div
-          (#:answer (input-textarea q-text))
+          (#:answer (textarea q-text))
           (:button.button.next-button ([:type "submit"]) "Submit")))
         (lambda (#:answer answer)
           (let ([q (make-quiz-question q-text answer)])

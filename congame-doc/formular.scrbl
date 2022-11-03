@@ -25,7 +25,7 @@ The following is an example of a complete form used within a page:
           (:div
             (#:name (input-text "What is your name?"))
           (:div
-            (#:opinion (input-textarea "What is your opinion about this form?"))))
+            (#:opinion (textarea "What is your opinion about this form?"))))
           (:button.button.next-button ([:type "submit"]) "Submit"))
         (λ (#:age age
             #:name name
@@ -45,8 +45,8 @@ The following is an example of a complete form used within a page:
   Creates a formular widget for simple text input.
 }
 
-@defproc[(input-textarea [label string?]
-                         [#:validators validators list? null])
+@defproc[(textarea [label string?]
+                   [#:validators validators list? null])
          (-> [meth symbol?] any/c)]{
   Creates a formular widget for a textarea input field.
 }

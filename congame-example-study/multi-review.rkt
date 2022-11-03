@@ -738,7 +738,7 @@
              ("3" . "(3 points) All parts were attempted in a meaningful way."))))
 
          (#:genuine-attempt-explanation
-          (input-textarea "In one sentence, explain your score whether this submission is a genuine attempt. E.g. \"While all parts were attempted, half of them do little more than restate the exercise and do not solve it.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"You should say why you chose the particular functions you used. In exercise 2, for example, you use both `geom_col` and `geom_bar` without even briefly saying what each of them does."))
+          (textarea "In one sentence, explain your score whether this submission is a genuine attempt. E.g. \"While all parts were attempted, half of them do little more than restate the exercise and do not solve it.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"You should say why you chose the particular functions you used. In exercise 2, for example, you use both `geom_col` and `geom_bar` without even briefly saying what each of them does."))
 
          (#:where-got-stuck
           (radios
@@ -749,7 +749,7 @@
              ("3" . "(3 points) Either the person never got stuck. Or for every problem encountered, the person clearly states where things went wrong, what they tried (google searches, Slack questions, R help). You can see what went wrong, even if the diagnosis of the problem may itself be wrong. "))))
 
          (#:where-got-stuck-explanation
-          (input-textarea "In one sentence, explain your score on incomplete problems and how clearly the person highlighted where they got stuck. E.g. \"Whenever you got stuck, you simply seem to have stopped without saying why you stopped or what you tried yet failed to work.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"For exercise 3, it seems that you simply mistyped the variable name (it is missing an underscore '_'). If so, you should have said that you ran the code and what error you hit.\""))
+          (textarea "In one sentence, explain your score on incomplete problems and how clearly the person highlighted where they got stuck. E.g. \"Whenever you got stuck, you simply seem to have stopped without saying why you stopped or what you tried yet failed to work.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"For exercise 3, it seems that you simply mistyped the variable name (it is missing an underscore '_'). If so, you should have said that you ran the code and what error you hit.\""))
 
          (#:clear-presentation
           (radios
@@ -760,7 +760,7 @@
              ("3" . "(3 points) The document is clearly written, graphs and code well described, and the document is as easy to understand as the material allows."))))
 
          (#:clear-presentation-explanation
-          (input-textarea "Explain your score on presentation in one sentence (e.g. \"I had to spend a lot of time to figure out which graph/which chunk of code belonged to which exercise\"). Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"For exercise 4, I suggest to split the code across several lines and to add a comment why you chose the method 'gam' rather than 'lm'.\" No more than 2 sentences."))
+          (textarea "Explain your score on presentation in one sentence (e.g. \"I had to spend a lot of time to figure out which graph/which chunk of code belonged to which exercise\"). Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"For exercise 4, I suggest to split the code across several lines and to add a comment why you chose the method 'gam' rather than 'lm'.\" No more than 2 sentences."))
          (:button.button.next-button ([:type "submit"]) "Submit")))
        (lambda (#:genuine-attempt genuine-attempt
                 #:genuine-attempt-explanation genuine-attempt-explanation
@@ -959,7 +959,7 @@
       (haml
        (:div
         (#:comments-on-review
-         (input-textarea "Comments on Review:"))
+         (textarea "Comments on Review:"))
         (#:review-score
          (input-number "Review Score (-1 to +1): "
                        #:min -1 #:max 1))
@@ -1007,7 +1007,7 @@
       (haml
        (:div
         (#:comments-on-review
-         (input-textarea "Comments on Review:"))
+         (textarea "Comments on Review:"))
         (#:review-score
          (input-number "Review Score (-1 to +1): "
                        #:min -1 #:max 1))
@@ -1081,7 +1081,7 @@
                                              #:min 0 #:max 2))
          (#:quality (input-number "What overall score between 0 (lowest) and 7 (highest) would you give this proposal?"
                                   #:min 0 #:max 7))
-         (#:feedback (input-textarea "Provide comments for the overall score and give at least one constructive item of feedback: a suggestion how to improve one particular aspect of the proposal."))
+         (#:feedback (textarea "Provide comments for the overall score and give at least one constructive item of feedback: a suggestion how to improve one particular aspect of the proposal."))
          (:button.button.next-button ((:type "submit")) "Submit")))
        (lambda (#:one-page-limit one-page-limit
                 #:how-clear-question how-clear-question
@@ -1210,7 +1210,7 @@
      (formular
       (haml
        (:div
-        (#:research-idea (input-textarea (format "Provide research idea ~a of ~a" i n)))
+        (#:research-idea (textarea (format "Provide research idea ~a of ~a" i n)))
         (:button.button.next-button ([:type "submit"]) "Submit")))
       (lambda (#:research-idea idea)
         (put 'submissions
@@ -1245,7 +1245,7 @@
           "Do you consider this a valid research idea?"
           '(("yes" . "Yes")
             ("no"  . "No"))))
-        (#:feedback (input-textarea "Provide a constructive suggestion how to improve this research question / turn it into a valid research question. Remember: be kind."))
+        (#:feedback (textarea "Provide a constructive suggestion how to improve this research question / turn it into a valid research question. Remember: be kind."))
         (:button.button.next-button ((:type "submit")) "Submit")))
       (lambda (#:valid-research-idea? valid-research-idea?
                #:feedback feedback)
@@ -1281,7 +1281,7 @@
       (haml
        (:div
         (#:comments-on-review
-         (input-textarea "Comments on Review:"))
+         (textarea "Comments on Review:"))
         (#:review-score
          (input-number "Review Score (-1 to +1): "
                        #:min -1 #:max 1))
@@ -1472,27 +1472,27 @@
          (#:exercise1
           (input-exercise-score 1))
          (#:exercise1-explanation
-          (input-textarea "Explain your score for exercise 1 briefly."))
+          (textarea "Explain your score for exercise 1 briefly."))
          (#:exercise2
           (input-exercise-score 2))
          (#:exercise2-explanation
-          (input-textarea "Explain your score for exercise 2 briefly."))
+          (textarea "Explain your score for exercise 2 briefly."))
          (#:exercise3
           (input-exercise-score 3))
          (#:exercise3-explanation
-          (input-textarea "Explain your score for exercise 3 briefly."))
+          (textarea "Explain your score for exercise 3 briefly."))
          (#:exercise4
           (input-exercise-score 4))
          (#:exercise4-explanation
-          (input-textarea "Explain your score for exercise 4 briefly."))
+          (textarea "Explain your score for exercise 4 briefly."))
          (#:exercise5
           (input-exercise-score 5))
          (#:exercise5-explanation
-          (input-textarea "Explain your score for exercise 5 briefly."))
+          (textarea "Explain your score for exercise 5 briefly."))
          (#:exercise6
           (input-exercise-score 6))
          (#:exercise6-explanation
-          (input-textarea "Explain your score for exercise 6 briefly."))
+          (textarea "Explain your score for exercise 6 briefly."))
          (:button.button.next-button ([:type "submit"]) "Submit")))
        (lambda (#:exercise1 exercise1
                 #:exercise2 exercise2
