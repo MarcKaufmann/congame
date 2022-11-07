@@ -3,7 +3,7 @@
 
     Thank you for participating in this research study exploring the role of excuses in people's decisions. The survey should take ~10 minutes and you will receive $3 if you complete it.
 
-    The research is conducted by Luca Flóra Drucker and Marc Kaufmann, and financed by the Central European University. It has been approved by the Ethics Review Committee of the Central European University (CEU). Your participation is voluntary and you may withdraw at any time. Participation in the study is not associated with any forseeable risks and or benefits beyond the monetary compensation.
+    The research is conducted by Marc Kaufmann, and financed by the Central European University. Your participation is voluntary and you may withdraw at any time. Participation in the study is not associated with any forseeable risks and or benefits beyond the monetary compensation.
 
     Please contact the principal investigator, Marc Kaufmann, at kaufmannm@"@"ceu.edu or by direct message via the platform if you have any concerns or questions. Report any technical problems you encounter to admin@"@"totalinsightmanagement.com.
 
@@ -50,7 +50,7 @@
 
   @h1{Excuses for working too little}
 
-  Think of a situation that you witnessed where someone made an excuse for procrastinating. Describe the situation, making sure to mention the following aspects:
+  Think of a situation that you witnessed where someone made an excuse for working too little. Describe the situation, making sure to mention the following aspects:
 
   @template[excuse-list]{for working too little}
 
@@ -64,7 +64,7 @@
 
   Thank you for your answers. You are done.
 
-  @h2{Completion Code: DISCODE}
+  @h2{Completion Code: CODEXCUSE71}
 
   Provide the above code on prolific to complete the study.
 }
