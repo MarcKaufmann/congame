@@ -1,7 +1,7 @@
 @step[introduction]{
     @h1{The Study}
 
-    Thank you for participating in this research study exploring the role of excuses in people's decisions. The survey should take ~10 minutes and you will receive $3 if you complete it.
+    Thank you for participating in this research study exploring the role of excuses in people's decisions. The survey should take ~15 minutes and you will receive £2.50 if you complete it. You will be asked to describe situations in which people make excuses for 3 different behaviors, followed by 2 general questions about excuses.
 
     The research is conducted by Marc Kaufmann, and financed by the Central European University. Your participation is voluntary and you may withdraw at any time. Participation in the study is not associated with any forseeable risks and or benefits beyond the monetary compensation.
 
@@ -14,11 +14,9 @@
   @ol{
     @li{Who was making an excuse and to whom?}
     @li{What action or behavior was the excuse for?}
-    @li{Why do you think the person felt the need for an excuse?}
     @li{What was the excuse?}
-    @li{Did you find the excuse convincing or not?}}
+    @li{Did the excuse achieve anything?}}
 }
-
 
 @step[general-excuse]{
 
@@ -59,12 +57,48 @@
     @submit-button[]}
 }
 
+@step[missing-goal-excuse]{
+
+  @h1{Excuses for missing a goal}
+
+  Think of a situation that you witnessed where someone made an excuse for missing their goal. Describe the situation, making sure to mention the following aspects:
+
+  @template[excuse-list]{for missing a goal}
+
+  @form{
+    @textarea[missing-goal-excuse]{Describe the situation and excuse:}
+    @submit-button[]}
+}
+
+@step[not-helping-excuse]{
+
+  @h1{Excuses for not helping someone}
+
+  Think of a situation that you witnessed where someone made an excuse for not helping someone else. Describe the situation, making sure to mention the following aspects:
+
+  @template[excuse-list]{for not helping someone else}
+
+  @form{
+    @textarea[not-helping-excuse]{Describe the situation and excuse:}
+    @submit-button[]}
+}
+
+@step[what-is-an-excuse]{
+  @h1{Final Questions}
+
+  @form{
+    @textarea[why-make-excuses]{Why do you usually make an excuse?}
+    @textarea[do-excuses-change-response]{Do you think that excuses change how people are treated, even when their are doubts whether they are true?}
+    @submit-button[]
+  }
+}
+
 @step[done]{
   @h1{Thank You!}
 
   Thank you for your answers. You are done.
 
-  @h2{Completion Code: CODEXCUSE71}
+  @h2{Completion Code: CES9S6UR}
 
   Provide the above code on prolific to complete the study.
 }
@@ -72,6 +106,6 @@
 @study[
   excuses
   #:transitions
-  [introduction --> general-excuse --> procrastination-excuse --> work-excuse --> done]
+  [introduction --> missing-goal-excuse --> not-helping-excuse --> procrastination-excuse --> what-is-an-excuse --> done]
   [done --> done]
 ]
