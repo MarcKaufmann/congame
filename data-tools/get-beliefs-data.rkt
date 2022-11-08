@@ -12,13 +12,12 @@
                        submission
                        ))
 
-  (define all-data (parameterize ([current-api-url api-url])
+(define all-data (parameterize ([current-api-url api-url])
+                   (get-instance-participant-data
+                    research-ideas-study-id
+                    research-ideas-1-iid)))
 
-    (get-instance-participant-data
-                      research-ideas-study-id
-                      research-ideas-1-iid)))
-
-  #;(get-and-write-data #:study-id research-ideas-study-id
+#;(get-and-write-data #:study-id research-ideas-study-id
                       #:iids (list research-ideas-1-iid)
                       #:api-url api-url
                       #:path (build-path beliefs-path "research-ideas-1.csv")
