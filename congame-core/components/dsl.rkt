@@ -226,11 +226,9 @@
           compiled-body ... ...))
         (make-put-all-keywords {~? action void}))]
 
-    [({~and {~or h1 h2 h3} tag} text0 text ...)
+    [({~and {~or h1 h2 h3} tag} body:body ...+)
      #:with tag-id (format-id #'tag ":~a" #'tag)
-     (unless (string? (syntax-e #'text0))
-       (raise-syntax-error 'tag "expected text" stx))
-     #'(tag-id text0 text ...)]
+     #'(tag-id body.compiled ...)]
 
     [(img url:string)
      #'(:img ([:href url]))]

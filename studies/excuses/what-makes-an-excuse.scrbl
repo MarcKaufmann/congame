@@ -23,6 +23,8 @@
 }
 
 @template-ungrouped[excuse-list]{
+  @h1{Excuses @yield[]}
+
   Think of a situation that you witnessed where someone made an excuse
   @yield[]. Describe the situation, making sure to mention the
   following aspects:
@@ -35,9 +37,6 @@
 }
 
 @step[general-excuse]{
-
-  @h1{Excuses}
-
   @template[excuse-list]{for some behavior}
 
   @form{
@@ -46,9 +45,6 @@
 }
 
 @step[procrastination-excuse]{
-
-  @h1{Excuses for procrastinating}
-
   @template[excuse-list]{for procrastinating}
 
   @form{
@@ -57,9 +53,6 @@
 }
 
 @step[work-excuse]{
-
-  @h1{Excuses for working too little}
-
   @template[excuse-list]{for working too little}
 
   @form{
@@ -68,9 +61,6 @@
 }
 
 @step[missing-goal-excuse]{
-
-  @h1{Excuses for missing a goal}
-
   @template[excuse-list]{for missing a goal}
 
   @form{
@@ -79,9 +69,6 @@
 }
 
 @step[not-helping-excuse]{
-
-  @h1{Excuses for not helping someone}
-
   @template[excuse-list]{for not helping someone else}
 
   @form{
