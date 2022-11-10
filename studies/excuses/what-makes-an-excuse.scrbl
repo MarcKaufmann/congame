@@ -10,7 +10,9 @@
     @button{Start Survey}
 }
 
-@template[excuse-list]{
+@template-ungrouped[excuse-list]{
+  Think of a situation that you witnessed where someone made an excuse @yield[]. Describe the situation, making sure to mention the following aspects:
+
   @ol{
     @li{Who was making an excuse and to whom?}
     @li{What action or behavior was the excuse for?}
@@ -21,8 +23,6 @@
 @step[general-excuse]{
 
   @h1{Excuses}
-
-  Think of a situation that you witnessed where someone made an excuse for some behavior. Describe the situation, making sure to mention the following aspects:
 
   @template[excuse-list]{for some behavior}
 
@@ -35,8 +35,6 @@
 
   @h1{Excuses for procrastinating}
 
-  Think of a situation that you witnessed where someone made an excuse for procrastinating. Describe the situation, making sure to mention the following aspects:
-
   @template[excuse-list]{for procrastinating}
 
   @form{
@@ -47,8 +45,6 @@
 @step[work-excuse]{
 
   @h1{Excuses for working too little}
-
-  Think of a situation that you witnessed where someone made an excuse for working too little. Describe the situation, making sure to mention the following aspects:
 
   @template[excuse-list]{for working too little}
 
@@ -61,8 +57,6 @@
 
   @h1{Excuses for missing a goal}
 
-  Think of a situation that you witnessed where someone made an excuse for missing their goal. Describe the situation, making sure to mention the following aspects:
-
   @template[excuse-list]{for missing a goal}
 
   @form{
@@ -73,8 +67,6 @@
 @step[not-helping-excuse]{
 
   @h1{Excuses for not helping someone}
-
-  Think of a situation that you witnessed where someone made an excuse for not helping someone else. Describe the situation, making sure to mention the following aspects:
 
   @template[excuse-list]{for not helping someone else}
 

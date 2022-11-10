@@ -63,38 +63,36 @@
 (define-literals dsl-literals
   [:p :br])
 
-;; TODO: Refactor into Environment object.
-(define known-actions
-  (make-parameter null))
-(define known-imports
-  (make-parameter null))
-(define known-templates
-  (make-parameter null))
+(struct Env (actions imports templates)
+  #:transparent)
 
-(define (collect-imports&actions stxs)
-  (for/fold ([actions null]
-             [imports null]
-             [templates null])
-            ([stx (in-list stxs)])
-    (syntax-parse stx
-      #:datum-literals (action import template)
-      [(action id:id _ ...)
-       (values (cons (syntax->datum #'id) actions) imports templates)]
-      [(import _ id:id)
-       (values actions (cons (syntax->datum #'id) imports) templates)]
-      [(template id:id _ ...)
-       (values actions imports (cons (syntax->datum #'id) templates))]
-      [_
-       (values actions imports templates)])))
+(define current-env
+  (make-parameter #f))
+
+(define (build-env stxs)
+  (define-values (actions imports templates)
+    (for/fold ([actions null]
+               [imports null]
+               [templates (hash)])
+              ([stx (in-list stxs)])
+      (syntax-parse stx
+        #:datum-literals (action import template template-ungrouped)
+        [(action id:id _ ...)
+         (values (cons (syntax->datum #'id) actions) imports templates)]
+        [(import _ id:id)
+         (values actions (cons (syntax->datum #'id) imports) templates)]
+        [(template id:id _ ...)
+         (values actions imports (hash-set templates (syntax->datum #'id) 'grouped))]
+        [(template-ungrouped id:id _ ...)
+         (values actions imports (hash-set templates (syntax->datum #'id) 'ungrouped))]
+        [_
+         (values actions imports templates)])))
+  (Env actions imports templates))
 
 (define (compile-module stx)
   (syntax-parse stx
     [(statement ...)
-     (define-values (actions imports templates)
-       (collect-imports&actions (syntax-e #'(statement ...))))
-     (parameterize ([known-actions actions]
-                    [known-imports imports]
-                    [known-templates templates])
+     (parameterize ([current-env (build-env (syntax-e #'(statement ...)))])
        (with-syntax ([(compiled-stmt ...) (filter-map compile-stmt (syntax-e #'(statement ...)))])
          #'(compiled-stmt ...)))]))
 
@@ -139,7 +137,7 @@
                                   cond-expr.compiled))))
 
   (syntax-parse stx
-    #:datum-literals (action import step study template)
+    #:datum-literals (action import step study template template-ungrouped)
     [{~or " " "\n"} #f]
 
     [(action name:id content ...+)
@@ -177,8 +175,12 @@
                (make-step/study 'step-id step-id)
                (make-step 'step-id step-id)) ...)))]
 
-    [(template template-id:id content ...+)
-     #:with (compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))
+    [({~and {~or template template-ungrouped} form-id} template-id:id content ...+)
+     #:with (compiled-content ...) (parameterize ([current-paragraph-tags
+                                                   (if (eq? (syntax-e #'form-id) 'template-ungrouped)
+                                                       (cons 'yield (current-paragraph-tags))
+                                                       (current-paragraph-tags))])
+                                     (map compile-expr (syntax-e (group-by-paragraph #'(content ...)))))
      #'(define (template-id content-proc)
          (haml (:div compiled-content ...)))]))
 
@@ -250,10 +252,20 @@
      #'(:ul item.xexpr ... ...)]
 
     [(template id:id content ...+)
-     #:with (compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))
-     (unless (member (syntax-e #'id) (known-templates))
-       (raise-syntax-error 'template (format "~a is not a known template" (syntax-e #'id)) stx #'id))
-     #'(id (λ () (haml compiled-content ...)))]
+     (define template-id (syntax-e #'id))
+     (unless (hash-has-key? (Env-templates (current-env)) template-id)
+       (raise-syntax-error 'template (format "~a is not a known template" template-id) stx #'id))
+     (define template-type
+       (hash-ref (Env-templates (current-env)) template-id))
+     (define content-stxes
+       (case template-type
+         [(ungrouped) (syntax-e #'(content ...))]
+         [(grouped) (syntax-e (group-by-paragraph #'(content ...)))]
+         [else (raise-syntax-error 'template (format "unexpected type ~a for template ~a" template-type template-id))]))
+     (with-syntax ([(compiled-content ...) (map compile-expr content-stxes)])
+       #`(id (λ () #,(if (= (length (syntax-e #'(compiled-content ...))) 1)
+                         #'(list (haml compiled-content ...))
+                         #'(haml compiled-content ...)))))]
 
     [(template id:id)
      #'(id (λ () (error 'template "yielded without content")))]
@@ -271,7 +283,7 @@
   (syntax-parse stx
     [(_ id:id e ...)
      (define the-id (syntax->datum #'id))
-     (unless (member the-id (known-imports))
+     (unless (member the-id (Env-imports (current-env)))
        (raise-syntax-error 'call (format "unknown procedure ~a; did you forget to import it?" the-id) stx))
      #'(id e ...)]))
 
@@ -333,19 +345,20 @@
 (define (check-action-id who stx)
   (unless (or (not (syntax-e stx))
               (memv (syntax->datum stx)
-                    (known-actions)))
+                    (Env-actions (current-env))))
     (raise-syntax-error who (format "~a is not a known action" (syntax-e stx)) stx)))
 
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define paragraph-tags
-  '(a em span strong))
+(define current-paragraph-tags
+  (make-parameter '(a em span strong)))
 
 ;; invariant: never two strings next to each other where one isn't "\n"
 (define (group-by-paragraph stx)
   (define (swallow? stx)
-    (member (syntax-e (car (syntax-e stx))) paragraph-tags))
+    (member (syntax-e (car (syntax-e stx)))
+            (current-paragraph-tags)))
 
   ;; TODO: make it so swallowed things can't have newlines in them
   (let loop ([stxs (syntax-e stx)]
@@ -911,16 +924,24 @@ DSL
              (make-step/study 'step2 step2)
              (make-step 'step2 step2)))))))
 
-    (check-equal?
+  (check-equal?
    (syntax->datum
     (read+compile #<<DSL
-@template[a]{
-  @h1{Hello}
-  @yield[]
+@template-ungrouped[a]{
+  Hello @yield[]!
 }
+
 @template[b]{
   @template[a]{
     Hi world!
+  }
+
+  @template[a]{
+    Hello
+
+    there
+
+    @h1{Friend}
   }
 }
 
@@ -932,8 +953,14 @@ DSL
    '((define (a content-proc)
        (haml
         (:div
-         (:h1 "Hello")
-         ,@(content-proc))))
+         (:p "Hello " ,@(content-proc) "!"))))
      (define (b content-proc)
-       (haml (:div (a (λ () (haml (:p "Hi world!")))))))
-     (define (hello) (page (haml (.container (b (λ () (error 'template "yielded without content"))))))))))
+       (haml
+        (:div
+         (a (λ () (list (haml "Hi world!"))))
+         (a (λ () (haml "Hello" "\n" "\n" "there" "\n" "\n" (:h1 "Friend")))))))
+     (define (hello)
+       (page
+        (haml
+         (.container
+          (b (λ () (error 'template "yielded without content"))))))))))
