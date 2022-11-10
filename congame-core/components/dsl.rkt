@@ -69,6 +69,9 @@
 (define current-env
   (make-parameter #f))
 
+(define current-in-template?
+  (make-parameter #f))
+
 (define (build-env stxs)
   (define-values (actions imports templates)
     (for/fold ([actions null]
@@ -176,7 +179,8 @@
                (make-step 'step-id step-id)) ...)))]
 
     [({~and {~or template template-ungrouped} form-id} template-id:id content ...+)
-     #:with (compiled-content ...) (parameterize ([current-paragraph-tags
+     #:with (compiled-content ...) (parameterize ([current-in-template? #t]
+                                                  [current-paragraph-tags
                                                    (if (eq? (syntax-e #'form-id) 'template-ungrouped)
                                                        (cons 'yield (current-paragraph-tags))
                                                        (current-paragraph-tags))])
@@ -270,7 +274,9 @@
     [(template id:id)
      #'(id (λ () (error 'template "yielded without content")))]
 
-    [(yield) ;; TODO: check that we're in a template
+    [(yield)
+     (unless (current-in-template?)
+       (raise-syntax-error 'yield "cannot yield outside template" stx stx))
      #'(unquote-splicing (content-proc))]
 
     [(:p body:body ...)
