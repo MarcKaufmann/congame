@@ -1,17 +1,31 @@
 @step[introduction]{
     @h1{The Study}
 
-    Thank you for participating in this research study exploring the role of excuses in people's decisions. The survey should take ~15 minutes and you will receive £2.50 if you complete it. You will be asked to describe situations in which people make excuses for 3 different behaviors, followed by 2 general questions about excuses.
+    Thank you for participating in this research study exploring the
+    role of excuses in people's decisions. The survey should take ~15
+    minutes and you will receive £2.50 if you complete it. You will be
+    asked to describe situations in which people make excuses for 3
+    different behaviors, followed by 2 general questions about
+    excuses.
 
-    The research is conducted by Marc Kaufmann, and financed by the Central European University. Your participation is voluntary and you may withdraw at any time. Participation in the study is not associated with any forseeable risks and or benefits beyond the monetary compensation.
+    The research is conducted by Marc Kaufmann, and financed by the
+    Central European University. Your participation is voluntary and
+    you may withdraw at any time. Participation in the study is not
+    associated with any forseeable risks and or benefits beyond the
+    monetary compensation.
 
-    Please contact the principal investigator, Marc Kaufmann, at kaufmannm@"@"ceu.edu or by direct message via the platform if you have any concerns or questions. Report any technical problems you encounter to admin@"@"totalinsightmanagement.com.
+    Please contact the principal investigator, Marc Kaufmann, at
+    kaufmannm@"@"ceu.edu or by direct message via the platform if you
+    have any concerns or questions. Report any technical problems you
+    encounter to admin@"@"totalinsightmanagement.com.
 
     @button{Start Survey}
 }
 
 @template-ungrouped[excuse-list]{
-  Think of a situation that you witnessed where someone made an excuse @yield[]. Describe the situation, making sure to mention the following aspects:
+  Think of a situation that you witnessed where someone made an excuse
+  @yield[]. Describe the situation, making sure to mention the
+  following aspects:
 
   @ol{
     @li{Who was making an excuse and to whom?}
@@ -80,7 +94,10 @@
 
   @form{
     @textarea[why-make-excuses]{Why do you usually make an excuse?}
-    @textarea[do-excuses-change-response]{Do you think that excuses change how people are treated, even when their are doubts whether they are true?}
+    @textarea[do-excuses-change-response]{
+      Do you think that excuses change how people are treated, even when
+      their are doubts whether they are true?
+    }
     @submit-button[]
   }
 }

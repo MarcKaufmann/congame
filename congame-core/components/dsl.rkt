@@ -53,16 +53,6 @@
 
 ;; compiler ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define-syntax-rule (define-literals set-id [id ...])
-  (begin
-    (define-syntax (id stx)
-      (raise-syntax-error 'id "may only be usde inside DSL" stx)) ...
-    (define-literal-set set-id
-      (id ...))))
-
-(define-literals dsl-literals
-  [:p :br])
-
 (struct Env (actions imports templates)
   #:transparent)
 
@@ -203,12 +193,14 @@
   ;; NOTE: For block-style tags, it's the tag's responibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (a button call div em form h1 h2 h3 img template span strong ol ul yield)
-    #:literal-sets (dsl-literals)
+    #:datum-literals (a br button call div em form h1 h2 h3 img ol p span strong template  ul yield)
     [str:string #'str]
 
     [(a url:string body:body ...+)
      #'(:a ([:href url]) body.compiled ...)]
+
+    [(br)
+     #'(:br)]
 
     [(button {~optional {~seq #:action action:id}} text0:string text:string ...)
      #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
@@ -242,6 +234,9 @@
 
     [(img url:string)
      #'(:img ([:href url]))]
+
+    [(p body:body ...)
+     #'(:p body.compiled ...)]
 
     [(span {~optional {~seq #:class class:string}} body:body ...+)
      #'(:span {~? ({~@ [:class class]})} body.compiled ...)]
@@ -277,13 +272,7 @@
     [(yield)
      (unless (current-in-template?)
        (raise-syntax-error 'yield "cannot yield outside template" stx stx))
-     #'(unquote-splicing (content-proc))]
-
-    [(:p body:body ...)
-     #'(:p body.compiled ...)]
-
-    [(:br)
-     #'(:br)]))
+     #'(unquote-splicing (content-proc))]))
 
 (define (compile-call-expr stx)
   (syntax-parse stx
@@ -339,7 +328,7 @@
           (haml compiled-label-expr))))]
 
     [({~and {~or input-date input-text input-number textarea} widget-id} ~! name:id label-expr ...+)
-     (compile-form-expr #'(widget-id name (:div label-expr ...)))]
+     (compile-form-expr #'(widget-id name (div label-expr ...)))]
 
     [(submit-button)
      #'((:button.button.next-button ([:type "submit"]) "Submit"))]
@@ -358,14 +347,14 @@
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define current-paragraph-tags
-  (make-parameter '(a em span strong)))
+  (make-parameter '(a br em span strong)))
+
+(define (swallow? stx)
+  (member (syntax-e (car (syntax-e stx)))
+          (current-paragraph-tags)))
 
 ;; invariant: never two strings next to each other where one isn't "\n"
 (define (group-by-paragraph stx)
-  (define (swallow? stx)
-    (member (syntax-e (car (syntax-e stx)))
-            (current-paragraph-tags)))
-
   ;; TODO: make it so swallowed things can't have newlines in them
   (let loop ([stxs (syntax-e stx)]
              [pending null]
@@ -411,22 +400,22 @@
            [(> depth 1)
             (values 0 (cons
                        (quasisyntax/loc stx
-                         (:p #,stx))
+                         (p #,stx))
                        paras))]
 
            [(and (= depth 1) (null? paras))
             (values 0 (list (quasisyntax/loc stx
-                              (:p #,stx))))]
+                              (p #,stx))))]
 
            [(= depth 1)
             (values 0 (cons
                        (quasisyntax/loc (car paras)
-                         (#,@(car paras) (:br) #,stx))
+                         (#,@(car paras) " " #,stx))
                        (cdr paras)))]
 
            [(null? paras)
             (values 0 (cons (quasisyntax/loc stx
-                              (:p #,stx))
+                              (p #,stx))
                             paras))]
 
            [else
@@ -445,24 +434,24 @@
 
   (check-equal? (syntax->datum (group-by-paragraph #'())) '())
   (check-equal? (syntax->datum (group-by-paragraph #'("hello")))
-                '((:p "hello")))
-  (check-equal? (syntax->datum (group-by-paragraph #'((:h1 "Title") "hello" "\n" "\n" "friend")))
-                '((:h1 "Title")
-                  (:p "hello")
-                  (:p "friend")))
+                '((p "hello")))
+  (check-equal? (syntax->datum (group-by-paragraph #'((h1 "Title") "hello" "\n" "\n" "friend")))
+                '((h1 "Title")
+                  (p "hello")
+                  (p "friend")))
 
   (check-equal? (syntax->datum (group-by-paragraph #'("hello" "\n" "there")))
-                '((:p "hello" (:br) "there")))
+                '((p "hello" " " "there")))
   (check-equal? (syntax->datum (group-by-paragraph #'("hello" "\n" "\n" "there")))
-                '((:p "hello") (:p "there")))
-  (check-equal? (syntax->datum (group-by-paragraph #'((:h1 "Page title") "hello" "\n" "there" "\n" "\n" "\n" "friend")))
-                '((:h1 "Page title")
-                  (:p "hello" (:br) "there")
-                  (:p "friend")))
-  (check-equal? (syntax->datum (group-by-paragraph #'("a" "\n" "b" "\n" "\n" "c" "\n" (:h1 "d"))))
-                '((:p "a" (:br) "b")
-                  (:p "c")
-                  (:h1 "d")))
+                '((p "hello") (p "there")))
+  (check-equal? (syntax->datum (group-by-paragraph #'((h1 "Page title") "hello" "\n" "there" "\n" "\n" "\n" "friend")))
+                '((h1 "Page title")
+                  (p "hello" " " "there")
+                  (p "friend")))
+  (check-equal? (syntax->datum (group-by-paragraph #'("a" "\n" "b" "\n" "\n" "c" "\n" (h1 "d"))))
+                '((p "a" " " "b")
+                  (p "c")
+                  (h1 "d")))
 
   (check-equal?
    (syntax->datum
@@ -479,7 +468,7 @@ DSL
        (page
         (haml
          (.container
-          (:p "a" (:br) "b")
+          (:p "a" " " "b")
           (:p "c")))))))
 
   (check-equal?
@@ -499,8 +488,54 @@ DSL
        (page
         (haml
          (.container
-          (:p "a" (:br) "b")
+          (:p "a" " " "b")
           (:p "c")
+          (:h1 "Heading")))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[a]{
+  a
+  b
+
+  @p{c}
+
+  @h1{Heading}
+}
+DSL
+                  ))
+   '((define (a)
+       (page
+        (haml
+         (.container
+          (:p "a" " " "b")
+          (:p "c")
+          (:h1 "Heading")))))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@step[a]{
+  a
+  b
+
+  @p{
+    c
+
+    d
+  }
+
+  @h1{Heading}
+}
+DSL
+                  ))
+   '((define (a)
+       (page
+        (haml
+         (.container
+          (:p "a" " " "b")
+          (:p "c" "\n" "\n" "d")
           (:h1 "Heading")))))))
 
   (check-equal?
@@ -525,10 +560,10 @@ DSL
        (page
         (haml
          (.container
-          (:p "a" (:br) "b")
+          (:p "a" " " "b")
           (:p "c")
           (:h1 "Heading")
-          (:p "d" (:br) "e")
+          (:p "d" " " "e")
           (:p "f")))))))
 
   (check-equal?
@@ -548,7 +583,7 @@ DSL
         (haml
          (.container
           (:h1 "Hello, world!")
-          (:p "How's it going?" (:br) "Pretty good?")
+          (:p "How's it going?" " " "Pretty good?")
           (:p "Yeah, good.")))))))
 
   (check-equal?
