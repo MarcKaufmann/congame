@@ -193,7 +193,7 @@
   ;; NOTE: For block-style tags, it's the tag's responibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (a br button call div em form h1 h2 h3 img ol p span strong template  ul yield)
+    #:datum-literals (a br button call div em form get h1 h2 h3 img ol p put span strong template ul yield)
     [str:string #'str]
 
     [(a url:string body:body ...+)
@@ -225,6 +225,9 @@
          (:div
           compiled-body ... ...))
         (make-put-all-keywords {~? action void}))]
+
+    [(get id:id {~optional default:expr})
+     #'(get 'id {~? default})]
 
     [({~and {~or h1 h2 h3} tag} body:body ...+)
      #:with tag-id (format-id #'tag ":~a" #'tag)
