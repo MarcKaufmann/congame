@@ -62,6 +62,10 @@
 (define current-in-template?
   (make-parameter #f))
 
+;; TODO: Eventually make this configurable at the study admin level.
+(define current-allow-full-escape?
+  (make-parameter #t))
+
 (define (build-env stxs)
   (define-values (actions imports templates)
     (for/fold ([actions null]
@@ -193,7 +197,7 @@
   ;; NOTE: For block-style tags, it's the tag's responibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (a br button call div em form get h1 h2 h3 img ol p put span strong template ul yield)
+    #:datum-literals (a br button call div em escape form get h1 h2 h3 img ol p put span strong template ul yield)
     [str:string #'str]
 
     [(a url:string body:body ...+)
@@ -216,6 +220,11 @@
 
     [(em body:body ...+)
      #'(:em body.compiled ...)]
+
+    [(escape expr)
+     (if (current-allow-full-escape?)
+         #'expr
+         #'(interpret-basic-expr 'escape 'expr))]
 
     [(form {~optional {~seq #:action action:id}} body ...+)
      #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e (group-by-paragraph #'(body ...))))
@@ -348,7 +357,7 @@
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define current-paragraph-tags
-  (make-parameter '(a br em span strong)))
+  (make-parameter '(a br em escape span strong)))
 
 (define (swallow? stx)
   (member (syntax-e (car (syntax-e stx)))
