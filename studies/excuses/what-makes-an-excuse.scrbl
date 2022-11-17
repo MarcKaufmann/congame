@@ -99,9 +99,14 @@
   Provide the above code on prolific to complete the study.
 }
 
+@;TODO: add @substudy syntax to #:transitions (pre-pass to extract @substudy and bind it).
+@define[substudy (make-randomized-study (hasheq 'missing-goal-excuse missing-goal-excuse
+                                                'not-helping-excuse not-helping-excuse
+                                                'procrastination-excuse procrastination-excuse))]
+
 @study[
   excuses
   #:transitions
-  [introduction --> missing-goal-excuse --> not-helping-excuse --> procrastination-excuse --> what-is-an-excuse --> done]
+  [introduction --> substudy --> what-is-an-excuse --> done]
   [done --> done]
 ]
