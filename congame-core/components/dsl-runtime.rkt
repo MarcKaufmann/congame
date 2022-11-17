@@ -37,6 +37,8 @@
 (provide
  make-randomized-study)
 
+;; NOTE: Someone could provide a step named
+;; `synthetic-randomizer-step`, in which case it will error.
 (define (make-randomized-study steps)
   (define (randomize)
     (define shuffled-steps (shuffle (hash-keys steps)))
