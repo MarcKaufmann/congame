@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          koyo/haml
+         racket/format
          racket/list
          racket/string
          racket/syntax
@@ -24,7 +25,9 @@
     congame/components/registry
     congame/components/study
     congame/components/transition-graph
-    koyo/haml))
+    koyo/haml
+    racket/format
+    racket/string))
 
 ;; Next time:
 ;;  * maybe add caching?
@@ -134,13 +137,18 @@
                                   cond-expr.compiled))))
 
   (syntax-parse stx
-    #:datum-literals (action import step study template template-ungrouped)
+    #:datum-literals (action define import step study template template-ungrouped)
     [{~or " " "\n"} #f]
 
     [(action name:id content ...+)
      #:with (compiled-content ...) (map compile-action-expr (syntax-e #'(content ...)))
      #'(define (name)
          compiled-content ...)]
+
+    [(define id:id e)
+     (if (current-allow-full-escape?)
+         #'(define id e)
+         #'(define id (interpret-basic-expr 'define 'e)))]
 
     [(import mod-path:id id:id)
      #'(define id (study-mod-require 'mod-path 'id))]
@@ -197,7 +205,7 @@
   ;; NOTE: For block-style tags, it's the tag's responibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (a br button call div em escape form get h1 h2 h3 img ol p put span strong template ul yield)
+    #:datum-literals (a br button call div em escape form get h1 h2 h3 img ol p span strong template ul yield)
     [str:string #'str]
 
     [(a url:string body:body ...+)
@@ -294,9 +302,13 @@
 
 (define (compile-action-expr stx)
   (syntax-parse stx
-    #:datum-literals (call)
+    #:datum-literals (call put)
     [(call _id:id _e ...)
-     (compile-call-expr stx)]))
+     (compile-call-expr stx)]
+
+    [(put id:id e)
+     #:with compiled-e (compile-expr #'e)
+     #'(put 'id compiled-e)]))
 
 (define (compile-cond-expr stx)
   (syntax-parse stx
