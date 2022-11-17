@@ -40,7 +40,6 @@
     (error 'import (format "module not found: ~a" mod-path)))
   (define (fail-id)
     (error 'import (format "module ~a does not provide ~a" mod-path id)))
-  (println `(,mod-path ,id))
   (dynamic-require (hash-ref *study-mod-registry* mod-path fail-mod) id fail-id))
 
 (define *study-registry*
