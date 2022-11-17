@@ -37,11 +37,24 @@
 (provide
  make-randomized-study)
 
-(define (make-randomized-study input-steps)
-  (define steps
-    (shuffle
-     (for/list ([(id step) (in-hash input-steps)])
-       (make-step id step (λ ()
-                            (begin0 next
-                              (put 'steps (map step-id steps))))))))
-  (make-study "randomized-study" steps))
+(define (make-randomized-study steps)
+  (define (randomize)
+    (define shuffled-steps (shuffle (hash-keys steps)))
+    (put 'steps shuffled-steps)
+    (put 'remaining-steps shuffled-steps)
+    (skip))
+  (make-study
+   "randomized-study"
+   (cons
+    (make-step 'synthetic-randomizer-step randomize randomizer-transition)
+    (for/list ([(id step) (in-hash steps)])
+      (make-step id step randomizer-transition)))))
+
+(define (randomizer-transition)
+  (let ([steps (get 'remaining-steps)])
+    (cond
+      [(null? steps)
+       done]
+      [else
+       (put 'remaining-steps (cdr steps))
+       (car steps)])))
