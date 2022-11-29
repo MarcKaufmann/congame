@@ -42,7 +42,7 @@ The features that will get implemented will however be determined by the priorit
 ### First-time Setup
 
     $ nvm use && npm install && npm run build
-    $ raco pkg install chief
+    $ raco pkg install chief              # install and build chief to launch web server
     $ raco pkg install congame-core/      # install and build the core library and its deps
     $ raco pkg install congame-identity/  # install and build the application and its deps
     $ raco pkg install congame-smtp-proxy # install and build the smtp-proxy dispatching traffic 
