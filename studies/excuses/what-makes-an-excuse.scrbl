@@ -11,7 +11,7 @@
     The research is conducted by Marc Kaufmann, and financed by the
     Central European University. Your participation is voluntary and
     you may withdraw at any time. Participation in the study is not
-    associated with any forseeable risks and or benefits beyond the
+    associated with any forseeable risks or benefits beyond the
     monetary compensation.
 
     Please contact the principal investigator, Marc Kaufmann, at
