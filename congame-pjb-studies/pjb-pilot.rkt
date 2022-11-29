@@ -27,7 +27,7 @@
          congame-price-lists/price-lists
          congame/tools
          "mail.rkt"
-         "tasks.rkt"
+         studies/real-effort/tasks
          (prefix-in config: congame/config)
          (prefix-in bot: (submod congame/components/bot actions)))
 
