@@ -1,8 +1,9 @@
-@;@import[studies/real-effort/tasks task-study]
+@import[racket/format format]
+@import[studies/real-effort/tasks task-study]
 
 @;@define[
 @;    tutorial-tasks
-@;    @tasks-study[
+@;    @task-study[
 @;        #:require-bindings '([n (const 2)]
 @;                             [max-wrong-tasks 2]
 @;                             [title (const "Tutorial tasks")]
@@ -28,10 +29,14 @@
     @button{Continue}
 }
 
+@action[increment-counter]{
+    @put[counter 0]
+}
+
 @step[description]{
     @h1{Study Description}
 
-    @button{Continue}
+    @button[#:action increment-counter]{Continue}
 }
 
 @step[hypothetical-time-choice]{
@@ -49,7 +54,8 @@
                   @; With the hypothetical choice we can estimate selection into the study based on present bias (or other traits)
                   --> hypothetical-time-choice
                   --> tutorial-tasks
-                  --> @lambda[done]
+                  --> @cond[[@=[@get[counter] 2] end]
+                            [else introduction]]
     ]
 ]
 
