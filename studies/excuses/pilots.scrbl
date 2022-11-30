@@ -1,3 +1,21 @@
+@;@import[studies/real-effort/tasks task-study]
+
+@;@define[
+@;    tutorial-tasks
+@;    @tasks-study[
+@;        #:require-bindings '([n (const 2)]
+@;                             [max-wrong-tasks 2]
+@;                             [title (const "Tutorial tasks")]
+@;                             [hide-description? (const #f)])
+@;        #:provide-bindings '([success? success?])]
+@;]
+
+@step[tutorial-tasks]{
+    @h1{Tutorial Tasks}
+
+    @button{Continue}
+}
+
 @step[introduction]{
     @h1{The Study}
 
@@ -7,8 +25,68 @@
 
     If you have concerns or questions, please contact the principal investigator, Marc Kaufmann, at @"kaufmannm@ceu.edu" or by direct message via Prolific. Report technical problems to @"admin@totalinsightmanagement.com".
 
-    @button{Start Study}
+    @button{Continue}
 }
+
+@step[description]{
+    @h1{Study Description}
+
+    @button{Continue}
+}
+
+@step[hypothetical-time-choice]{
+    @h1{Hypothetical Question}
+
+    @;TODO: How are hypothetical choices framed in experiments and surveys?
+
+    @button{Continue}
+}
+
+@study[
+    tutorial
+    #:transitions
+    [introduction --> description
+                  @; With the hypothetical choice we can estimate selection into the study based on present bias (or other traits)
+                  --> hypothetical-time-choice
+                  --> tutorial-tasks
+                  --> @lambda[done]
+    ]
+]
+
+@step[sign-up-for-main-study]{
+    @h1{Participate in Rest of Study}
+
+    @button{Continue}
+}
+
+@;@study[
+@;    day1
+@;    #:transitions
+@;    [required-tasks --> work-choices @; Should we ask work choices first?
+@;                    --> determine-choice-that-counts
+@;                    --> choice-that-counts
+@;                    --> do-chosen-work
+@;                    --> explain-choice
+@;                    --> schedule-day2-reminder-email]
+@;]
+@;
+@;@study[
+@;    day2
+@;    #:transitions
+@;    [required-tasks --> choice-that-counts
+@;    --> do-chosen-work]
+@;]
+
+@step[final]{
+    @h1{Final step}
+}
+
+@study[
+    excuse-pilot
+    #:transitions
+    [tutorial --> final]
+    [final --> final]
+]
 
 @;{
 @;
@@ -36,3 +114,4 @@
 @; - Do Krupka, Weber (2013) on these choices, including with various social image concerns
 @; - Ask them some questions that get directly at degree of present bias, at their self-identity.
 @;}
+}
