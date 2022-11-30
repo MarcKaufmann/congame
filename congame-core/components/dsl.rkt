@@ -97,18 +97,26 @@
          #'(compiled-stmt ...)))]))
 
 (define (compile-stmt stx)
+  (define-syntax-class next-step-expr
+    #:datum-literals (end)
+    (pattern end
+             #:with target #'done)
+    (pattern next-step-id:id
+             #:with target #'(goto next-step-id)))
+
+  ;; TODO: We should allow actions in the cond, no? Or does it interfere with something else?
   (define-syntax-class cond-expr
-    #:datum-literals (cond else)
-    (pattern (cond [clause-expr clause-id:id] ...+
-                   [else else-id:id])
+    #:datum-literals (cond else end)
+    (pattern (cond [clause-expr clause-next-step:next-step-expr] ...+
+                   [else else-next-step:next-step-expr])
              #:attr id #f
              #:with (compiled-clause-expr ...) (map compile-cond-expr (syntax-e #'(clause-expr ...)))
              #:with compiled #'(cond
-                                 [compiled-clause-expr (goto clause-id)] ...
-                                 [else (goto else-id)])))
+                                 [compiled-clause-expr clause-next-step.target] ...
+                                 [else else-next-step.target])))
 
   (define-syntax-class transition-entry
-    #:datum-literals (--> cond else lambda)
+    #:datum-literals (--> cond else lambda end)
     (pattern -->
              #:attr id #f
              #:with compiled this-syntax)
@@ -119,6 +127,14 @@
     (pattern {~and (cond _ ...) e:cond-expr}
              #:attr id #f
              #:with compiled #'(unquote (λ () e.compiled)))
+
+    (pattern (lambda action-expr ... end)
+             #:attr id #f
+             #:with (compiled-action-expr ...) (map compile-action-expr (syntax-e #'(action-expr ...)))
+             #:with compiled #'(unquote
+                                (λ ()
+                                  compiled-action-expr ...
+                                  done)))
 
     (pattern (lambda action-expr ... target-id:id)
              #:attr id #f
