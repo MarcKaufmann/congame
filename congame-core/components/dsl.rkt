@@ -194,7 +194,9 @@
           (list
            (cond [(study? step-id)
                   (make-step/study 'step-id step-id)]
-                 [(step/study? step-id) step-id]
+                 [(or (step/study? step-id)
+                      (step? step-id))
+                  step-id]
                  [else (make-step 'step-id step-id)]) ...)))]
 
     [({~and {~or template template-ungrouped} form-id} template-id:id content ...+)
