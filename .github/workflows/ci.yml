@@ -50,6 +50,7 @@ jobs:
           congame-core/ \
           congame-example-study/ \
           congame-identity/ \
+          studies/ \
           congame-pjb-studies/ \
           congame-price-lists/ \
           congame-smtp-proxy/ \
@@ -59,6 +60,7 @@ jobs:
           congame-core \
           congame-example-study \
           congame-identity \
+          studies \
           congame-pjb-studies \
           congame-price-lists \
           congame-smtp-proxy \
@@ -119,6 +121,7 @@ jobs:
           congame-core/ \
           congame-example-study/ \
           congame-identity/ \
+          studies/ \
           congame-pjb-studies/ \
           congame-price-lists/ \
           congame-smtp-proxy/ \
@@ -128,6 +131,7 @@ jobs:
           congame-core \
           congame-example-study \
           congame-identity \
+          studies \
           congame-pjb-studies \
           congame-price-lists \
           congame-smtp-proxy \
