@@ -1,21 +1,14 @@
-@import[racket/format format]
 @import[studies/real-effort/tasks task-study]
 
-@;@define[
-@;    tutorial-tasks
-@;    @task-study[
-@;        #:require-bindings '([n (const 2)]
-@;                             [max-wrong-tasks 2]
-@;                             [title (const "Tutorial tasks")]
-@;                             [hide-description? (const #f)])
-@;        #:provide-bindings '([success? success?])]
-@;]
-
-@step[tutorial-tasks]{
-    @h1{Tutorial Tasks}
-
-    @button{Continue}
-}
+@define[tutorial-tasks (make-step/study
+                            'tutorial-tasks
+                            task-study
+                            #:require-bindings '([n (const 2)]
+                                                 [max-wrong-tasks (const 2)]
+                                                 [title (const "Tutorial tasks")]
+                                                 [hide-description? (const #f)])
+                                                #:provide-bindings '([success? success?]))
+]
 
 @step[introduction]{
     @h1{The Study}
