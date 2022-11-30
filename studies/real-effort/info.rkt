@@ -4,16 +4,10 @@
 (define deps '("base"
                "component-lib"
                "congame-core"
-               "congame-web"
                "forms-lib"
                "gregor-lib"
                "koyo-lib"
-               "marionette"
-               "racket/match"
-               "racket/random"
-               "racket/runtime-path"
-               "racket/serialize"
-               "racket/string"
+               "marionette-lib"
                "sentry-lib"
                "web-server-lib"))
 (define build-deps '())
