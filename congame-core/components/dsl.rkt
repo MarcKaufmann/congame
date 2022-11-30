@@ -192,9 +192,10 @@
           study-id-str
           #:transitions (transition-graph [transition-entry.compiled ...] ...)
           (list
-           (if (study? step-id)
-               (make-step/study 'step-id step-id)
-               (make-step 'step-id step-id)) ...)))]
+           (cond [(study? step-id)
+                  (make-step/study 'step-id step-id)]
+                 [(step/study? step-id) step-id]
+                 [else (make-step 'step-id step-id)]) ...)))]
 
     [({~and {~or template template-ungrouped} form-id} template-id:id content ...+)
      #:with (compiled-content ...) (parameterize ([current-in-template? #t]
