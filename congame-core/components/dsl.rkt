@@ -322,6 +322,14 @@
     [(call _id:id _e ...)
      (compile-call-expr stx)]
 
+    [(escape expr)
+     (if (current-allow-full-escape?)
+         #'expr
+         #'(interpret-basic-expr 'escape 'expr))]
+
+    [(get id:id {~optional default:expr})
+     #'(get 'id {~? default})]
+
     [(put id:id e)
      #:with compiled-e (compile-expr #'e)
      #'(put 'id compiled-e)]))
