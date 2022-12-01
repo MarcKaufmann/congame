@@ -1,4 +1,5 @@
 @import[studies/real-effort/tasks task-study]
+@import[studies/real-effort/tasks format]
 
 @define[tutorial-tasks (make-step/study
                             'tutorial-tasks
@@ -23,7 +24,7 @@
 }
 
 @action[increment-counter]{
-    @put[counter 0]
+    @put[counter]{@call[format "Hello"]}
 }
 
 @step[description]{

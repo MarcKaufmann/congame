@@ -12,4 +12,5 @@
                "web-server-lib"))
 (define build-deps '())
 (define congame-studies
-  '((studies/real-effort/tasks task-study)))
+  '((studies/real-effort/tasks task-study)
+    (studies/real-effort/tasks format)))

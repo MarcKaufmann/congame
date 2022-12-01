@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (except-in forms form)
+         racket/format
          racket/match
          racket/random
          racket/runtime-path
@@ -17,7 +18,7 @@
          congame/components/bot
          (prefix-in bot: (submod congame/components/bot actions)))
 
-(provide task-study)
+(provide task-study format)
 
 ;; Generate the matrices if there is no csv mapping to them
 (define-static-resource matrix-dir "matrices")
