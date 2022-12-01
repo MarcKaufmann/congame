@@ -321,7 +321,10 @@
 
 (define (compile-action-expr stx)
   (syntax-parse stx
-    #:datum-literals (call put)
+    #:datum-literals (call put get escape)
+    ;; TODO: This adds an empty list, which is not what we want but gets code to compile
+    ["\n" null]
+
     [(call _id:id _e ...)
      (compile-call-expr stx)]
 
