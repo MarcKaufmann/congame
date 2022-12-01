@@ -486,6 +486,7 @@ QUERY
  step-page?
  wrap-page
  study?
+ step?
  study-transitions)
 
 (module+ private
