@@ -947,7 +947,7 @@ DSL
          (cond
            ((study? step2) (make-step/study 'step2 step2))
            ((or (step/study? step2) (step? step2)) step2)
-           (else (make-step 'step2 step2)))))))
+           (else (make-step 'step2 step2))))))))
 
   (check-equal?
    (syntax->datum
@@ -1009,23 +1009,23 @@ DSL
                        [step1 --> done]
                        [step2 --> done]
                        [done --> done])
-       (list
-        (cond
-         ((study? step0) (make-step/study 'step0 step0))
-         ((or (step/study? step0) (step? step0)) step0)
-         (else (make-step 'step0 step0)))
-        (cond
-         ((study? step1) (make-step/study 'step1 step1))
-         ((or (step/study? step1) (step? step1)) step1)
-         (else (make-step 'step1 step1)))
-        (cond
-         ((study? done) (make-step/study 'done done))
-         ((or (step/study? done) (step? done)) done)
-         (else (make-step 'done done)))
-        (cond
-         ((study? step2) (make-step/study 'step2 step2))
-         ((or (step/study? step2) (step? step2)) step2)
-         (else (make-step 'step2 step2))))))))
+        (list
+         (cond
+           ((study? step0) (make-step/study 'step0 step0))
+           ((or (step/study? step0) (step? step0)) step0)
+           (else (make-step 'step0 step0)))
+         (cond
+           ((study? step1) (make-step/study 'step1 step1))
+           ((or (step/study? step1) (step? step1)) step1)
+           (else (make-step 'step1 step1)))
+         (cond
+           ((study? done) (make-step/study 'done done))
+           ((or (step/study? done) (step? done)) done)
+           (else (make-step 'done done)))
+         (cond
+           ((study? step2) (make-step/study 'step2 step2))
+           ((or (step/study? step2) (step? step2)) step2)
+           (else (make-step 'step2 step2))))))))
 
   (check-equal?
    (syntax->datum
@@ -1087,4 +1087,4 @@ DSL
        (put 'counter1 "3")
        (put 'counter2 (println "Hello"))
        (put 'counter3 (println "Hello"))
-       (put 'counter4 (println "Hello")))))))
+       (put 'counter4 (println "Hello"))))))
