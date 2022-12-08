@@ -169,6 +169,7 @@
      #'(define id (study-mod-require 'mod-path 'id))]
 
     [(step name:id content ...+)
+     #:fail-when (eq? (syntax-e #'name) 'end) "'end' is not a valid step id"
      #:with (compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))
      #'(define (name)
          (page
@@ -177,6 +178,7 @@
             compiled-content ...))))]
 
     [(study study-id:id #:transitions [transition-entry:transition-entry ...] ...+)
+     #:fail-when (eq? (syntax-e #'study-id) 'end) "'end' is not a valid study id"
      #:with study-id-str (datum->syntax #'study-id (symbol->string (syntax->datum #'study-id)))
      #:with (step-id ...) (for*/fold ([stxes null]
                                       [seen-ids (hasheq)]
@@ -1085,4 +1087,24 @@ DSL
        (put 'counter1 "3")
        (put 'counter2 (println "Hello"))
        (put 'counter3 (println "Hello"))
-       (put 'counter4 (println "Hello"))))))
+       (put 'counter4 (println "Hello")))))
+
+  (check-exn
+   #rx"not a valid step id"
+   (lambda ()
+     (read+compile #<<DSL
+@step[end]{Hello}
+DSL
+                   )))
+
+
+  (check-exn
+   #rx"not a valid study id"
+   (lambda ()
+     (read+compile #<<DSL
+@study[
+  end
+  #:transitions
+  [a --> b]]
+DSL
+                   ))))
