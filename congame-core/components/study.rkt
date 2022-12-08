@@ -661,8 +661,13 @@ QUERY
         #:transitions (or/c #f (hash/c symbol? any/c))
         #:failure-handler (or/c #f (-> step? any/c step-id/c)))
        study?)
-  (define comptime-transitions (and transitions (hash-ref transitions 'comptime)))
-  (define runtime-transitions (and transitions (hash-ref transitions 'runtime)))
+  (define known-steps
+    (for/hash ([s (in-list steps)])
+      (values (step-id s) #t)))
+  (define comptime-transitions
+    (and transitions (hash-ref transitions 'comptime)))
+  (define runtime-transitions
+    (and transitions (hash-ref transitions 'runtime)))
   (define steps-with-transitions
     (cond
       [runtime-transitions
@@ -676,7 +681,14 @@ QUERY
                      (define fn-or-id (cdr p))
                      (define transition
                        (cond
-                         [(symbol? fn-or-id) (λ () fn-or-id)]
+                         [(symbol? fn-or-id)
+                          (unless (hash-has-key? known-steps fn-or-id)
+                            (define unknown-steps
+                              (string-join (map symbol->string (sort (hash-keys known-steps) symbol<?)) ", "))
+                            (error 'make-study
+                                   "expected a known step~n  unknown step: ~a~n  known steps: ~a"
+                                   fn-or-id unknown-steps))
+                          (λ () fn-or-id)]
                          [else fn-or-id]))
                      (cond
                        [(step/study? s)
