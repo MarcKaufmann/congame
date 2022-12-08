@@ -480,14 +480,23 @@ QUERY
 
 (provide
  current-xexpr-wrapper
- make-step
- make-step/study
  step-id
  step-page?
  wrap-page
  study?
  step?
- study-transitions)
+ study-transitions
+
+ (contract-out
+  [make-step (->* (step-id/c handler/c)
+                  (transition/c
+                   #:for-bot procedure?)
+                  step?)]
+  [make-step/study (->* (step-id/c study?)
+                        (transition/c
+                         #:require-bindings (listof binding/c)
+                         #:provide-bindings (listof binding/c))
+                        step?)]))
 
 (module+ private
   (provide
@@ -522,29 +531,20 @@ QUERY
 (define (default-transition)
   next)
 
-(define/contract (make-step id
-                            handler
-                            [transition default-transition]
-                            #:for-bot [handler/bot
-                                       (lambda ()
-                                         (if (eq? transition default-transition)
-                                             (bot:continuer)
-                                             (raise-user-error "no bot transition for step" id)))])
-  (->* (step-id/c handler/c)
-       (transition/c
-        #:for-bot procedure?)
-       step?)
+(define (make-step id
+                   handler
+                   [transition default-transition]
+                   #:for-bot [handler/bot
+                              (lambda ()
+                                (if (eq? transition default-transition)
+                                    (bot:continuer)
+                                    (raise-user-error "no bot transition for step" id)))])
   (step id handler handler/bot transition))
 
-(define/contract (make-step/study id s
-                                  [transition (lambda () next)]
-                                  #:require-bindings [require-bindings null]
-                                  #:provide-bindings [provide-bindings null])
-  (->* (step-id/c study?)
-       (transition/c
-        #:require-bindings (listof binding/c)
-        #:provide-bindings (listof binding/c))
-       step?)
+(define (make-step/study id s
+                         [transition (lambda () next)]
+                         #:require-bindings [require-bindings null]
+                         #:provide-bindings [provide-bindings null])
   (step/study
    id
    (lambda ()
