@@ -137,7 +137,11 @@
 
   (define (execute! b [previous-paths null])
     (when (>= (count-path-run previous-paths) INFINITE-LOOP-THRESHOLD)
-      (raise-bot-error "potential infinite loop at path ~s" (car previous-paths)))
+      (raise-bot-error
+       (string-append
+        "potential infinite loop at path ~s~n"
+        "  see also: https://github.com/MarcKaufmann/congame/issues/92")
+       (car previous-paths)))
     (with-handlers ([exn:bot:done? void])
       (define study-stack-str (find-attribute "data-study-stack"))
       (unless study-stack-str
