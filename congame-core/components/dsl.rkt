@@ -2,7 +2,6 @@
 
 (require (for-syntax racket/base)
          koyo/haml
-         racket/format
          racket/list
          racket/string
          racket/syntax
@@ -130,7 +129,7 @@
 
     (pattern (lambda action-expr ... end)
              #:attr id #f
-             #:with (compiled-action-expr ...) (map compile-action-expr (syntax-e #'(action-expr ...)))
+             #:with (compiled-action-expr ...) (filter-map compile-action-expr (syntax-e #'(action-expr ...)))
              #:with compiled #'(unquote
                                 (λ ()
                                   compiled-action-expr ...
@@ -138,7 +137,7 @@
 
     (pattern (lambda action-expr ... target-id:id)
              #:attr id #f
-             #:with (compiled-action-expr ...) (map compile-action-expr (syntax-e #'(action-expr ...)))
+             #:with (compiled-action-expr ...) (filter-map compile-action-expr (syntax-e #'(action-expr ...)))
              #:with compiled #'(unquote
                                 (λ ()
                                   compiled-action-expr ...
@@ -146,7 +145,7 @@
 
     (pattern (lambda action-expr ... {~and (cond _ ...) cond-expr:cond-expr})
              #:attr id #f
-             #:with (compiled-action-expr ...) (map compile-action-expr (syntax-e #'(action-expr ...)))
+             #:with (compiled-action-expr ...) (filter-map compile-action-expr (syntax-e #'(action-expr ...)))
              #:with compiled #'(unquote
                                 (λ ()
                                   compiled-action-expr ...
@@ -157,7 +156,7 @@
     [{~or " " "\n"} #f]
 
     [(action name:id content ...+)
-     #:with (compiled-content ...) (map compile-action-expr (syntax-e #'(content ...)))
+     #:with (compiled-content ...) (filter-map compile-action-expr (syntax-e #'(content ...)))
      #'(define (name)
          compiled-content ...)]
 
@@ -322,8 +321,7 @@
 (define (compile-action-expr stx)
   (syntax-parse stx
     #:datum-literals (call put get escape)
-    ;; TODO: This adds an empty list, which is not what we want but gets code to compile
-    ["\n" null]
+    ["\n" #f]
 
     [(call _id:id _e ...)
      (compile-call-expr stx)]
