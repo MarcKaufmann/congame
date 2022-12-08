@@ -168,10 +168,11 @@
     [(import mod-path:id id:id)
      #'(define id (study-mod-require 'mod-path 'id))]
 
-    [(step name:id content ...+)
+    [(step name:id {~optional {~seq #:pre pre-action-id:id}} content ...+)
      #:fail-when (eq? (syntax-e #'name) 'end) "'end' is not a valid step id"
      #:with (compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))
      #'(define (name)
+         {~? (pre-action-id)}
          (page
           (haml
            (.container
@@ -1097,7 +1098,6 @@ DSL
 DSL
                    )))
 
-
   (check-exn
    #rx"not a valid study id"
    (lambda ()
@@ -1107,4 +1107,26 @@ DSL
   #:transitions
   [a --> b]]
 DSL
-                   ))))
+                   )))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile
+    #<<DSL
+@action[pre-step-foo]{
+  @put[x]{42}
+}
+
+@step[foo #:pre pre-step-foo]{
+  Hello world
+}
+DSL
+    ))
+   '((define (pre-step-foo)
+       (put 'x "42"))
+     (define (foo)
+       (pre-step-foo)
+       (page
+        (haml
+         (.container
+          (:p "Hello world"))))))))
