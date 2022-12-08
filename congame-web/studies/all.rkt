@@ -6,6 +6,7 @@
                      setup/getinfo
                      syntax/parse)
          congame/components/registry
+         congame/components/study
          racket/runtime-path)
 
 (define-syntax-rule (reprovide mod ...)
@@ -39,7 +40,8 @@
                                #'(begin
                                    (define-runtime-module-path-index mod-id mod-path)
                                    (register-study-mod! mod-path mod-id)
-                                   (register-study! quoted-study-id study-id))))
+                                   (when (study? study-id)
+                                     (register-study! quoted-study-id study-id)))))
      #'(begin
          (require req-spec ...)
          reg-spec ...)]))
