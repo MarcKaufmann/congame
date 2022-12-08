@@ -8,7 +8,9 @@
          (prefix-in s: scribble/reader)
          syntax/parse
 
-         "dsl-runtime.rkt"
+         "dsl/runtime.rkt"
+         (prefix-in stdlib: "dsl/stdlib.rkt")
+
          "formular.rkt"
          "registry.rkt"
          "study.rkt"
@@ -19,7 +21,8 @@
  read-syntax+compile)
 
 (define attached-mods
-  '(congame/components/dsl-runtime
+  '(congame/components/dsl/runtime
+    congame/components/dsl/stdlib
     congame/components/formular
     congame/components/registry
     congame/components/study
@@ -166,7 +169,9 @@
          #'(define id (interpret-basic-expr 'define 'e)))]
 
     [(import mod-path:id id:id)
-     #'(define id (study-mod-require 'mod-path 'id))]
+     (if (eq? (syntax-e #'mod-path) 'stdlib)
+         #'(define id (dynamic-require 'congame/components/dsl/stdlib 'id))
+         #'(define id (study-mod-require 'mod-path 'id)))]
 
     [(step name:id {~optional {~seq #:pre pre-action-id:id}} content ...+)
      #:fail-when (eq? (syntax-e #'name) 'end) "'end' is not a valid step id"

@@ -3,7 +3,7 @@
 (require racket/format
          racket/list
          racket/match
-         "study.rkt")
+         "../study.rkt")
 
 (provide
  make-put-all-keywords
