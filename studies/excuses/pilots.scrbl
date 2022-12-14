@@ -20,17 +20,17 @@
 
     If you have concerns or questions, please contact the principal investigator, Marc Kaufmann, at @"kaufmannm@ceu.edu" or by direct message via Prolific. Report technical problems to @"admin@totalinsightmanagement.com".
 
-    @button{Continue}
+    @button[#:action increment-counter]{Continue}
 }
 
 @action[increment-counter]{
-    @put[counter]{@call[add1 @get['counter 0]]}
+    @put[counter @call[add1 @get[counter 0]]]
 }
 
 @step[description]{
     @h1{Study Description}
 
-    @button[#:action increment-counter]{Continue}
+    @button{Continue}
 }
 
 @step[hypothetical-time-choice]{
