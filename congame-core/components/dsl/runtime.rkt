@@ -20,7 +20,7 @@
 (define (interpret-basic-expr who e)
   (let loop ([e e])
     (match e
-      [(? number?)  e]
+      [(? number?) e]
 
       [`(~a ,e) (~a (loop e))]
 

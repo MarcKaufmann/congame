@@ -69,7 +69,7 @@
 
 ;; TODO: Eventually make this configurable at the study admin level.
 (define current-allow-full-escape?
-  (make-parameter #t))
+  (make-parameter #f))
 
 (define (build-env stxs)
   (define-values (actions imports templates)
