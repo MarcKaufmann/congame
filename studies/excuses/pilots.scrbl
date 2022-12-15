@@ -1,14 +1,15 @@
 @import[studies/real-effort/tasks task-study]
-@import[stdlib add1]
+@import[stdlib add1 make-step/study]
 
-@define[tutorial-tasks (make-step/study
-                            'tutorial-tasks
-                            task-study
-                            #:require-bindings '([n (const 2)]
-                                                 [max-wrong-tasks (const 2)]
-                                                 [title (const "Tutorial tasks")]
-                                                 [hide-description? (const #f)])
-                                                #:provide-bindings '([success? success?]))
+@define[tutorial-tasks
+  @call[make-step/study
+        'tutorial-tasks
+        task-study
+        #:require-bindings '([n (const 2)]
+                             [max-wrong-tasks (const 2)]
+                             [title (const "Tutorial tasks")]
+                             [hide-description? (const #f)])
+        #:provide-bindings '([success? success?])]
 ]
 
 @step[introduction]{

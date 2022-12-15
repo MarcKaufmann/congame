@@ -81,8 +81,8 @@
         #:datum-literals (action import template template-ungrouped)
         [(action id:id _ ...)
          (values (cons (syntax->datum #'id) actions) imports templates)]
-        [(import _ id:id)
-         (values actions (cons (syntax->datum #'id) imports) templates)]
+        [(import _ id:id ...+)
+         (values actions (append (map syntax->datum (syntax-e #'(id ...))) imports) templates)]
         [(template id:id _ ...)
          (values actions imports (hash-set templates (syntax->datum #'id) 'grouped))]
         [(template-ungrouped id:id _ ...)
@@ -164,14 +164,17 @@
          compiled-content ...)]
 
     [(define id:id e)
-     (if (current-allow-full-escape?)
-         #'(define id e)
-         #'(define id (interpret-basic-expr 'define 'e)))]
+     #:with compiled-e (compile-expr #'e)
+     #'(define id compiled-e)]
 
     [(import mod-path:id id:id)
      (if (eq? (syntax-e #'mod-path) 'stdlib)
          #'(define id (dynamic-require 'congame/components/dsl/stdlib 'id))
          #'(define id (study-mod-require 'mod-path 'id)))]
+
+    [(import mod-path:id id:id ...+)
+     #:with (compiled-import ...) (map compile-stmt (syntax-e #'((import mod-path id) ...)))
+     #'(begin compiled-import ...)]
 
     [(step name:id {~optional {~seq #:pre pre-action-id:id}} content ...+)
      #:fail-when (eq? (syntax-e #'name) 'end) "'end' is not a valid step id"
@@ -234,7 +237,8 @@
     #:datum-literals (a br button call div em escape form get h1 h2 h3 img ol p quote span strong template ul yield)
     [num:number #'num]
     [str:string #'str]
-    [(quote id:id) #''id]
+    [kwd:keyword #'kwd]
+    [(quote e) #''e]
 
     [(a url:string body:body ...+)
      #'(:a ([:href url]) body.compiled ...)]
@@ -318,7 +322,13 @@
     [(yield)
      (unless (current-in-template?)
        (raise-syntax-error 'yield "cannot yield outside template" stx stx))
-     #'(unquote-splicing (content-proc))]))
+     #'(unquote-splicing (content-proc))]
+
+    [id:id
+     (define the-id (syntax->datum #'id))
+     (unless (member the-id (Env-imports (current-env)))
+       (raise-syntax-error 'call (format "unknown identifier ~a; did you forget to import it?" the-id) stx))
+     #'id]))
 
 (define (compile-call-expr stx)
   (syntax-parse stx
@@ -1104,6 +1114,16 @@ DSL
        (put 'counter1 3)
        (put 'counter2 (format "~a" "Hello"))
        (put 'sym 'test))))
+
+  (check-equal?
+   (syntax->datum
+    (read+compile #<<DSL
+@import[stdlib add1 make-step/study]
+DSL
+                  ))
+   '((begin
+       (define add1 (dynamic-require 'congame/components/dsl/stdlib 'format))
+       (define make-step/study (dynamic-require 'congame/components/dsl/stdlib 'make-step/study)))))
 
   (check-exn
    #rx"not a valid step id"
