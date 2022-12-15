@@ -321,12 +321,10 @@
 (define (compile-call-expr stx)
   (syntax-parse stx
     [(_ id:id e ...)
-     ; TODO: Check the next line makes sense
-     #:with (compiled-e ...) (map compile-expr (syntax-e #'(e ...)))
      (define the-id (syntax->datum #'id))
      (unless (member the-id (Env-imports (current-env)))
        (raise-syntax-error 'call (format "unknown procedure ~a; did you forget to import it?" the-id) stx))
-     #'(id compiled-e ...)]))
+     #'(id e ...)]))
 
 (define (compile-action-expr stx)
   (syntax-parse stx
