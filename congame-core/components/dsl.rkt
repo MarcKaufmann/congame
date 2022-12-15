@@ -231,8 +231,10 @@
   ;; NOTE: For block-style tags, it's the tag's responibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (a br button call div em escape form get h1 h2 h3 img ol p span strong template ul yield)
+    #:datum-literals (a br button call div em escape form get h1 h2 h3 img ol p quote span strong template ul yield)
+    [num:number #'num]
     [str:string #'str]
+    [(quote id:id) #''id]
 
     [(a url:string body:body ...+)
      #'(:a ([:href url]) body.compiled ...)]
@@ -269,8 +271,8 @@
           compiled-body ... ...))
         (make-put-all-keywords {~? action void}))]
 
-    [(get id:id {~optional default:expr})
-     #'(get 'id {~? default})]
+    [(get . _rest)
+     (compile-get-expr stx)]
 
     [({~and {~or h1 h2 h3} tag} body:body ...+)
      #:with tag-id (format-id #'tag ":~a" #'tag)
@@ -321,10 +323,21 @@
 (define (compile-call-expr stx)
   (syntax-parse stx
     [(_ id:id e ...)
+     #:with (compiled-e ...) (map compile-expr (syntax-e #'(e ...)))
      (define the-id (syntax->datum #'id))
      (unless (member the-id (Env-imports (current-env)))
        (raise-syntax-error 'call (format "unknown procedure ~a; did you forget to import it?" the-id) stx))
-     #'(id e ...)]))
+     #'(id compiled-e ...)]))
+
+(define (compile-get-expr stx)
+  (syntax-parse stx
+    [(_ id:expr)
+     #:with compiled-id (compile-expr #'id)
+     #'(get compiled-id)]
+    [(_ id:expr default:expr)
+     #:with compiled-id (compile-expr #'id)
+     #:with compiled-default (compile-expr #'default)
+     #'(get compiled-id compiled-default)]))
 
 (define (compile-action-expr stx)
   (syntax-parse stx
@@ -339,12 +352,13 @@
          #'expr
          #'(interpret-basic-expr 'escape 'expr))]
 
-    [(get id:id {~optional default:expr})
-     #'(get 'id {~? default})]
+    [(get . _rest)
+     (compile-get-expr stx)]
 
-    [(put id:id e)
+    [(put id:expr e)
+     #:with compiled-id (compile-expr #'id)
      #:with compiled-e (compile-expr #'e)
-     #'(put 'id compiled-e)]))
+     #'(put compiled-id compiled-e)]))
 
 (define (compile-cond-expr stx)
   (syntax-parse stx
@@ -355,8 +369,8 @@
      #:with compiled-e0 (compile-cond-expr #'e0)
      #:with compiled-e1 (compile-cond-expr #'e1)
      #'(equal? compiled-e0 compiled-e1)]
-    [(get id:id)
-     #'(get 'id)]))
+    [(get . _rest)
+     (compile-get-expr stx)]))
 
 (define (compile-form-expr stx)
   (define (stx->keyword-stx stx)
@@ -912,7 +926,7 @@ DSL
 @study[
   hello-study
   #:transitions
-  [step0 --> @cond[[@=[@get[some-var] "agree"] step1]
+  [step0 --> @cond[[@=[@get['some-var] "agree"] step1]
                    [@else step2]]]
   [step1 --> done]
   [step2 --> done]
@@ -988,7 +1002,7 @@ DSL
   #:transitions
   [step0 --> @lambda[
                @call[println "hello"]
-               @cond[[@=[@get[some-var] "agree"] step1]
+               @cond[[@=[@get['some-var] "agree"] step1]
                      [@else step2]]]]
   [step1 --> done]
   [step2 --> done]
@@ -1077,23 +1091,19 @@ DSL
   (check-equal?
    (syntax->datum
     (read+compile #<<DSL
-@import[racket/base println]
+@import[racket/base format]
 @action[test]{
-  @put[counter1]{3}
-  @put[counter2]{@call[println "Hello"]}
-  @put[counter3]{
-    @call[println "Hello"]
-  }
-  @put[counter4 @call[println "Hello"]]
+  @put['counter1 3]
+  @put['counter2 @call[format "~a" "Hello"]]
+  @put['sym 'test]
 }
 DSL
                   ))
-   '((define println (study-mod-require 'racket/base 'println))
+   '((define format (study-mod-require 'racket/base 'format))
      (define (test)
-       (put 'counter1 "3")
-       (put 'counter2 (println "Hello"))
-       (put 'counter3 (println "Hello"))
-       (put 'counter4 (println "Hello")))))
+       (put 'counter1 3)
+       (put 'counter2 (format "~a" "Hello"))
+       (put 'sym 'test))))
 
   (check-exn
    #rx"not a valid step id"
@@ -1119,7 +1129,7 @@ DSL
     (read+compile
     #<<DSL
 @action[pre-step-foo]{
-  @put[x]{42}
+  @put['x]{42}
 }
 
 @step[foo #:pre pre-step-foo]{

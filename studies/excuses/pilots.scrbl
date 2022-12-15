@@ -24,7 +24,7 @@
 }
 
 @action[increment-counter]{
-    @put[counter @call[add1 @get[counter 0]]]
+    @put['counter @call[add1 @get['counter 0]]]
 }
 
 @step[description]{
@@ -48,7 +48,7 @@
                   @; With the hypothetical choice we can estimate selection into the study based on present bias (or other traits)
                   --> hypothetical-time-choice
                   --> tutorial-tasks
-                  --> @cond[[@=[@get[counter] 2] end]
+                  --> @cond[[@=[@get['counter] 2] end]
                             [else introduction]]
     ]
 ]
