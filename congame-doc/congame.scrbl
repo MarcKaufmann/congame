@@ -93,3 +93,5 @@ The study @racket[submit-research-ideas] @racket[put]s a value with the key @rac
 @section{Studies}
 
 @include-section["multi-review.scrbl"]
+
+@include-section["veneer.scrbl"]
