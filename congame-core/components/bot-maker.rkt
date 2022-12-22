@@ -17,10 +17,10 @@
    make-bot
    (for/list ([st (in-list (study-steps s))])
      (match st
-       [(step/study id _ _ _ s)
+       [(step/study id _ _ _ _ s)
         (make-bot-stepper/study id ((study->bot s (cons id stack)) model))]
 
-       [(step id _ handler/bot _)
+       [(step id _ handler/bot _ _)
         (make-bot-stepper id (lambda ()
                                (define id* (reverse (cons id stack)))
                                (with-handlers ([exn:fail?

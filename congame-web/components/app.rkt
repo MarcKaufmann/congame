@@ -164,6 +164,10 @@
       #:roles (user)
       (study-page db)]
 
+     [("study" (string-arg) "view" (string-arg) ...)
+      #:roles (user)
+      (study-view-page db)]
+
      [("_anon-login" (string-arg))
       (anon-login-page auth db users)]
 

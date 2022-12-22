@@ -4,7 +4,8 @@
          congame/components/resource
          congame/components/study
          (except-in forms form)
-         koyo/haml)
+         koyo/haml
+         web-server/http)
 
 (provide
  consent-study
@@ -173,7 +174,14 @@
                (lambda ()
                  (if (get 'consented?)
                      next
-                     'done)))
+                     'done))
+               #:view-handler (lambda (_req)
+                                (response/xexpr
+                                 ((current-xexpr-wrapper)
+                                  (haml
+                                   (.container
+                                    (:h1 "Custom View Handler")
+                                    (:p "Your name is " (get 'name))))))))
     (make-step/study 'simple (wrap-sub-study simple-study echo-wrapper))
     (make-step 'give-consent-2 give-consent)
     (make-step 'done done-step))))

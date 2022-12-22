@@ -26,6 +26,7 @@
          sentry
          syntax/parse/define
          threading
+         web-server/dispatchers/dispatch
          web-server/servlet
          (only-in xml xexpr?)
          "bot.rkt"
@@ -490,6 +491,7 @@ QUERY
  (contract-out
   [make-step (->* (step-id/c handler/c)
                   (transition/c
+                   #:view-handler (or/c #f (-> request? response?))
                    #:for-bot procedure?)
                   step?)]
   [make-step/study (->* (step-id/c study?)
@@ -504,7 +506,7 @@ QUERY
    (struct-out step/study)
    (struct-out study)))
 
-(struct step (id handler handler/bot transition)
+(struct step (id handler handler/bot view-handler transition)
   #:transparent)
 
 (struct step/study step (study)
@@ -519,7 +521,7 @@ QUERY
    (proc
     ((step-page-renderer p)))))
 
-(struct study (name requires provides transitions steps failure-handler)
+(struct study (name requires provides transitions steps view-handler failure-handler)
   #:transparent)
 
 (define step-id/c symbol?)
@@ -534,53 +536,50 @@ QUERY
 (define (make-step id
                    handler
                    [transition default-transition]
+                   #:view-handler [view-hdl #f]
                    #:for-bot [handler/bot
                               (lambda ()
                                 (if (eq? transition default-transition)
                                     (bot:continuer)
                                     (raise-user-error "no bot transition for step" id)))])
-  (step id handler handler/bot transition))
+  (step id handler handler/bot view-hdl transition))
 
 (define (make-step/study id s
                          [transition (lambda () next)]
                          #:require-bindings [require-bindings null]
                          #:provide-bindings [provide-bindings null])
-  (step/study
-   id
-   (lambda ()
-     (define all-required-bindings
-       (for/fold ([seen (for/hasheq ([binding (in-list require-bindings)])
-                          (values (car binding) #t))]
-                  [bindings require-bindings]
-                  #:result bindings)
-                 ([required-id (in-list (study-requires s))]
-                  #:unless (hash-has-key? seen required-id))
-         (values (hash-set seen required-id #t)
-                 (cons (list required-id required-id) bindings))))
-     (define bindings
-       (for/hasheq ([binding (in-list all-required-bindings)])
-         (match binding
-           [`(,dst-id (const ,v))
-            (values dst-id v)]
+  (define (handler)
+    (define all-required-bindings
+      (for/fold ([seen (for/hasheq ([binding (in-list require-bindings)])
+                         (values (car binding) #t))]
+                 [bindings require-bindings]
+                 #:result bindings)
+                ([required-id (in-list (study-requires s))]
+                 #:unless (hash-has-key? seen required-id))
+        (values (hash-set seen required-id #t)
+                (cons (list required-id required-id) bindings))))
+    (define bindings
+      (for/hasheq ([binding (in-list all-required-bindings)])
+        (match binding
+          [`(,dst-id (const ,v))
+           (values dst-id v)]
 
-           [`(,dst-id ,src-id)
-            (values dst-id (get src-id (lambda ()
-                                         (error 'get "value not found for key ~.s in sub-study~n  bound to: ~s~n  required by step: ~.s" src-id dst-id id))))])))
-     (with-widget-parameterization
-       (define result-bindings
-         (run-study s #:bindings bindings))
-       (for ([binding (in-list provide-bindings)])
-         (match-define (list dst-id src-id) binding)
-         (put dst-id (hash-ref result-bindings src-id (lambda ()
-                                                        (error 'run-study/step "expected binding ~s to be provided by sub-study~n  bound to: ~s~n  at step: ~.s" src-id dst-id id)))))
-       ;; We're done with the sub-study so clear out the resume stack
-       ;; (if any) to avoid issues with resuming at a boundary between
-       ;; two sub-studies (#24).
-       (current-resume-stack null)
-       (continue)))
-   void
-   transition
-   s))
+          [`(,dst-id ,src-id)
+           (values dst-id (get src-id (lambda ()
+                                        (error 'get "value not found for key ~.s in sub-study~n  bound to: ~s~n  required by step: ~.s" src-id dst-id id))))])))
+    (with-widget-parameterization
+      (define result-bindings
+        (run-study s #:bindings bindings))
+      (for ([binding (in-list provide-bindings)])
+        (match-define (list dst-id src-id) binding)
+        (put dst-id (hash-ref result-bindings src-id (lambda ()
+                                                       (error 'run-study/step "expected binding ~s to be provided by sub-study~n  bound to: ~s~n  at step: ~.s" src-id dst-id id)))))
+      ;; We're done with the sub-study so clear out the resume stack
+      ;; (if any) to avoid issues with resuming at a boundary between
+      ;; two sub-studies (#24).
+      (current-resume-stack null)
+      (continue)))
+  (step/study id handler void #f transition s))
 
 (define/contract (wrap-sub-study s wrapper)
   (-> study? (-> handler/c handler/c) study?)
@@ -630,6 +629,7 @@ QUERY
  wrap-sub-study
  make-study
  run-study
+ view-study
  fail
  study-steps
  step/study?
@@ -654,11 +654,13 @@ QUERY
                              #:requires [requires null]
                              #:provides [provides null]
                              #:transitions [transitions #f]
+                             #:view-handler [view-hdl #f]
                              #:failure-handler [failure-hdl #f])
   (->* (string? (non-empty-listof step?))
        (#:requires (listof symbol?)
         #:provides (listof symbol?)
         #:transitions (or/c #f (hash/c symbol? any/c))
+        #:view-handler (or/c #f (-> request? response?))
         #:failure-handler (or/c #f (-> step? any/c step-id/c)))
        study?)
   (define known-steps
@@ -713,7 +715,7 @@ QUERY
       [else
        steps]))
 
-  (study name requires provides comptime-transitions steps-with-transitions failure-hdl))
+  (study name requires provides comptime-transitions steps-with-transitions view-hdl failure-hdl))
 
 (define/contract (run-study s
                             [req (current-request)]
@@ -892,6 +894,62 @@ QUERY
 (define/contract (fail reason [s (current-step)])
   (->* (any/c) (step?) void?)
   (raise (exn:fail:study "study failed" (current-continuation-marks) s reason)))
+
+(define/contract (view-study s req route reverse-uri-proc)
+  (-> study? request? (listof string?) (-> string? string?) response?)
+  (define-values (target stack)
+    (let loop ([target s]
+               [stack '(*root*)]
+               [route route])
+      (cond
+        [(null? route)
+         (values target stack)]
+        [else
+         (define id (string->symbol (car route)))
+         (define st (study-find-step target id))
+         (unless st
+           (next-dispatcher))
+         (if (step/study? st)
+             (loop (step/study-study st) (cons id stack) (cdr route))
+             (values st stack))])))
+  (define hdl
+    (cond
+      [(study? target)
+       (or (study-view-handler target)
+           (make-default-study-view target))]
+      [(step? target)
+       (or (step-view-handler target)
+           (make-default-step-view target))]
+      [else
+       (raise-argument-error 'view-study "(or/c study? step?)" target)]))
+  (parameterize ([current-study-stack stack]
+                 [current-view-reverse-uri-proc reverse-uri-proc])
+    (hdl req)))
+
+(define current-view-reverse-uri-proc
+  (make-parameter #f))
+
+(define ((make-default-study-view s) _req)
+  (response/xexpr*
+   ((current-xexpr-wrapper)
+    (haml
+     (.container
+      (:h1 (study-name s))
+      (:ul
+       ,@(for/list ([child (in-list (study-steps s))])
+           (define route (symbol->string (step-id child)))
+           (haml
+            (:li
+             (:a
+              ([:href ((current-view-reverse-uri-proc) route)])
+              route))))))))))
+
+(define ((make-default-step-view s) _req)
+  (response/xexpr*
+   ((current-xexpr-wrapper)
+    (haml
+     (.container
+      (:h1 (symbol->string (step-id s))))))))
 
 
 ;; db ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

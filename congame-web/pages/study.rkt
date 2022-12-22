@@ -15,7 +15,8 @@
 (provide
  home-page
  study-instances-page
- study-page)
+ study-page
+ study-view-page)
 
 (define ((study-instances-page db) _req)
   (cond [(user-enrolled-via-identity? (current-user))
@@ -109,6 +110,26 @@
              #:participant participant)
             (lambda ()
               (run-study s req)))])]
+
+    [else
+     (next-dispatcher)]))
+
+(define ((study-view-page db) req slug route)
+  (define uid
+    (user-id (current-user)))
+  (cond
+    [(lookup-study db slug uid)
+     => (match-lambda
+          [(list s participant)
+           (call-with-study-manager
+            (make-study-manager
+             #:database db
+             #:participant participant)
+            (lambda ()
+              (define the-route (if (equal? route '("")) null route))
+              (define (reverse-uri-proc view)
+                (reverse-uri 'study-view-page slug (append the-route (list view))))
+              (view-study s req the-route reverse-uri-proc)))])]
 
     [else
      (next-dispatcher)]))
