@@ -1122,7 +1122,7 @@ DSL
 DSL
                   ))
    '((begin
-       (define add1 (dynamic-require 'congame/components/dsl/stdlib 'format))
+       (define add1 (dynamic-require 'congame/components/dsl/stdlib 'add1))
        (define make-step/study (dynamic-require 'congame/components/dsl/stdlib 'make-step/study)))))
 
   (check-exn
