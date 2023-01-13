@@ -9,7 +9,7 @@
     action define import step study template template-ungrouped
 
     @; expr
-    a br button div em escape form get h1 h2 h3 img li p quote span strong ol ul yield
+    a br button div em escape form get h1 h2 h3 img li p put quote span strong ol ul yield
 
     @; form-expr
     input-date input-text input-number textarea submit-button
@@ -56,7 +56,12 @@
   [call-expr (imported-id expr ...)]
 
   [get-expr (get expr)
-            (get expr expr)]
+            (get expr expr)
+            (get #:instance expr)
+            (get #:instance expr expr)]
+
+  [put-expr (put id-expr expr)
+            (put #:instance id-expr expr)]
 
   [form-expr (input-date id expr ...+)
              (input-text id expr ...+)
@@ -67,6 +72,11 @@
              (submit-button)
              (textarea id expr ...+)
              expr]
+
+  [action-expr call-expr
+               get-expr
+               put-expr
+               (escape s-expr)]
 
   [maybe-action (code:line)
                 (code:line #:action action-id)]
