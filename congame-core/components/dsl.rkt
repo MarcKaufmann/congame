@@ -344,10 +344,28 @@
     [(_ id:expr)
      #:with compiled-id (compile-expr #'id)
      #'(get compiled-id)]
+    [(_ #:instance id:expr)
+     #:with compiled-id (compile-expr #'id)
+     #'(get/instance compiled-id)]
     [(_ id:expr default:expr)
      #:with compiled-id (compile-expr #'id)
      #:with compiled-default (compile-expr #'default)
-     #'(get compiled-id compiled-default)]))
+     #'(get compiled-id compiled-default)]
+    [(_ #:instance id:expr default:expr)
+     #:with compiled-id (compile-expr #'id)
+     #:with compiled-default (compile-expr #'default)
+     #'(get/instance compiled-id compiled-default)]))
+
+(define (compile-put-expr stx)
+  (syntax-parse stx
+    [(_ id:expr e:expr)
+     #:with compiled-id (compile-expr #'id)
+     #:with compiled-e (compile-expr #'e)
+     #'(put compiled-id compiled-e)]
+    [(_ #:instance id:expr e:expr)
+     #:with compiled-id (compile-expr #'id)
+     #:with compiled-e (compile-expr #'e)
+     #'(put/instance compiled-id compiled-e)]))
 
 (define (compile-action-expr stx)
   (syntax-parse stx
@@ -365,10 +383,8 @@
     [(get . _rest)
      (compile-get-expr stx)]
 
-    [(put id:expr e)
-     #:with compiled-id (compile-expr #'id)
-     #:with compiled-e (compile-expr #'e)
-     #'(put compiled-id compiled-e)]))
+    [(put . _rest)
+     (compile-put-expr stx)]))
 
 (define (compile-cond-expr stx)
   (syntax-parse stx
@@ -937,6 +953,7 @@ DSL
   hello-study
   #:transitions
   [step0 --> @cond[[@=[@get['some-var] "agree"] step1]
+                   [@=[@get[#:instance 'some-other-var] "always-agree"] step1]
                    [@else step2]]]
   [step1 --> done]
   [step2 --> done]
@@ -955,6 +972,8 @@ DSL
                        [step0 --> ,(λ ()
                                      (cond
                                        [(equal? (get 'some-var) "agree")
+                                        (goto step1)]
+                                       [(equal? (get/instance 'some-other-var) "always-agree")
                                         (goto step1)]
                                        [else
                                         (goto step2)]))]
