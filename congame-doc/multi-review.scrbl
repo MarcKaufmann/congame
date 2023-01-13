@@ -1,10 +1,9 @@
 #lang scribble/manual
 
-(require (for-label congame-example-study/multi-review))
-
-@defmodule[congame-example-study/review]
+@(require (for-label congame-example-study/multi-review))
 
 @title{Multiple-Person Review Study}
+@defmodule[congame-example-study/review]
 
 A multi-person review study allows a submitter to submit an assignment that is reviewed by multiple people for scoring. The study provided is @racket{review-study}.
 

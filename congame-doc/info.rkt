@@ -3,6 +3,7 @@
 (define collection "congame")
 (define deps '("base"))
 (define build-deps '("congame-core"
+                     "congame-example-study"
                      "congame-web"
                      "congame-identity"
                      "congame-smtp-proxy"
