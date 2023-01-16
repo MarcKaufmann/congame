@@ -8,6 +8,7 @@ if [ "$#" -ne 1 ]; then
 fi
 
 BASEPATH="$(dirname "$0")"
+DOCS_IMAGE_NAME="ghcr.io/marckaufmann/congame-docs:$GITHUB_SHA"
 IDENTITY_IMAGE_NAME="ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA"
 SMTP_IMAGE_NAME="ghcr.io/marckaufmann/congame-smtp-proxy:$GITHUB_SHA"
 WEB_IMAGE_NAME="ghcr.io/marckaufmann/congame-web:$GITHUB_SHA"
@@ -20,6 +21,8 @@ SMTP_CONTAINER_PORT_2="675"
 
 case "$1" in
     PRODUCTION)
+        DOCS_CONTAINER_NAME="congame-docs"
+        DOCS_CONTAINER_PORT="9013"
         IDENTITY_CONTAINER_NAME="congame-identity"
         IDENTITY_CONTAINER_PORT="8100"
         IDENTITY_ENVIRONMENT_PATH="$BASEPATH/identity-production.env"
@@ -31,6 +34,8 @@ case "$1" in
         WEB_RUN_PATH="/opt/congame/production"
     ;;
     STAGING)
+        DOCS_CONTAINER_NAME="congame-docs-staging"
+        DOCS_CONTAINER_PORT="9014"
         IDENTITY_CONTAINER_NAME="congame-identity-staging"
         IDENTITY_CONTAINER_PORT="9100"
         IDENTITY_ENVIRONMENT_PATH="$BASEPATH/identity-staging.env"
@@ -77,6 +82,7 @@ echo "CONGAME_SENTRY_DSN=$SENTRY_DSN" >> "$WEB_ENVIRONMENT_PATH"
 log "Pulling image from GHCR..."
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   echo "$PAT" | docker login ghcr.io -u MarcKaufmann --password-stdin
+  docker pull "$DOCS_IMAGE_NAME"
   docker pull "$IDENTITY_IMAGE_NAME"
   docker pull "$SMTP_IMAGE_NAME"
   docker pull "$WEB_IMAGE_NAME"
@@ -93,9 +99,18 @@ scp -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$IDENTITY_ENVIRONMENT_PAT
 scp -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$WEB_ENVIRONMENT_PATH" "$TARGET_HOST:$WEB_RUN_PATH/env"
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
   docker network create congame || true
+
+  docker stop "$DOCS_CONTAINER_NAME" || true
+  docker rm "$DOCS_CONTAINER_NAME" || true
+  docker run \
+    --name "$DOCS_CONTAINER_NAME" \
+    --network congame \
+    -p "127.0.0.1:$DOCS_CONTAINER_PORT":"80" \
+    -d \
+    "$DOCS_IMAGE_NAME"
+
   docker stop "$IDENTITY_CONTAINER_NAME" || true
   docker rm "$IDENTITY_CONTAINER_NAME" || true
-
   docker run \
     --name "$IDENTITY_CONTAINER_NAME" \
     --env-file "$IDENTITY_RUN_PATH/env" \
