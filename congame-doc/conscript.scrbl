@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@title{DSL (Veneer)}
+@title{DSL (Conscript)}
 @section{Grammar}
 
 @racketgrammar*[

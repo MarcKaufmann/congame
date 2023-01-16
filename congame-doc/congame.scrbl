@@ -9,5 +9,5 @@
 @include-section["introduction.scrbl"]
 @include-section["howtos.scrbl"]
 @include-section["multi-review.scrbl"]
-@include-section["veneer.scrbl"]
+@include-section["conscript.scrbl"]
 @include-section["reference.scrbl"]
