@@ -100,6 +100,27 @@ a participant or collect information from them (or both).
          #:contracts
          [(validator-expr (-> any/c xexpr?))]]{
 
+  Within a @tech{step}, this form delimits where the setup actions of
+  a step end.  Once execution of a step reaches this form, the next
+  time the step is executed, the setup actions will be skipped.
+
+  For example:
+
+  @codeblock|{
+    (define (step-with-setup)
+      (perform-a-once)
+      (perform-b-once)
+      (page
+       (haml
+        (:p "Some text..."))))
+  }|
+
+  When the user lands on @racket[step-with-setup] the first time,
+  @racket[perform-a-once] and @racket[perform-b-once] will be called.
+  Subsequently, if the user reloads the page, it will be as if only
+  the expressions under the @racket[page] form make up the step.  If
+  control never reaches the @racket[page] form, the setup actions will
+  get run again.
 }
 
 @deftogether[(
