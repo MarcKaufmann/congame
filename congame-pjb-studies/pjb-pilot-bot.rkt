@@ -23,17 +23,28 @@
 
 (define (pjb-pilot-bot-model id bot)
   (match id
-    ['(*root* the-study tutorial-tasks task)
+    ['(*root* tutorial-tasks task)
+     ;; NOTE: We don't _have to_ call bot here and instead could take
+     ;; our own bot actions (from the congame/components/bot actions
+     ;; submodule).
      (bot #t)]
 
-    ['(*root* the-study required-tasks task)
+    ['(*root* required-tasks task)
      (bot #t)]
 
-    ['(*root* the-study elicit-WTW-and-work extra-tasks task)
+    ['(*root* elicit-WTW-and-work extra-tasks task)
      (bot #t)]
 
-    ['(*root* the-study elicit-WTW-and-work elicit-immediate-WTW)
+    ['(*root* elicit-WTW-and-work elicit-immediate-WTW)
      (bot 2)]
+
+    [_
+     (bot)]))
+
+(define (pjb-pilot-bot-model/full id bot)
+  (match id
+    [`(*root* the-study . ,path)
+     (pjb-pilot-bot-model (cons '*root* path) bot)]
 
     [_
      (bot)]))
@@ -79,5 +90,5 @@
     #:study-url "http://127.0.0.1:5100/study/pilot1"
     #:username "bot@example.com"
     #:password "password"
-    #:headless? #t
-    (make-pjb-pilot-bot pjb-pilot-bot-model))))
+    #:headless? #f
+    (make-pjb-pilot-bot pjb-pilot-bot-model/full))))
