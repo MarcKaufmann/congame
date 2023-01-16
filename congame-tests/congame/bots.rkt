@@ -96,7 +96,7 @@
      #:username "bot@example.com"
      #:password "password"
      #:browser shared-browser
-     (make-pjb-pilot-bot pjb-pilot-bot-model)))
+     (make-pjb-pilot-bot pjb-pilot-bot-model/full)))
 
    (test-suite
     "test-substudy-failing"

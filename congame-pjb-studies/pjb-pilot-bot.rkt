@@ -7,7 +7,7 @@
 
 (provide
  make-pjb-pilot-bot
- pjb-pilot-bot-model
+ pjb-pilot-bot-model/full
  make-relax-test-bot
  relax-test-bot-model)
 
