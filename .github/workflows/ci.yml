@@ -151,6 +151,9 @@ jobs:
 
     - name: Build executables
       run: |
+        raco scribble +m --dest doc --redirect 'https://docs.racket-lang.org/local-redirect/index.html' congame-doc/congame.scrbl
+        echo '<html><head><meta http-equiv="refresh" content="0; url=congame.html">' > doc/index.html
+
         mkdir build
         raco koyo dist -t build/identity ++lang north congame-identity/dynamic.rkt
         raco koyo dist -t build/smtp-proxy congame-smtp-proxy/main.rkt
@@ -164,12 +167,14 @@ jobs:
 
     - name: Build docker images
       run: |
+        docker build -t "ghcr.io/marckaufmann/congame-docs:$GITHUB_SHA" -f Dockerfile.docs .
         docker build -t "ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA" -f Dockerfile.identity .
         docker build -t "ghcr.io/marckaufmann/congame-smtp-proxy:$GITHUB_SHA" -f Dockerfile.smtp-proxy .
         docker build -t "ghcr.io/marckaufmann/congame-web:$GITHUB_SHA" -f Dockerfile.web .
 
     - name: Push docker images
       run: |
+        docker push "ghcr.io/marckaufmann/congame-docs:$GITHUB_SHA"
         docker push "ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA"
         docker push "ghcr.io/marckaufmann/congame-smtp-proxy:$GITHUB_SHA"
         docker push "ghcr.io/marckaufmann/congame-web:$GITHUB_SHA"
