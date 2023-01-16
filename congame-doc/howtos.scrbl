@@ -79,3 +79,16 @@ research-ideas])]. The magic happens in @racket[#:provide-bindings
 @racket['submission]. If the parent study did not want to use the
 provided value, then it can do so by providing an empty list of
 @racket[#:provide-bindings].
+
+
+@section{Scheduling tasks at most once}
+
+See @filepath{omnitrack/track-physical.rkt} for an example.
+
+Within a step and before the @racket[page] form is used, compute a
+unique random value -- the @deftech{nonce} -- store it in the
+@tech{step scope}, and call your desired task with that @tech{nonce}
+and the participant id as arguments.  When the task runs, it should
+look up the @tech{nonce} from @tech{step scope} and, if it matches,
+perform its duties and then remove the @tech{nonce}.  Otherwise, it
+should do nothing.

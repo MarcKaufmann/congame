@@ -7,6 +7,7 @@
                      "congame-web"
                      "congame-identity"
                      "congame-smtp-proxy"
+                     "forms-doc"
                      "forms-lib"
                      "koyo-doc"
                      "koyo-lib"
