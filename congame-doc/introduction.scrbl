@@ -6,7 +6,7 @@
 
 @title{Introduction}
 
-congame is software to design and build browser-based studies, geared towards economics.
+@deftech{congame} is software to design and build browser-based studies, geared towards economics.
 
 @section{Basic Setup: single congame server}
 
@@ -18,7 +18,7 @@ For example, a person may state personal information about their sexual orientat
 
 @section{Privacy-Friendly Setup}
 
-For this reason, congame comes with an identity server that allows separation of enrolling in studies and collecting data. In this setup, there is an additional identity server as well as an SMTP proxy server with which the identity server receives messages sent by the congame server.
+For this reason, @tech{congame} comes with an identity server that allows separation of enrolling in studies and collecting data. In this setup, there is an additional identity server as well as an SMTP proxy server with which the identity server receives messages sent by the congame server.
 
 The general workflow is as follows: potential participants sign up with their email on the identity server. The researcher deploys their study to their congame server. The researcher registers their congame server with the identity server and creates an API user on their congame server. With this API user, the identity server can pull any active studies and display them to potential participants when signing up.
 
