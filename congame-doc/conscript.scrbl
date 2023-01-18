@@ -154,7 +154,47 @@ Now when you go back to the @emph{Dashboard}, you should see your study with the
 
 Having a study that consists of a single page isn't very interesting. Let us add two more steps, one intermediate one, where we will ask for the name and age, and a final one to thank the person by name.
 
-Update @filepath{tutorial.scrbl} to contain the following:
+There are several new parts in this multi-step study:
+
+@itemize[
+  @item{How to put multiple steps in sequence}
+  @item{How to write a form}
+  @item{How to get and use data that is stored}
+]
+
+Suppose that we have three steps, creatively named @racket{step1}, @racket{step2}, and @racket{step3}. To create a study with these steps in order, with @racket[step3] the final one, we write:
+
+@codeblock|{
+  @study[
+    three-steps
+    #:transitions
+    [step1 --> step2 --> step3 --> step3]]
+}|
+
+The first argument of @racket[study] is the ID of the study. It must be followed by the keyword @racket[#:transitions], followed by one or more transition entries enclosed in square brackets. The simplest type of transition entry is a sequence of step IDs connected by @racket[-->]'s, such as @racket[step1 --> step2]. The arrow indicates that after completing step @racket[step1], we transition to @racket[step2].
+
+Note that every step has to explicitly define a transition, even if it is meant to be the final step. Thus to make @racket[step3] the final step, we have to write that it transitions to itself: @racket[step3 --> step3].
+
+The primary goal of studies is to collect data from participants, and @racket[form]s are the main way of getting input from participants. The simplest forms will contain one or more @racket[input] fields, and a @racket[submit-button]. The input field when we want a freeform text answer, such as for the name, is the @racket[input-text]. In order to be able to store the answer provided by the user when the form is submitted, we need to provide an ID for the data:
+
+@codeblock|{
+  @input-text[first-name]{What is your name?}
+}|
+
+This input field ensures that the answer the user provided is a string and stores it as such with the ID @racket[first-name]. A form to get the first name and the age of a person will thus look as follows:
+
+@codeblock|{
+  @form{
+    @input-text[first-name]{What is your first name?}
+    @input-number[age]{What is your age (in years)?}
+    @submit-button[]}
+}|
+
+It is important not to confuse square ("[]") and curly ("{}") brackets. The main difference is that curly brackets interpret their content as a string by default (although they correctly expand other @"@" forms, such as @racket[@get] that we'll see later). Therefore much of what users see will be in curly brackets. Square brackets on the other hand interpret their content as data: therefore identifiers of studies and steps, numbers, or keys to extract data should be enclosed in square brackets. Square brackets are optional, but when used have to come before curly brackets (which are also optional).
+
+Once a study stores data, we can get it by using @racket[get]. Suppose the user provided their first name, then we can get the value with @racket[@get['first-name]] -- note the single quote (') in front of first-name, which identifies it as a @emph{symbol} rather than as the object named @racket[first-name].
+
+Putting all of this together, we can create our first multi-step study by updating @filepath{tutorial.scrbl} as follows:
 
 @codeblock|{
 @step[description]{
@@ -173,34 +213,32 @@ Update @filepath{tutorial.scrbl} to contain the following:
   @h1{Survey}
 
   @form{
-    @input-text[name]{What is your name?}
-    @input-number[age #:min 0]{What is your age (in years)?}
-    @;@input-number[height #:min 0.0]{How tall are you (in meters)?}
+    @input-text[first-name]{What is your first name?}
+    @input-number[age]{What is your age (in years)?}
     @submit-button[]}
 }
 
 @step[thank-you]{
-  @h1{Thank you @get['name]}
+  @h1{Thank you @get['first-name]}
 
-  Thank you for participating in our survey!
+  Thank you for participating in our survey @get['first-name]!
 }
 
+@define[]
 @study[
   tutorial2
   #:transitions
-  [description --> age-height-survey --> thank-you]
-  [thank-you --> thank-you]
-]
+  [description --> age-height-survey --> thank-you --> thank-you]]
 }|
 
-Then, on your congame server, go to the admin page, and follow these steps to update the study code and the study run for tutorial:
+We have to update the code on the congame server to reflect these changes. Go to the admin page, and follow these steps to update the study code and the study run for tutorial:
 
-@itemize{
+@itemize[
   @item{Click on your existing study instance}
   @item{Click on @emph{Edit DSL}}
   @item{Change the DSL ID to @emph{tutorial2}, since we call the new study @emph{tutorial2}}
   @item{Pick the updated version of @filepath{tutorial.scrbl}}
-  @item{Click @emph{Update}}}
+  @item{Click @emph{Update}}]
 
 Try to resume the study. If you did the the @emph{tutorial1} study, you should now see an error. This is because when you did @emph{tutorial1}, you progressed to the step with the ID @emph{start}. Since such a step does not exist in @emph{tutorial2}, you get an error.
 
