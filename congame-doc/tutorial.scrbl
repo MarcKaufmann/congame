@@ -33,7 +33,7 @@
 @step[thank-you]{
   @h1{Thank you @get['name]}
 
-  Thank you for participating in our survey!
+  Thank you for participating in our survey @get['name]!
 }
 
 @study[

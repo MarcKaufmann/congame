@@ -445,7 +445,7 @@
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define current-paragraph-tags
-  (make-parameter '(a br em escape span strong)))
+  (make-parameter '(a br em escape get span strong)))
 
 (define (swallow? stx)
   (member (syntax-e (car (syntax-e stx)))
