@@ -231,7 +231,7 @@
     (pattern (li body:body ...+)
              #:with (xexpr ...) #'((:li body.compiled ...))))
 
-  ;; NOTE: For block-style tags, it's the tag's responibility to call
+  ;; NOTE: For block-style tags, it's the tag's responsibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
     #:datum-literals (a br button call div em escape form get h1 h2 h3 img ol p quote span strong template ul yield)
