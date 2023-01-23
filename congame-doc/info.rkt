@@ -1,7 +1,8 @@
 #lang info
 
 (define collection "congame")
-(define deps '("base"))
+(define deps '("base"
+               "scribble-lib"))
 (define build-deps '("congame-core"
                      "congame-example-study"
                      "congame-web"

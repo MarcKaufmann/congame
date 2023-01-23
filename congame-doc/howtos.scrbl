@@ -1,6 +1,7 @@
 #lang scribble/manual
 
-@(require (for-label congame/components/study
+@(require "howtos.rkt"
+          (for-label congame/components/study
                      racket/base
                      racket/contract))
 
@@ -92,3 +93,25 @@ and the participant id as arguments.  When the task runs, it should
 look up the @tech{nonce} from @tech{step scope} and, if it matches,
 perform its duties and then remove the @tech{nonce}.  Otherwise, it
 should do nothing.
+
+
+@section{Style Guide}
+
+@compare0[
+  @codeblock0[#:keep-lang-line? #f]|{
+    #lang scribble/manual
+    @; don't indent top-level forms
+    @step[my-step]{
+      @; within a form, ident using two spaces
+      @h1{Hello World}
+    }
+  }|
+  @codeblock0[#:keep-lang-line? #f]|{
+    #lang scribble/manual
+
+      @step[my-step]{
+
+      @h1{Hello World}
+      }
+  }|
+]
