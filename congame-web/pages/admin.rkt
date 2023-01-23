@@ -359,8 +359,8 @@
     ([:action target]
      [:method "POST"]
      [:enctype "multipart/form-data"])
-    (rw "dsl-id" (field-group "DSL ID"))
-    (rw "dsl-source" (field-group "DSL Source" (widget-file)))
+    (rw "dsl-id" (field-group "Study ID"))
+    (rw "dsl-source" (field-group "Study Source" (widget-file)))
     (:button
      ([:type "submit"])
      "Update"))))
