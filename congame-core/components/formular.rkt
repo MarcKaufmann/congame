@@ -203,7 +203,11 @@
           ((widget-file) name value errors) label)
          ,@((widget-errors) name value errors))))]))
 
-(define ((input-number label #:min [min -inf.0] #:max [max +inf.0] #:validators [validators null]) meth)
+(define ((input-number label
+                       #:min [min -inf.0]
+                       #:max [max +inf.0]
+                       #:step [step 1]
+                       #:validators [validators null]) meth)
   (match meth
     ['validator
      (apply ensure binding/number (required) (to-real) (cons (range/inclusive min max) validators))]
@@ -213,7 +217,8 @@
         (.group
          (:label
           ((widget-number #:attributes `((min ,(if (= min -inf.0) "" (number->string min)))
-                                         (max ,(if (= max +inf.0) "" (number->string max)))))
+                                         (max ,(if (= max +inf.0) "" (number->string max)))
+                                         (step ,(number->string step))))
            name value errors)
           label)
          ,@((widget-errors) name value errors))))]))

@@ -417,7 +417,8 @@
                    ~!
                    {~alt
                     {~optional {~seq #:min min-expr:number}}
-                    {~optional {~seq #:max max-expr:number}}} ...
+                    {~optional {~seq #:max max-expr:number}}
+                    {~optional {~seq #:step step-expr:number}}} ...
                    label-expr)
      #:with name-kwd (stx->keyword-stx #'name)
      #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
@@ -425,6 +426,7 @@
          (input-number
           {~? {~@ #:min min-expr}}
           {~? {~@ #:max max-expr}}
+          {~? {~@ #:step step-expr}}
           (haml compiled-label-expr))))]
 
     [({~and {~or input-date input-text input-number textarea} widget-id} ~! name:id label-expr ...+)
