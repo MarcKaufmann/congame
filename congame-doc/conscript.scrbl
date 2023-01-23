@@ -133,15 +133,15 @@ To start, note that @tech{conscript} is based on @tech{scribble} syntax: this me
   [start --> start]]
 }|
 
-This code defines a @tech{step} named 'start', and a @tech{study} named 'tutorial', which starts with a single step and ends with a single step. You can upload the code to your congame server as follows, where you have to provide the name of the study that should be run as the @emph{DSL ID}. To do so, follow these steps:
+This code defines a @tech{step} named 'start', and a @tech{study} named 'tutorial', which starts with a single step and ends with a single step. You can upload the code to your congame server as follows, where you have to provide the name of the study that should be run as the @emph{Study ID}. To do so, follow these steps:
 
 @itemlist[
   @item{Log in to your researcher account}
   @item{Go the @emph{Admin} page}
   @item{Click on @emph{New Study}}
-  @item{Provide a name such as "Tutorial <your name>"}
-  @item{Pick the type @emph{DSL}}
-  @item{As @emph{DSL ID}, write the name of the study, @emph{tutorial1}}
+  @item{Provide a @emph{Name} such as "Tutorial <your name>"}
+  @item{As @emph{Type}, choose @emph{DSL}}
+  @item{As @emph{Study ID}, take the ID of the study from your source code, @emph{tutorial1} if you used the code above}
   @item{As @emph{DSL source}, browse for your @filepath{tutorial.scrbl} file}
   @item{Click the @emph{Create} button}
 ]
@@ -162,7 +162,7 @@ There are several new parts in this multi-step study:
   @item{How to get and use data that is stored}
 ]
 
-Suppose that we have three steps, creatively named @racket{step1}, @racket{step2}, and @racket{step3}. To create a study with these steps in order, with @racket[step3] the final one, we write:
+Suppose that we have three steps, creatively named @racket[step1], @racket[step2], and @racket[step3]. To create a study with these steps in order, with @racket[step3] the final one, we write:
 
 @codeblock|{
   @study[
@@ -171,11 +171,11 @@ Suppose that we have three steps, creatively named @racket{step1}, @racket{step2
     [step1 --> step2 --> step3 --> step3]]
 }|
 
-The first argument of @racket[study] is the ID of the study. It must be followed by the keyword @racket[#:transitions], followed by one or more transition entries enclosed in square brackets. The simplest type of transition entry is a sequence of step IDs connected by @racket[-->]'s, such as @racket[step1 --> step2]. The arrow indicates that after completing step @racket[step1], we transition to @racket[step2].
+The first argument of @racket[study] is the ID of the study. It must be followed by the keyword @racket[#:transitions], followed by one or more transition entries enclosed in square brackets. The simplest type of transition entry is a sequence of step IDs connected by @racket[-->]'s, such as @racket[step1 --> step2]. The arrow indicates that after completing @racket[step1], we transition to @racket[step2].
 
 Note that every step has to explicitly define a transition, even if it is meant to be the final step. Thus to make @racket[step3] the final step, we have to write that it transitions to itself: @racket[step3 --> step3].
 
-The primary goal of studies is to collect data from participants, and @racket[form]s are the main way of getting input from participants. The simplest forms will contain one or more @racket[input] fields, and a @racket[submit-button]. The input field when we want a freeform text answer, such as for the name, is the @racket[input-text]. In order to be able to store the answer provided by the user when the form is submitted, we need to provide an ID for the data:
+The primary goal of studies is to collect data from participants, and @racket[form]s are the main way of getting input from participants. The simplest forms will contain one or more @racket[input] fields, and a @racket[submit-button]. The input field for free-form text answers (e.g. when asking for a name) is @racket[input-text]. In order to be able to store the answer provided by the user when the form is submitted, we need to provide an ID for the data:
 
 @codeblock|{
   @input-text[first-name]{What is your name?}
@@ -190,9 +190,9 @@ This input field ensures that the answer the user provided is a string and store
     @submit-button[]}
 }|
 
-It is important not to confuse square ("[]") and curly ("{}") brackets. The main difference is that curly brackets interpret their content as a string by default (although they correctly expand other @"@" forms, such as @racket[@get] that we'll see later). Therefore much of what users see will be in curly brackets. Square brackets on the other hand interpret their content as data: therefore identifiers of studies and steps, numbers, or keys to extract data should be enclosed in square brackets. Square brackets are optional, but when used have to come before curly brackets (which are also optional).
+It is important not to confuse square ("[]") and curly ("{}") brackets. The main difference is that curly brackets interpret their content as a string by default (although they correctly expand other @"@" forms, such as @code|{@get}| that we'll see later). Therefore much of what users see will be in curly brackets. Square brackets on the other hand interpret their content as data: therefore identifiers of studies and steps, numbers, or keys to extract data should be enclosed in square brackets. Square brackets are optional, but when used have to come before curly brackets (which are also optional).
 
-Once a study stores data, we can get it by using @racket[get]. Suppose the user provided their first name, then we can get the value with @racket[@get['first-name]] -- note the single quote (') in front of first-name, which identifies it as a @emph{symbol} rather than as the object named @racket[first-name].
+Once a study stores data, we can get it by using @code|{@get}|. Suppose the user provided their first name, then we can get the value with @code|{@get['first-name]}| -- note the single quote (') in front of first-name, which identifies it as a @emph{symbol} rather than as the object named @racket[first-name].
 
 Putting all of this together, we can create our first multi-step study by updating @filepath{tutorial.scrbl} as follows:
 
@@ -224,7 +224,6 @@ Putting all of this together, we can create our first multi-step study by updati
   Thank you for participating in our survey @get['first-name]!
 }
 
-@define[]
 @study[
   tutorial2
   #:transitions
@@ -245,3 +244,61 @@ Try to resume the study. If you did the the @emph{tutorial1} study, you should n
 To fix this, you have to clear the progress of your user for this study instance. Go to the admin page of the tutorial instance (@emph{Admin}, click on the name of your tutorial instance). Towards the bottom, you will see a list of instances under @bold{Instance Name}. Click on your instance. At the bottom of the next page is the list of participants who have enrolled in this study. Click on your ID (which you can identify by the email if you enrolled from your congame server). Then click on @emph{Clear participant progress}. (Note: it may look like there was no progress, if the table is empty. That's because the progress shows only additional data that you store explicitly, not implicit progress such as the current step you are on.)
 
 Now you can bo back to the dashboard and go through the study. Congratulations, this is your first survey in @tech{conscript}!
+
+@subsection{Studies with Logic}
+
+We often want to respond to participants, whether it is to display different messages as we progress, or based on their answers. We will now create a few studies using some of the programming features that conscript provides.
+
+First, let us count down from 10 to 0 and display the pages to the user. We could of course define a separate step for each number, calling them @racket[step10] down to @racket[step0] and then string them together as @racket{step10 --> ... --> step0}, but that is tedious. Instead, for every user, let us store the value of @racket[counter] and every time the user progresses, we decrease the value of @racket[counter] and display it on the screen. To store a value for a user, we use @code|{@put[id value]}|.
+
+One important thing to note about conscript is that it currently does not yet have many features that you would expect of a programming language, including basic arithmetic and string operations. The way to do basic arithmetic is to use @code|{@escape[...]}|, for example:
+
+@codeblock|{
+  @; Adding two numbers
+  @escape[(+ 1 2)]
+  @; Multiplying two numbers
+  @escape[(* 3 4)]
+  @; Subtracting two numbers
+  @escape[(* 3 4)]
+  @; Dividing two numbers
+  @escape[(/ 4.5 2)]
+}|
+
+In addition, since Racket uses prefix notation for arithmetic --- we write @racket{(+ 1 2)} instead of @racket{1 + 2}, and the parentheses are necessary --- the same is true for conscript. Let us know how painful this is and we can see if it is worth spending time fixing this (but first you'll have to try to use it, then once you can do it, we'll listen).
+
+@codeblock|{
+@; import some helper functions
+@import[stdlib format sub1]
+
+@action[initialize-counter]{
+  @; This stores the number 10 in the value of counter
+  @put['counter 10]
+}
+
+@action[decrement-counter]{
+  @; This will overwrite the previous value of 'counter for this person
+  @put['counter @call[sub1 @get['counter]]]
+}
+
+@step[initialize]{
+  @h1{Initializing counter}
+
+  @button[#:action initialize-counter]{Initialize the Counter!!}
+}
+
+@step[display-counter]{
+  @h1{Counter is @call[format "~a" @get['counter]]}
+
+  @button[#:action decrement-counter]{Count down!}
+}
+
+@study[
+  countdown
+  #:transitions
+  [initialize --> display-counter --> display-counter]
+]
+}|
+
+@subsection{Studies involving multiple Participants}
+
+Coming soon...
