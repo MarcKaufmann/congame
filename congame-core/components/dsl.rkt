@@ -430,8 +430,8 @@
     [({~and {~or input-date input-text input-number textarea} widget-id} ~! name:id label-expr ...+)
      (compile-form-expr #'(widget-id name (div label-expr ...)))]
 
-    [(submit-button)
-     #'((:button.button.next-button ([:type "submit"]) "Submit"))]
+    [(submit-button {~optional label:string})
+     #'((:button.button.next-button ([:type "submit"]) {~? label "Submit"}))]
 
     [e
      #:with compiled-expr (compile-expr #'e)
