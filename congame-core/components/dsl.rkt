@@ -156,7 +156,9 @@
 
   (syntax-parse stx
     #:datum-literals (action define import step study template template-ungrouped)
-    [{~or " " "\n"} #f]
+    [s:string
+     #:when (regexp-match? #px"^\\s+$" (syntax->datum #'s))
+     #f]
 
     [(action name:id content ...+)
      #:with (compiled-content ...) (filter-map compile-action-expr (syntax-e #'(content ...)))

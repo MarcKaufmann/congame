@@ -651,7 +651,31 @@ DSL
           (page
            (haml
             (.container
-             (:p "Hello world"))))))))))
+             (:p "Hello world")))))))
+
+     (check-equal?
+      (syntax->datum
+       (read+compile
+        #<<DSL
+  @step[foo]{
+  Hello world
+}
+
+   @step[bar]{
+  Goodbye
+}
+DSL
+        ))
+      '((define (foo)
+          (page
+           (haml
+            (.container
+             (:p "Hello world")))))
+        (define (bar)
+          (page
+           (haml
+            (.container
+             (:p "Goodbye"))))))))))
 
 (module+ test
   (require rackunit/text-ui)
