@@ -6,6 +6,8 @@
 
 @title{Congame}
 @author[(author+email "Marc Kaufmann" "marc@trichotomy.xyz")]
+
+@table-of-contents[]
 @include-section["introduction.scrbl"]
 @include-section["howtos.scrbl"]
 @include-section["multi-review.scrbl"]
