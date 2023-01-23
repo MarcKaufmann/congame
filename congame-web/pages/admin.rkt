@@ -141,30 +141,47 @@
     (:label label " " (w name value errors))
     ,@((widget-errors) name value errors))))
 
+(define (tooltip label info)
+  (haml
+   (:span
+    label " "
+    (:span
+     ([:title info])
+     "ℹ️"))))
+
 (define (render-study-form target rw)
   (haml
    (:form
     ([:action target]
      [:method "POST"]
      [:enctype "multipart/form-data"])
-    (rw "name" (field-group "Name"))
-    (rw "slug" (field-group "Slug"))
-    (rw "type" (field-group "Type" (widget-select
-                                    #:attributes `([data-mask "type"])
-                                    `(("dsl" . "DSL")
-                                      ("racket" . "Racket")))))
+    (rw "name" (field-group (tooltip "Name" "A descriptive study name that is unique across all studies on the server.  Must only contain alphanumeric characters and spaces.")))
+    (rw "slug" (field-group "Slug (optional)"))
+    (rw "type" (field-group (tooltip "Type" "Leave as-is for now.")
+                            (widget-select
+                             #:attributes `([data-mask "type"])
+                             `(("dsl" . "DSL")
+                               ("racket" . "Racket")))))
     (:div
      ([:data-mask-group "racket"]
       [:style "display: none"])
-     (rw "study-id" (field-group "Study ID"
-                                 (widget-select (cons
-                                                 (cons "" "Please select a study")
-                                                 (for/list ([id (in-hash-keys (get-registered-studies))])
-                                                   (cons (~a id) (~a id))))))))
+     (rw "study-id"
+         (field-group
+          "Study ID"
+          (widget-select (cons
+                          (cons "" "Please select a study")
+                          (for/list ([id (in-hash-keys (get-registered-studies))])
+                            (cons (~a id) (~a id))))))))
     (:div
      ([:data-mask-group "dsl"])
-     (rw "dsl-id" (field-group "Study ID" (widget-text)))
-     (rw "dsl-source" (field-group "Study Source" (widget-file))))
+     (rw "dsl-id"
+         (field-group
+          (tooltip "Study ID" "The id of the @study in your source code.")
+          (widget-text)))
+     (rw "dsl-source"
+         (field-group
+          (tooltip "Study Source" "The file that contains your study. While all extensions work, .scrbl is encouraged.")
+          (widget-file))))
     (:button
      ([:type "submit"])
      "Create"))))
