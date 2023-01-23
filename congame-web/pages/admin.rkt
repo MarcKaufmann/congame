@@ -150,15 +150,21 @@
     (rw "name" (field-group "Name"))
     (rw "slug" (field-group "Slug"))
     (rw "type" (field-group "Type" (widget-select
-                                    `(("racket" . "Racket")
-                                      ("dsl" . "DSL")))))
-    (rw "study-id" (field-group "Study ID"
-                                (widget-select (cons
-                                                (cons "" "Please select a study")
-                                                (for/list ([id (in-hash-keys (get-registered-studies))])
-                                                  (cons (~a id) (~a id)))))))
-    (rw "dsl-id" (field-group "DSL ID" (widget-text)))
-    (rw "dsl-source" (field-group "DSL Source" (widget-file)))
+                                    #:attributes `([data-mask "type"])
+                                    `(("dsl" . "DSL")
+                                      ("racket" . "Racket")))))
+    (:div
+     ([:data-mask-group "racket"]
+      [:style "display: none"])
+     (rw "study-id" (field-group "Study ID"
+                                 (widget-select (cons
+                                                 (cons "" "Please select a study")
+                                                 (for/list ([id (in-hash-keys (get-registered-studies))])
+                                                   (cons (~a id) (~a id))))))))
+    (:div
+     ([:data-mask-group "dsl"])
+     (rw "dsl-id" (field-group "Study ID" (widget-text)))
+     (rw "dsl-source" (field-group "Study Source" (widget-file))))
     (:button
      ([:type "submit"])
      "Create"))))

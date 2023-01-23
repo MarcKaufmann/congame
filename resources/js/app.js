@@ -1,13 +1,15 @@
 /* global Sentry, up*/
 (function() {
-  Sentry.onLoad(function() {
-    var pidEl = document.querySelector("[data-participant-id]");
-    if (pidEl) {
-      Sentry.setUser({
-        id: pidEl.dataset.participantId
-      });
-    }
-  });
+  if (window.Sentry !== undefined) {
+    Sentry.onLoad(function() {
+      var pidEl = document.querySelector("[data-participant-id]");
+      if (pidEl) {
+        Sentry.setUser({
+          id: pidEl.dataset.participantId
+        });
+      }
+    });
+  }
 
   up.compiler(".toggleable__toggle", function(el) {
     el.addEventListener("click", function(e) {
@@ -36,5 +38,28 @@
       e.preventDefault();
       return false;
     });
+  });
+
+  up.compiler("[data-mask]", function(el) {
+    let form = el.closest("form");
+    let groups = form.querySelectorAll("[data-mask-group]");
+
+    el.addEventListener("change", function() {
+      reset();
+    });
+
+    reset();
+    return;
+
+    function reset() {
+      let active = el.value;
+      groups.forEach(function(g) {
+        if (g.dataset.maskGroup === active) {
+          g.style.display = "block";
+        } else {
+          g.style.display = "none";
+        }
+      });
+    }
   });
 })();
