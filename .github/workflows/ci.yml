@@ -151,8 +151,8 @@ jobs:
 
     - name: Build executables
       run: |
-        raco scribble +m --dest doc --redirect 'https://docs.racket-lang.org/local-redirect/index.html' congame-doc/congame.scrbl
-        echo '<html><head><meta http-equiv="refresh" content="0; url=congame.html">' > doc/index.html
+        raco scribble +m --htmls --dest doc --redirect 'https://docs.racket-lang.org/local-redirect/index.html' congame-doc/congame.scrbl
+        echo '<html><head><meta http-equiv="refresh" content="0; url=/congame/index.html">' > doc/index.html
 
         mkdir build
         raco koyo dist -t build/identity ++lang north congame-identity/dynamic.rkt
