@@ -1,42 +1,49 @@
-@step[start]{
-    @h1{The Beginning is the End}
-}
-
-@study[
-  tutorial1
-  #:transitions
-  [start --> start]
-]
+@import[stdlib number->string]
 
 @step[description]{
-  @h1{The study}
+  @h1{Description}
 
-  Welcome to our study. In this study, we will ask you about
+  Welcome to our study. In this study, we will ask for your:
 
   @ul{
     @li{your age}
-    @li{your height}}
+    @li{your name}}
 
   @button{Start Survey}
 }
 
-@step[age-height-survey]{
+@step[survey]{
   @h1{Survey}
 
   @form{
     @input-text[first-name]{What is your first name?}
-    @input-number[age]{What is your age (in years)?}
+    @input-number[age]{What is your age?}
     @submit-button[]}
 }
 
 @step[thank-you]{
-  @h1{Thank you @get['first-name]}
+  @h1{Thank you, @get['first-name]}
 
-  Thank you for participating in our survey @get['first-name]!
+  Thank you for participating in our survey, @get['first-name]! You are the most awesome @call[number->string @get['age]]-year old!
 }
 
 @study[
   tutorial2
   #:transitions
-  [description --> age-height-survey --> thank-you --> thank-you]
+  [description --> survey --> thank-you]
+  [thank-you --> thank-you]
 ]
+
+@; hl is not h1 (L vs 1)
+@; Then single quotes for 'getting
+@; \uFEFF at the start of file (on mac)
+@; study instance vs study
+@; CSS
+@; u1 is not ul
+@; Allow making fields not required
+@; note about kebab-case
+@; exporting data
+@; clean up old tutorials
+@; input-radio
+@;
+@; json: {first-name: "Marc", age: 38}

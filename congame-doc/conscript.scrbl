@@ -200,11 +200,11 @@ Putting all of this together, we can create our first multi-step study by updati
 @step[description]{
   @h1{The study}
 
-  Welcome to our study. In this study, we will ask you about
+  Welcome to our study. In this study, we will ask for
 
   @ul{
-    @li{your age}
-    @li{your height}}
+    @li{your first name}
+    @li{your age}}
 
   @button{Start Survey}
 }
@@ -245,26 +245,63 @@ To fix this, you have to clear the progress of your user for this study instance
 
 Now you can bo back to the dashboard and go through the study. Congratulations, this is your first survey in @tech{conscript}!
 
+@subsection{Using the standard library}
+
+Basic conscript is purposefully underpowered and comes with a small number of built-in features. To provide more functionality without resorting to @tech{Racket}, we are collecting useful functions in the standard library that makes it relatively easy to use them with conscript.
+
+To illustrate this, let us add a display of the person's age to the previous study. It may seem straightforward, and you might try to do change the code of the final @racket[thank-you] step as follows:
+
+@codeblock|{
+@step[thank-you]{
+  @h1{Thank you, @get['first-name]}
+
+  Thank you for participating in our survey, @get['first-name]! You are the most awesome @get['age]-year old!
+}
+}|
+
+You might expect this to display the age on the page. Instead, you are likely to find that the final page does not display the age at all, and you see only "You are the most awesome &-year old!" instead. What is going on?
+
+What is going on is that when we are storing a number, we are storing a number and not a string! So when we use @code|{@get['age]}| to display the age, we are providing the age as a number and not as a string, and since numbers are encoded differently, this leads to the strange display you get. To fix this, all we need to do is to convert numbers to strings before displaying them. Fortunately, @racket[number->string] is provided in @racket[stdlib]. To use a function from @racket[stdlib], you have to
+
+@itemlist[
+  @item{import it with @code|{@import[stdlib name-of-the-function]}|}
+  @item{use it with @code|{@call[name-of-the-function function-arguments]}|}
+  #:style 'ordered
+]
+
+In our case, this would look as follows:
+
+@codeblock|{
+@; import functions you need, ideally at the top of the file
+@import[stdlib number->string]
+
+@; Now you can use `number->string` in a @call
+@step[thank-you]{
+  @h1{Thank you, @get['first-name]}
+
+  Thank you for participating in our survey, @get['first-name]! You are the most awesome @call[number->string @get['age]]-year old!
+}
+}|
+
+@; UNCOMMENT IF STUDENTS HIT THIS PROBLEM
+@; Notice that calling a function such as @racket[number->string] via the @code|{@call}| operator is different from using, say, the @code|{@h1}| operator. Specifically, we list the function name followed by a space followed by a list of arguments needed by the function, here the number that we want to convert to a string. So you cannot write @code|{@number->string[@get['age]]}|. The reason is that the former is in fact a function (or macro or operator) defined in some @tech{Racket} package, while @code|{@h1}| is a core operator in Conscript.
+
+While cumbersome to get used to at first, it is good to get in the habit of realizing what type of object you are dealing with when programming, even in concscript.
+
+@subsection{Basic Arithmetic}
+
+In progress. List of topics:
+
+@itemize[
+  @item{How to use @racket[sub1] and @racket[add1] with @code|{@import}|}
+  @item{How to use @code|{@escape}| if we make it usable with @code|{@get}|}
+]
+
 @subsection{Studies with Logic}
 
 We often want to respond to participants, whether it is to display different messages as we progress, or based on their answers. We will now create a few studies using some of the programming features that conscript provides.
 
 First, let us count down from 10 to 0 and display the pages to the user. We could of course define a separate step for each number, calling them @racket[step10] down to @racket[step0] and then string them together as @racket{step10 --> ... --> step0}, but that is tedious. Instead, for every user, let us store the value of @racket[counter] and every time the user progresses, we decrease the value of @racket[counter] and display it on the screen. To store a value for a user, we use @code|{@put[id value]}|.
-
-One important thing to note about conscript is that it currently does not yet have many features that you would expect of a programming language, including basic arithmetic and string operations. The way to do basic arithmetic is to use @code|{@escape[...]}|, for example:
-
-@codeblock|{
-  @; Adding two numbers
-  @escape[(+ 1 2)]
-  @; Multiplying two numbers
-  @escape[(* 3 4)]
-  @; Subtracting two numbers
-  @escape[(* 3 4)]
-  @; Dividing two numbers
-  @escape[(/ 4.5 2)]
-}|
-
-In addition, since Racket uses prefix notation for arithmetic --- we write @racket{(+ 1 2)} instead of @racket{1 + 2}, and the parentheses are necessary --- the same is true for conscript. Let us know how painful this is and we can see if it is worth spending time fixing this (but first you'll have to try to use it, then once you can do it, we'll listen).
 
 @codeblock|{
 @; import some helper functions
@@ -302,3 +339,20 @@ In addition, since Racket uses prefix notation for arithmetic --- we write @rack
 @subsection{Studies involving multiple Participants}
 
 Coming soon...
+
+@subsection{Basic Arithmetic (features in progress)}
+
+One important thing to note about conscript is that it currently does not yet have many features that you would expect of a programming language, including basic arithmetic and string operations. The way to do basic arithmetic is to use @code|{@escape[...]}|, for example:
+
+@codeblock|{
+  @; Adding two numbers
+  @escape[(+ 1 2)]
+  @; Multiplying two numbers
+  @escape[(* 3 4)]
+  @; Subtracting two numbers
+  @escape[(* 3 4)]
+  @; Dividing two numbers
+  @escape[(/ 4.5 2)]
+}|
+
+In addition, since Racket uses prefix notation for arithmetic --- we write @racket{(+ 1 2)} instead of @racket{1 + 2}, and the parentheses are necessary --- the same is true for conscript. Let us know how painful this is and we can see if it is worth spending time fixing this (but first you'll have to try to use it, then once you can do it, we'll listen).
