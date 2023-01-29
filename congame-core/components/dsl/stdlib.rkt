@@ -9,5 +9,6 @@
  make-step/study
 
  add1
- sub1
- format)
+ format
+ number->string
+ sub1)
