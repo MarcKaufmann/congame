@@ -236,11 +236,21 @@
   ;; NOTE: For block-style tags, it's the tag's responsibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (a br button call div em escape form get h1 h2 h3 img ol p quote span strong template ul yield)
+    #:datum-literals (a br button call div em escape form get h1 h2 h3 hl img ol p quote span strong template u1 ul yield)
     [num:number #'num]
     [str:string #'str]
     [kwd:keyword #'kwd]
     [(quote e) #''e]
+
+    [({~and {~or hl u1} id} . _rest)
+     #:fail-when #t (apply format
+                           "did you mean ~a (~a)?"
+                           (hash-ref
+                            (hasheq
+                             'hl '(h1 "the character '1' (one) instead of 'l' (lowercase L)")
+                             'u1 '(ul "the character 'l' (lowercase L) instead of '1' (one)"))
+                            (syntax->datum #'id)))
+     #'(void)]
 
     [(a url:string body:body ...+)
      #'(:a ([:href url]) body.compiled ...)]
