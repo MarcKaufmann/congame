@@ -1,3 +1,3 @@
 FROM nginx:1.23.3
 
-COPY doc/* /usr/share/nginx/html/
+COPY doc/congame/* /usr/share/nginx/html/
