@@ -301,9 +301,17 @@ In progress. List of topics:
 
 We often want to respond to participants, whether it is to display different messages as we progress, or based on their answers. We will now create a few studies using some of the programming features that conscript provides.
 
-First, let us count down from 10 to 0 and display the pages to the user. We could of course define a separate step for each number, calling them @racket[step10] down to @racket[step0] and then string them together as @racket{step10 --> ... --> step0}, but that is tedious. Instead, for every user, let us store the value of @racket[counter] and every time the user progresses, we decrease the value of @racket[counter] and display it on the screen. To store a value for a user, we use @code|{@put[id value]}|.
+First, let us count down from 10 to 0 and display the pages to the
+user. We could of course define a separate step for each number,
+calling them @racket[step10] down to @racket[step0] and then string
+them together as @tt{step10 --> ... --> step0}, but that is
+tedious. Instead, for every user, let us store the value of
+@racket[counter] and every time the user progresses, we decrease the
+value of @racket[counter] and display it on the screen. To store a
+value for a user, we use @code[#:lang "scribble/manual"]|{@put[id value]}|.
 
-@codeblock|{
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
 @; import some helper functions
 @import[stdlib format sub1]
 
