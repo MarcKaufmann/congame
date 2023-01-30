@@ -20,6 +20,9 @@
 (define (interpret-basic-expr who e)
   (let loop ([e e])
     (match e
+      [`(quote ,e) e]
+
+      [(? symbol?) e]
       [(? number?) e]
 
       [`(~a ,e) (~a (loop e))]
@@ -28,6 +31,8 @@
       [`(- ,a ,b) (- (loop a) (loop b))]
       [`(* ,a ,b) (* (loop a) (loop b))]
       [`(/ ,a ,b) (/ (loop a) (loop b))]
+
+      [`(get ,id) (get (loop id))]
 
       [_ (error who "invalid expression: ~e" e)])))
 
