@@ -32,7 +32,7 @@
         (br)
         (button maybe-action text ...+)
         call-expr
-        (div maybe-class expr ...+)
+        (div maybe-option ... expr ...+)
         (em expr ...+)
         (escape s-expr)
         (form maybe-action form-expr ...+)
@@ -81,8 +81,9 @@
 
   [maybe-action (code:line)
                 (code:line #:action action-id)]
-  [maybe-class (code:line)
-               (code:line #:class string)]
+  [maybe-option (code:line)
+                (code:line #:class string)
+                (code:line #:style string)]
 
   [transition [transition-entry ...+]]
   [transition-entry -->

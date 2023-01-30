@@ -266,9 +266,16 @@
     [(call _id:id _e ...)
      (compile-call-expr stx)]
 
-    [(div {~optional {~seq #:class class:string}} body ...+)
+    ;; TODO: change haml to support (:div () ...)
+    [(div {~alt
+           {~optional {~seq #:class class:string}}
+           {~optional {~seq #:style style:string}}} ...
+          body ...+)
      #:with (compiled-body ...) (map compile-expr (syntax-e (group-by-paragraph #'(body ...))))
-     #'(:div {~? ({~@ [:class class]})} compiled-body ...)]
+     #'(:div ([:data-ignored ""]
+              {~? {~@ [:class class]}}
+              {~? {~@ [:style style]}})
+             compiled-body ...)]
 
     [(em body:body ...+)
      #'(:em body.compiled ...)]
