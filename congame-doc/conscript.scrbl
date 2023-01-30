@@ -289,15 +289,6 @@ In our case, this would look as follows:
 
 While cumbersome to get used to at first, it is good to get in the habit of realizing what type of object you are dealing with when programming, even in concscript.
 
-@subsection{Basic Arithmetic}
-
-In progress. List of topics:
-
-@itemize[
-  @item{How to use @racket[sub1] and @racket[add1] with @code|{@import}|}
-  @item{How to use @code|{@escape}| if we make it usable with @code|{@get}|}
-]
-
 @subsection{Studies with Logic}
 
 We often want to respond to participants, whether it is to display different messages as we progress, or based on their answers. We will now create a few studies using some of the programming features that conscript provides.
@@ -311,29 +302,41 @@ tedious. Instead, for every user, let us store the value of
 value of @racket[counter] and display it on the screen. To store a
 value for a user, we use @code[#:lang "scribble/manual"]|{@put[id value]}|.
 
+The most important building block for this is the @code[#:lang "scribble/manual"]|{@action}| operator. Whenever you want to change or update some value or variable in conscript, you have to define a named @tt{action} which will be evaluated when called. In the case of the countdown, we need to do two things. First, we need an action that initializes the user's counter to 10; second, we need an action that decreases the counter by 1 when called:
+
 @codeblock[#:keep-lang-line? #f]|{
 #lang scribble/manual
-@; import some helper functions
-@import[stdlib format sub1]
+@import[stdlib sub1]
 
 @action[initialize-counter]{
-  @; This stores the number 10 in the value of counter
   @put['counter 10]
 }
 
 @action[decrement-counter]{
-  @; This will overwrite the previous value of 'counter for this person
   @put['counter @call[sub1 @get['counter]]]
 }
+}|
 
-@step[initialize]{
-  @h1{Initializing counter}
+Here we also import @racket[sub1], which subtracts 1 from its argument. Later we'll see another way to do basic arithmetic.
 
-  @button[#:action initialize-counter]{Initialize the Counter!!}
+Next, we need to call the @tt{action}s in the right places. There are two places where you can use actions: before a step is displayed by using @code|{@step[step-name #:pre action-id]}|; or after a button click (and before the next step is executed) using @code|{@button[#:action-id action-id]{Next}}|. We will the button approach here:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@import[stdlib number->string]
+
+@; Here goes the above code defining the actions
+@; ...
+
+@step[description]{
+  @h1{The countdown is about to begin}
+
+  @button[#:action initialize-counter]{Start Countdown}
 }
 
-@step[display-counter]{
-  @h1{Counter is @call[format "~a" @get['counter]]}
+@step[show-counter]{
+  @h1{@call[number->string @get['counter]]}
 
   @button[#:action decrement-counter]{Count down!}
 }
@@ -341,9 +344,39 @@ value for a user, we use @code[#:lang "scribble/manual"]|{@put[id value]}|.
 @study[
   countdown
   #:transitions
-  [initialize --> display-counter --> display-counter]
+  [description --> show-counter]
+  [show-counter --> show-counter]
 ]
 }|
+
+While this works, it has a fatal flaw. We keep counting down forever and ever. Instead, we would like to stop once we hit 0, and display the launch page.
+
+@subsection{Conditions}
+
+In order to stop once the counter hits 0, we need to change the transitions. Specifically, we want to transition to the @tt{launch} step when the counter is 0, and otherwise keep displaying the @tt{show-counter} step. To do so, we use @code[#:lang "scribble/manual"]|{@cond}|:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@step[launch]{
+  @h1{Study launched!}
+}
+
+@study[
+  countdown
+  #:transitions
+  [description --> show-counter
+               --> @cond[[@=[@get['counter] 0]
+                          launch]
+                         [@else
+                          show-counter]]]
+  [launch --> launch]
+]
+}|
+
+@subsection{Intermezzo: Some exercises}
+
+Use the keyword arguments @tt{#:style} @tt{#:class} with the @code|{@div}| to add some CSS styling to your page. (You can only use these with @tt{div} operators, not for others.)
 
 @subsection{Studies involving multiple Participants}
 

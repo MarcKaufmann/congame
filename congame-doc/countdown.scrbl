@@ -1,30 +1,36 @@
-@; import some helper functions
-@import[stdlib format sub1]
+@import[stdlib number->string sub1]
 
 @action[initialize-counter]{
-  @; This stores the number 10 in the value of counter
   @put['counter 10]
 }
 
 @action[decrement-counter]{
-  @; This will overwrite the previous value of 'counter for this person
   @put['counter @call[sub1 @get['counter]]]
 }
 
-@step[initialize]{
-  @h1{Initializing counter}
+@step[description]{
+  @h1{The countdown is about to begin}
 
-  @button[#:action initialize-counter]{Initialize the Counter!!}
+  @button[#:action initialize-counter]{Start Countdown}
 }
 
-@step[display-counter]{
-  @h1{Counter is @call[format "~a" @get['counter]]}
+@step[show-counter]{
+  @h1{@call[number->string @get['counter]]}
 
   @button[#:action decrement-counter]{Count down!}
+}
+
+@step[launch]{
+  @h1{Study launched!}
 }
 
 @study[
   countdown
   #:transitions
-  [initialize --> display-counter --> display-counter]
+  [description --> show-counter
+               --> @cond[[@=[@get['counter] 0]
+                         launch]
+                        [@else
+                         show-counter]]]
+  [launch --> launch]
 ]
