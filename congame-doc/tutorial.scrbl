@@ -279,7 +279,7 @@ On the launch page, let us highlight the font of "Study launched!" in red, which
 h1 { color: red;}
 }|
 
-In @tech{conscript}, we can add CSS styles to @tt{@div} tags by using the @tt{#:style} keyword argument. To change the @tt{@h1} tag, we need to wrap it in a @tt{@div} tag and style it accordingly:
+In @tech{conscript}, we can add CSS styles to @tt{div} tags by using the @tt{#:style} keyword argument. To change the @tt{h1} tag, we need to wrap it in a @tt{div} tag and style it accordingly:
 
 @codeblock|{
 @step[launch]{
