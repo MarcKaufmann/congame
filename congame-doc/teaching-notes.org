@@ -1,0 +1,7 @@
+* Issues found by students
+
+- Allow making fields not required
+- note about kebab-case
+- exporting data
+- input-radio
+- json: {first-name: "Marc", age: 38}
