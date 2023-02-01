@@ -235,6 +235,7 @@ DSL
                 (:h1 "Section 2")
                 (#:age
                  (input-number
+                  #:required? #t
                   #:min 1
                   #:max 100
                   (haml "How old are you?")))
@@ -366,7 +367,7 @@ DSL
           (page
            (haml
             (.container
-             (:div (:p "Hello " (:em "world") "!"))))))))
+             (:div ([:data-ignored ""])(:p "Hello " (:em "world") "!"))))))))
 
      (check-equal?
       (syntax->datum
@@ -384,7 +385,7 @@ DSL
           (page
            (haml
             (.container
-             (:div
+             (:div ((:data-ignored ""))
               (:p "Hello")
               (:p (:em "world") "!"))))))))
 
@@ -405,7 +406,7 @@ DSL
            (haml
             (.container
              (:div
-              ([:class "example"])
+              ([:data-ignored ""] [:class "example"])
               (:p "Hello")
               (:p (:em "world") "!"))))))))
 
