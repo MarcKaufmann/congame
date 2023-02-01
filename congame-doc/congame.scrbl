@@ -12,4 +12,5 @@
 @include-section["howtos.scrbl"]
 @include-section["multi-review.scrbl"]
 @include-section["conscript.scrbl"]
+@include-section["tutorial.scrbl"]
 @include-section["reference.scrbl"]
