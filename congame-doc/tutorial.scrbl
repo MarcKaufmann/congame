@@ -1,12 +1,13 @@
 #lang scribble/manual
 
-@title{Conscript Tutorial}
+@; TODO
+@; Be consistent in the use of 'I', 'We', 'you'
 
-@section{Tutorial}
+@title{Conscript Tutorial}
 
 You will create a simple study that gets some information from people (their age, their height), elicits a probability about some belief from them, and finally asks them to choose their favorite color between orange and blue, which will determine how the final page looks.
 
-@subsection{Create researcher account}
+@section{Create researcher account}
 
 To follow along with this tutorial, you need to create an account with the 'researcher' or 'admin' roles on a @tech{congame} server. To do so, create an account on your @tech{congame} server, then in your database, set the researcher role in the database. In postgres:
 
@@ -16,7 +17,7 @@ To follow along with this tutorial, you need to create an account with the 'rese
 
 If you have a researcher or admin role, you will see navigation for 'Admin' and 'Jobs'.
 
-@subsection{The first study}
+@section{The first study}
 
 To start, note that @tech{conscript} is based on @tech{scribble} syntax: this means that all operators start with an @"@", followed by the name of the operator, followed either by square brackets ("[]") or curly brackets ("{}") that contain additional content. To get started, let us create a @tech{conscript} study that displays a single page with some text. To do so, store the following text in @filepath{tutorial.scrbl}:
 
@@ -47,7 +48,7 @@ If everything went well, you will see a page with instances of your tutorial stu
 
 Now when you go back to the @emph{Dashboard}, you should see your study with the name you gave it as an instance. You can now enroll in that study yourself (for testing) and should see the first page. Congratulations!
 
-@subsection{Multi-Step Studies}
+@section{Multi-Step Studies}
 
 Having a study that consists of a single page isn't very interesting. Let us add two more steps, one intermediate one, where we will ask for the name and age, and a final one to thank the person by name.
 
@@ -142,7 +143,7 @@ To fix this, you have to clear the progress of your user for this study instance
 
 Now you can bo back to the dashboard and go through the study. Congratulations, this is your first survey in @tech{conscript}!
 
-@subsection{Using the standard library}
+@section{Using the standard library}
 
 Basic conscript is purposefully underpowered and comes with a small number of built-in features. To provide more functionality without resorting to @tech{Racket}, we are collecting useful functions in the standard library that makes it relatively easy to use them with conscript.
 
@@ -185,7 +186,7 @@ In our case, this would look as follows:
 
 While cumbersome to get used to at first, it is good to get in the habit of realizing what type of object you are dealing with when programming, even in concscript.
 
-@subsection{Studies with Logic}
+@section{Studies with Logic}
 
 We often want to respond to participants, whether it is to display different messages as we progress, or based on their answers. We will now create a few studies using some of the programming features that conscript provides.
 
@@ -247,7 +248,7 @@ Next, we need to call the @tt{action}s in the right places. There are two places
 
 While this works, it has a fatal flaw. We keep counting down forever and ever. Instead, we would like to stop once we hit 0, and display the launch page.
 
-@subsection{Conditions}
+@section{Conditions}
 
 In order to stop once the counter hits 0, we need to change the transitions. Specifically, we want to transition to the @tt{launch} step when the counter is 0, and otherwise keep displaying the @tt{show-counter} step. To do so, we use @code[#:lang "scribble/manual"]|{@cond}|:
 
@@ -270,15 +271,42 @@ In order to stop once the counter hits 0, we need to change the transitions. Spe
 ]
 }|
 
-@subsection{Intermezzo: Some exercises}
+@section{CSS with #:style}
 
-Use the keyword arguments @tt{#:style} @tt{#:class} with the @code|{@div}| to add some CSS styling to your page. (You can only use these with @tt{div} operators, not for others.)
+On the launch page, let us highlight the font of "Study launched!" in red, which requires that we change the following CSS rule (CSS stands for @emph{Cascading Style Sheet}):
 
-@subsection{Studies involving multiple Participants}
+@codeblock|{
+h1 { color: red;}
+}|
+
+In @tech{conscript}, we can add CSS styles to @tt{@div} tags by using the @tt{#:style} keyword argument. To change the @tt{@h1} tag, we need to wrap it in a @tt{@div} tag and style it accordingly:
+
+@codeblock|{
+@step[launch]{
+  @div[#:style "color: red;"]{
+    @h1{Study launched!}
+  }
+}
+}|
+
+To add multiple style properties, we separate them by a semicolon:
+
+@codeblock|{
+@step[launch]{
+  @div[#:style "color: red; font-size: 2rem;"]{
+    @h1{Study launched!}
+  }
+}
+}|
+
+@section{Intermezzo: Some exercises}
+
+
+@section{Studies involving multiple Participants}
 
 Coming soon...
 
-@subsection{Basic Arithmetic (features in progress)}
+@section{Basic Arithmetic (features in progress)}
 
 One important thing to note about conscript is that it currently does not yet have many features that you would expect of a programming language, including basic arithmetic and string operations. The way to do basic arithmetic is to use @code|{@escape[...]}|, for example:
 

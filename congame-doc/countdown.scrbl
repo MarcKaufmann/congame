@@ -21,7 +21,9 @@
 }
 
 @step[launch]{
-  @h1{Study launched!}
+  @div[#:style "color: red; font-size: 2rem;"]{
+    @h1{Study launched!}
+  }
 }
 
 @study[
