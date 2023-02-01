@@ -33,17 +33,3 @@
   [description --> survey --> thank-you]
   [thank-you --> thank-you]
 ]
-
-@; hl is not h1 (L vs 1)
-@; Then single quotes for 'getting
-@; \uFEFF at the start of file (on mac)
-@; study instance vs study
-@; CSS
-@; u1 is not ul
-@; Allow making fields not required
-@; note about kebab-case
-@; exporting data
-@; clean up old tutorials
-@; input-radio
-@;
-@; json: {first-name: "Marc", age: 38}
