@@ -433,6 +433,7 @@
     [(input-number name:id
                    ~!
                    {~alt
+                    {~optional {~seq #:required? required?:boolean}}
                     {~optional {~seq #:min min-expr:number}}
                     {~optional {~seq #:max max-expr:number}}
                     {~optional {~seq #:step step-expr:number}}} ...
@@ -441,6 +442,7 @@
      #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
      #'((name-kwd
          (input-number
+          {~? {~@ #:required? required?} {~@ #:required? #t}}
           {~? {~@ #:min min-expr}}
           {~? {~@ #:max max-expr}}
           {~? {~@ #:step step-expr}}

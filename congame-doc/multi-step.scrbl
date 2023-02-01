@@ -17,13 +17,14 @@
 
   @form{
     @input-text[first-name]{What is your first name?}
-    @input-number[age]{What is your age?}
+    @input-number[age #:required? #f]{What is your age?}
     @submit-button[]}
 }
 
 @step[thank-you]{
   @h1{Thank you, @get['first-name]}
 
+  @; TODO: The next part currently breaks if age is #f.
   Thank you for participating in our survey, @get['first-name]! You are the most awesome @call[number->string @get['age]]-year old!
 }
 
