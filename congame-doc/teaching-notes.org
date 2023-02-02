@@ -5,3 +5,4 @@
 - exporting data
 - input-radio
 - json: {first-name: "Marc", age: 38}
+- Why does input-time not work in Firefox? Do we attempt the correct widget or not?
