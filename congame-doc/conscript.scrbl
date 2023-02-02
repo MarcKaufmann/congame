@@ -13,7 +13,7 @@
     a br button div em escape form get h1 h2 h3 img li p put quote span strong ol ul yield
 
     @; form-expr
-    input-date input-text input-number textarea submit-button
+    checkbox input-date input-file input-number input-text input-time textarea submit-button
 
     @; transition
     --> cond
@@ -64,9 +64,12 @@
   [put-expr (put id-expr expr)
             (put #:instance id-expr expr)]
 
-  [form-expr (input-date id expr ...+)
-             (input-text id expr ...+)
+  [form-expr (checkbox id expr ...+)
+             (input-date id expr ...+)
+             (input-file id expr ...+)
              (input-number id expr ...+)
+             (input-text id expr ...+)
+             (input-time id expr ...+)
              (input-number id #:min number expr ...+)
              (input-number id #:max number expr ...+)
              (input-number id #:min number #:max number expr ...+)
