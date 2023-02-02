@@ -422,8 +422,8 @@
     (datum->syntax stx (string->keyword (symbol->string (syntax-e stx)))))
 
   (syntax-parse stx
-    #:datum-literals (input-date input-text input-number textarea submit-button)
-    [({~and {~or input-date input-text input-number textarea} widget-id} name:id label-expr)
+    #:datum-literals (checkbox input-date input-file input-number input-text input-time textarea submit-button)
+    [({~and {~or checkbox input-date input-file input-number input-text input-time textarea} widget-id} name:id label-expr)
      #:with name-kwd (stx->keyword-stx #'name)
      #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
      #'((name-kwd
@@ -448,7 +448,8 @@
           {~? {~@ #:step step-expr}}
           (haml compiled-label-expr))))]
 
-    [({~and {~or input-date input-text input-number textarea} widget-id} ~! name:id label-expr ...+)
+    ; FIXME: The next clause does not work with keyword arguments and multiple labels.
+    [({~and {~or checkbox input-date input-file input-number input-text input-time textarea} widget-id} ~! name:id label-expr ...+)
      (compile-form-expr #'(widget-id name (div label-expr ...)))]
 
     [(submit-button {~optional label:string})
