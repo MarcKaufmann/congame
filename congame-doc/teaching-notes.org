@@ -6,3 +6,9 @@
 - input-radio
 - json: {first-name: "Marc", age: 38}
 - Why does input-time not work in Firefox? Do we attempt the correct widget or not?
+- document stdlib
+- add JS support?
+- waiting-page, or some waiting after hitting button; timing widgets
+  - probably as a wrapper
+- what is an instance vs a study vs a step
+- what does it mean to "Edit DSL"
