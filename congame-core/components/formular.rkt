@@ -206,13 +206,14 @@
 (define ((input-number label
                        #:min [min -inf.0]
                        #:max [max +inf.0]
-                       #:required? [required? #t]
                        #:step [step 1]
+                       #:required? [required? #t]
                        #:validators [validators null]) meth)
   (match meth
     ['validator
-     (cond [required? (apply ensure binding/number (required) (to-real) (cons (range/inclusive min max) validators))]
-           [else (apply ensure binding/number (to-real) (cons (range/inclusive min max) validators))])]
+     (let* ([validators (cons (to-real) (range/inclusive min max) validators)]
+            [validators (if required? (cons (required) validators) validators)])
+       (apply ensure binding/number validators))]
     ['widget
      (lambda (name value errors)
        (haml

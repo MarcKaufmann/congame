@@ -442,7 +442,7 @@
      #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
      #'((name-kwd
          (input-number
-          {~? {~@ #:required? required?} {~@ #:required? #t}}
+          {~? {~@ #:required? required?}}
           {~? {~@ #:min min-expr}}
           {~? {~@ #:max max-expr}}
           {~? {~@ #:step step-expr}}
