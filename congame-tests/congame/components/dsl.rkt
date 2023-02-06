@@ -235,7 +235,6 @@ DSL
                 (:h1 "Section 2")
                 (#:age
                  (input-number
-                  #:required? #t
                   #:min 1
                   #:max 100
                   (haml "How old are you?")))
