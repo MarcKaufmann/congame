@@ -118,7 +118,7 @@
                                  [else else-next-step.target])))
 
   (define-syntax-class transition-entry
-    #:datum-literals (--> cond else lambda end)
+    #:datum-literals (--> end ev)
     (pattern -->
              #:attr id #f
              #:with compiled this-syntax)
@@ -126,33 +126,10 @@
     (pattern id:id
              #:with compiled this-syntax)
 
-    (pattern {~and (cond _ ...) e:cond-expr}
+    (pattern (ev e)
              #:attr id #f
-             #:with compiled #'(unquote (λ () e.compiled)))
-
-    (pattern (lambda action-expr ... end)
-             #:attr id #f
-             #:with (compiled-action-expr ...) (filter-map compile-action-expr (syntax-e #'(action-expr ...)))
-             #:with compiled #'(unquote
-                                (λ ()
-                                  compiled-action-expr ...
-                                  done)))
-
-    (pattern (lambda action-expr ... target-id:id)
-             #:attr id #f
-             #:with (compiled-action-expr ...) (filter-map compile-action-expr (syntax-e #'(action-expr ...)))
-             #:with compiled #'(unquote
-                                (λ ()
-                                  compiled-action-expr ...
-                                  (goto target-id))))
-
-    (pattern (lambda action-expr ... {~and (cond _ ...) cond-expr:cond-expr})
-             #:attr id #f
-             #:with (compiled-action-expr ...) (filter-map compile-action-expr (syntax-e #'(action-expr ...)))
-             #:with compiled #'(unquote
-                                (λ ()
-                                  compiled-action-expr ...
-                                  cond-expr.compiled))))
+             #:with compiled-escape-expr (compile-escape-expr this-syntax)
+             #:with compiled #'(unquote compiled-escape-expr)))
 
   (syntax-parse stx
     #:datum-literals (action define import step study template template-ungrouped)
@@ -236,7 +213,7 @@
   ;; NOTE: For block-style tags, it's the tag's responsibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (a br button call div em escape form get h1 h2 h3 hl img ol p quote span strong template u1 ul yield)
+    #:datum-literals (a br button div em form h1 h2 h3 hl img ol p quote span strong template u1 ul yield)
     [num:number #'num]
     [str:string #'str]
     [kwd:keyword #'kwd]
@@ -263,9 +240,6 @@
      (check-action-id 'button #'{~? action #f})
      #'(button {~? action void} joined-text)]
 
-    [(call _id:id _e ...)
-     (compile-call-expr stx)]
-
     ;; TODO: change haml to support (:div () ...)
     [(div {~alt
            {~optional {~seq #:class class:string}}
@@ -280,11 +254,6 @@
     [(em body:body ...+)
      #'(:em body.compiled ...)]
 
-    [(escape expr)
-     (if (current-allow-full-escape?)
-         #'expr
-         #'(interpret-basic-expr 'escape 'expr))]
-
     [(form {~optional {~seq #:action action:id}} body ...+)
      #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e (group-by-paragraph #'(body ...))))
      (check-action-id 'form #'{~? action #f})
@@ -293,9 +262,6 @@
          (:div
           compiled-body ... ...))
         (make-put-all-keywords {~? action void}))]
-
-    [(get . _rest)
-     (compile-get-expr stx)]
 
     [({~and {~or h1 h2 h3} tag} body:body ...+)
      #:with tag-id (format-id #'tag ":~a" #'tag)
@@ -343,20 +309,7 @@
        (raise-syntax-error 'yield "cannot yield outside template" stx stx))
      #'(unquote-splicing (content-proc))]
 
-    [id:id
-     (define the-id (syntax->datum #'id))
-     (unless (member the-id (Env-imports (current-env)))
-       (raise-syntax-error 'call (format "unknown identifier ~a; did you forget to import it?" the-id) stx))
-     #'id]))
-
-(define (compile-call-expr stx)
-  (syntax-parse stx
-    [(_ id:id e ...)
-     #:with (compiled-e ...) (map compile-expr (syntax-e #'(e ...)))
-     (define the-id (syntax->datum #'id))
-     (unless (member the-id (Env-imports (current-env)))
-       (raise-syntax-error 'call (format "unknown procedure ~a; did you forget to import it?" the-id) stx))
-     #'(id compiled-e ...)]))
+    [_ (compile-escape-expr stx)]))
 
 (define (compile-get-expr stx)
   (syntax-parse stx
@@ -375,35 +328,15 @@
      #:with compiled-default (compile-expr #'default)
      #'(get/instance compiled-id compiled-default)]))
 
-(define (compile-put-expr stx)
+(define (compile-escape-expr stx)
   (syntax-parse stx
-    [(_ id:expr e:expr)
-     #:with compiled-id (compile-expr #'id)
-     #:with compiled-e (compile-expr #'e)
-     #'(put compiled-id compiled-e)]
-    [(_ #:instance id:expr e:expr)
-     #:with compiled-id (compile-expr #'id)
-     #:with compiled-e (compile-expr #'e)
-     #'(put/instance compiled-id compiled-e)]))
+    #:datum-literals (ev)
+    [(ev e) #'(interpret-basic-expr 'e)]))
 
 (define (compile-action-expr stx)
   (syntax-parse stx
-    #:datum-literals (call put get escape)
     ["\n" #f]
-
-    [(call _id:id _e ...)
-     (compile-call-expr stx)]
-
-    [(escape expr)
-     (if (current-allow-full-escape?)
-         #'expr
-         #'(interpret-basic-expr 'escape 'expr))]
-
-    [(get . _rest)
-     (compile-get-expr stx)]
-
-    [(put . _rest)
-     (compile-put-expr stx)]))
+    [_ (compile-escape-expr stx)]))
 
 (define (compile-cond-expr stx)
   (syntax-parse stx
@@ -469,11 +402,10 @@
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define current-paragraph-tags
-  (make-parameter '(a br call em escape get span strong)))
+  (make-parameter '(a br em ev span strong)))
 
 (define (swallow? stx)
-  (member (syntax-e (car (syntax-e stx)))
-          (current-paragraph-tags)))
+  (member (syntax-e (car (syntax-e stx))) (current-paragraph-tags)))
 
 ;; invariant: never two strings next to each other where one isn't "\n"
 (define (group-by-paragraph stx)

@@ -1,11 +1,11 @@
 @import[stdlib number->string sub1]
 
 @action[initialize-counter]{
-  @put['counter 10]
+  @(ev (put 'counter 10))
 }
 
 @action[decrement-counter]{
-  @put['counter @call[sub1 @get['counter]]]
+  @(ev (put 'counter (sub1 (get 'counter))))
 }
 
 @step[description]{
@@ -15,7 +15,7 @@
 }
 
 @step[show-counter]{
-  @h1{@call[number->string @get['counter]]}
+  @h1{@(ev (~a (get 'counter)))}
 
   @button[#:action decrement-counter]{Count down!}
 }
@@ -30,9 +30,9 @@
   countdown
   #:transitions
   [description --> show-counter
-               --> @cond[[@=[@get['counter] 0]
-                         launch]
-                        [@else
-                         show-counter]]]
+               --> @(ev (lambda ()
+                         (cond
+                          [(= (get 'counter) 0) 'launch]
+                          [else 'show-counter])))]
   [launch --> launch]
 ]

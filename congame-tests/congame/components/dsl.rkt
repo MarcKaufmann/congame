@@ -420,9 +420,11 @@ DSL
 @study[
   hello-study
   #:transitions
-  [step0 --> @cond[[@=[@get['some-var] "agree"] step1]
-                   [@=[@get[#:instance 'some-other-var] "always-agree"] step1]
-                   [@else step2]]]
+  [step0 --> @(ev (lambda ()
+                   (cond
+                    [(= (get 'some-var) "agree") (goto step1)]
+                    [(= (get/instance 'some-other-var) "always-agree") (goto step1)]
+                    [else (goto step2)])))]
   [step1 --> done]
   [step2 --> done]
   [done --> done]
@@ -437,14 +439,15 @@ DSL
           (make-study
            "hello-study"
            #:transitions (transition-graph
-                          [step0 --> ,(λ ()
-                                        (cond
-                                          [(equal? (get 'some-var) "agree")
-                                           (goto step1)]
-                                          [(equal? (get/instance 'some-other-var) "always-agree")
-                                           (goto step1)]
-                                          [else
-                                           (goto step2)]))]
+                          [step0 --> ,(interpret-basic-expr
+                                       '(lambda ()
+                                          (cond
+                                            [(= (get 'some-var) "agree")
+                                             (goto step1)]
+                                            [(= (get/instance 'some-other-var) "always-agree")
+                                             (goto step1)]
+                                            [else
+                                             (goto step2)])))]
                           [step1 --> done]
                           [step2 --> done]
                           [done --> done])
@@ -472,7 +475,7 @@ DSL
 @import[racket/base println]
 
 @action[quit]{
-  @call[println "hello"]
+  @(ev (println "hello"))
 }
 
 @step[hello]{
@@ -481,7 +484,7 @@ DSL
 DSL
                      ))
       '((define println (study-mod-require 'racket/base 'println))
-        (define (quit) (println "hello"))
+        (define (quit) (interpret-basic-expr '(println "hello")))
         (define (hello) (page (haml (.container (button quit "Quit")))))))
 
      (check-equal?
@@ -497,10 +500,11 @@ DSL
 @study[
   hello-study
   #:transitions
-  [step0 --> @lambda[
-               @call[println "hello"]
-               @cond[[@=[@get['some-var] "agree"] step1]
-                     [@else step2]]]]
+  [step0 --> @(ev (lambda ()
+                    (println "hello")
+                    (cond
+                     [(= (get 'some-var) "agree") (goto step1)]
+                     [else (goto step2)])))]
   [step1 --> done]
   [step2 --> done]
   [done --> done]
@@ -516,13 +520,14 @@ DSL
           (make-study
            "hello-study"
            #:transitions (transition-graph
-                          [step0 --> ,(λ ()
-                                        (println "hello")
-                                        (cond
-                                          [(equal? (get 'some-var) "agree")
-                                           (goto step1)]
-                                          [else
-                                           (goto step2)]))]
+                          [step0 --> ,(interpret-basic-expr
+                                       '(lambda ()
+                                          (println "hello")
+                                          (cond
+                                            [(= (get 'some-var) "agree")
+                                             (goto step1)]
+                                            [else
+                                             (goto step2)])))]
                           [step1 --> done]
                           [step2 --> done]
                           [done --> done])
@@ -590,17 +595,17 @@ DSL
        (read+compile #<<DSL
 @import[racket/base format]
 @action[test]{
-  @put['counter1 3]
-  @put['counter2 @call[format "~a" "Hello"]]
-  @put['sym 'test]
+  @(ev (put 'counter1 3))
+  @(ev (put 'counter2 (format "~a" "Hello")))
+  @(ev (put 'sym 'test))
 }
 DSL
                      ))
       '((define format (study-mod-require 'racket/base 'format))
         (define (test)
-          (put 'counter1 3)
-          (put 'counter2 (format "~a" "Hello"))
-          (put 'sym 'test))))
+          (interpret-basic-expr '(put 'counter1 3))
+          (interpret-basic-expr '(put 'counter2 (format "~a" "Hello")))
+          (interpret-basic-expr '(put 'sym 'test)))))
 
      (check-equal?
       (syntax->datum
@@ -636,7 +641,7 @@ DSL
        (read+compile
         #<<DSL
 @action[pre-step-foo]{
-  @put['x]{42}
+  @(ev (put 'x 42))
 }
 
 @step[foo #:pre pre-step-foo]{
@@ -645,7 +650,7 @@ DSL
 DSL
         ))
       '((define (pre-step-foo)
-          (put 'x "42"))
+          (interpret-basic-expr '(put 'x 42)))
         (define (foo)
           (pre-step-foo)
           (page
