@@ -211,7 +211,7 @@
                        #:validators [validators null]) meth)
   (match meth
     ['validator
-     (let* ([validators (cons (to-real) (range/inclusive min max) validators)]
+     (let* ([validators (list* (to-real) (range/inclusive min max) validators)]
             [validators (if required? (cons (required) validators) validators)])
        (apply ensure binding/number validators))]
     ['widget
