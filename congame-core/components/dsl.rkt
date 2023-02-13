@@ -15,8 +15,6 @@
          "study.rkt"
          "transition-graph.rkt")
 
-;; TODO: rename compile-expr -> compile-markup
-;; TODO: rename compile-escape-expr -> compile-expr
 (provide
  dsl-require
  read-syntax+compile)
@@ -112,8 +110,8 @@
 
     (pattern (ev e)
              #:attr id #f
-             #:with compiled-escape-expr (compile-escape-expr this-syntax)
-             #:with compiled #'(unquote compiled-escape-expr)))
+             #:with compiled-expr (compile-expr this-syntax)
+             #:with compiled #'(unquote compiled-expr)))
 
   (syntax-parse stx
     #:datum-literals (action define import step study template template-ungrouped)
@@ -128,7 +126,7 @@
            compiled-content ...))]
 
     [(define id:id e)
-     #:with compiled-e (compile-expr #'e)
+     #:with compiled-e (compile-markup #'e)
      #'(define id compiled-e)]
 
     [(import mod-path:id id:id)
@@ -140,7 +138,7 @@
 
     [(step name:id {~optional {~seq #:pre pre-action-id:id}} content ...+)
      #:fail-when (eq? (syntax-e #'name) 'end) "'end' is not a valid step id"
-     #:with (compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))
+     #:with (compiled-content ...) (map compile-markup (syntax-e (group-by-paragraph #'(content ...))))
      #'(define (name)
          (let ([*env* (make-environment *env*)])
            {~? (pre-action-id)}
@@ -178,14 +176,14 @@
                                                    (if (eq? (syntax-e #'form-id) 'template-ungrouped)
                                                        (cons 'yield (current-paragraph-tags))
                                                        (current-paragraph-tags))])
-                                     (map compile-expr (syntax-e (group-by-paragraph #'(content ...)))))
+                                     (map compile-markup (syntax-e (group-by-paragraph #'(content ...)))))
      #'(define (template-id content-proc)
          (let ([*env* (make-environment *env*)])
            (haml (:div compiled-content ...))))]))
 
-(define (compile-expr stx)
+(define (compile-markup stx)
   (define-syntax-class body
-    (pattern body #:with compiled (compile-expr #'body)))
+    (pattern body #:with compiled (compile-markup #'body)))
 
   (define-syntax-class list-item
     #:datum-literals (li)
@@ -230,7 +228,7 @@
            {~optional {~seq #:class class:string}}
            {~optional {~seq #:style style:string}}} ...
           body ...+)
-     #:with (compiled-body ...) (map compile-expr (syntax-e (group-by-paragraph #'(body ...))))
+     #:with (compiled-body ...) (map compile-markup (syntax-e (group-by-paragraph #'(body ...))))
      #'(:div ([:data-ignored ""]
               {~? {~@ [:class class]}}
               {~? {~@ [:style style]}})
@@ -281,7 +279,7 @@
          [(ungrouped) (syntax-e #'(content ...))]
          [(grouped) (syntax-e (group-by-paragraph #'(content ...)))]
          [else (raise-syntax-error 'template (format "unexpected type ~a for template ~a" template-type template-id))]))
-     (with-syntax ([(compiled-content ...) (map compile-expr content-stxes)])
+     (with-syntax ([(compiled-content ...) (map compile-markup content-stxes)])
        #`(id (λ () #,(if (= (length (syntax-e #'(compiled-content ...))) 1)
                          #'(list (haml compiled-content ...))
                          #'(haml compiled-content ...)))))]
@@ -294,9 +292,9 @@
        (raise-syntax-error 'yield "cannot yield outside template" stx stx))
      #'(unquote-splicing (content-proc))]
 
-    [_ (compile-escape-expr stx)]))
+    [_ (compile-expr stx)]))
 
-(define (compile-escape-expr stx)
+(define (compile-expr stx)
   (syntax-parse stx
     #:datum-literals (ev)
     [(ev e) #'(interpret 'e *env*)]))
@@ -304,7 +302,7 @@
 (define (compile-action-expr stx)
   (syntax-parse stx
     ["\n" #f]
-    [_ (compile-escape-expr stx)]))
+    [_ (compile-expr stx)]))
 
 (define (compile-form-expr stx)
   (define (stx->keyword-stx stx)
@@ -314,7 +312,7 @@
     #:datum-literals (checkbox input-date input-file input-number input-text input-time textarea submit-button)
     [({~and {~or checkbox input-date input-file input-number input-text input-time textarea} widget-id} name:id label-expr)
      #:with name-kwd (stx->keyword-stx #'name)
-     #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
+     #:with compiled-label-expr (compile-markup (syntax-e #'label-expr))
      #'((name-kwd
          (widget-id
           (haml compiled-label-expr))))]
@@ -328,7 +326,7 @@
                     {~optional {~seq #:step step-expr:number}}} ...
                    label-expr)
      #:with name-kwd (stx->keyword-stx #'name)
-     #:with compiled-label-expr (compile-expr (syntax-e #'label-expr))
+     #:with compiled-label-expr (compile-markup (syntax-e #'label-expr))
      #'((name-kwd
          (input-number
           {~? {~@ #:required? required?}}
@@ -345,8 +343,8 @@
      #'((:button.button.next-button ([:type "submit"]) {~? label "Submit"}))]
 
     [e
-     #:with compiled-expr (compile-expr #'e)
-     #'(compiled-expr)]))
+     #:with compiled-markup (compile-markup #'e)
+     #'(compiled-markup)]))
 
 (define (check-action-id who stx)
   (unless (or (not (syntax-e stx))
