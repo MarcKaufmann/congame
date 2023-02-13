@@ -117,9 +117,9 @@ Putting all of this together, we can create our first multi-step study by updati
 }
 
 @step[thank-you]{
-  @h1{Thank you @get['first-name]}
+  @h1{Thank you @(ev (get 'first-name))}
 
-  Thank you for participating in our survey @get['first-name]!
+  Thank you for participating in our survey @(ev (get 'first-name))!
 }
 
 @study[
@@ -143,48 +143,31 @@ To fix this, you have to clear the progress of your user for this study instance
 
 Now you can bo back to the dashboard and go through the study. Congratulations, this is your first survey in @tech{conscript}!
 
-@section{Using the standard library}
+@section{Using standard functions}
 
-Basic conscript is purposefully underpowered and comes with a small number of built-in features. To provide more functionality without resorting to @tech{Racket}, we are collecting useful functions in the standard library that makes it relatively easy to use them with conscript.
+Basic conscript is purposefully underpowered and comes with a small number of built-in features. Many @tech{Racket} functions are provided by default, and we will add more as they become useful.
 
 To illustrate this, let us add a display of the person's age to the previous study. It may seem straightforward, and you might try to do change the code of the final @racket[thank-you] step as follows:
 
 @codeblock|{
 @step[thank-you]{
-  @h1{Thank you, @get['first-name]}
+  @h1{Thank you, @(ev (get 'first-name))}
 
-  Thank you for participating in our survey, @get['first-name]! You are the most awesome @get['age]-year old!
+  Thank you for participating in our survey, @(ev (get 'first-name))! You are the most awesome @(ev (get 'age))-year old!
 }
 }|
 
-You might expect this to display the age on the page. Instead, you are likely to find that the final page does not display the age at all, and you see only "You are the most awesome &-year old!" instead. What is going on?
+You might expect this to display the age on the page. Instead, you are likely to find that the final page does not display the age at all, and you see only "You are the most awesome &-year old!" (or some other strange character in place of the &) instead. What is going on?
 
-What is going on is that when we are storing a number, we are storing a number and not a string! So when we use @code|{@get['age]}| to display the age, we are providing the age as a number and not as a string, and since numbers are encoded differently, this leads to the strange display you get. To fix this, all we need to do is to convert numbers to strings before displaying them. Fortunately, @racket[number->string] is provided in @racket[stdlib]. To use a function from @racket[stdlib], you have to
-
-@itemlist[
-  @item{import it with @code|{@import[stdlib name-of-the-function]}|}
-  @item{use it with @code|{@call[name-of-the-function function-arguments]}|}
-  #:style 'ordered
-]
-
-In our case, this would look as follows:
+What is going on is that when we are storing a number, we are storing a number and not a string! So when we use @code|{@(ev (get 'age))}| to display the age, we are providing the age as a number and not as a string, and since numbers are encoded differently, this leads to the strange display you get. To fix this, all we need to do is to convert numbers to strings before displaying them. Fortunately, @racket[number->string] is provided by default. To use it, just call it inside an @code|{@(ev ...)}| call:
 
 @codeblock|{
-@; import functions you need, ideally at the top of the file
-@import[stdlib number->string]
-
-@; Now you can use `number->string` in a @call
 @step[thank-you]{
-  @h1{Thank you, @get['first-name]}
+  @h1{Thank you, @(ev (get 'first-name))}
 
-  Thank you for participating in our survey, @get['first-name]! You are the most awesome @call[number->string @get['age]]-year old!
+  Thank you for participating in our survey, @(ev (get 'first-name))! You are the most awesome @(ev (number->string (get 'age)))-year old!
 }
 }|
-
-@; UNCOMMENT IF STUDENTS HIT THIS PROBLEM
-@; Notice that calling a function such as @racket[number->string] via the @code|{@call}| operator is different from using, say, the @code|{@h1}| operator. Specifically, we list the function name followed by a space followed by a list of arguments needed by the function, here the number that we want to convert to a string. So you cannot write @code|{@number->string[@get['age]]}|. The reason is that the former is in fact a function (or macro or operator) defined in some @tech{Racket} package, while @code|{@h1}| is a core operator in Conscript.
-
-While cumbersome to get used to at first, it is good to get in the habit of realizing what type of object you are dealing with when programming, even in concscript.
 
 @section{Studies with Logic}
 
@@ -199,29 +182,32 @@ tedious. Instead, for every user, let us store the value of
 value of @racket[counter] and display it on the screen. To store a
 value for a user, we use @code[#:lang "scribble/manual"]|{@put[id value]}|.
 
-The most important building block for this is the @code[#:lang "scribble/manual"]|{@action}| operator. Whenever you want to change or update some value or variable in conscript, you have to define a named @tt{action} which will be evaluated when called. In the case of the countdown, we need to do two things. First, we need an action that initializes the user's counter to 10; second, we need an action that decreases the counter by 1 when called:
+The most important building block for this is the @code[#:lang
+"scribble/manual"]|{@action}| operator. Whenever you want to change or update
+some value or variable in conscript, you have to define a named @tt{action}
+which will be evaluated when called. In the case of the countdown, we need to do
+two things. First, we need an action that initializes the user's counter to 10;
+second, we need an action that decreases the counter by 1 when called:
+
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang scribble/manual
-@import[stdlib sub1]
 
 @action[initialize-counter]{
-  @put['counter 10]
+  @(ev (put 'counter 10))
 }
 
 @action[decrement-counter]{
-  @put['counter @call[sub1 @get['counter]]]
+  @(ev (put 'counter (sub1 (get 'counter))))
 }
 }|
 
-Here we also import @racket[sub1], which subtracts 1 from its argument. Later we'll see another way to do basic arithmetic.
+Here we use @racket[sub1], which subtracts 1 from its argument. Later we'll see another way to do basic arithmetic.
 
 Next, we need to call the @tt{action}s in the right places. There are two places where you can use actions: before a step is displayed by using @code|{@step[step-name #:pre action-id]}|; or after a button click (and before the next step is executed) using @code|{@button[#:action-id action-id]{Next}}|. We will the button approach here:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang scribble/manual
-
-@import[stdlib number->string]
 
 @; Here goes the above code defining the actions
 @; ...
@@ -233,7 +219,7 @@ Next, we need to call the @tt{action}s in the right places. There are two places
 }
 
 @step[show-counter]{
-  @h1{@call[number->string @get['counter]]}
+  @h1{@(ev (number->string (get 'counter)))}
 
   @button[#:action decrement-counter]{Count down!}
 }
@@ -250,7 +236,7 @@ While this works, it has a fatal flaw. We keep counting down forever and ever. I
 
 @section{Conditions}
 
-In order to stop once the counter hits 0, we need to change the transitions. Specifically, we want to transition to the @tt{launch} step when the counter is 0, and otherwise keep displaying the @tt{show-counter} step. To do so, we use @code[#:lang "scribble/manual"]|{@cond}|:
+In order to stop once the counter hits 0, we need to change the transitions. Specifically, we want to transition to the @tt{launch} step when the counter is 0, and otherwise keep displaying the @tt{show-counter} step. To do so, we use @racket[cond] inside a transition, which has to be wrapped in something mysterious called a @racket[lambda]:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang scribble/manual
@@ -263,13 +249,19 @@ In order to stop once the counter hits 0, we need to change the transitions. Spe
   countdown
   #:transitions
   [description --> show-counter
-               --> @cond[[@=[@get['counter] 0]
-                          launch]
-                         [@else
-                          show-counter]]]
+               --> @(ev (lambda ()
+                          (cond
+                            [(= (get 'counter) 0)
+                             'launch]
+                            [else
+                             'show-counter])))]
   [launch --> launch]
 ]
 }|
+
+For now, ignore what the @racket[lambda] part does, simply type it and run with it. As for the @racket[cond], it is relatively straightforward: it consists of two or more clauses that are wrapped in square brackets ('[]'). Each clause starts with a condition, such as @tt{(= (get 'counter) 0)}, which checks whether the value of @tt{'counter} is 0 or not. If the condition holds, then the transition continues to the step at the end of the clause, here @tt{'launch}, which has a quote (') in front of it. (Note: this will soon change, as we will write it @tt{(goto launch)}, with no quote (') in front of launch.)
+
+The final clause must always start with the keyword @racket[else], which is a catchall for the case where none of the conditions in previous clauses were met.
 
 @section{CSS with #:style}
 
@@ -299,23 +291,11 @@ To add multiple style properties, we separate them by a semicolon:
 @section{Intermezzo: Some exercises}
 
 
+
 @section{Studies involving multiple Participants}
 
 Coming soon...
 
 @section{Basic Arithmetic (features in progress)}
 
-One important thing to note about conscript is that it currently does not yet have many features that you would expect of a programming language, including basic arithmetic and string operations. The way to do basic arithmetic is to use @code|{@escape[...]}|, for example:
-
-@codeblock|{
-  @; Adding two numbers
-  @escape[(+ 1 2)]
-  @; Multiplying two numbers
-  @escape[(* 3 4)]
-  @; Subtracting two numbers
-  @escape[(* 3 4)]
-  @; Dividing two numbers
-  @escape[(/ 4.5 2)]
-}|
-
-In addition, since Racket uses prefix notation for arithmetic --- we write @racket{(+ 1 2)} instead of @racket{1 + 2}, and the parentheses are necessary --- the same is true for conscript. Let us know how painful this is and we can see if it is worth spending time fixing this (but first you'll have to try to use it, then once you can do it, we'll listen).
+Coming soon...
