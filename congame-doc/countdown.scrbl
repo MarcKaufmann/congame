@@ -1,5 +1,3 @@
-@import[stdlib number->string sub1]
-
 @action[initialize-counter]{
   @(ev (put 'counter 10))
 }

@@ -1,5 +1,3 @@
-@import[stdlib number->string]
-
 @step[survey]{
   @h1{Survey}
 

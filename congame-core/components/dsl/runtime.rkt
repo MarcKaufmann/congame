@@ -6,8 +6,7 @@
          "../study.rkt")
 
 (provide
- make-put-all-keywords
- interpret-basic-expr)
+ make-put-all-keywords)
 
 (define (make-put-all-keywords [action void])
   (make-keyword-procedure
@@ -17,66 +16,99 @@
        (put (string->symbol (keyword->string kw)) arg))
      (action))))
 
-;; TODO: actual environments
-(define (interpret-basic-expr e)
-  (let loop ([e e])
+
+;; environment ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ make-environment
+ make-initial-environment
+ environment?
+ environment-set!
+ environment-ref)
+
+(struct environment (parent bindings))
+
+(define-syntax-rule (define-initial-env env-id id ...)
+  (define env-id
+    (make-hasheq
+     (list (cons 'id id) ...))))
+
+(define-initial-env initial-env
+  + - * / =
+  get put
+  get/instance put/instance
+  add1 sub1
+  ~a format number->string)
+
+(define (make-initial-environment)
+  (define env (make-environment))
+  (begin0 env
+    (for ([(id v) (in-hash initial-env)])
+      (environment-set! env id v))))
+
+(define (make-environment [parent #f])
+  (environment parent (make-hasheq)))
+
+(define (environment-set! e id v)
+  (hash-set! (environment-bindings e) id v))
+
+(define (environment-ref e id)
+  (hash-ref (environment-bindings e) id (λ ()
+                                          (cond
+                                            [(environment-parent e) => (λ (pe) (environment-ref pe id))]
+                                            [else (error 'environment-ref "unbound variable ~a" id)]))))
+
+
+;; interpreter ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ interpret)
+
+(define (interpret e [env (make-initial-environment)])
+  (let loop ([e e] [env env])
     (match e
       [`(quote ,e) e]
 
       [`(lambda ,arg-ids . ,bodies)
        (lambda args
-         (define ns (make-empty-namespace))
          (unless (equal? (length arg-ids) (length args))
            (error 'loop "bad arity"))
+         (define lambda-env (make-environment env))
          (for ([arg-id (in-list arg-ids)]
                [arg (in-list args)])
-           (namespace-set-variable-value! arg-id arg #t ns))
-         (parameterize ([current-namespace ns])
-           (loop `(begin . ,bodies))))]
+           (environment-set! lambda-env arg-id arg))
+         (loop `(begin . ,bodies) lambda-env))]
 
       [`(begin . ,bodies)
        (for/last ([body-e (in-list bodies)])
-         (loop body-e))]
+         (loop body-e env))]
 
       [`(if ,test-e ,then-e ,else-e)
-       (if (loop test-e)
-           (loop then-e)
-           (loop else-e))]
+       (if (loop test-e env)
+           (loop then-e env)
+           (loop else-e env))]
 
       [`(cond [,test-e . ,bodies] [else . ,else-bodies])
        (loop `(if ,test-e
                   (begin . ,bodies)
-                  (begin . ,else-bodies)))]
+                  (begin . ,else-bodies))
+             env)]
 
       [`(cond ,branch ,branches ... ,else-branch)
        (loop `(cond
                 ,branch
                 [else (cond
                         ,@branches
-                        [else ,else-branch])]))]
+                        [else ,else-branch])])
+             env)]
 
       [(? boolean?) e]
       [(? number?) e]
       [(? string?) e]
-      [(? symbol? id) (namespace-variable-value id)]  ;; TODO: restrict this
-
-      [`(~a ,e) (~a (loop e))]
-      [`(sub1 ,e) (sub1 (loop e))]
-
-      [`(= ,a ,b) (= (loop a) (loop b))]
-      [`(+ ,a ,b) (+ (loop a) (loop b))]
-      [`(- ,a ,b) (- (loop a) (loop b))]
-      [`(* ,a ,b) (* (loop a) (loop b))]
-      [`(/ ,a ,b) (/ (loop a) (loop b))]
-
-      [`(get ,id)
-       (get (loop id))]
-
-      [`(put ,id ,e)
-       (put (loop id) (loop e))]
+      [(? symbol? id) (environment-ref env id)]
 
       [`(,rator . ,rands)
-       (apply (loop rator) (map loop rands))]
+       (apply (loop rator env) (map (λ (rand) (loop rand env)) rands))]
 
       [_ (error 'interpret-basic-expr "invalid expression: ~e" e)])))
 

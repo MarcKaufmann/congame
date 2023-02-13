@@ -9,20 +9,20 @@
          syntax/parse
 
          "dsl/runtime.rkt"
-         (prefix-in stdlib: "dsl/stdlib.rkt")
 
          "formular.rkt"
          "registry.rkt"
          "study.rkt"
          "transition-graph.rkt")
 
+;; TODO: rename compile-expr -> compile-markup
+;; TODO: rename compile-escape-expr -> compile-expr
 (provide
  dsl-require
  read-syntax+compile)
 
 (define attached-mods
   '(congame/components/dsl/runtime
-    congame/components/dsl/stdlib
     congame/components/formular
     congame/components/registry
     congame/components/study
@@ -31,8 +31,6 @@
     racket/format
     racket/string))
 
-;; Next time:
-;;  * maybe add caching?
 (define (dsl-require s id)
   (define in (open-input-string s))
   (port-count-lines! in)
@@ -46,7 +44,8 @@
       (namespace-attach-module ns mod))
     (for ([mod (in-list mods-to-require)])
       (eval `(require ,mod)))
-    (for-each eval (syntax->datum (compile-module (read-syntax 'dsl in))))
+    (eval `(define *env* (make-initial-environment)))
+    (for-each eval (syntax->datum (read-syntax+compile 'dsl in)))
     (namespace-variable-value id)))
 
 (define (read-syntax what in)
@@ -65,10 +64,6 @@
   (make-parameter #f))
 
 (define current-in-template?
-  (make-parameter #f))
-
-;; TODO: Eventually make this configurable at the study admin level.
-(define current-allow-full-escape?
   (make-parameter #f))
 
 (define (build-env stxs)
@@ -106,17 +101,6 @@
     (pattern next-step-id:id
              #:with target #'(goto next-step-id)))
 
-  ;; TODO: We should allow actions in the cond, no? Or does it interfere with something else?
-  (define-syntax-class cond-expr
-    #:datum-literals (cond else end)
-    (pattern (cond [clause-expr clause-next-step:next-step-expr] ...+
-                   [else else-next-step:next-step-expr])
-             #:attr id #f
-             #:with (compiled-clause-expr ...) (map compile-cond-expr (syntax-e #'(clause-expr ...)))
-             #:with compiled #'(cond
-                                 [compiled-clause-expr clause-next-step.target] ...
-                                 [else else-next-step.target])))
-
   (define-syntax-class transition-entry
     #:datum-literals (--> end ev)
     (pattern -->
@@ -140,16 +124,15 @@
     [(action name:id content ...+)
      #:with (compiled-content ...) (filter-map compile-action-expr (syntax-e #'(content ...)))
      #'(define (name)
-         compiled-content ...)]
+         (let ([*env* (make-environment *env*)])
+           compiled-content ...))]
 
     [(define id:id e)
      #:with compiled-e (compile-expr #'e)
      #'(define id compiled-e)]
 
     [(import mod-path:id id:id)
-     (if (eq? (syntax-e #'mod-path) 'stdlib)
-         #'(define id (dynamic-require 'congame/components/dsl/stdlib 'id))
-         #'(define id (study-mod-require 'mod-path 'id)))]
+     #'(environment-set! *env* 'id (study-mod-require 'mod-path 'id))]
 
     [(import mod-path:id id:id ...+)
      #:with (compiled-import ...) (map compile-stmt (syntax-e #'((import mod-path id) ...)))
@@ -159,11 +142,12 @@
      #:fail-when (eq? (syntax-e #'name) 'end) "'end' is not a valid step id"
      #:with (compiled-content ...) (map compile-expr (syntax-e (group-by-paragraph #'(content ...))))
      #'(define (name)
-         {~? (pre-action-id)}
-         (page
-          (haml
-           (.container
-            compiled-content ...))))]
+         (let ([*env* (make-environment *env*)])
+           {~? (pre-action-id)}
+           (page
+            (haml
+             (.container
+              compiled-content ...)))))]
 
     [(study study-id:id #:transitions [transition-entry:transition-entry ...] ...+)
      #:fail-when (eq? (syntax-e #'study-id) 'end) "'end' is not a valid study id"
@@ -196,7 +180,8 @@
                                                        (current-paragraph-tags))])
                                      (map compile-expr (syntax-e (group-by-paragraph #'(content ...)))))
      #'(define (template-id content-proc)
-         (haml (:div compiled-content ...)))]))
+         (let ([*env* (make-environment *env*)])
+           (haml (:div compiled-content ...))))]))
 
 (define (compile-expr stx)
   (define-syntax-class body
@@ -311,44 +296,15 @@
 
     [_ (compile-escape-expr stx)]))
 
-(define (compile-get-expr stx)
-  (syntax-parse stx
-    [(_ id:expr)
-     #:with compiled-id (compile-expr #'id)
-     #'(get compiled-id)]
-    [(_ #:instance id:expr)
-     #:with compiled-id (compile-expr #'id)
-     #'(get/instance compiled-id)]
-    [(_ id:expr default:expr)
-     #:with compiled-id (compile-expr #'id)
-     #:with compiled-default (compile-expr #'default)
-     #'(get compiled-id compiled-default)]
-    [(_ #:instance id:expr default:expr)
-     #:with compiled-id (compile-expr #'id)
-     #:with compiled-default (compile-expr #'default)
-     #'(get/instance compiled-id compiled-default)]))
-
 (define (compile-escape-expr stx)
   (syntax-parse stx
     #:datum-literals (ev)
-    [(ev e) #'(interpret-basic-expr 'e)]))
+    [(ev e) #'(interpret 'e *env*)]))
 
 (define (compile-action-expr stx)
   (syntax-parse stx
     ["\n" #f]
     [_ (compile-escape-expr stx)]))
-
-(define (compile-cond-expr stx)
-  (syntax-parse stx
-    #:datum-literals (= get)
-    [num:number #'num]
-    [str:string #'str]
-    [(= e0 e1)
-     #:with compiled-e0 (compile-cond-expr #'e0)
-     #:with compiled-e1 (compile-cond-expr #'e1)
-     #'(equal? compiled-e0 compiled-e1)]
-    [(get . _rest)
-     (compile-get-expr stx)]))
 
 (define (compile-form-expr stx)
   (define (stx->keyword-stx stx)

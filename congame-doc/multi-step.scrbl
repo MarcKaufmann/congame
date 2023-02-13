@@ -1,5 +1,3 @@
-@import[stdlib number->string]
-
 @step[description]{
   @h1{Description}
 
@@ -22,10 +20,10 @@
 }
 
 @step[thank-you]{
-  @h1{Thank you, @get['first-name]}
+  @h1{Thank you, @(ev (get 'first-name))}
 
   @; TODO: The next part currently breaks if age is #f.
-  Thank you for participating in our survey, @get['first-name]! You are the most awesome @call[number->string @get['age]]-year old!
+  Thank you for participating in our survey, @(ev (get 'first-name))! You are the most awesome @(ev (number->string (get 'age)))-year old!
 }
 
 @study[

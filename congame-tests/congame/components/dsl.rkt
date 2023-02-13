@@ -31,11 +31,12 @@
 DSL
                      ))
       '((define (a)
-          (page
-           (haml
-            (.container
-             (:p "a" " " "b")
-             (:p "c")))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p "a" " " "b")
+               (:p "c"))))))))
 
      (check-equal?
       (syntax->datum
@@ -51,12 +52,13 @@ DSL
 DSL
                      ))
       '((define (a)
-          (page
-           (haml
-            (.container
-             (:p "a" " " "b")
-             (:p "c")
-             (:h1 "Heading")))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p "a" " " "b")
+               (:p "c")
+               (:h1 "Heading"))))))))
 
      (check-equal?
       (syntax->datum
@@ -72,12 +74,13 @@ DSL
 DSL
                      ))
       '((define (a)
-          (page
-           (haml
-            (.container
-             (:p "a" " " "b")
-             (:p "c")
-             (:h1 "Heading")))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p "a" " " "b")
+               (:p "c")
+               (:h1 "Heading"))))))))
 
      (check-equal?
       (syntax->datum
@@ -97,12 +100,13 @@ DSL
 DSL
                      ))
       '((define (a)
-          (page
-           (haml
-            (.container
-             (:p "a" " " "b")
-             (:p "c" "\n" "\n" "d")
-             (:h1 "Heading")))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p "a" " " "b")
+               (:p "c" "\n" "\n" "d")
+               (:h1 "Heading"))))))))
 
      (check-equal?
       (syntax->datum
@@ -123,14 +127,15 @@ DSL
 DSL
                      ))
       '((define (a)
-          (page
-           (haml
-            (.container
-             (:p "a" " " "b")
-             (:p "c")
-             (:h1 "Heading")
-             (:p "d" " " "e")
-             (:p "f")))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p "a" " " "b")
+               (:p "c")
+               (:h1 "Heading")
+               (:p "d" " " "e")
+               (:p "f"))))))))
 
      (check-equal?
       (syntax->datum
@@ -145,12 +150,13 @@ DSL
 DSL
                      ))
       '((define (a)
-          (page
-           (haml
-            (.container
-             (:h1 "Hello, world!")
-             (:p "How's it going?" " " "Pretty good?")
-             (:p "Yeah, good.")))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:h1 "Hello, world!")
+               (:p "How's it going?" " " "Pretty good?")
+               (:p "Yeah, good."))))))))
 
      (check-equal?
       (syntax->datum
@@ -173,16 +179,18 @@ DSL
 DSL
                      ))
       '((define (hello)
-          (page
-           (haml
-            (.container
-             (:h1 "Hello!")
-             (button void "Continue...")))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:h1 "Hello!")
+               (button void "Continue..."))))))
         (define (done)
-          (page
-           (haml
-            (.container
-             (:p "You're done!")))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p "You're done!"))))))
         (define hello-study
           (make-study
            "hello-study"
@@ -205,7 +213,7 @@ DSL
 @import[a b]
 DSL
                      ))
-      '((define b (study-mod-require 'a 'b))))
+      '((environment-set! *env* 'b (study-mod-require 'a 'b))))
 
      (check-equal?
       (syntax->datum
@@ -222,26 +230,27 @@ DSL
 DSL
                      ))
       '((define (form-step)
-          (page
-           (haml
-            (.container
-             (formular
-              (haml
-               (:div
-                (:h1 "Section 1")
-                (#:name
-                 (input-text
-                  (haml "What is your name?")))
-                (:h1 "Section 2")
-                (#:age
-                 (input-number
-                  #:min 1
-                  #:max 100
-                  (haml "How old are you?")))
-                (:button.button.next-button
-                 ([:type "submit"])
-                 "Submit")))
-              (make-put-all-keywords void))))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (formular
+                (haml
+                 (:div
+                  (:h1 "Section 1")
+                  (#:name
+                   (input-text
+                    (haml "What is your name?")))
+                  (:h1 "Section 2")
+                  (#:age
+                   (input-number
+                    #:min 1
+                    #:max 100
+                    (haml "How old are you?")))
+                  (:button.button.next-button
+                   ([:type "submit"])
+                   "Submit")))
+                (make-put-all-keywords void)))))))))
 
      (check-equal?
       (syntax->datum
@@ -255,12 +264,13 @@ DSL
 DSL
                      ))
       '((define (example-step)
-          (page
-           (haml
-            (.container
-             (:ol
-              (:li "Test")
-              (:li "Foo"))))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:ol
+                (:li "Test")
+                (:li "Foo")))))))))
 
      (check-equal?
       (syntax->datum
@@ -274,12 +284,13 @@ DSL
 DSL
                      ))
       '((define (example-step)
-          (page
-           (haml
-            (.container
-             (:ul
-              (:li "Test")
-              (:li "Foo"))))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:ul
+                (:li "Test")
+                (:li "Foo")))))))))
 
      (check-equal?
       (syntax->datum
@@ -298,15 +309,16 @@ DSL
 DSL
                      ))
       '((define (example-step)
-          (page
-           (haml
-            (.container
-             (:ul
-              (:li
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
                (:ul
-                (:li "Nested 1")
-                (:li "Nested 2")))
-              (:li "Foo"))))))))
+                (:li
+                 (:ul
+                  (:li "Nested 1")
+                  (:li "Nested 2")))
+                (:li "Foo")))))))))
 
      (check-equal?
       (syntax->datum
@@ -317,10 +329,11 @@ DSL
 DSL
                      ))
       '((define (example-step)
-          (page
-           (haml
-            (.container
-             (:p (:a ([:href "http://example.com"]) "example.com"))))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p (:a ([:href "http://example.com"]) "example.com")))))))))
 
      (check-equal?
       (syntax->datum
@@ -331,11 +344,12 @@ DSL
 DSL
                      ))
       '((define (example-step)
-          (page
-           (haml
-            (.container
-             (:p
-              (:strong "Hello " (:em "world") "!"))))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p
+                (:strong "Hello " (:em "world") "!")))))))))
 
      (check-equal?
       (syntax->datum
@@ -346,13 +360,14 @@ DSL
 DSL
                      ))
       '((define (example-step)
-          (page
-           (haml
-            (.container
-             (:p
-              "Hello "
-              (:strong "world")
-              "!")))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p
+                "Hello "
+                (:strong "world")
+                "!"))))))))
 
      (check-equal?
       (syntax->datum
@@ -363,10 +378,11 @@ DSL
 DSL
                      ))
       '((define (example-step)
-          (page
-           (haml
-            (.container
-             (:div ([:data-ignored ""])(:p "Hello " (:em "world") "!"))))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:div ([:data-ignored ""])(:p "Hello " (:em "world") "!")))))))))
 
      (check-equal?
       (syntax->datum
@@ -381,12 +397,13 @@ DSL
 DSL
                      ))
       '((define (example-step)
-          (page
-           (haml
-            (.container
-             (:div ((:data-ignored ""))
-              (:p "Hello")
-              (:p (:em "world") "!"))))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:div ((:data-ignored ""))
+                     (:p "Hello")
+                     (:p (:em "world") "!")))))))))
 
      (check-equal?
       (syntax->datum
@@ -401,13 +418,14 @@ DSL
 DSL
                      ))
       '((define (example-step)
-          (page
-           (haml
-            (.container
-             (:div
-              ([:data-ignored ""] [:class "example"])
-              (:p "Hello")
-              (:p (:em "world") "!"))))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:div
+                ([:data-ignored ""] [:class "example"])
+                (:p "Hello")
+                (:p (:em "world") "!")))))))))
 
      (check-equal?
       (syntax->datum
@@ -431,15 +449,23 @@ DSL
 ]
 DSL
                      ))
-      '((define (step0) (page (haml (.container (button void "Continue")))))
-        (define (step1) (page (haml (.container (button void "Continue")))))
-        (define (step2) (page (haml (.container (button void "Continue")))))
-        (define (done) (page (haml (.container (:p "You're done.")))))
+      '((define (step0)
+          (let ([*env* (make-environment *env*)])
+            (page (haml (.container (button void "Continue"))))))
+        (define (step1)
+          (let ([*env* (make-environment *env*)])
+            (page (haml (.container (button void "Continue"))))))
+        (define (step2)
+          (let ([*env* (make-environment *env*)])
+            (page (haml (.container (button void "Continue"))))))
+        (define (done)
+          (let ([*env* (make-environment *env*)])
+            (page (haml (.container (:p "You're done."))))))
         (define hello-study
           (make-study
            "hello-study"
            #:transitions (transition-graph
-                          [step0 --> ,(interpret-basic-expr
+                          [step0 --> ,(interpret
                                        '(lambda ()
                                           (cond
                                             [(= (get 'some-var) "agree")
@@ -447,7 +473,8 @@ DSL
                                             [(= (get/instance 'some-other-var) "always-agree")
                                              (goto step1)]
                                             [else
-                                             (goto step2)])))]
+                                             (goto step2)]))
+                                       *env*)]
                           [step1 --> done]
                           [step2 --> done]
                           [done --> done])
@@ -483,9 +510,13 @@ DSL
 }
 DSL
                      ))
-      '((define println (study-mod-require 'racket/base 'println))
-        (define (quit) (interpret-basic-expr '(println "hello")))
-        (define (hello) (page (haml (.container (button quit "Quit")))))))
+      '((environment-set! *env* 'println (study-mod-require 'racket/base 'println))
+        (define (quit)
+          (let ([*env* (make-environment *env*)])
+            (interpret '(println "hello") *env*)))
+        (define (hello)
+          (let ([*env* (make-environment *env*)])
+            (page (haml (.container (button quit "Quit"))))))))
 
      (check-equal?
       (syntax->datum
@@ -511,23 +542,32 @@ DSL
 ]
 DSL
                      ))
-      '((define println (study-mod-require 'racket/base 'println))
-        (define (step0) (page (haml (.container (button void "Continue")))))
-        (define (step1) (page (haml (.container (button void "Continue")))))
-        (define (step2) (page (haml (.container (button void "Continue")))))
-        (define (done) (page (haml (.container (:p "You're done.")))))
+      '((environment-set! *env* 'println (study-mod-require 'racket/base 'println))
+        (define (step0)
+          (let ([*env* (make-environment *env*)])
+            (page (haml (.container (button void "Continue"))))))
+        (define (step1)
+          (let ([*env* (make-environment *env*)])
+            (page (haml (.container (button void "Continue"))))))
+        (define (step2)
+          (let ([*env* (make-environment *env*)])
+            (page (haml (.container (button void "Continue"))))))
+        (define (done)
+          (let ([*env* (make-environment *env*)])
+            (page (haml (.container (:p "You're done."))))))
         (define hello-study
           (make-study
            "hello-study"
            #:transitions (transition-graph
-                          [step0 --> ,(interpret-basic-expr
+                          [step0 --> ,(interpret
                                        '(lambda ()
                                           (println "hello")
                                           (cond
                                             [(= (get 'some-var) "agree")
                                              (goto step1)]
                                             [else
-                                             (goto step2)])))]
+                                             (goto step2)]))
+                                       *env*)]
                           [step1 --> done]
                           [step2 --> done]
                           [done --> done])
@@ -576,19 +616,22 @@ DSL
 DSL
                      ))
       '((define (a content-proc)
-          (haml
-           (:div
-            (:p "Hello " ,@(content-proc) "!"))))
+          (let ([*env* (make-environment *env*)])
+            (haml
+             (:div
+              (:p "Hello " ,@(content-proc) "!")))))
         (define (b content-proc)
-          (haml
-           (:div
-            (a (λ () (list (haml "Hi world!"))))
-            (a (λ () (haml "Hello" "\n" "\n" "there" "\n" "\n" (:h1 "Friend")))))))
+          (let ([*env* (make-environment *env*)])
+            (haml
+             (:div
+              (a (λ () (list (haml "Hi world!"))))
+              (a (λ () (haml "Hello" "\n" "\n" "there" "\n" "\n" (:h1 "Friend"))))))))
         (define (hello)
-          (page
-           (haml
-            (.container
-             (b (λ () (error 'template "yielded without content")))))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (b (λ () (error 'template "yielded without content"))))))))))
 
      (check-equal?
       (syntax->datum
@@ -601,21 +644,12 @@ DSL
 }
 DSL
                      ))
-      '((define format (study-mod-require 'racket/base 'format))
+      '((environment-set! *env* 'format (study-mod-require 'racket/base 'format))
         (define (test)
-          (interpret-basic-expr '(put 'counter1 3))
-          (interpret-basic-expr '(put 'counter2 (format "~a" "Hello")))
-          (interpret-basic-expr '(put 'sym 'test)))))
-
-     (check-equal?
-      (syntax->datum
-       (read+compile #<<DSL
-@import[stdlib add1 make-step/study]
-DSL
-                     ))
-      '((begin
-          (define add1 (dynamic-require 'congame/components/dsl/stdlib 'add1))
-          (define make-step/study (dynamic-require 'congame/components/dsl/stdlib 'make-step/study)))))
+          (let ([*env* (make-environment *env*)])
+            (interpret '(put 'counter1 3) *env*)
+            (interpret '(put 'counter2 (format "~a" "Hello")) *env*)
+            (interpret '(put 'sym 'test) *env*)))))
 
      (check-exn
       #rx"not a valid step id"
@@ -650,13 +684,15 @@ DSL
 DSL
         ))
       '((define (pre-step-foo)
-          (interpret-basic-expr '(put 'x 42)))
+          (let ([*env* (make-environment *env*)])
+            (interpret '(put 'x 42) *env*)))
         (define (foo)
-          (pre-step-foo)
-          (page
-           (haml
-            (.container
-             (:p "Hello world")))))))
+          (let ([*env* (make-environment *env*)])
+            (pre-step-foo)
+            (page
+             (haml
+              (.container
+               (:p "Hello world"))))))))
 
      (check-equal?
       (syntax->datum
@@ -672,15 +708,17 @@ DSL
 DSL
         ))
       '((define (foo)
-          (page
-           (haml
-            (.container
-             (:p "Hello world")))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p "Hello world"))))))
         (define (bar)
-          (page
-           (haml
-            (.container
-             (:p "Goodbye"))))))))))
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p "Goodbye")))))))))))
 
 (module+ test
   (require rackunit/text-ui)
