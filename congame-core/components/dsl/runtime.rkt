@@ -58,6 +58,9 @@
                                             [(environment-parent e) => (λ (pe) (environment-ref pe id))]
                                             [else (error 'environment-ref "unbound variable ~a" id)]))))
 
+(define (environment-has-binding? e id)
+  (hash-has-key? (environment-bindings e) id))
+
 
 ;; interpreter ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -72,7 +75,7 @@
       [`(lambda ,arg-ids . ,bodies)
        (lambda args
          (unless (equal? (length arg-ids) (length args))
-           (error 'loop "bad arity"))
+           (error 'interpret "bad arity"))
          (define lambda-env (make-environment env))
          (for ([arg-id (in-list arg-ids)]
                [arg (in-list args)])
@@ -82,6 +85,13 @@
       [`(begin . ,bodies)
        (for/last ([body-e (in-list bodies)])
          (loop body-e env))]
+
+      [`(define ,id ,e)
+       (unless (symbol? id)
+         (error 'interpret "id must be a symbol"))
+       (when (environment-has-binding? env id)
+         (error 'interpret "cannot redefine variable ~a" id))
+       (environment-set! env id (loop e env))]
 
       [`(if ,test-e ,then-e ,else-e)
        (if (loop test-e env)
