@@ -198,14 +198,8 @@ DSL
                           [hello --> done]
                           [done --> done])
            (list
-            (cond
-              ((study? hello) (make-step/study 'hello hello))
-              ((or (step/study? hello) (step? hello)) hello)
-              (else (make-step 'hello hello)))
-            (cond
-              ((study? done) (make-step/study 'done done))
-              ((or (step/study? done) (step? done)) done)
-              (else (make-step 'done done))))))))
+            (->step 'hello hello)
+            (->step 'done done))))))
 
      (check-equal?
       (syntax->datum
@@ -479,22 +473,10 @@ DSL
                           [step2 --> done]
                           [done --> done])
            (list
-            (cond
-              ((study? step0) (make-step/study 'step0 step0))
-              ((or (step/study? step0) (step? step0)) step0)
-              (else (make-step 'step0 step0)))
-            (cond
-              ((study? step1) (make-step/study 'step1 step1))
-              ((or (step/study? step1) (step? step1)) step1)
-              (else (make-step 'step1 step1)))
-            (cond
-              ((study? done) (make-step/study 'done done))
-              ((or (step/study? done) (step? done)) done)
-              (else (make-step 'done done)))
-            (cond
-              ((study? step2) (make-step/study 'step2 step2))
-              ((or (step/study? step2) (step? step2)) step2)
-              (else (make-step 'step2 step2))))))))
+            (->step 'step0 step0)
+            (->step 'step1 step1)
+            (->step 'done done)
+            (->step 'step2 step2))))))
 
      (check-equal?
       (syntax->datum
@@ -572,22 +554,10 @@ DSL
                           [step2 --> done]
                           [done --> done])
            (list
-            (cond
-              ((study? step0) (make-step/study 'step0 step0))
-              ((or (step/study? step0) (step? step0)) step0)
-              (else (make-step 'step0 step0)))
-            (cond
-              ((study? step1) (make-step/study 'step1 step1))
-              ((or (step/study? step1) (step? step1)) step1)
-              (else (make-step 'step1 step1)))
-            (cond
-              ((study? done) (make-step/study 'done done))
-              ((or (step/study? done) (step? done)) done)
-              (else (make-step 'done done)))
-            (cond
-              ((study? step2) (make-step/study 'step2 step2))
-              ((or (step/study? step2) (step? step2)) step2)
-              (else (make-step 'step2 step2))))))))
+            (->step 'step0 step0)
+            (->step 'step1 step1)
+            (->step 'done done)
+            (->step 'step2 step2))))))
 
      (check-equal?
       (syntax->datum
@@ -718,7 +688,38 @@ DSL
             (page
              (haml
               (.container
-               (:p "Goodbye")))))))))))
+               (:p "Goodbye"))))))))
+
+
+     (check-equal?
+      (syntax->datum
+       (read+compile
+        #<<DSL
+@step[a]{
+  Hello world
+}
+
+@study[
+ binding-transitions
+ #:transitions
+ [a --> [b a] --> b]
+]
+DSL
+        ))
+      '((define (a)
+          (let ([*env* (make-environment *env*)])
+            (page
+             (haml
+              (.container
+               (:p "Hello world"))))))
+        (define binding-transitions
+          (make-study
+           "binding-transitions"
+           #:transitions
+           (transition-graph (a --> b --> b))
+           (list
+            (->step 'a a)
+            (->step 'b a)))))))))
 
 (module+ test
   (require rackunit/text-ui)

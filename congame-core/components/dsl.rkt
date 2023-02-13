@@ -102,16 +102,23 @@
   (define-syntax-class transition-entry
     #:datum-literals (--> end ev)
     (pattern -->
-             #:attr id #f
+             #:attr step-name #f
+             #:attr step-id #f
              #:with compiled this-syntax)
 
     (pattern id:id
+             #:with step-name #'id
+             #:with step-id #'id
              #:with compiled this-syntax)
 
     (pattern (ev e)
-             #:attr id #f
+             #:attr step-name #f
+             #:attr step-id #f
              #:with compiled-expr (compile-expr this-syntax)
-             #:with compiled #'(unquote compiled-expr)))
+             #:with compiled #'(unquote compiled-expr))
+
+    (pattern [step-name:id step-id:id]
+             #:with compiled #'step-name))
 
   (syntax-parse stx
     #:datum-literals (action define import step study template template-ungrouped)
@@ -150,25 +157,25 @@
     [(study study-id:id #:transitions [transition-entry:transition-entry ...] ...+)
      #:fail-when (eq? (syntax-e #'study-id) 'end) "'end' is not a valid study id"
      #:with study-id-str (datum->syntax #'study-id (symbol->string (syntax->datum #'study-id)))
-     #:with (step-id ...) (for*/fold ([stxes null]
-                                      [seen-ids (hasheq)]
-                                      #:result (reverse stxes))
-                                     ([id-stx (in-list (syntax-e #'({~? transition-entry.id} ... ...)))]
-                                      [id (in-value (syntax->datum id-stx))]
-                                      #:unless (hash-has-key? seen-ids id))
-                            (values (cons id-stx stxes)
-                                    (hash-set seen-ids id #t)))
+     #:with ((step-name step-id) ...)
+     (for/fold ([stxes null]
+                [seen-names (hasheq)]
+                #:result (reverse stxes))
+               ([name-stx (in-list (syntax-e #'({~? transition-entry.step-name} ... ...)))]
+                [id-stx (in-list (syntax-e #'({~? transition-entry.step-id} ... ...)))])
+       (define name
+         (and name-stx (syntax->datum name-stx)))
+       (cond
+         [(hash-has-key? seen-names name)
+          (values stxes seen-names)]
+         [else
+          (values (cons (list (or name-stx id-stx) id-stx) stxes)
+                  (hash-set seen-names name #t))]))
      #'(define study-id
          (make-study
           study-id-str
           #:transitions (transition-graph [transition-entry.compiled ...] ...)
-          (list
-           (cond [(study? step-id)
-                  (make-step/study 'step-id step-id)]
-                 [(or (step/study? step-id)
-                      (step? step-id))
-                  step-id]
-                 [else (make-step 'step-id step-id)]) ...)))]
+          (list (->step 'step-name step-id) ...)))]
 
     [({~and {~or template template-ungrouped} form-id} template-id:id content ...+)
      #:with (compiled-content ...) (parameterize ([current-in-template? #t]

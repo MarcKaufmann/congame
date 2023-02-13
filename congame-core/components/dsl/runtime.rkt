@@ -141,3 +141,15 @@
       [else
        (put 'remaining-steps (cdr steps))
        (car steps)])))
+
+
+;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ ->step)
+
+(define (->step id v)
+  (cond
+    [(study? v) (make-step/study id v)]
+    [(or (step/study? v) (step? v)) v]
+    [else (make-step id v)]))
