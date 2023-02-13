@@ -107,9 +107,8 @@
        (edge a b)]))
   (fprintf out "}~n"))
 
-(define dot (find-executable-path "dot"))
-
 (define (comptime-transitions->pdf ts)
+  (define dot (find-executable-path "dot"))
   (unless dot
     (error 'comptime-transitions->pdf "dot executable not found"))
   (define filename (make-temporary-file "comptime-transitions-~a.pdf"))
