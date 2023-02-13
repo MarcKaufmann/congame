@@ -288,8 +288,134 @@ To add multiple style properties, we separate them by a semicolon:
 }
 }|
 
-@section{Intermezzo: Some exercises}
+@section{Reusing steps and whole studies}
 
+In many studies, it is useful to repeatedly measure the same thing: a willingness to pay, the mood, fatigue, and many others. In countdown, we saw one way of repeating a step that displays similar information again and again. Now we will see several other ways, including ones where we elicit information again and again. Note that one major problem we will have to deal with is how to name the values that we measure: if we always use the identifier @tt{'fatigue} to store how tired a person is, then we run the danger of overwriting it.
+
+First, let us try to define a step and reuse it 3 times:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@step[description]{
+  @h1{Fatigue Survey}
+
+  In this study we will ask you three times how tired you are.
+
+  @button{Start study}
+}
+
+@step[how-tired-are-you]{
+  @h1{Fatigue question}
+
+  @form{
+    @input-number[fatigue #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
+    @submit-button[]
+  }
+}
+
+@step[done]{
+  @h1{You are done!}
+
+  Thank you for participating.
+}
+
+@study[
+  three-fatigues
+  #:transitions
+  @; This will not work as expected
+  [description --> how-tired-are-you --> how-tired-are-you --> how-tired-are-you --> done]
+  [done --> done]
+]
+}|
+
+The above does not work, as it is interpreted as saying that after the step @tt{how-tired-are-you} comes the step @tt{how-tired-are-you}, and the next arrow simply repeats this information again. We could add a counter as we did for countdown, but that will not work. When you look at the data in the database after submitting two or more answers, you will see that only a single answer (the last one) was stored. This problem persists when we use the counter.
+
+One way to solve the problem is to define three separate steps that do the same thing, but store it in different values:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@step[how-tired-are-you1]{
+  @h1{Fatigue question}
+
+  @form{
+    @input-number[fatigue1 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
+    @submit-button[]
+  }
+}
+
+@step[how-tired-are-you2]{
+  @h1{Fatigue question}
+
+  @form{
+    @input-number[fatigue2 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
+    @submit-button[]
+  }
+}
+
+@step[how-tired-are-you3]{
+  @h1{Fatigue question}
+
+  @form{
+    @input-number[fatigue3 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
+    @submit-button[]
+  }
+}
+
+@study[
+  three-fatigues
+  #:transitions
+  [description --> how-tired-are-you1
+               --> how-tired-are-you2
+               --> how-tired-are-you3
+               --> done]
+  [done --> done]
+]
+}|
+
+This will work. But one of the more famous mottos in programming is @emph{Don't Repeat Yourself}, or @emph{DRY} for short. While one can overdo it with DRY, here we have literally had to repeat whole steps three times, and moreover manually needed to change the name of the step and of the value we want to store. Imagine a more complicated survey with 10 questions: we would have to change 10 names for each repetition, which is a recipe for disaster!
+
+This brings us to one of the nicer features of conscript: we can reuse whole studies as substudies of a larger study. Moreover, substudies never overwrite data from other substudies  (unless you use advanced features, which require you being explicit about it). In our context, that means that if we define a study that saves a respondent's fatigue with the identifier @tt{'fatigue}, we can reuse it multiple times, and each saves its own identifier @tt{'fatigue}, leaving all the others alone.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@; take the `description` and `done` steps from above
+@; ...
+
+@; Add the following
+@step[how-tired-are-you]{
+  @h1{Fatigue question}
+
+  @form{
+    @input-number[fatigue #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
+    @submit-button[]
+  }
+}
+
+@study[
+  fatigue
+  #:transitions
+  [how-tired-are-you --> @(ev (lambda () done))]
+]
+
+@study[
+  three-fatigues
+  #:transitions
+  [description --> [fatigue1 fatigue]
+               --> [fatigue2 fatigue]
+               --> [fatigue3 fatigue]
+               --> done]
+  [done --> done]
+]
+}|
+
+This is the first time that we define two studies. Then we reuse the first study, named @tt{fatigue} three times in the second one, by using the following pattern for the transition: @tt{--> [<name-the-step> <study-to-run>]}, where the @emph{<name-of-the-step>} is what you want to call this step as part of the @tt{three-fatigues} study, while @tt{<study-to-run>} is the study that will be run. Hence we provide three different names, yet the same study each time, since we want to run the same study.
+
+It is important that for the study that we want to use as a substudy that we add a transition at the end that looks as follows: @code|{@(ev (lambda () done))}|. This tells conscript that at this point it should leave the substudy and go back to the parent study.
+
+@section{Intermezzo: Some exercises}
 
 
 @section{Studies involving multiple Participants}

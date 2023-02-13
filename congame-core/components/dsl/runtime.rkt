@@ -38,7 +38,8 @@
   get put
   get/instance put/instance
   add1 sub1
-  ~a format number->string)
+  ~a format number->string
+  done next)
 
 (define (make-initial-environment)
   (define env (make-environment))
