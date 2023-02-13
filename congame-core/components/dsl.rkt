@@ -320,6 +320,17 @@
          (widget-id
           (haml compiled-label-expr))))]
 
+    [({~and {~or checkbox input-date input-file input-number input-text input-time textarea} widget-id}
+      name:id
+      {~optional {~seq #:required? required?:boolean}}
+      label-expr)
+     #:with name-kwd (stx->keyword-stx #'name)
+     #:with compiled-label-expr (compile-markup (syntax-e #'label-expr))
+     #'((name-kwd
+         (widget-id
+          {~? {~@ #:required? required?}}
+          (haml compiled-label-expr))))]
+
     [(input-number name:id
                    ~!
                    {~alt
@@ -338,7 +349,7 @@
           {~? {~@ #:step step-expr}}
           (haml compiled-label-expr))))]
 
-    ; FIXME: The next clause does not work with keyword arguments and multiple labels.
+    ; FIXME: The next clause does not work with #:required
     [({~and {~or checkbox input-date input-file input-number input-text input-time textarea} widget-id} ~! name:id label-expr ...+)
      (compile-form-expr #'(widget-id name (div label-expr ...)))]
 

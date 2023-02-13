@@ -164,10 +164,12 @@
   (bot:type-all elts-to-type)
   (m:element-click! (bot:find "button[type=submit]")))
 
-(define ((checkbox label) meth)
+(define ((checkbox label #:required? [required? #t]) meth)
   (match meth
     ['validator
-     (ensure binding/boolean (required))]
+     (if required?
+         (ensure binding/boolean (required))
+         (ensure binding/boolean))]
 
     ['widget
      (lambda (name value errors)
@@ -176,10 +178,13 @@
          (:label ((widget-checkbox) name value errors) label)
          ,@((widget-errors) name value errors))))]))
 
-(define ((radios label options #:validators [validators null]) meth)
+(define ((radios label
+                 options
+                 #:required? [required? #t]
+                 #:validators [validators null]) meth)
   (match meth
     ['validator
-     (apply ensure binding/text (required) validators)]
+     (apply ensure binding/text (cons/required? required? validators))]
 
     ['widget
      (lambda (name value errors)
@@ -190,10 +195,12 @@
           ((widget-radio-group options) name value errors))
          ,@((widget-errors) name value errors))))]))
 
-(define ((input-file label #:validators [validators null]) meth)
+(define ((input-file label
+                     #:required? [required? #t]
+                     #:validators [validators null]) meth)
   (match meth
     ['validator
-     (apply ensure binding/file (required) validators)]
+     (apply ensure binding/file (cons/required? required? validators))]
 
     ['widget
      (lambda (name value errors)
@@ -211,9 +218,7 @@
                        #:validators [validators null]) meth)
   (match meth
     ['validator
-     (let* ([validators (list* (to-real) (range/inclusive min max) validators)]
-            [validators (if required? (cons (required) validators) validators)])
-       (apply ensure binding/number validators))]
+       (apply ensure binding/number (cons/required? required? (list* (to-real) (range/inclusive min max) validators)))]
     ['widget
      (lambda (name value errors)
        (haml
@@ -226,10 +231,12 @@
           label)
          ,@((widget-errors) name value errors))))]))
 
-(define ((input-text label #:validators [validators null]) meth)
+(define ((input-text label
+                     #:required? [required? #t]
+                     #:validators [validators null]) meth)
   (match meth
     ['validator
-     (apply ensure binding/text (required) validators)]
+     (apply ensure binding/text (cons/required? required? validators))]
     ['widget
      (lambda (name value errors)
        (haml
@@ -238,10 +245,12 @@
           ((widget-text) name value errors) label)
          ,@((widget-errors) name value errors))))]))
 
-(define ((textarea label #:validators [validators null]) meth)
+(define ((textarea label
+                   #:required? [required? #t]
+                   #:validators [validators null]) meth)
   (match meth
     ['validator
-     (apply ensure binding/text (required) validators)]
+     (apply ensure binding/text (cons/required? required? validators))]
     ['widget
      (lambda (name value errors)
        (haml
@@ -249,15 +258,20 @@
          (:label label ((widget-textarea) name value errors))
          ,@((widget-errors) name value errors))))]))
 
-(define ((input-time label #:validators [validators null]) meth)
+(define (widget-time #:attributes [attributes null])
+  (widget-input #:type "time" #:attributes attributes))
+
+(define ((input-time label
+                     #:required? [required? #t]
+                     #:validators [validators null]) meth)
   (match meth
     ['validator
-     (apply ensure binding/text (required) validators)]
+     (apply ensure binding/text (cons/required? required? validators))]
     ['widget
      (lambda (name value errors)
        (haml
         (.group
-         (:label label ((widget-text) name value errors))
+         (:label label ((widget-time) name value errors))
          ,@((widget-errors) name value errors))))]))
 
 ; FIXME: Move this to `forms` package
@@ -265,13 +279,22 @@
   (widget-input #:type "date"
                 #:attributes attributes))
 
-(define ((input-date label #:validators [validators null]) meth)
+(define ((input-date label
+                     #:required? [required? #t]
+                     #:validators [validators null]) meth)
   (match meth
     ['validator
-     (apply ensure binding/text (required) validators)]
+     (apply ensure binding/text (cons/required? required? validators))]
     ['widget
      (lambda (name value errors)
        (haml
         (.group
          (:label label ((widget-date) name value errors))
          ,@((widget-errors) name value errors))))]))
+
+;;; help ;;;;;;;;;;;;;;;;;;;;
+
+(define (cons/required? required? l)
+  (if required?
+      (cons (required) l)
+      l))
