@@ -132,10 +132,6 @@
          (let ([*env* (make-environment *env*)])
            compiled-content ...))]
 
-    [(define id:id e)
-     #:with compiled-e (compile-markup #'e)
-     #'(define id compiled-e)]
-
     [(import mod-path:id id:id)
      #'(environment-set! *env* 'id (study-mod-require 'mod-path 'id))]
 
