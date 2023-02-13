@@ -312,7 +312,7 @@
     (datum->syntax stx (string->keyword (symbol->string (syntax-e stx)))))
 
   (syntax-parse stx
-    #:datum-literals (checkbox input-date input-file input-number input-text input-time textarea submit-button)
+    #:datum-literals (checkbox input-date input-file input-number input-text input-time radios select textarea submit-button)
     [({~and {~or checkbox input-date input-file input-number input-text input-time textarea} widget-id} name:id label-expr)
      #:with name-kwd (stx->keyword-stx #'name)
      #:with compiled-label-expr (compile-markup (syntax-e #'label-expr))
@@ -348,6 +348,18 @@
           {~? {~@ #:max max-expr}}
           {~? {~@ #:step step-expr}}
           (haml compiled-label-expr))))]
+
+    [({~and {~or radios select} widget-id} name:id
+             options
+             {~optional {~seq #:required? required?:boolean}}
+             label-expr)
+     #:with name-kwd (stx->keyword-stx #'name)
+     #:with compiled-label-expr (compile-markup (syntax-e #'label-expr))
+     #'((name-kwd
+         (widget-id
+          {~? {~@ #:required? required?}}
+          (haml compiled-label-expr)
+          options)))]
 
     ; FIXME: The next clause does not work with #:required
     [({~and {~or checkbox input-date input-file input-number input-text input-time textarea} widget-id} ~! name:id label-expr ...+)

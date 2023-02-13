@@ -8,6 +8,8 @@
     @input-number[n]{What is your favourite number? (@"@input-number")}
     @input-text[plain-text]{What is your name? (@"@input-text")}
     @input-time[time]{What is the local time? (@"@input-time")}
+    @radios[radios '(("yes" . "Yes") ("no" . "No") ("maybe" . "Maybe"))]{What is your answer? (@"@radios")}
+    @select[select '(("blue" . "Blue") ("orange". "Orange") ("red" . "Red"))]{Which colors do you like? (@"select")}
     @textarea[textarea]{Tell me about yourself. Uh-mh. Interesting. Mmhm. (@"@textarea")}
     @submit-button[]{Submit glorious information}}
 }
@@ -22,6 +24,8 @@
     @input-number[n-not-r #:required? #f]{What is your favourite number? (@"@input-number")}
     @input-text[plain-text-not-r #:required? #f]{What is your name? (@"@input-text")}
     @input-time[time-not-r #:required? #f]{What is the local time? (@"@input-time")}
+    @radios[radios-not-r '(("yes" . "Yes") ("no" . "No") ("maybe" . "Maybe")) #:required? #f]{What is your answer? (@"@radios")}
+    @select[select-not-r '(("blue" . "Blue") ("orange" . "Orange") ("red" . "Red")) #:required? #f]{Which color do you like? (@"select")}
     @textarea[textarea-not-r #:required? #f]{Tell me about yourself. Uh-mh. Interesting. Mmhm. (@"@textarea")}
     @submit-button[]{Submit glorious information}}
 }

@@ -16,6 +16,7 @@
  formular-autofill
  checkbox
  radios
+ select
  input-date
  input-file
  input-number
@@ -158,6 +159,11 @@
          (define the-radio (bot:find (format "[name=~a][value='~a']" field-id value)))
          (values (cons the-radio elts-to-click) elts-to-type)]
 
+        ; FIXME: Marc thinks the bot:find won't work, since we need to get the option field with [value='value'], which is a child of select with name [name=field-id]. The space between them should select the child.
+        [("select")
+         (define the-select (bot:find (format "[name=~a] [value='~a']" field-id value)))
+         (values (cons the-select elts-to-click) elts-to-type)]
+
         [else
          (error 'formular-autofill (format "unhandled field type ~a" field-type))])))
   (bot:click-all elts-to-click)
@@ -193,6 +199,22 @@
          (:label.radio-group
           label
           ((widget-radio-group options) name value errors))
+         ,@((widget-errors) name value errors))))]))
+
+(define ((select label
+                 options
+                 #:required? [required? #t]
+                 #:validators [validators null]) meth)
+  (match meth
+    ['validator
+     (apply ensure binding/text (cons/required? required? validators))]
+
+    ['widget
+     (lambda (name value errors)
+       (haml
+        (.group
+         (:label
+          ((widget-select options) name value errors) label)
          ,@((widget-errors) name value errors))))]))
 
 (define ((input-file label
