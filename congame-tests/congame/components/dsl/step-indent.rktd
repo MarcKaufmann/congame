@@ -1,0 +1,1 @@
+((define (foo) (let ((*env* (make-environment *env*))) (page (haml (.container (:p "Hello world")))))) (define (bar) (let ((*env* (make-environment *env*))) (page (haml (.container (:p "Goodbye")))))))
