@@ -417,6 +417,17 @@ It is important that for the study that we want to use as a substudy that we add
 
 @section{Intermezzo: Some exercises}
 
+@bold{Exercise 1} The function @racket[rand] can be used to generate random numbers: @tt{(rand 10)} returns a random integer between 0 and 9. Use this to create the following study. Draw a random number between 0 and 9 for a person and store it. Now repeat the following steps three times:
+
+@itemlist[
+  @item{Elicit the person's belief that their number is greater than or equal to 5}
+  @item{Pick a random number. Tell the person whether their number is larger than (or equal to) or smaller than this new random number, which you show them.}
+]
+
+For example, you might pick the random number 3 for them. Then you pick the numbers 6 ("Your number is smaller than 6"), 9 ("Your number is smaller than 9"), and 2 ("Your number is larger than (or equl to) 2").
+
+@bold{Exercise 2} Pick an experiment from a paper of your choice. Stub out the experiment: this means that you create a page for every page of the experiment, but for pages that might require some interface (e.g. some game or an involved elicitation method), you simply write what would happen there and what functionality you need to be able to implement it.
+
 
 @section{Studies involving multiple Participants}
 
