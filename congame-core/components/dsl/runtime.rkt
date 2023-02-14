@@ -39,6 +39,7 @@
   get/instance put/instance
   add1 sub1
   ~a format number->string
+  random
   done next)
 
 (define (make-initial-environment)
