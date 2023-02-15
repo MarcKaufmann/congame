@@ -435,7 +435,7 @@ Many studies involve participants who interact or affect each other: the dictato
 
 When we need to share data so that it is available for all participants in an instance, we have to use @racket{get/instance} and @racket{put/instance}. To illustrate, let us implement a simple version of the dictator game, where the person chooses between ($10, $0) and ($5, $5): i.e. taking $10 for themselves and nothing for the other, or giving $5 dollars to both.
 
-@codeblock[#:keep-lang-line #f]|{
+@codeblock[#:keep-lang-line? #f]|{
 #lang scribble/manual
 
 @step[prep]{
