@@ -35,8 +35,10 @@
 
 (define-initial-env initial-env
   + - * / =
+  zero? even?
   get put
   get/instance put/instance
+  hash hash-ref hash-set hash-update
   add1 sub1
   ~a format number->string
   random
