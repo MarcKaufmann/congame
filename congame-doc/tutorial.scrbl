@@ -438,12 +438,16 @@ When we need to share data so that it is available for all participants in an in
 @codeblock[#:keep-lang-line #f]|{
 #lang scribble/manual
 
+@step[prep]{
+  @h1{Do we need a first step that is not an action?}
+
+  @button{Next}
+}
+
 @action[assign-roles]{
   @(ev
     (begin
       (define next-pid
-        @; (get 'key value-if-key-not-found) returns the value of 'key,
-        @; and the value-if-key-not-found if the key is not found
         (get/instance 'pid 0))
       (put 'pid next-pid)
       (cond [(even? next-pid) (put 'role "Dictator")]
@@ -462,11 +466,11 @@ When we need to share data so that it is available for all participants in an in
 
   @form{
     @radios[
-      payment
+      payment-string
       '(
-        (10 . "$10 for yourself, $0 for the other perons")
-        (5  . "$5 for yourself, $5 for the other person")
-       )'
+        ("10" . "$10 for yourself, $0 for the other perons")
+        ("5"  . "$5 for yourself, $5 for the other person")
+       )
     ]{Please choose which of these options you prefer:}
     @submit-button[]}
 }
@@ -491,16 +495,19 @@ When we need to share data so that it is available for all participants in an in
 
   Check back later to see if your partner has made their choice yet.
 
-  @button[#:action-id check-answer]{Check the answer}
+  @button[#:action check-answer]{Check the answer}
 }
 
 @action[update-receiver-payment]{
   @(ev
      (begin
+       (define payment
+         (string->number (get 'payment-string)))
+       (put 'payment payment)
        (define receiver-id
          (add1 (get 'pid)))
        (define receiver-payment
-         (- 10 (get 'payment)))
+         (- 10 payment))
        (define current-payments
          (get/instance 'payments (hash)))
        (define new-payments
@@ -509,22 +516,27 @@ When we need to share data so that it is available for all participants in an in
 }
 
 @step[display-dictator #:pre update-receiver-payment]{
-  @h1{You will receive $@(ev (get 'payment))}
+  @h1{You will receive $@(ev (number->string (get 'payment)))}
 }
 
 @step[display-receiver]{
-  @h1{You will receive $@(ev (get 'payment))}
+  @h1{You will receive $@(ev (number->string (get 'payment)))}
 }
 
 @study[
   baby-dictator
   #:transitions
-  [start --> @(ev (cond [(even? (get 'pid)) 'wait]
-                        [else choice]))]
+  @; everyone
+  [prep --> start --> @(ev (lambda () (cond [(even? (get 'pid)) 'choice]
+                        [else 'wait])))]
+  @; dictator
   [choice --> display-dictator]
-  [wait --> @(ev (cond [(get 'payment #f) display-receiver]
-                       [else wait]))]
-
+  [display-dictator --> display-dictator]
+  @; receiver
+  [wait --> @(ev (lambda () (cond [(get 'payment #f) 'display-receiver]
+                       [else 'wait])))]
+  [display-receiver --> display-receiver]
+]
 }|
 
 @section{Basic Arithmetic (features in progress)}

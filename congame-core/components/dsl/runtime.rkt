@@ -40,7 +40,7 @@
   get/instance put/instance
   hash hash-ref hash-set hash-update
   add1 sub1
-  ~a format number->string
+  ~a format number->string string->number
   random
   done next)
 
