@@ -42,7 +42,8 @@
   add1 sub1
   ~a format number->string string->number
   random
-  done next)
+  done next
+  current-participant-owner?)
 
 (define (make-initial-environment)
   (define env (make-environment))
