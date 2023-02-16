@@ -1,9 +1,3 @@
-@step[prep]{
-  @h1{Do we need a first step that is not an action?}
-
-  @button{Next}
-}
-
 @action[assign-roles]{
   @(ev
     (begin
@@ -87,7 +81,7 @@
   baby-dictator
   #:transitions
   @; everyone
-  [prep --> start --> @(ev (lambda () (cond [(even? (get 'pid)) 'choice]
+  [start --> @(ev (lambda () (cond [(even? (get 'pid)) 'choice]
                         [else 'wait])))]
   @; dictator
   [choice --> display-dictator]

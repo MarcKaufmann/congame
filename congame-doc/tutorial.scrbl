@@ -438,12 +438,6 @@ When we need to share data so that it is available for all participants in an in
 @codeblock[#:keep-lang-line? #f]|{
 #lang scribble/manual
 
-@step[prep]{
-  @h1{Do we need a first step that is not an action?}
-
-  @button{Next}
-}
-
 @action[assign-roles]{
   @(ev
     (begin
@@ -527,7 +521,7 @@ When we need to share data so that it is available for all participants in an in
   baby-dictator
   #:transitions
   @; everyone
-  [prep --> start --> @(ev (lambda () (cond [(even? (get 'pid)) 'choice]
+  [start --> @(ev (lambda () (cond [(even? (get 'pid)) 'choice]
                         [else 'wait])))]
   @; dictator
   [choice --> display-dictator]
