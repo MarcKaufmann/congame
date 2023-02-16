@@ -107,7 +107,7 @@ Putting all of this together, we can create our first multi-step study by updati
   @button{Start Survey}
 }
 
-@step[age-height-survey]{
+@step[age-name-survey]{
   @h1{Survey}
 
   @form{
@@ -125,7 +125,7 @@ Putting all of this together, we can create our first multi-step study by updati
 @study[
   tutorial2
   #:transitions
-  [description --> age-height-survey --> thank-you --> thank-you]]
+  [description --> age-name-survey --> thank-you --> thank-you]]
 }|
 
 We have to update the code on the congame server to reflect these changes. Go to the admin page, and follow these steps to update the study code and the study run for tutorial:
@@ -433,7 +433,74 @@ For example, you might pick the random number 3 for them. Then you pick the numb
 
 Many studies involve participants who interact or affect each other: the dictator game, the public goods game, any study with markets, auctions, or negotiations. This requires also that we somehow share values across participants. While @racket{get} and @racket{put} provide a way to store values for a given participant, these values are private. This makes sense by default. Consider what would happen in the countdown study if two participants took the same study instance, and one participant has already progressed to the point where the counter is 3. Then the other participant would see the counter at 3 right from the start, which is clearly not the behavior we want.
 
-When we need to share data so that it is available for all participants in an instance, we have to use @racket{get/instance} and @racket{put/instance}. To illustrate, let us implement a simple version of the dictator game, where the person chooses between ($10, $0) and ($5, $5): i.e. taking $10 for themselves and nothing for the other, or giving $5 dollars to both.
+We will start with a specific, but particularly useful feature that we can implement with multiple participants: an admin page for your study instance that only you (the owner of the study instance) can see. You can display information about the study there, whether about progress by participants or some summaries on their answers. For now, let us have a study where participants provide their name and age, and on the admin page we show how many participants have completed the study so far.
+
+For this, we use the function @racket[current-participant-owner?], which returns true (@racket[#t]) when the current user is the owner of the instance, and false (@racket[#f]) otherwise.
+
+@codeblock[#:keep-lang-line? #f]{
+#lang scribble/manual
+
+@; Same code as in tutorial 2 above for the steps of normal participants
+
+@step[admin]{
+  @h1{You reached the admin page!}
+}
+
+@study[
+  survey-with-admin
+  #:transitions
+  [start --> @(ev (lambda ()
+                    (cond [(current-participant-owner?) 'admin]
+                          [else 'description])))]
+  [admin --> admin]
+  [description --> age-name-survey --> thank-you --> thank-you]]
+}|
+}
+
+With this code, the owner of the study instance will see the start page, and after that the admin page and remain there. Study participants on the other hand will be guided to the normal study instead. Right now, the admin page doesn't provide any useful data. In order to share data from the participants with the owner, we need to use @racket[get/instance] and @racket[put/instance] instead of @racket[get] and @racket[put]. @racket[put/instance] stores the data in a way that we can access it with @racket[get/instance] from each participant. This also means that if two participants store something on an instance, they overwrite each others value. Therefore we have to make sure first get the old value, and then update it.
+
+For now, all we want is to count how many participants completed the study, so every time a participant gets to the @tt{thank-you} page, we increment an @emph{instance-wide} counter by 1.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@action[initialize-count-if-needed]{
+  @(ev
+    (begin
+      (unless (get/instance 'participant #f)
+        (put/instance 'participant-count 0))
+      ))
+}
+
+@start[start]{
+  @h1{Start page}
+
+  @button[#:action initialize-count-if-needed]{Next}
+}
+
+@action[increment-participant-count]{
+  @(ev
+    (begin
+      (define participant-count
+        (get/instance 'participant-count))
+      (put 'participant-count (add1 participant-count))
+    ))
+}
+
+@step[thank-you #:pre increment-participant-count]{
+  @; old code
+  @; ...
+}
+
+@step[admin]{
+  @h1{Admin}
+
+  Number of participants who completed the study: @(ev (get/instance 'participant-count))
+}
+
+}|
+
+Next, let us implement a simple version of the dictator game to highlight a more complicated case of multi-person experiment. In our version, the person chooses between ($10, $0) and ($5, $5): i.e. taking $10 for themselves and nothing for the other, or giving $5 dollars to both.
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang scribble/manual
