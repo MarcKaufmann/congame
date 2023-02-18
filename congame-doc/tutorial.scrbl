@@ -437,7 +437,7 @@ We will start with a specific, but particularly useful feature that we can imple
 
 For this, we use the function @racket[current-participant-owner?], which returns true (@racket[#t]) when the current user is the owner of the instance, and false (@racket[#f]) otherwise.
 
-@codeblock[#:keep-lang-line? #f]{
+@codeblock[#:keep-lang-line? #f]|{
 #lang scribble/manual
 
 @; Same code as in tutorial 2 above for the steps of normal participants
@@ -455,7 +455,6 @@ For this, we use the function @racket[current-participant-owner?], which returns
   [admin --> admin]
   [description --> age-name-survey --> thank-you --> thank-you]]
 }|
-}
 
 With this code, the owner of the study instance will see the start page, and after that the admin page and remain there. Study participants on the other hand will be guided to the normal study instead. Right now, the admin page doesn't provide any useful data. In order to share data from the participants with the owner, we need to use @racket[get/instance] and @racket[put/instance] instead of @racket[get] and @racket[put]. @racket[put/instance] stores the data in a way that we can access it with @racket[get/instance] from each participant. This also means that if two participants store something on an instance, they overwrite each others value. Therefore we have to make sure first get the old value, and then update it.
 
