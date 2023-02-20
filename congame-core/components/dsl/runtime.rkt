@@ -43,7 +43,7 @@
   add1 sub1
   ~a format number->string string->number
   random
-  done next
+  done next skip
   current-participant-owner?)
 
 (define (make-initial-environment)
