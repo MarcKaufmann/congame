@@ -1,13 +1,13 @@
 @action[assign-roles]{
   @(ev
     (begin
-      (define next-pid
-        (get/instance 'pid 0))
-      (put 'pid next-pid)
-      (cond [(even? next-pid) (put 'role "Dictator")]
-            [else (put 'role "(Non-)Receiver")])
-      (put/instance 'pid (add1 next-pid))
-    ))
+      (unless (get 'role #f)
+       (define next-pid
+         (get/instance 'pid 0))
+       (put 'pid next-pid)
+       (cond [(even? next-pid) (put 'role "Dictator")]
+             [else (put 'role "(Non-)Receiver")])
+       (put/instance 'pid (add1 next-pid)))))
 }
 
 @step[start #:pre assign-roles]{
