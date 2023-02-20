@@ -129,8 +129,9 @@
     [(action name:id content ...+)
      #:with (compiled-content ...) (filter-map compile-action-expr (syntax-e #'(content ...)))
      #'(define (name)
-         (let ([*env* (make-environment *env*)])
-           compiled-content ...))]
+         (with-study-transaction
+           (let ([*env* (make-environment *env*)])
+             compiled-content ...)))]
 
     [(import mod-path:id id:id)
      #'(environment-set! *env* 'id (study-mod-require 'mod-path 'id))]
