@@ -50,7 +50,7 @@
 
   Waiting for the dictator to make a choice.
 
-  @(ev (refresh-every 5))
+  @refresh-every[5]
 }
 
 @action[update-receiver-payment]{

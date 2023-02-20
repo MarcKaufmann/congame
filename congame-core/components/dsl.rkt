@@ -199,7 +199,7 @@
   ;; NOTE: For block-style tags, it's the tag's responsibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
-    #:datum-literals (a br button div em form h1 h2 h3 hl img ol p quote span strong template u1 ul yield)
+    #:datum-literals (a br button div em form h1 h2 h3 hl img ol p quote refresh-every span strong template u1 ul yield)
     [num:number #'num]
     [str:string #'str]
     [kwd:keyword #'kwd]
@@ -258,6 +258,10 @@
 
     [(p body:body ...)
      #'(:p body.compiled ...)]
+
+    ;; TODO: Remove refresh-every from interpreter and move it all here.
+    [(refresh-every n:number)
+     #'(interpret '(refresh-every n) *env*)]
 
     [(span {~optional {~seq #:class class:string}} body:body ...+)
      #'(:span {~? ({~@ [:class class]})} body.compiled ...)]
