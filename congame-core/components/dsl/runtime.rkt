@@ -35,6 +35,7 @@
 
 (define-initial-env initial-env
   + - * / =
+  not void
   zero? even?
   get put
   get/instance put/instance
@@ -88,20 +89,22 @@
          (loop `(begin . ,bodies) lambda-env))]
 
       [`(begin . ,bodies)
+       (define begin-env (make-environment env))
        (for/last ([body-e (in-list bodies)])
-         (loop body-e env))]
+         (loop body-e begin-env))]
 
       [`(define ,id ,e)
        (unless (symbol? id)
          (error 'interpret "id must be a symbol"))
        (when (environment-has-binding? env id)
          (error 'interpret "cannot redefine variable ~a" id))
-       (environment-set! env id (loop e env))]
+       (environment-set! env id (loop e env))
+       (void)]
 
       [`(if ,test-e ,then-e ,else-e)
        (if (loop test-e env)
-           (loop then-e env)
-           (loop else-e env))]
+           (loop then-e (make-environment env))
+           (loop else-e (make-environment env)))]
 
       [`(cond [,test-e . ,bodies] [else . ,else-bodies])
        (loop `(if ,test-e
@@ -116,6 +119,26 @@
                         ,@branches
                         [else ,else-branch])])
              env)]
+
+      [`(when ,test-e . ,bodies)
+       (loop `(if ,test-e
+                  (begin . ,bodies)
+                  (void))
+             env)]
+
+      [`(unless ,test-e . ,bodies)
+       (loop `(if ,test-e
+                  (void)
+                  (begin . ,bodies))
+             env)]
+
+      [`(or ,e1 ,e2)
+       (or (loop e1 env)
+           (loop e2 env))]
+
+      [`(and ,e1 ,e2)
+       (and (loop e1 env)
+            (loop e2 env))]
 
       [(? boolean?) e]
       [(? number?) e]
