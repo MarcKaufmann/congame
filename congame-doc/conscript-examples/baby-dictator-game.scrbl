@@ -1,13 +1,14 @@
 @action[assign-roles]{
   @(ev
     (begin
-      (unless (get 'role #f)
-       (define next-pid
-         (get/instance 'pid 0))
-       (put 'pid next-pid)
-       (cond [(even? next-pid) (put 'role "Dictator")]
-             [else (put 'role "(Non-)Receiver")])
-       (put/instance 'pid (add1 next-pid)))))
+      (with-transaction
+       (unless (get 'role #f)
+        (define next-pid
+          (get/instance 'pid 0))
+        (put 'pid next-pid)
+        (cond [(even? next-pid) (put 'role "Dictator")]
+              [else (put 'role "(Non-)Receiver")])
+        (put/instance 'pid (add1 next-pid))))))
 }
 
 @step[start #:pre assign-roles]{
@@ -22,14 +23,14 @@
     @radios[
       payment-string
       '(
-        ("10" . "$10 for yourself, $0 for the other perons")
+        ("10" . "$10 for yourself, $0 for the other person")
         ("5"  . "$5 for yourself, $5 for the other person")
        )
     ]{Please choose which of these options you prefer:}
     @submit-button[]}
 }
 
-@action[check-answer]{
+@action[check-on-dictator]{
   @(ev
     (begin
       @; We automatically pair participant with id 1 with participant
@@ -39,17 +40,17 @@
         (get/instance 'payments (hash)))
       (define receiver-payment
         (hash-ref payments (get 'pid) #f))
-      (cond [receiver-payment (put 'payment receiver-payment)]
-            [else (put 'payment #f)])))
+      (when receiver-payment
+        (put 'payment receiver-payment)
+        (skip))))
 }
 
-@step[wait]{
+@step[wait #:pre check-on-dictator]{
+  @h1{Waiting...}
 
-  @h1{Refresh this screen regularly}
+  Waiting for the dictator to make a choice.
 
-  Check back later to see if your partner has made their choice yet.
-
-  @button[#:action check-answer]{Check the answer}
+  @(ev (refresh-every 5))
 }
 
 @action[update-receiver-payment]{
@@ -87,7 +88,6 @@
   [choice --> display-dictator]
   [display-dictator --> display-dictator]
   @; receiver
-  [wait --> @(ev (lambda () (cond [(get 'payment #f) 'display-receiver]
-                       [else 'wait])))]
+  [wait --> display-receiver]
   [display-receiver --> display-receiver]
 ]

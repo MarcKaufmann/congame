@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/format
+(require koyo/haml
+         racket/format
          racket/list
          racket/match
          "../study.rkt")
@@ -15,6 +16,16 @@
            [arg (in-list kw-args)])
        (put (string->symbol (keyword->string kw)) arg))
      (action))))
+
+(define (refresh-every n-seconds)
+  (haml
+   (:script
+    (format #<<SCRIPT
+setTimeout(function() {
+  document.location.reload();
+}, ~a*1000)
+SCRIPT
+            n-seconds))))
 
 
 ;; environment ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -44,7 +55,8 @@
   ~a format number->string string->number
   random
   done next skip
-  current-participant-owner?)
+  current-participant-owner?
+  refresh-every)
 
 (define (make-initial-environment)
   (define env (make-environment))
@@ -139,6 +151,10 @@
       [`(and ,e1 ,e2)
        (and (loop e1 env)
             (loop e2 env))]
+
+      [`(with-transaction . ,bodies)
+       (with-study-transaction
+         (loop `(begin . ,bodies) env))]
 
       [(? boolean?) e]
       [(? number?) e]
