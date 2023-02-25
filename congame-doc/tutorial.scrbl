@@ -603,12 +603,12 @@ Next, let us implement a simple version of the dictator game to highlight a more
 
 You can find example studies on GitHub at @hyperlink{https://github.com/MarcKaufmann/congame/tree/master/congame-doc/conscript-examples} that illustrate a variety of features:
 
-@itemlist{
+@itemlist[
   @item{how to include tables}
   @item{the form input types available}
   @item{how to create a simple admin page}
   @item{how to randomize participants into multiple treatments}
-}
+]
 
 @section{Basic Arithmetic (features in progress)}
 
