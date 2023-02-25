@@ -608,6 +608,7 @@ You can find example studies on GitHub at @url{https://github.com/MarcKaufmann/c
   @item{the form input types available}
   @item{how to create a simple admin page}
   @item{how to randomize participants into multiple treatments}
+  @item{how to use @code|{@refresh-every}| to wait for input from another player}
 ]
 
 @section{Randomizing participants into treatments}
