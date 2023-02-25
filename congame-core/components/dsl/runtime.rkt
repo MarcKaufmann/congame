@@ -64,7 +64,7 @@ SCRIPT
       (put/instance treatments-key updated-treatments))))
 
 (define-initial-env initial-env
-  + - * / =
+  + - * / = modulo remainder
   not void
   zero? even? empty? equal?
   get put
