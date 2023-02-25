@@ -601,7 +601,7 @@ Next, let us implement a simple version of the dictator game to highlight a more
 
 @section{Example Studies on Github}
 
-You can find example studies on GitHub at @hyperlink{https://github.com/MarcKaufmann/congame/tree/master/congame-doc/conscript-examples} that illustrate a variety of features:
+You can find example studies on GitHub at @url{https://github.com/MarcKaufmann/congame/tree/master/congame-doc/conscript-examples} that illustrate a variety of features:
 
 @itemlist[
   @item{how to include tables}
@@ -609,6 +609,44 @@ You can find example studies on GitHub at @hyperlink{https://github.com/MarcKauf
   @item{how to create a simple admin page}
   @item{how to randomize participants into multiple treatments}
 ]
+
+@section{Randomizing participants into treatments}
+
+While the example study on github provides an example for randomizing participants into treatments from scratch, you can use the function @racket[assigning-treatments] that you can use inside @tt{(ev ...)}. Thus the action that assigns treatments simply becomes:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@action[assigning-treatments]{
+  @(ev
+    (begin
+      (define treatments
+        (list
+          'buyer 'buyer 'seller 'seller 'seller
+          'observer 'observer 'observer 'observer 'observer))
+      (assigning-treatments treatments)))
+}
+}|
+
+This will randomize the order of the treatments and balance them across participants as they arrive. That means that in the case of 10 treatments (as in the example), every set of 10 participants is assigned to these 10 roles to ensure that we always have 2 buyers, 3 sellers, and 5 observers. The order in which they are assigned these roles is randomized.
+
+This works by storing the treatment of the participant as a participant variable in @racket['role] and the set of treatments for the current group of participants as an instance variable in @racket['treatments]. You can overrule these with @racket[#:treatments-key] and @racket[#:role-key]. So if you prefer storing the next set of treatments in @racket['my-treatments] and the treatment of the participant in @racket['treatment], then you need to change the action as follows:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@action[assigning-treatments]{
+  @(ev
+    (being
+      (define treatments
+        (list
+          'buyer 'buyer 'seller 'seller 'seller
+          'observer 'observer 'observer 'observer 'observer))
+      (assigning-treatments treatments
+                            #:treatments-key 'my-treatments
+                            #:role-key       'treatment)))
+}
+}|
 
 @section{Basic Arithmetic (features in progress)}
 

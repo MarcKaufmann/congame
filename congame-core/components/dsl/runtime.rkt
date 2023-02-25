@@ -44,19 +44,41 @@ SCRIPT
     (make-hasheq
      (list (cons 'id id) ...))))
 
+; FIXME: the next function should probably be removed after class 2023 It is
+; helpful for students, but this version is probably misguided and hardcodes too
+; much.
+(define (assigning-treatments treatments
+                              #:treatments-key [treatments-key 'treatments]
+                              #:role-key [role-key 'role])
+  (unless (get role-key #f)
+    (with-study-transaction
+      (when (empty? (get/instance treatments-key '()))
+        (put/instance treatments-key (shuffle treatments)))
+      (define remaining-treatments
+        (get/instance treatments-key))
+      (define role
+        (first remaining-treatments))
+      (put role-key role)
+      (define updated-treatments
+        (rest remaining-treatments))
+      (put/instance treatments-key updated-treatments))))
+
 (define-initial-env initial-env
   + - * / =
   not void
-  zero? even?
+  zero? even? empty? equal?
   get put
   get/instance put/instance
+  list first second third fourth fifth sixth seventh eighth ninth tenth rest
   hash hash-ref hash-set hash-update
   add1 sub1
-  ~a format number->string string->number
-  random
+  ~a format number->string string->number symbol->string string->symbol
+  random shuffle
   done next skip
   current-participant-owner?
-  refresh-every)
+  refresh-every
+  error
+  assigning-treatments)
 
 (define (make-initial-environment)
   (define env (make-environment))
