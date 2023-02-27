@@ -52,7 +52,6 @@
 (define (read-syntax+compile what in)
   (compile-module (read-syntax what in)))
 
-
 ;; compiler ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (struct Env (actions imports templates)
@@ -65,23 +64,70 @@
   (make-parameter #f))
 
 (define (build-env stxs)
-  (define-values (actions imports templates)
-    (for/fold ([actions null]
+  (define-values (_names actions imports templates)
+    (for/fold ([names null]
+               [actions null]
                [imports null]
                [templates (hash)])
               ([stx (in-list stxs)])
       (syntax-parse stx
-        #:datum-literals (action import template template-ungrouped)
+        #:datum-literals (action import step study template template-ungrouped)
         [(action id:id _ ...)
-         (values (cons (syntax->datum #'id) actions) imports templates)]
+         (define name
+           (syntax->datum #'id))
+         (when (memq name names)
+           (raise-syntax-error 'dsl "identifier already defined" stx #'id))
+         (values
+          (cons name names)
+          (cons name actions)
+          imports
+          templates)]
         [(import _ id:id ...+)
-         (values actions (append (map syntax->datum (syntax-e #'(id ...))) imports) templates)]
+         (define name-stxes
+           (syntax-e #'(id ...)))
+         (define import-names
+           (map syntax->datum name-stxes))
+         (define defined-name
+           (ormap (λ (n) (and (memq n names) n)) import-names))
+         (when defined-name
+           (raise-syntax-error 'dsl "indentifier already defined" stx (list-ref name-stxes (index-of import-names defined-name))))
+         (values
+          (append import-names names)
+          actions
+          (append import-names imports)
+          templates)]
+        [({~or step study} id:id _ ...)
+         (define name
+           (syntax->datum #'id))
+         (when (memq name names)
+           (raise-syntax-error 'dsl "identifier already defined" stx #'id))
+         (values
+          (cons name names)
+          actions
+          imports
+          templates)]
         [(template id:id _ ...)
-         (values actions imports (hash-set templates (syntax->datum #'id) 'grouped))]
+         (define name
+           (syntax->datum #'id))
+         (when (memq name names)
+           (raise-syntax-error 'dsl "identifier already defined" stx #'id))
+         (values
+          (cons name names)
+          actions
+          imports
+          (hash-set templates (syntax->datum #'id) 'grouped))]
         [(template-ungrouped id:id _ ...)
-         (values actions imports (hash-set templates (syntax->datum #'id) 'ungrouped))]
+         (define name
+           (syntax->datum #'id))
+         (when (memq name names)
+           (raise-syntax-error 'dsl "identifier already defined" stx #'id))
+         (values
+          (cons name names)
+          actions
+          imports
+          (hash-set templates (syntax->datum #'id) 'ungrouped))]
         [_
-         (values actions imports templates)])))
+         (values names actions imports templates)])))
   (Env actions imports templates))
 
 (define (compile-module stx)
@@ -121,7 +167,7 @@
              #:with compiled #'step-name))
 
   (syntax-parse stx
-    #:datum-literals (action define import step study template template-ungrouped)
+    #:datum-literals (action import step study template template-ungrouped)
     [s:string
      #:when (regexp-match? #px"^\\s+$" (syntax->datum #'s))
      #f]
@@ -314,7 +360,7 @@
 
 (define (compile-action-expr stx)
   (syntax-parse stx
-    ["\n" #f]
+    [{~or " " "\n"} #f]
     [_ (compile-expr stx)]))
 
 (define (compile-form-expr stx)
