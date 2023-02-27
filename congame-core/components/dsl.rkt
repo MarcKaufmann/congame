@@ -258,6 +258,18 @@
     (pattern (li body:body ...+)
              #:with (xexpr ...) #'((:li body.compiled ...))))
 
+  (define-splicing-syntax-class attrs
+    (pattern {~seq {~alt
+                    {~optional {~seq #:id id-e:string}}
+                    {~optional {~seq #:class class-e:string}}
+                    {~optional {~seq #:style style-e:string}}} ...}
+             #:with (e ...) #'({~? {~@ [:id id-e]}}
+                               {~? {~@ [:class class-e]}}
+                               {~? {~@ [:style style-e]}})
+             #:with (group ...) (if (null? (syntax-e #'(e ...)))
+                                    #'()
+                                    #'(({~@ e ...})))))
+
   ;; NOTE: For block-style tags, it's the tag's responsibility to call
   ;; group-by-paragraph on its exprs.
   (syntax-parse stx
@@ -280,8 +292,8 @@
                             (syntax->datum #'id)))
      #'(void)]
 
-    [(a url:string body:body ...+)
-     #'(:a ([:href url]) body.compiled ...)]
+    [(a attrs:attrs url:string body:body ...+)
+     #'(:a ([:href url] {~@ attrs.e ...}) body.compiled ...)]
 
     [(br)
      #'(:br)]
@@ -291,19 +303,12 @@
      (check-action-id 'button #'{~? action #f})
      #'(button {~? action void} joined-text)]
 
-    ;; TODO: change haml to support (:div () ...)
-    [(div {~alt
-           {~optional {~seq #:class class-e:string}}
-           {~optional {~seq #:style style-e:string}}} ...
-          body ...+)
+    [(div attrs:attrs body ...+)
      #:with (compiled-body ...) (map compile-markup (syntax-e (group-by-paragraph #'(body ...))))
-     #'(:div ([:data-ignored ""]
-              {~? {~@ [:class class-e]}}
-              {~? {~@ [:style style-e]}})
-             compiled-body ...)]
+     #'(:div attrs.group ... compiled-body ...)]
 
-    [(em body:body ...+)
-     #'(:em body.compiled ...)]
+    [(em attrs:attrs body:body ...+)
+     #'(:em attrs.group ... body.compiled ...)]
 
     [(form {~optional {~seq #:action action:id}} body ...+)
      #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e (group-by-paragraph #'(body ...))))
@@ -314,19 +319,19 @@
           compiled-body ... ...))
         (make-put-all-keywords {~? action void}))]
 
-    [({~and {~or h1 h2 h3} tag} body:body ...+)
+    [({~and {~or h1 h2 h3} tag} attrs:attrs body:body ...+)
      #:with tag-id (format-id #'tag ":~a" #'tag)
-     #'(tag-id body.compiled ...)]
+     #'(tag-id attrs.group ... body.compiled ...)]
 
-    [({~and {~or table tbody thead td th tr} tag} body:body ...)
+    [({~and {~or table tbody thead td th tr} tag} attrs:attrs body:body ...)
      #:with tag-id (format-id #'tag ":~a" #'tag)
-     #'(tag-id body.compiled ...)]
+     #'(tag-id attrs.group ... body.compiled ...)]
 
-    [(img url:string)
-     #'(:img ([:href url]))]
+    [(img attrs:attrs url:string)
+     #'(:img ([:href url] {~@ attrs.e ...}))]
 
-    [(p body:body ...)
-     #'(:p body.compiled ...)]
+    [(p attrs:attrs body:body ...)
+     #'(:p attrs.group ... body.compiled ...)]
 
     ;; TODO: Remove refresh-every from interpreter and move it all here.
     [(refresh-every n:number)
@@ -335,22 +340,22 @@
     [(script content:string ...+)
      #'(:script (string-append content ...))]
 
-    [(span {~optional {~seq #:class class:string}} body:body ...+)
-     #'(:span {~? ({~@ [:class class]})} body.compiled ...)]
+    [(span attrs:attrs body:body ...+)
+     #'(:span attrs.group ... body.compiled ...)]
 
-    [(strong body:body ...+)
-     #'(:strong body.compiled ...)]
+    [(strong attrs:attrs body:body ...+)
+     #'(:strong attrs.group ... body.compiled ...)]
 
     [(style content:string ...+)
      #'(:style
         ([:type "text/css"])
         (string-append content ...))]
 
-    [(ol item:list-item ...+)
-     #'(:ol item.xexpr ... ...)]
+    [(ol attrs:attrs item:list-item ...+)
+     #'(:ol attrs.group ... item.xexpr ... ...)]
 
-    [(ul item:list-item ...+)
-     #'(:ul item.xexpr ... ...)]
+    [(ul attrs:attrs item:list-item ...+)
+     #'(:ul attrs.group ... item.xexpr ... ...)]
 
     [(template id:id content ...+)
      (define template-id (syntax-e #'id))

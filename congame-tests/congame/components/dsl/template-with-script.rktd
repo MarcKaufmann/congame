@@ -1,6 +1,5 @@
 ((define (t content-proc)
-   (let ((*env* (make-environment *env*)))
-     (haml (:div (:script (string-append "console.log(\"hello from template\")"))))))
+   (let ((*env* (make-environment *env*))) (haml (:div (:script (string-append "console.log(\"hello from template\")"))))))
  (define (hello)
    (let ((*env* (make-environment *env*)))
      (page
