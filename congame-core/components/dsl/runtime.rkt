@@ -178,6 +178,11 @@ SCRIPT
        (with-study-transaction
          (loop `(begin . ,bodies) env))]
 
+      [`(goto ,id)
+       (begin0 id
+         (unless (symbol? id)
+           (error 'interpret "goto: expected a symbol but received ~e" id)))]
+
       [(? boolean?) e]
       [(? number?) e]
       [(? string?) e]
@@ -186,7 +191,8 @@ SCRIPT
       [`(,rator . ,rands)
        (apply (loop rator env) (map (λ (rand) (loop rand env)) rands))]
 
-      [_ (error 'interpret-basic-expr "invalid expression: ~e" e)])))
+      [_
+       (error 'interpret "invalid expression: ~e" e)])))
 
 
 ;; randomization ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
