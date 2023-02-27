@@ -609,6 +609,7 @@ You can find example studies on GitHub at @url{https://github.com/MarcKaufmann/c
   @item{how to create a simple admin page}
   @item{how to randomize participants into multiple treatments}
   @item{how to use @code|{@refresh-every}| to wait for input from another player}
+  @item{how to use html tags inside of @tt{(ev ...)}}
 ]
 
 @section{Randomizing participants into treatments}
@@ -649,6 +650,46 @@ This works by storing the treatment of the participant as a participant variable
 }
 }|
 
-@section{Basic Arithmetic (features in progress)}
+@section{Using buttons to jump to different steps}
 
-Coming soon...
+You can use the @racket[#:to-step] keyword of buttons to override the default transition and instead jump to the step mentioned in the button as follows:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+step[a]{
+  @h1{Step b}
+
+  @button[#:to-step c]{To step c}
+  @button[#:to-step d]{To step d}
+  @button{Default transition (to step b)}
+}
+
+step[b]{
+  @h1{Step b}
+  @button{Next}
+}
+
+step[c]{
+  @h1{Step c}
+  @button{Next}
+}
+
+step[d]{
+  @h1{Step d}
+  @button{Next}
+}
+
+step[final]{
+  @h1{Final}
+}
+
+@study[
+  skippy
+  #:transitions
+  [a --> b --> c --> d --> final]
+  [final --> final]
+]
+}|
+
+This study would usually go from step a through d to the final page. But if we click on the appropriate button on the first page, we will instead directly jump to step c or d, overriding the defaults.
