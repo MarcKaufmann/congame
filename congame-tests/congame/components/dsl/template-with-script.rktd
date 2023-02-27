@@ -1,16 +1,11 @@
-((define (foo)
+((define (t content-proc)
+   (let ((*env* (make-environment *env*)))
+     (haml (:div (:script (string-append "console.log(\"hello from template\")"))))))
+ (define (hello)
    (let ((*env* (make-environment *env*)))
      (page
       (haml
        (.container
         ,@(->styles (reverse (current-study-styles)))
-        (:p "Hello world")
-        ,@(->scripts (reverse (current-study-scripts))))))))
- (define (bar)
-   (let ((*env* (make-environment *env*)))
-     (page
-      (haml
-       (.container
-        ,@(->styles (reverse (current-study-styles)))
-        (:p "Goodbye")
+        (t (λ () (error 'template "yielded without content")))
         ,@(->scripts (reverse (current-study-scripts)))))))))

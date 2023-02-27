@@ -1,10 +1,90 @@
-((define (a) (let ((*env* (make-environment *env*))) (page (haml (.container (:p "a" " " "b") (:p "c") (:h1 "Heading"))))))
- (define (b) (let ((*env* (make-environment *env*))) (page (haml (.container (:p "a" " " "b") (:p "c") (:h1 "Heading"))))))
- (define (c) (let ((*env* (make-environment *env*))) (page (haml (.container (:p "a" " " "b") (:p "c" "\n" "\n" "d") (:h1 "Heading"))))))
- (define (d) (let ((*env* (make-environment *env*))) (page (haml (.container (:p "a" " " "b") (:p "c") (:h1 "Heading") (:p "d" " " "e") (:p "f"))))))
- (define (ordered-list) (let ((*env* (make-environment *env*))) (page (haml (.container (:ol (:li "Test") (:li "Foo")))))))
- (define (unordered-list) (let ((*env* (make-environment *env*))) (page (haml (.container (:ul (:li "Test") (:li "Foo")))))))
- (define (nested-lists) (let ((*env* (make-environment *env*))) (page (haml (.container (:ul (:li (:ul (:li "Nested 1") (:li "Nested 2"))) (:li "Foo")))))))
- (define (anchor) (let ((*env* (make-environment *env*))) (page (haml (.container (:p (:a ((:href "http://example.com")) "example.com")))))))
- (define (emphasis) (let ((*env* (make-environment *env*))) (page (haml (.container (:p "Hello " (:strong "world") "!"))))))
- (define (emphasis-nesting) (let ((*env* (make-environment *env*))) (page (haml (.container (:p (:strong "Hello " (:em "world") "!"))))))))
+((define (a)
+   (let ((*env* (make-environment *env*)))
+     (page
+      (haml
+       (.container
+        ,@(->styles (reverse (current-study-styles)))
+        (:p "a" " " "b")
+        (:p "c")
+        (:h1 "Heading")
+        ,@(->scripts (reverse (current-study-scripts))))))))
+ (define (b)
+   (let ((*env* (make-environment *env*)))
+     (page
+      (haml
+       (.container
+        ,@(->styles (reverse (current-study-styles)))
+        (:p "a" " " "b")
+        (:p "c")
+        (:h1 "Heading")
+        ,@(->scripts (reverse (current-study-scripts))))))))
+ (define (c)
+   (let ((*env* (make-environment *env*)))
+     (page
+      (haml
+       (.container
+        ,@(->styles (reverse (current-study-styles)))
+        (:p "a" " " "b")
+        (:p "c" "\n" "\n" "d")
+        (:h1 "Heading")
+        ,@(->scripts (reverse (current-study-scripts))))))))
+ (define (d)
+   (let ((*env* (make-environment *env*)))
+     (page
+      (haml
+       (.container
+        ,@(->styles (reverse (current-study-styles)))
+        (:p "a" " " "b")
+        (:p "c")
+        (:h1 "Heading")
+        (:p "d" " " "e")
+        (:p "f")
+        ,@(->scripts (reverse (current-study-scripts))))))))
+ (define (ordered-list)
+   (let ((*env* (make-environment *env*)))
+     (page
+      (haml
+       (.container
+        ,@(->styles (reverse (current-study-styles)))
+        (:ol (:li "Test") (:li "Foo"))
+        ,@(->scripts (reverse (current-study-scripts))))))))
+ (define (unordered-list)
+   (let ((*env* (make-environment *env*)))
+     (page
+      (haml
+       (.container
+        ,@(->styles (reverse (current-study-styles)))
+        (:ul (:li "Test") (:li "Foo"))
+        ,@(->scripts (reverse (current-study-scripts))))))))
+ (define (nested-lists)
+   (let ((*env* (make-environment *env*)))
+     (page
+      (haml
+       (.container
+        ,@(->styles (reverse (current-study-styles)))
+        (:ul (:li (:ul (:li "Nested 1") (:li "Nested 2"))) (:li "Foo"))
+        ,@(->scripts (reverse (current-study-scripts))))))))
+ (define (anchor)
+   (let ((*env* (make-environment *env*)))
+     (page
+      (haml
+       (.container
+        ,@(->styles (reverse (current-study-styles)))
+        (:p (:a ((:href "http://example.com")) "example.com"))
+        ,@(->scripts (reverse (current-study-scripts))))))))
+ (define (emphasis)
+   (let ((*env* (make-environment *env*)))
+     (page
+      (haml
+       (.container
+        ,@(->styles (reverse (current-study-styles)))
+        (:p "Hello " (:strong "world") "!")
+        ,@(->scripts (reverse (current-study-scripts))))))))
+ (define (emphasis-nesting)
+   (let ((*env* (make-environment *env*)))
+     (page
+      (haml
+       (.container
+        ,@(->styles (reverse (current-study-styles)))
+        (:p (:strong "Hello " (:em "world") "!"))
+        ,@(->scripts (reverse (current-study-scripts)))))))))

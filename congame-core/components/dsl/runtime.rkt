@@ -222,10 +222,20 @@ SCRIPT
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- ->step)
+ ->step
+ ->scripts
+ ->styles)
 
 (define (->step id v)
   (cond
     [(study? v) (make-step/study id v)]
     [(or (step/study? v) (step? v)) v]
     [else (make-step id v)]))
+
+(define (->scripts strs)
+  (for/list ([str (in-list strs)])
+    (haml (:script str))))
+
+(define (->styles strs)
+  (for/list ([str (in-list strs)])
+    (haml (:style ([:type "text/css"]) str))))

@@ -43,6 +43,8 @@
     (for ([mod (in-list mods-to-require)])
       (eval `(require ,mod)))
     (eval `(define *env* (make-initial-environment)))
+    (eval `(define current-study-scripts (make-parameter null)))
+    (eval `(define current-study-styles (make-parameter null)))
     (for-each eval (syntax->datum (read-syntax+compile 'dsl in)))
     (namespace-variable-value id)))
 
@@ -167,7 +169,7 @@
              #:with compiled #'step-name))
 
   (syntax-parse stx
-    #:datum-literals (action import step study template template-ungrouped)
+    #:datum-literals (action import script step study style template template-ungrouped)
     [s:string
      #:when (regexp-match? #px"^\\s+$" (syntax->datum #'s))
      #f]
@@ -194,7 +196,14 @@
            (page
             (haml
              (.container
-              compiled-content ...)))))]
+              ,@(->styles (reverse (current-study-styles)))
+              compiled-content ...
+              ,@(->scripts (reverse (current-study-scripts))))))))]
+
+    [(script content:string ...+)
+     #'(current-study-scripts
+        (let ([old (current-study-scripts)])
+          (cons (string-append content ...) old)))]
 
     [(study study-id:id #:transitions [transition-entry:transition-entry ...] ...+)
      #:fail-when (eq? (syntax-e #'study-id) 'end) "'end' is not a valid study id"
@@ -219,6 +228,11 @@
           #:transitions (transition-graph [transition-entry.compiled ...] ...)
           (list (->step 'step-name step-id) ...)))]
 
+    [(style content:string ...+)
+     #'(current-study-styles
+        (let ([old (current-study-styles)])
+          (cons (string-append content ...) old)))]
+
     [({~and {~or template template-ungrouped} form-id} template-id:id content ...+)
      #:with (compiled-content ...) (parameterize ([current-in-template? #t]
                                                   [current-paragraph-tags
@@ -229,6 +243,8 @@
      #'(define (template-id content-proc)
          (let ([*env* (make-environment *env*)])
            (haml (:div compiled-content ...))))]))
+
+;; @style{  }
 
 (define (compile-markup stx)
   (define-syntax-class body
@@ -247,7 +263,8 @@
   (syntax-parse stx
     #:datum-literals (a br button div em form h1 h2 h3 hl img ol p quote refresh-every span strong
                         table tbody td th thead tr
-                        template u1 ul yield)
+                        template u1 ul yield
+                        script style)
     [num:number #'num]
     [str:string #'str]
     [kwd:keyword #'kwd]
@@ -276,13 +293,13 @@
 
     ;; TODO: change haml to support (:div () ...)
     [(div {~alt
-           {~optional {~seq #:class class:string}}
-           {~optional {~seq #:style style:string}}} ...
+           {~optional {~seq #:class class-e:string}}
+           {~optional {~seq #:style style-e:string}}} ...
           body ...+)
      #:with (compiled-body ...) (map compile-markup (syntax-e (group-by-paragraph #'(body ...))))
      #'(:div ([:data-ignored ""]
-              {~? {~@ [:class class]}}
-              {~? {~@ [:style style]}})
+              {~? {~@ [:class class-e]}}
+              {~? {~@ [:style style-e]}})
              compiled-body ...)]
 
     [(em body:body ...+)
@@ -315,11 +332,19 @@
     [(refresh-every n:number)
      #'(interpret '(refresh-every n) *env*)]
 
+    [(script content:string ...+)
+     #'(:script (string-append content ...))]
+
     [(span {~optional {~seq #:class class:string}} body:body ...+)
      #'(:span {~? ({~@ [:class class]})} body.compiled ...)]
 
     [(strong body:body ...+)
      #'(:strong body.compiled ...)]
+
+    [(style content:string ...+)
+     #'(:style
+        ([:type "text/css"])
+        (string-append content ...))]
 
     [(ol item:list-item ...+)
      #'(:ol item.xexpr ... ...)]
