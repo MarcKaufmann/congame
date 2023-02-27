@@ -298,10 +298,16 @@
     [(br)
      #'(:br)]
 
-    [(button {~optional {~seq #:action action:id}} text0:string text:string ...)
+    [(button {~alt
+              {~optional {~seq #:action action:id}}
+              {~optional {~seq #:to-step step-id:id}}} ...
+             text0:string text:string ...)
      #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
      (check-action-id 'button #'{~? action #f})
-     #'(button {~? action void} joined-text)]
+     #'(button
+        {~? {~@ #:to-step-id 'step-id}}
+        {~? action void}
+        joined-text)]
 
     [(div attrs:attrs body ...+)
      #:with (compiled-body ...) (map compile-markup (syntax-e (group-by-paragraph #'(body ...))))
