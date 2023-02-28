@@ -50,25 +50,42 @@ SCRIPT
 (define (assigning-treatments treatments
                               #:treatments-key [treatments-key 'treatments]
                               #:role-key [role-key 'role])
-  (unless (get role-key #f)
+  (unless (get/global role-key #f)
     (with-study-transaction
-      (when (empty? (get/instance treatments-key '()))
-        (put/instance treatments-key (shuffle treatments)))
+      (when (empty? (get/instance/global treatments-key '()))
+        (put/instance/global treatments-key (shuffle treatments)))
       (define remaining-treatments
-        (get/instance treatments-key))
+        (get/instance/global treatments-key))
       (define role
         (first remaining-treatments))
-      (put role-key role)
+      (put/global role-key role)
       (define updated-treatments
         (rest remaining-treatments))
-      (put/instance treatments-key updated-treatments))))
+      (put/instance/global treatments-key updated-treatments))))
+
+(define (get/global k [default (lambda ()
+                          (error 'get/global "value not found for key ~.s" k))])
+  (parameterize ([current-study-stack '(*root*)])
+    (get k default)))
+
+(define (get/instance/global k [default (lambda ()
+                          (error 'get/instance/global "value not found for key ~.s" k))])
+  (parameterize ([current-study-stack '(*root*)])
+    (get/instance k default)))
+
+(define (put/global k v)
+  (parameterize ([current-study-stack '(*root*)])
+    (put k v)))
+
+(define (put/instance/global k v)
+  (parameterize ([current-study-stack '(*root*)])
+    (put/instance k v)))
 
 (define-initial-env initial-env
   + - * / = modulo remainder
   not void
   zero? even? empty? equal?
-  get put
-  get/instance put/instance
+  get put get/instance put/instance get/global put/global get/instance/global put/instance/global
   list first second third fourth fifth sixth seventh eighth ninth tenth rest
   hash hash-ref hash-set hash-update
   add1 sub1

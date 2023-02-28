@@ -604,12 +604,11 @@ Next, let us implement a simple version of the dictator game to highlight a more
 You can find example studies on GitHub at @url{https://github.com/MarcKaufmann/congame/tree/master/congame-doc/conscript-examples} that illustrate a variety of features:
 
 @itemlist[
-  @item{how to include tables}
-  @item{the form input types available}
-  @item{how to create a simple admin page}
-  @item{how to randomize participants into multiple treatments}
-  @item{how to use @code|{@refresh-every}| to wait for input from another player}
-  @item{how to use html tags inside of @tt{(ev ...)}}
+  @item{how to include tables (tables.scrbl)}
+  @item{the form input types available (all-inputs.scrbl)}
+  @item{how to randomize participants into multiple treatments (assign-treatments.scrbl)}
+  @item{how to use @code|{@refresh-every}| to wait for input from another player (wait-for-partner.scrbl)}
+  @item{how to use html tags inside of @tt{(ev ...)} (tags-in-ev.scrbl)}
 ]
 
 @section{Randomizing participants into treatments}
@@ -632,7 +631,7 @@ While the example study on github provides an example for randomizing participan
 
 This will randomize the order of the treatments and balance them across participants as they arrive. That means that in the case of 10 treatments (as in the example), every set of 10 participants is assigned to these 10 roles to ensure that we always have 2 buyers, 3 sellers, and 5 observers. The order in which they are assigned these roles is randomized.
 
-This works by storing the treatment of the participant as a participant variable in @racket['role] and the set of treatments for the current group of participants as an instance variable in @racket['treatments]. You can overrule these with @racket[#:treatments-key] and @racket[#:role-key]. So if you prefer storing the next set of treatments in @racket['my-treatments] and the treatment of the participant in @racket['treatment], then you need to change the action as follows:
+This works by storing the treatment of the participant as a participant variable in @racket['role] and the set of treatments for the current group of participants as an instance variable in @racket['treatments]. Importantly, both of these variables are stored at the top level (@tt{(*root*)}), so they can be set and retrieved with @racket[get/global], @racket[put/global] for the @racket['role] and with @racket[get/instance/global] and @racket[put/instance/global] for the @racket['treatments] (you should not mess with the latter though). You can overrule these with @racket[#:treatments-key] and @racket[#:role-key]. So if you prefer storing the next set of treatments in @racket['my-treatments] and the treatment of the participant in @racket['treatment], then you need to change the action as follows:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang scribble/manual
@@ -648,7 +647,13 @@ This works by storing the treatment of the participant as a participant variable
                             #:treatments-key 'my-treatments
                             #:role-key       'treatment)))
 }
+
+@step[show-treatment]{
+  @h1{Your treatment is @(ev (~a (get/global 'role)))}
+}
 }|
+
+Notice the use of @racket[get/global] instead of @racket[get] to retrieve the role. This gets the value of @racket['role] stored at the top level study (@tt{(*root*)}), so that it is available from all substudies. Do not overuse the @tt{/global} versions of @racket[get] and @racket[put]. These set global variables, which is bad practice in general, as it leads to buggier code.
 
 @section{Using buttons to jump to different steps}
 
