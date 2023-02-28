@@ -334,7 +334,7 @@
      #'(tag-id attrs.group ... body.compiled ...)]
 
     [(img attrs:attrs url:string)
-     #'(:img ([:href url] {~@ attrs.e ...}))]
+     #'(:img ([:src url] {~@ attrs.e ...}))]
 
     [(p attrs:attrs body:body ...)
      #'(:p attrs.group ... body.compiled ...)]
