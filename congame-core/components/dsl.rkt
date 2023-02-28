@@ -404,15 +404,15 @@
     (datum->syntax stx (string->keyword (symbol->string (syntax-e stx)))))
 
   (syntax-parse stx
-    #:datum-literals (checkbox input-date input-file input-number input-text input-time radios select textarea submit-button)
-    [({~and {~or checkbox input-date input-file input-number input-text input-time textarea} widget-id} name:id label-expr)
+    #:datum-literals (checkbox input-date input-file input-number input-range input-text input-time radios select textarea submit-button)
+    [({~and {~or checkbox input-date input-file input-number input-range input-text input-time textarea} widget-id} name:id label-expr)
      #:with name-kwd (stx->keyword-stx #'name)
      #:with compiled-label-expr (compile-markup (syntax-e #'label-expr))
      #'((name-kwd
          (widget-id
           (haml compiled-label-expr))))]
 
-    [({~and {~or checkbox input-date input-file input-number input-text input-time textarea} widget-id}
+    [({~and {~or checkbox input-date input-file input-number input-range input-text input-time textarea} widget-id}
       name:id
       {~optional {~seq #:required? required?:boolean}}
       label-expr)
@@ -423,7 +423,7 @@
           {~? {~@ #:required? required?}}
           (haml compiled-label-expr))))]
 
-    [(input-number name:id
+    [({~and {~or input-number input-range} widget-id} name:id
                    ~!
                    {~alt
                     {~optional {~seq #:required? required?:boolean}}
@@ -434,7 +434,7 @@
      #:with name-kwd (stx->keyword-stx #'name)
      #:with compiled-label-expr (compile-markup (syntax-e #'label-expr))
      #'((name-kwd
-         (input-number
+         (widget-id
           {~? {~@ #:required? required?}}
           {~? {~@ #:min min-expr}}
           {~? {~@ #:max max-expr}}
@@ -454,7 +454,7 @@
           options)))]
 
     ; FIXME: The next clause does not work with #:required
-    [({~and {~or checkbox input-date input-file input-number input-text input-time textarea} widget-id} ~! name:id label-expr ...+)
+    [({~and {~or checkbox input-date input-file input-number input-range input-text input-time textarea} widget-id} ~! name:id label-expr ...+)
      (compile-form-expr #'(widget-id name (div label-expr ...)))]
 
     [(submit-button {~optional label:string})

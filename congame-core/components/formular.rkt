@@ -20,9 +20,19 @@
  input-date
  input-file
  input-number
+ input-range
  input-text
  input-time
  textarea)
+
+; FIXME: Move these to `forms` package eventually
+(define (widget-date #:attributes [attributes null])
+  (widget-input #:type "date"
+                #:attributes attributes))
+
+(define (widget-range #:attributes [attributes null])
+  (widget-input #:type "range"
+                #:attributes attributes))
 
 ;; Building up an intermediate representation of formualrs would allow
 ;; us to compose smaller formulars into larger ones.  We may want to
@@ -232,26 +242,34 @@
           ((widget-file) name value errors) label)
          ,@((widget-errors) name value errors))))]))
 
-(define ((input-number label
-                       #:min [min -inf.0]
-                       #:max [max +inf.0]
-                       #:step [step 1]
-                       #:required? [required? #t]
-                       #:validators [validators null]) meth)
-  (match meth
-    ['validator
+(define (input-number-type widget)
+  (define ((result-input label
+                         #:min [min -inf.0]
+                         #:max [max +inf.0]
+                         #:step [step 1]
+                         #:required? [required? #t]
+                         #:validators [validators null]) meth)
+    (match meth
+      ['validator
        (apply ensure binding/number (cons/required? required? (list* (to-real) (range/inclusive min max) validators)))]
-    ['widget
-     (lambda (name value errors)
-       (haml
-        (.group
-         (:label
-          ((widget-number #:attributes `((min ,(if (= min -inf.0) "" (number->string min)))
-                                         (max ,(if (= max +inf.0) "" (number->string max)))
-                                         (step ,(number->string step))))
-           name value errors)
-          label)
-         ,@((widget-errors) name value errors))))]))
+      ['widget
+       (lambda (name value errors)
+         (haml
+          (.group
+           (:label
+            ((widget #:attributes `((min ,(if (= min -inf.0) "" (number->string min)))
+                                    (max ,(if (= max +inf.0) "" (number->string max)))
+                                    (step ,(number->string step))))
+             name value errors)
+            label)
+           ,@((widget-errors) name value errors))))]))
+  result-input)
+
+(define input-number
+  (input-number-type widget-number))
+
+(define input-range
+  (input-number-type widget-range))
 
 (define ((input-text label
                      #:required? [required? #t]
@@ -295,11 +313,6 @@
         (.group
          (:label label ((widget-time) name value errors))
          ,@((widget-errors) name value errors))))]))
-
-; FIXME: Move this to `forms` package
-(define (widget-date #:attributes [attributes null])
-  (widget-input #:type "date"
-                #:attributes attributes))
 
 (define ((input-date label
                      #:required? [required? #t]

@@ -6,6 +6,7 @@
     @input-date[data]{What date is today? (@"@input-date")}
     @input-file[uploaded-file]{Upload a file. (@"@input-file")}
     @input-number[n]{What is your favourite number? (@"@input-number")}
+    @input-range[slider]{Slide around to find a number between 0 and 100 (the defaults). (@"@input-range")}
     @input-text[plain-text]{What is your name? (@"@input-text")}
     @input-time[time]{What is the local time? (@"@input-time")}
     @radios[radios '(("yes" . "Yes") ("no" . "No") ("maybe" . "Maybe"))]{What is your answer? (@"@radios")}
@@ -22,6 +23,7 @@
     @input-date[data-not-r #:required? #f]{What date is today? (@"@input-date")}
     @input-file[uploaded-file-not-r #:required? #f]{Upload a file. (@"@input-file")}
     @input-number[n-not-r #:required? #f]{What is your favourite number? (@"@input-number")}
+    @input-range[slider-not-r #:required? #f]{Slide around to find a number between 0 and 100 (the defaults). (@"@input-range")}
     @input-text[plain-text-not-r #:required? #f]{What is your name? (@"@input-text")}
     @input-time[time-not-r #:required? #f]{What is the local time? (@"@input-time")}
     @radios[radios-not-r '(("yes" . "Yes") ("no" . "No") ("maybe" . "Maybe")) #:required? #f]{What is your answer? (@"@radios")}
