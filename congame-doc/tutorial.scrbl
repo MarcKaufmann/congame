@@ -698,3 +698,37 @@ step[final]{
 }|
 
 This study would usually go from step a through d to the final page. But if we click on the appropriate button on the first page, we will instead directly jump to step c or d, overriding the defaults.
+
+@section{Basic Arithmetic}
+
+You can use basic arithmetic in @tt{ev} based on @tech{Racket}'s arithmetic, which means that it is infix based:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@; Add two or more numbers
+@(ev (+ 2 3))     @; 2 + 3
+@(ev (+ 1 2 3 4)) @; 1 + 2 + 3 + 4
+
+@; Subtract two numbers
+@(ev (- 3 4)) @; 3 - 4
+
+@; Multiply two or more numbers
+@(ev (* 2 3))   @; 2 * 3
+@(ev (* 2 -3))  @; 2 * (-3)
+
+@; Divide
+@(ev (/ 9 3))   @; 9 / 3 => 3
+@(ev (/ 7 2))   @; 7 / 2 => the fraction 7/2!
+@(ev (/ 7 2.0)) @; 7 / 2.0 => floating point 3.5
+}|
+
+If you want to include it in html markup, don't forget to transform the number to a string by using either @racket[number->string] or @racket[~a] (which turns every input into a string, so also works for symbols (@tt{'age}) or lists or other items):
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@h1{Twice your age is @(ev (number->string (* 2 (get 'age))))}
+
+Your remaining life expectancy is @(ev (~a (- 80 (get 'age)))).
+}|
