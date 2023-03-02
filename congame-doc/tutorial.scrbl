@@ -721,6 +721,9 @@ You can use basic arithmetic in @tt{ev} based on @tech{Racket}'s arithmetic, whi
 @(ev (/ 9 3))   @; 9 / 3 => 3
 @(ev (/ 7 2))   @; 7 / 2 => the fraction 7/2!
 @(ev (/ 7 2.0)) @; 7 / 2.0 => floating point 3.5
+
+@; compute mean of 4 numbers
+@(ev (/ (+ 1 2 3 4) 4.0))
 }|
 
 If you want to include it in html markup, don't forget to transform the number to a string by using either @racket[number->string] or @racket[~a] (which turns every input into a string, so also works for symbols (@tt{'age}) or lists or other items):
