@@ -86,7 +86,8 @@ SCRIPT
   not void
   zero? even? empty? equal?
   get put get/instance put/instance get/global put/global get/instance/global put/instance/global
-  list first second third fourth fifth sixth seventh eighth ninth tenth rest
+  list cons append
+  first second third fourth fifth sixth seventh eighth ninth tenth rest
   hash hash-ref hash-set hash-update
   add1 sub1
   ~a format number->string string->number symbol->string string->symbol
