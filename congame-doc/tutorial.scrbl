@@ -466,7 +466,7 @@ For now, all we want is to count how many participants completed the study, so e
 @action[initialize-count-if-needed]{
   @(ev
     (begin
-      (unless (get/instance 'participant #f)
+      (unless (get/instance 'participant-count #f)
         (put/instance 'participant-count 0))
       ))
 }
@@ -482,7 +482,7 @@ For now, all we want is to count how many participants completed the study, so e
     (begin
       (define participant-count
         (get/instance 'participant-count))
-      (put 'participant-count (add1 participant-count))
+      (put/instance 'participant-count (add1 participant-count))
     ))
 }
 
