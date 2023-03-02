@@ -724,6 +724,10 @@ You can use basic arithmetic in @tt{ev} based on @tech{Racket}'s arithmetic, whi
 
 @; compute mean of 4 numbers
 @(ev (/ (+ 1 2 3 4) 4.0))
+
+@; Get the remainder or quotient
+@(ev (remainder 7 2)) @; => 1
+@(ev (quotient 7 2))  @; => 3
 }|
 
 If you want to include it in html markup, don't forget to transform the number to a string by using either @racket[number->string] or @racket[~a] (which turns every input into a string, so also works for symbols (@tt{'age}) or lists or other items):
