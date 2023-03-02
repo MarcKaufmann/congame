@@ -609,6 +609,7 @@ You can find example studies on GitHub at @url{https://github.com/MarcKaufmann/c
   @item{how to randomize participants into multiple treatments (assign-treatments.scrbl)}
   @item{how to use @code|{@refresh-every}| to wait for input from another player (wait-for-partner.scrbl)}
   @item{how to use html tags inside of @tt{(ev ...)} (tags-in-ev.scrbl)}
+  @item{how to use images, and apply CSS styles to them with @code|{@style}|, @tt{#:style}, and @tt{#:class} (images.scrbl)}
 ]
 
 @section{Randomizing participants into treatments}
