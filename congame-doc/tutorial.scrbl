@@ -471,7 +471,7 @@ For now, all we want is to count how many participants completed the study, so e
       ))
 }
 
-@start[start]{
+@step[start]{
   @h1{Start page}
 
   @button[#:action initialize-count-if-needed]{Next}
