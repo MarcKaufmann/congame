@@ -1,4 +1,10 @@
 @script{
+  var i = 5;
+  if ( i < 5 ) {
+    console.log("shouldn't display");
+  } else {
+    console.log("i is less than 5");
+  }
   console.log("Running last!")
 }
 
