@@ -256,7 +256,9 @@
     (pattern "\n"
              #:with (xexpr ...) null)
     (pattern (li body:body ...+)
-             #:with (xexpr ...) #'((:li body.compiled ...))))
+             #:with (xexpr ...) #'((:li body.compiled ...)))
+    (pattern e:expr
+             #:with (xexpr ...) #`(#,(compile-expr #'e))))
 
   (define-splicing-syntax-class attrs
     (pattern {~seq {~alt
@@ -292,13 +294,14 @@
                             (syntax->datum #'id)))
      #'(void)]
 
-    [(a attrs:attrs url:string body:body ...+)
+    [(a ~! attrs:attrs url:string body:body ...+)
      #'(:a ([:href url] {~@ attrs.e ...}) body.compiled ...)]
 
-    [(br)
+    [(br ~!)
      #'(:br)]
 
-    [(button {~alt
+    [(button ~!
+             {~alt
               {~optional {~seq #:action action:id}}
               {~optional {~seq #:to-step step-id:id}}} ...
              text0:string text:string ...)
@@ -309,14 +312,14 @@
         {~? action void}
         joined-text)]
 
-    [(div attrs:attrs body ...+)
+    [(div ~! attrs:attrs body ...+)
      #:with (compiled-body ...) (map compile-markup (syntax-e (group-by-paragraph #'(body ...))))
      #'(:div attrs.group ... compiled-body ...)]
 
-    [(em attrs:attrs body:body ...+)
+    [(em ~! attrs:attrs body:body ...+)
      #'(:em attrs.group ... body.compiled ...)]
 
-    [(form {~optional {~seq #:action action:id}} body ...+)
+    [(form ~! {~optional {~seq #:action action:id}} body ...+)
      #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e (group-by-paragraph #'(body ...))))
      (check-action-id 'form #'{~? action #f})
      #'(formular
@@ -325,42 +328,42 @@
           compiled-body ... ...))
         (make-put-all-keywords {~? action void}))]
 
-    [({~and {~or h1 h2 h3} tag} attrs:attrs body:body ...+)
+    [({~and {~or h1 h2 h3} tag} ~! attrs:attrs body:body ...+)
      #:with tag-id (format-id #'tag ":~a" #'tag)
      #'(tag-id attrs.group ... body.compiled ...)]
 
-    [({~and {~or table tbody thead td th tr} tag} attrs:attrs body:body ...)
+    [({~and {~or table tbody thead td th tr} tag} ~! attrs:attrs body:body ...)
      #:with tag-id (format-id #'tag ":~a" #'tag)
      #'(tag-id attrs.group ... body.compiled ...)]
 
-    [(img attrs:attrs url:string)
+    [(img ~! attrs:attrs url:string)
      #'(:img ([:src url] {~@ attrs.e ...}))]
 
-    [(p attrs:attrs body:body ...)
+    [(p ~! attrs:attrs body:body ...)
      #'(:p attrs.group ... body.compiled ...)]
 
     ;; TODO: Remove refresh-every from interpreter and move it all here.
     [(refresh-every n:number)
      #'(interpret '(refresh-every n) *env*)]
 
-    [(script content:string ...+)
+    [(script ~! content:string ...+)
      #'(:script (string-append content ...))]
 
-    [(span attrs:attrs body:body ...+)
+    [(span ~! attrs:attrs body:body ...+)
      #'(:span attrs.group ... body.compiled ...)]
 
-    [(strong attrs:attrs body:body ...+)
+    [(strong ~! attrs:attrs body:body ...+)
      #'(:strong attrs.group ... body.compiled ...)]
 
-    [(style content:string ...+)
+    [(style ~! content:string ...+)
      #'(:style
         ([:type "text/css"])
         (string-append content ...))]
 
-    [(ol attrs:attrs item:list-item ...+)
+    [(ol ~! attrs:attrs item:list-item ...+)
      #'(:ol attrs.group ... item.xexpr ... ...)]
 
-    [(ul attrs:attrs item:list-item ...+)
+    [(ul ~! attrs:attrs item:list-item ...+)
      #'(:ul attrs.group ... item.xexpr ... ...)]
 
     [(template id:id content ...+)
@@ -379,10 +382,10 @@
                          #'(list (haml compiled-content ...))
                          #'(haml compiled-content ...)))))]
 
-    [(template id:id)
+    [(template ~! id:id)
      #'(id (λ () (error 'template "yielded without content")))]
 
-    [(yield)
+    [(yield ~!)
      (unless (current-in-template?)
        (raise-syntax-error 'yield "cannot yield outside template" stx stx))
      #'(unquote-splicing (content-proc))]
@@ -391,8 +394,9 @@
 
 (define (compile-expr stx)
   (syntax-parse stx
-    #:datum-literals (ev)
-    [(ev e) #'(interpret 'e *env*)]))
+    #:datum-literals (ev splicing-ev)
+    [(ev e) #'(interpret 'e *env*)]
+    [(splicing-ev e) #'(unquote-splicing (interpret 'e *env*))]))
 
 (define (compile-action-expr stx)
   (syntax-parse stx
