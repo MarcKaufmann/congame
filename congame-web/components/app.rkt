@@ -21,6 +21,7 @@
          racket/runtime-path
          racket/string
          threading
+         (only-in xml current-unescaped-tags html-unescaped-tags)
          web-server/dispatch
          (prefix-in files: web-server/dispatchers/dispatch-files)
          (prefix-in filter: web-server/dispatchers/dispatch-filter)
@@ -230,6 +231,7 @@
          (reverse-uri 'serve-resource-page (resource-id r)))))
   (current-production-error-page production-error-page)
   (current-git-sha config:git-sha)
+  (current-unescaped-tags html-unescaped-tags)
   (current-xexpr-wrapper tpl:page/xexpr)
 
   (define manager
