@@ -14,6 +14,12 @@
 @step[start #:pre assign-roles]{
   @h1{You are in the role of @(ev (get 'role))}
 
+  @ul{
+    @(splicing-ev
+      (for/list ([x '(1 2 3 4)])
+        @li[(~a (add1 x))]))
+  }
+
   @button{Next}
 }
 

@@ -86,7 +86,7 @@ SCRIPT
   not void
   zero? even? empty? equal?
   get put get/instance put/instance get/global put/global get/instance/global put/instance/global
-  list cons append
+  list cons append map
   first second third fourth fifth sixth seventh eighth ninth tenth rest
   hash hash-ref hash-set hash-update
   add1 sub1
@@ -191,6 +191,9 @@ SCRIPT
       [`(and ,e1 ,e2)
        (and (loop e1 env)
             (loop e2 env))]
+
+      [`(for/list ([,id ,e]) . ,bodies)
+       (loop `(map (lambda (,id) ,@bodies) ,e) env)]
 
       [`(with-transaction . ,bodies)
        (with-study-transaction
