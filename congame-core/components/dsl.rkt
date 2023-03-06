@@ -169,7 +169,7 @@
              #:with compiled #'step-name))
 
   (syntax-parse stx
-    #:datum-literals (action import script step study style template template-ungrouped)
+    #:datum-literals (action define import script step study style template template-ungrouped)
     [s:string
      #:when (regexp-match? #px"^\\s+$" (syntax->datum #'s))
      #f]
@@ -179,6 +179,9 @@
      #'(define (name)
          (let ([*env* (make-environment *env*)])
            compiled-content ...))]
+
+    [(define name:id e:expr)
+     #'(interpret '(define name e) *env*)]
 
     [(import mod-path:id id:id)
      #'(environment-set! *env* 'id (study-mod-require 'mod-path 'id))]
