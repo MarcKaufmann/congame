@@ -18,6 +18,7 @@
          koyo/sentry
          net/url
          racket/contract
+         racket/format
          racket/runtime-path
          racket/string
          threading
@@ -28,6 +29,7 @@
          (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
          web-server/dispatchers/filesystem-map
          web-server/http
+         (only-in web-server/http/response current-header-handler)
          web-server/managers/lru
          web-server/servlet-dispatch)
 
@@ -54,16 +56,24 @@
 
 (define-logger request)
 
-(define ((wrap-logging hdl) req)
-  (log-request-debug
-   "~a /~a [~a] [~a]"
-   (request-method req)
-   (string-join (map path/param-path (url-path (request-uri req))) "/")
-   (request-client-ip req)
-   (and~>
-    (headers-assq* #"user-agent" (request-headers/raw req))
-    (header-value)))
-  (hdl req))
+(define ((make-logging-dispatcher disp) conn req)
+  (define start-ms
+    (current-inexact-monotonic-milliseconds))
+  (parameterize ([current-header-handler
+                  (λ (resp)
+                    (begin0 resp
+                      (log-request-debug
+                       "~a /~a ~a [~a] [~a] [~ams]"
+                       (request-method req)
+                       (string-join (map path/param-path (url-path (request-uri req))) "/")
+                       (response-code resp)
+                       (request-client-ip req)
+                       (and~>
+                        (headers-assq* #"user-agent" (request-headers/raw req))
+                        (header-value))
+                       (~r #:precision '(= 2)
+                           (- (current-inexact-monotonic-milliseconds) start-ms)))))])
+    (disp conn req)))
 
 (define/contract (make-app auth broker broker-admin db flashes mailer _migrator reps sessions uploads users)
   (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? replication-manager? session-manager? uploader? user-manager? app?)
@@ -216,8 +226,7 @@
         ((wrap-session sessions))
         (wrap-preload)
         (wrap-cors)
-        (wrap-profiler)
-        (wrap-logging)))
+        (wrap-profiler)))
 
   (current-broker broker)
   (when config:debug
@@ -237,7 +246,8 @@
   (define manager
     (make-threshold-LRU-manager (stack expired-page) (* 8 1024 1024 1024)))
 
-  (app (sequencer:make
-        (filter:make #rx"^/static/.+$" static-dispatcher)
-        (dispatch/servlet #:manager manager (stack dispatch))
-        (dispatch/servlet #:manager manager (stack not-found-page)))))
+  (app (make-logging-dispatcher
+        (sequencer:make
+         (filter:make #rx"^/static/.+$" static-dispatcher)
+         (dispatch/servlet #:manager manager (stack dispatch))
+         (dispatch/servlet #:manager manager (stack not-found-page))))))
