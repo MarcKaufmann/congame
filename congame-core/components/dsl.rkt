@@ -231,6 +231,10 @@
           #:transitions (transition-graph [transition-entry.compiled ...] ...)
           (list (->step 'step-name step-id) ...)))]
 
+    [(study study-id:id #:dynamic e:expr)
+     #:fail-when (eq? (syntax-e #'study-id) 'end) "'end' is not a valid study id"
+     #'(define study-id (interpret 'e *env*))]
+
     [(style content:string ...+)
      #'(current-study-styles
         (let ([old (current-study-styles)])
