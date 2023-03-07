@@ -204,7 +204,7 @@ SCRIPT
          (unless (symbol? id)
            (error 'interpret "goto: expected a symbol but received ~e" id)))]
 
-      [(list (and (or 'a 'br 'div 'em 'h1 'h2 'h3 'p 'li 'ul 'ol 'span 'strong 'img) tag) bodies ...)
+      [(list (and (or 'a 'br 'div 'em 'h1 'h2 'h3 'p 'li 'ul 'ol 'span 'strong 'img 'table 'th 'td 'tr 'thead 'tbody) tag) bodies ...)
        (cons tag (map (lambda (b) (loop b env)) bodies))]
 
       [(? boolean?) e]
