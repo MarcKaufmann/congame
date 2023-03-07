@@ -95,7 +95,7 @@ SCRIPT
   done next skip
   current-participant-owner?
   refresh-every
-  error
+  apply error
   assigning-treatments)
 
 (define (make-initial-environment)

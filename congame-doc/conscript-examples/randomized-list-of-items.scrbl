@@ -13,13 +13,15 @@
 }
 
 @step[display-randomized-list]{
-  @h1{Randomized list}
+  @h1{Randomized list and its sum}
 
 
   @ul{
     @(splicing-ev
       (for/list ([item (get 'items)])
         @li[(~a item)]))
+    @(ev
+      (~a (apply + (get 'items))))
   }
 }
 
