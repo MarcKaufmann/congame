@@ -84,9 +84,9 @@ SCRIPT
 (define-initial-env initial-env
   + - * / = modulo remainder quotient
   not void
-  zero? even? empty? equal?
+  > < >= <= zero? even? empty? equal?
   get put get/instance put/instance get/global put/global get/instance/global put/instance/global
-  list cons append map list-ref
+  list cons append map list-ref sort max min
   first second third fourth fifth sixth seventh eighth ninth tenth rest
   hash hash-ref hash-set hash-update
   add1 sub1
