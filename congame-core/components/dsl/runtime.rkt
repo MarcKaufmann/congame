@@ -82,7 +82,7 @@ SCRIPT
     (put/instance k v)))
 
 (define-initial-env initial-env
-  + - * / = modulo remainder quotient
+  + - * / = modulo remainder quotient round ~r
   not void
   > < >= <= zero? even? empty? equal?
   get put get/instance put/instance get/global put/global get/instance/global put/instance/global
