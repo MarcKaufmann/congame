@@ -23,10 +23,31 @@
     @(ev
       (~a (apply + (get 'items))))
   }
+
+  @button{Next}
+}
+
+@step[display-randomized-forms]{
+  @h1{Randomized form}
+
+  @form{
+    @input-text[text1]{The first question: @(ev (~a (first (get 'items))))}
+    @input-text[text2]{The second question: @(ev (~a (second (get 'items))))}
+    @input-text[text3]{The third question: @(ev (~a (third (get 'items))))}
+    @input-text[text4]{The fourth question: @(ev (~a (fourth (get 'items))))}
+    @submit-button[]
+  }
+}
+
+@step[the-end]{
+  @h1{The End}
 }
 
 @study[
   randomized-list
   #:transitions
-  [welcome --> display-randomized-list --> display-randomized-list]
+  [welcome --> display-randomized-list
+           --> display-randomized-forms
+           --> the-end]
+  [the-end --> the-end]
 ]
