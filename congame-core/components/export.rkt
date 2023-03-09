@@ -18,6 +18,9 @@
 (define (list->jsexpr xs)
   (map ->jsexpr xs))
 
+(define (pair->jsexpr p)
+  (list (->jsexpr (car p)) (->jsexpr (cdr p))))
+
 ;; WARN: Studies can store hashes with arbirtrary keys, which means
 ;; over here we may end up with collisions because we convert
 ;; non-symbol keys to symbols.  So, a hash that has an entry with key
@@ -47,6 +50,7 @@
    [string?       (define ->jsexpr values)]
    [symbol?       (define ->jsexpr symbol->string)]
    [list?         (define ->jsexpr list->jsexpr)]
+   [pair?         (define ->jsexpr pair->jsexpr)]
    [hash?         (define ->jsexpr hash->jsexpr)]
    [bytes?        (define ->jsexpr bytes->string/utf-8)]
    [binding:file? (define ->jsexpr binding:file->jsexpr)]))
