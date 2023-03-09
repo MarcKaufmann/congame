@@ -88,7 +88,7 @@ SCRIPT
   get put get/instance put/instance get/global put/global get/instance/global put/instance/global
   list cons append map list-ref sort max min
   first second third fourth fifth sixth seventh eighth ninth tenth rest
-  hash hash-ref hash-set hash-update
+  hash hash-ref hash-set hash-set* hash-update
   add1 sub1
   ~a format number->string string->number symbol->string string->symbol string=?
   random shuffle
