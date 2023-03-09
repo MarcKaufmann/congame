@@ -4,6 +4,8 @@
          racket/format
          racket/list
          racket/match
+         gregor
+         gregor/period
          "../study.rkt")
 
 (provide
@@ -82,18 +84,20 @@ SCRIPT
     (put/instance k v)))
 
 (define-initial-env initial-env
-  + - * / = modulo remainder quotient round ~r
-  not void
+  + - * / = modulo remainder quotient round ~r add1 sub1
   > < >= <= zero? even? empty? equal?
+  not void
   get put get/instance put/instance get/global put/global get/instance/global put/instance/global
   list cons append map list-ref sort max min
   first second third fourth fifth sixth seventh eighth ninth tenth rest
   hash hash-ref hash-set hash-set* hash-update
-  add1 sub1
   ~a format number->string string->number symbol->string string->symbol string=?
   random shuffle
   done next skip
   current-participant-owner?
+  ~t today date=? date>=? date>? date<=? date<?
+  moment now now/moment moment>=? moment? moment>? moment<? moment<=? moment=?
+  +period period years months weeks days hours minutes seconds milliseconds microseconds nanoseconds
   refresh-every
   apply error
   assigning-treatments)

@@ -3,6 +3,7 @@
 (require racket/contract
          racket/format
          racket/generic
+         gregor
          json
          web-server/http)
 
@@ -42,6 +43,10 @@
 (define (~MiB b)
   (~a (~r #:precision '(= 2) (/ b 1024.0 1024.0)) "MB"))
 
+(define (moment->jsexpr m)
+  ; FIXME: Should we use moment->iso8601 instead?
+  (moment->iso8601/tzid m))
+
 (define-generics jsexprable
   [->jsexpr jsexprable]
   #:fast-defaults
@@ -53,4 +58,5 @@
    [pair?         (define ->jsexpr pair->jsexpr)]
    [hash?         (define ->jsexpr hash->jsexpr)]
    [bytes?        (define ->jsexpr bytes->string/utf-8)]
-   [binding:file? (define ->jsexpr binding:file->jsexpr)]))
+   [binding:file? (define ->jsexpr binding:file->jsexpr)]
+   [moment?       (define ->jsexpr moment->jsexpr)]))
