@@ -538,9 +538,6 @@ Next, let us implement a simple version of the dictator game to highlight a more
 @action[check-answer]{
   @(ev
     (begin
-      @; We automatically pair participant with id 1 with participant
-      @; with id 0; participant with id 3 with participant with id 2;
-      @; and so on
       (define payments
         (get/instance 'payments (hash)))
       (define receiver-payment
@@ -561,6 +558,9 @@ Next, let us implement a simple version of the dictator game to highlight a more
 @action[update-receiver-payment]{
   @(ev
      (begin
+       @; We pair participant with id 1 with participant
+       @; with id 0; participant with id 3 with participant with id 2;
+       @; and so on
        (define payment
          (string->number (get 'payment-string)))
        (put 'payment payment)
