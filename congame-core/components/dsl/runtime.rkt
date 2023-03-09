@@ -90,7 +90,7 @@ SCRIPT
   first second third fourth fifth sixth seventh eighth ninth tenth rest
   hash hash-ref hash-set hash-update
   add1 sub1
-  ~a format number->string string->number symbol->string string->symbol
+  ~a format number->string string->number symbol->string string->symbol string=?
   random shuffle
   done next skip
   current-participant-owner?
