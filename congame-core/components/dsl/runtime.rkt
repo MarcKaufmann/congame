@@ -1,12 +1,14 @@
 #lang racket/base
 
-(require koyo/haml
-         racket/format
-         racket/list
-         racket/vector
-         racket/match
+(require (for-syntax koyo/haml
+                     racket/base)
          gregor
          gregor/period
+         koyo/haml
+         racket/format
+         racket/list
+         racket/match
+         racket/vector
          "../study.rkt")
 
 (provide
@@ -103,25 +105,133 @@ SCRIPT
   (iso8601->moment (get/global k)))
 
 (define-initial-env initial-env
-  + - * / = modulo remainder quotient round ~r add1 sub1
-  > < >= <= zero? even? empty? equal?
-  not void
-  get put get/instance put/instance get/global put/global get/instance/global put/instance/global
-  get/moment get/instance/moment get/global/moment put/moment put/instance/moment put/global/moment
-  list cons append map list-ref sort max min build-list range list->vector take drop make-list
-  first second third fourth fifth sixth seventh eighth ninth tenth rest
-  vector vector->list vector-length vector-map vector-ref vector-set! build-vector vector-copy! vector-take vector-drop vector-empty? make-vector
-  hash hash-ref hash-set hash-set* hash-update
-  ~a format number->string string->number symbol->string string->symbol string=?
-  random shuffle
-  done next skip
+  *
+  +
+  +period
+  -
+  /
+  <
+  <=
+  =
+  >
+  >=
+  add1
+  append
+  apply
+  assigning-treatments
+  build-list
+  build-vector
+  button
+  cons
   current-participant-owner?
-  ~t today date=? date>=? date>? date<=? date<?
-  moment now now/moment moment>=? moment? moment>? moment<? moment<=? moment=? moment->iso8601 iso8601->moment
-  +period period years months weeks days hours minutes seconds milliseconds microseconds nanoseconds
+  date<=?
+  date<?
+  date=?
+  date>=?
+  date>?
+  days
+  done
+  drop
+  eighth
+  empty?
+  equal?
+  error
+  even?
+  fifth
+  first
+  format
+  fourth
+  get
+  get/global
+  get/global/moment
+  get/instance
+  get/instance/global
+  get/instance/moment
+  get/moment
+  hash
+  hash-ref
+  hash-set
+  hash-set*
+  hash-update
+  hours
+  iso8601->moment
+  list
+  list*
+  list->vector
+  list-ref
+  make-list
+  make-vector
+  map
+  max
+  microseconds
+  milliseconds
+  min
+  minutes
+  modulo
+  moment
+  moment->iso8601
+  moment<=?
+  moment<?
+  moment=?
+  moment>=?
+  moment>?
+  moment?
+  months
+  nanoseconds
+  next
+  ninth
+  not
+  now
+  now/moment
+  number->string
+  period
+  put
+  put/global
+  put/global/moment
+  put/instance
+  put/instance/global
+  put/instance/moment
+  put/moment
+  quotient
+  random
+  range
   refresh-every
-  apply error
-  assigning-treatments)
+  remainder
+  rest
+  round
+  second
+  seconds
+  seventh
+  shuffle
+  sixth
+  skip
+  sort
+  string->number
+  string->symbol
+  string=?
+  sub1
+  symbol->string
+  take
+  tenth
+  third
+  today
+  vector
+  vector->list
+  vector-copy!
+  vector-drop
+  vector-empty?
+  vector-length
+  vector-map
+  vector-ref
+  vector-set!
+  vector-take
+  void
+  weeks
+  years
+  zero?
+  ~a
+  ~r
+  ~t)
 
 (define (make-initial-environment)
   (define env (make-environment))
@@ -150,9 +260,18 @@ SCRIPT
 (provide
  interpret)
 
+(define-namespace-anchor ns-anchor)
+
 (define (interpret e [env (make-initial-environment)])
   (let loop ([e e] [env env])
     (match e
+      [`(#%app ,rator . ,rands)
+       (loop (cons rator rands) env)]
+      [`(#%top . ev)
+       (λ (e) (loop e env))]
+      [`(#%top . ,id)
+       (loop id env)]
+
       [`(quote ,e) e]
 
       [`(lambda ,arg-ids . ,bodies)
@@ -229,8 +348,9 @@ SCRIPT
          (unless (symbol? id)
            (error 'interpret "goto: expected a symbol but received ~e" id)))]
 
-      [(list (and (or 'a 'br 'div 'em 'h1 'h2 'h3 'p 'li 'ul 'ol 'span 'strong 'img 'table 'th 'td 'tr 'thead 'tbody) tag) bodies ...)
-       (cons tag (map (lambda (b) (loop b env)) bodies))]
+      [`(haml . ,_rest)
+       (parameterize ([current-namespace (namespace-anchor->namespace ns-anchor)])
+         (loop (syntax->datum (expand (datum->syntax #f e))) env))]
 
       [(? boolean?) e]
       [(? number?) e]

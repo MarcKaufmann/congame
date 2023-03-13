@@ -26,6 +26,7 @@
     congame/components/study
     congame/components/transition-graph
     koyo/haml
+    racket/base
     racket/format
     racket/string))
 
@@ -256,157 +257,182 @@
 
 ;; @style{  }
 
-(define (compile-markup stx)
-  (define-syntax-class body
-    (pattern body #:with compiled (compile-markup #'body)))
-
-  (define-syntax-class list-item
-    #:datum-literals (li)
-    #:attributes ([xexpr 1])
-    (pattern "\n"
-             #:with (xexpr ...) null)
-    (pattern (li body:body ...+)
-             #:with (xexpr ...) #'((:li body.compiled ...)))
-    (pattern e:expr
-             #:with (xexpr ...) #`(#,(compile-expr #'e))))
-
-  (define-splicing-syntax-class attrs
-    (pattern {~seq {~alt
-                    {~optional {~seq #:id id-e:string}}
-                    {~optional {~seq #:class class-e:string}}
-                    {~optional {~seq #:style style-e:string}}} ...}
-             #:with (e ...) #'({~? {~@ [:id id-e]}}
-                               {~? {~@ [:class class-e]}}
-                               {~? {~@ [:style style-e]}})
-             #:with (group ...) (if (null? (syntax-e #'(e ...)))
-                                    #'()
-                                    #'(({~@ e ...})))))
-
+(define (compile-markup stx [expr-compiler compile-expr])
   ;; NOTE: For block-style tags, it's the tag's responsibility to call
   ;; group-by-paragraph on its exprs.
+  (let loop ([stx stx])
+    (define-syntax-class body
+      (pattern body #:with compiled (loop #'body)))
+
+    (define-syntax-class list-item
+      #:datum-literals (li)
+      #:attributes ([xexpr 1])
+      (pattern "\n"
+               #:with (xexpr ...) null)
+      (pattern (li body:body ...+)
+               #:with (xexpr ...) #'((:li body.compiled ...)))
+      (pattern e:expr
+               #:with (xexpr ...) #`(#,(compile-expr #'e))))
+
+    (define-splicing-syntax-class attrs
+      (pattern {~seq {~alt
+                      {~optional {~seq #:id id-e:string}}
+                      {~optional {~seq #:class class-e:string}}
+                      {~optional {~seq #:style style-e:string}}} ...}
+               #:with (e ...) #'({~? {~@ [:id id-e]}}
+                                 {~? {~@ [:class class-e]}}
+                                 {~? {~@ [:style style-e]}})
+               #:with (group ...) (if (null? (syntax-e #'(e ...)))
+                                      #'()
+                                      #'(({~@ e ...})))))
+
+    (syntax-parse stx
+      #:datum-literals (a br button div em form h1 h2 h3 hl img ol p quote refresh-every span strong
+                          table tbody td th thead tr
+                          template u1 ul yield
+                          script style)
+      [num:number #'num]
+      [str:string #'str]
+      [kwd:keyword #'kwd]
+      [(quote e) #''e]
+
+      [({~and {~or hl u1} id} . _rest)
+       #:fail-when #t (apply format
+                             "did you mean ~a (~a)?"
+                             (hash-ref
+                              (hasheq
+                               'hl '(h1 "the character '1' (one) instead of 'l' (lowercase L)")
+                               'u1 '(ul "the character 'l' (lowercase L) instead of '1' (one)"))
+                              (syntax->datum #'id)))
+       #'(void)]
+
+      [(a ~! attrs:attrs url:string body:body ...+)
+       #'(:a ([:href url] {~@ attrs.e ...}) body.compiled ...)]
+
+      [(br ~!)
+       #'(:br)]
+
+      [(button ~!
+               {~alt
+                {~optional {~seq #:action action:id}}
+                {~optional {~seq #:to-step step-id:id}}} ...
+               text0:string text:string ...)
+       #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
+       (check-action-id 'button #'{~? action #f})
+       #'(button
+          {~? {~@ #:to-step-id 'step-id}}
+          {~? action void}
+          joined-text)]
+
+      [(div ~! attrs:attrs body ...+)
+       #:with (compiled-body ...) (map loop (syntax-e (group-by-paragraph #'(body ...))))
+       #'(:div attrs.group ... compiled-body ...)]
+
+      [(em ~! attrs:attrs body:body ...+)
+       #'(:em attrs.group ... body.compiled ...)]
+
+      ;; FIXME: compile-form-expr needs to pass around expr-compiler
+      [(form ~! {~optional {~seq #:action action:id}} body ...+)
+       #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e (group-by-paragraph #'(body ...))))
+       (check-action-id 'form #'{~? action #f})
+       #'(formular
+          (haml
+           (:div
+            compiled-body ... ...))
+          (make-put-all-keywords {~? action void}))]
+
+      [({~and {~or h1 h2 h3} tag} ~! attrs:attrs body:body ...+)
+       #:with tag-id (format-id #'tag ":~a" #'tag)
+       #'(tag-id attrs.group ... body.compiled ...)]
+
+      [({~and {~or table tbody thead td th tr} tag} ~! attrs:attrs body:body ...)
+       #:with tag-id (format-id #'tag ":~a" #'tag)
+       #'(tag-id attrs.group ... body.compiled ...)]
+
+      [(img ~! attrs:attrs url:string)
+       #'(:img ([:src url] {~@ attrs.e ...}))]
+
+      [(p ~! attrs:attrs body:body ...)
+       #'(:p attrs.group ... body.compiled ...)]
+
+      ;; TODO: Remove refresh-every from interpreter and move it all here.
+      [(refresh-every n:number)
+       #'(interpret '(refresh-every n) *env*)]
+
+      [(script ~! content:string ...+)
+       #'(:script (string-append content ...))]
+
+      [(span ~! attrs:attrs body:body ...+)
+       #'(:span attrs.group ... body.compiled ...)]
+
+      [(strong ~! attrs:attrs body:body ...+)
+       #'(:strong attrs.group ... body.compiled ...)]
+
+      [(style ~! content:string ...+)
+       #'(:style
+          ([:type "text/css"])
+          (string-append content ...))]
+
+      [(ol ~! attrs:attrs item:list-item ...+)
+       #'(:ol attrs.group ... item.xexpr ... ...)]
+
+      [(ul ~! attrs:attrs item:list-item ...+)
+       #'(:ul attrs.group ... item.xexpr ... ...)]
+
+      [(template id:id content ...+)
+       (define template-id (syntax-e #'id))
+       (unless (hash-has-key? (Env-templates (current-env)) template-id)
+         (raise-syntax-error 'template (format "~a is not a known template" template-id) stx #'id))
+       (define template-type
+         (hash-ref (Env-templates (current-env)) template-id))
+       (define content-stxes
+         (case template-type
+           [(ungrouped) (syntax-e #'(content ...))]
+           [(grouped) (syntax-e (group-by-paragraph #'(content ...)))]
+           [else (raise-syntax-error 'template (format "unexpected type ~a for template ~a" template-type template-id))]))
+       (with-syntax ([(compiled-content ...) (map loop content-stxes)])
+         #`(id (λ () #,(if (= (length (syntax-e #'(compiled-content ...))) 1)
+                           #'(list (haml compiled-content ...))
+                           #'(haml compiled-content ...)))))]
+
+      [(template ~! id:id)
+       #'(id (λ () (error 'template "yielded without content")))]
+
+      [(yield ~!)
+       (unless (current-in-template?)
+         (raise-syntax-error 'yield "cannot yield outside template" stx stx))
+       #'(unquote-splicing (content-proc))]
+
+      [_
+       (expr-compiler stx)])))
+
+(define (syntax=?* a b)
+  (equal?
+   (syntax->datum a)
+   (syntax->datum b)))
+
+(define (compile-expr-maybe-markup stx)
   (syntax-parse stx
-    #:datum-literals (a br button div em form h1 h2 h3 hl img ol p quote refresh-every span strong
-                        table tbody td th thead tr
-                        template u1 ul yield
-                        script style)
-    [num:number #'num]
-    [str:string #'str]
-    [kwd:keyword #'kwd]
-    [(quote e) #''e]
-
-    [({~and {~or hl u1} id} . _rest)
-     #:fail-when #t (apply format
-                           "did you mean ~a (~a)?"
-                           (hash-ref
-                            (hasheq
-                             'hl '(h1 "the character '1' (one) instead of 'l' (lowercase L)")
-                             'u1 '(ul "the character 'l' (lowercase L) instead of '1' (one)"))
-                            (syntax->datum #'id)))
-     #'(void)]
-
-    [(a ~! attrs:attrs url:string body:body ...+)
-     #'(:a ([:href url] {~@ attrs.e ...}) body.compiled ...)]
-
-    [(br ~!)
-     #'(:br)]
-
-    [(button ~!
-             {~alt
-              {~optional {~seq #:action action:id}}
-              {~optional {~seq #:to-step step-id:id}}} ...
-             text0:string text:string ...)
-     #:with joined-text (datum->syntax #'text0 (string-join (syntax->datum #'(text0 text ...)) ""))
-     (check-action-id 'button #'{~? action #f})
-     #'(button
-        {~? {~@ #:to-step-id 'step-id}}
-        {~? action void}
-        joined-text)]
-
-    [(div ~! attrs:attrs body ...+)
-     #:with (compiled-body ...) (map compile-markup (syntax-e (group-by-paragraph #'(body ...))))
-     #'(:div attrs.group ... compiled-body ...)]
-
-    [(em ~! attrs:attrs body:body ...+)
-     #'(:em attrs.group ... body.compiled ...)]
-
-    [(form ~! {~optional {~seq #:action action:id}} body ...+)
-     #:with ((compiled-body ...) ...) (map compile-form-expr (syntax-e (group-by-paragraph #'(body ...))))
-     (check-action-id 'form #'{~? action #f})
-     #'(formular
-        (haml
-         (:div
-          compiled-body ... ...))
-        (make-put-all-keywords {~? action void}))]
-
-    [({~and {~or h1 h2 h3} tag} ~! attrs:attrs body:body ...+)
-     #:with tag-id (format-id #'tag ":~a" #'tag)
-     #'(tag-id attrs.group ... body.compiled ...)]
-
-    [({~and {~or table tbody thead td th tr} tag} ~! attrs:attrs body:body ...)
-     #:with tag-id (format-id #'tag ":~a" #'tag)
-     #'(tag-id attrs.group ... body.compiled ...)]
-
-    [(img ~! attrs:attrs url:string)
-     #'(:img ([:src url] {~@ attrs.e ...}))]
-
-    [(p ~! attrs:attrs body:body ...)
-     #'(:p attrs.group ... body.compiled ...)]
-
-    ;; TODO: Remove refresh-every from interpreter and move it all here.
-    [(refresh-every n:number)
-     #'(interpret '(refresh-every n) *env*)]
-
-    [(script ~! content:string ...+)
-     #'(:script (string-append content ...))]
-
-    [(span ~! attrs:attrs body:body ...+)
-     #'(:span attrs.group ... body.compiled ...)]
-
-    [(strong ~! attrs:attrs body:body ...+)
-     #'(:strong attrs.group ... body.compiled ...)]
-
-    [(style ~! content:string ...+)
-     #'(:style
-        ([:type "text/css"])
-        (string-append content ...))]
-
-    [(ol ~! attrs:attrs item:list-item ...+)
-     #'(:ol attrs.group ... item.xexpr ... ...)]
-
-    [(ul ~! attrs:attrs item:list-item ...+)
-     #'(:ul attrs.group ... item.xexpr ... ...)]
-
-    [(template id:id content ...+)
-     (define template-id (syntax-e #'id))
-     (unless (hash-has-key? (Env-templates (current-env)) template-id)
-       (raise-syntax-error 'template (format "~a is not a known template" template-id) stx #'id))
-     (define template-type
-       (hash-ref (Env-templates (current-env)) template-id))
-     (define content-stxes
-       (case template-type
-         [(ungrouped) (syntax-e #'(content ...))]
-         [(grouped) (syntax-e (group-by-paragraph #'(content ...)))]
-         [else (raise-syntax-error 'template (format "unexpected type ~a for template ~a" template-type template-id))]))
-     (with-syntax ([(compiled-content ...) (map compile-markup content-stxes)])
-       #`(id (λ () #,(if (= (length (syntax-e #'(compiled-content ...))) 1)
-                         #'(list (haml compiled-content ...))
-                         #'(haml compiled-content ...)))))]
-
-    [(template ~! id:id)
-     #'(id (λ () (error 'template "yielded without content")))]
-
-    [(yield ~!)
-     (unless (current-in-template?)
-       (raise-syntax-error 'yield "cannot yield outside template" stx stx))
-     #'(unquote-splicing (content-proc))]
-
-    [_ (compile-expr stx)]))
+    [(rator rand ...)
+     #:with compiled-rator (compile-expr-maybe-markup #'rator)
+     #:with (compiled-rand ...) (map compile-expr-maybe-markup (syntax-e #'(rand ...)))
+     #:with (compiled-rator* compiled-rand* ...) (compile-markup #'(compiled-rator compiled-rand ...) values)
+     (if (syntax=?* #'compiled-rator* #'rator)
+         #'(compiled-rator* compiled-rand* ...)
+         #'(haml (compiled-rator* compiled-rand* ...)))]
+    [_
+     #:with compiled (compile-markup stx values)
+     (if (syntax=?* #'compiled stx) stx #'(haml compiled))]))
 
 (define (compile-expr stx)
   (syntax-parse stx
     #:datum-literals (ev splicing-ev)
-    [(ev e) #'(interpret 'e *env*)]
-    [(splicing-ev e) #'(unquote-splicing (interpret 'e *env*))]))
+    [(ev e)
+     #:with compiled-e (compile-expr-maybe-markup #'e)
+     #'(interpret 'compiled-e *env*)]
+    [(splicing-ev e)
+     #:with compiled-e (compile-expr-maybe-markup #'e)
+     #'(interpret 'compiled-e *env*)]))
 
 (define (compile-action-expr stx)
   (syntax-parse stx
@@ -438,13 +464,13 @@
           (haml compiled-label-expr))))]
 
     [({~and {~or input-number input-range} widget-id} name:id
-                   ~!
-                   {~alt
-                    {~optional {~seq #:required? required?:boolean}}
-                    {~optional {~seq #:min min-expr:number}}
-                    {~optional {~seq #:max max-expr:number}}
-                    {~optional {~seq #:step step-expr:number}}} ...
-                   label-expr)
+                                                      ~!
+                                                      {~alt
+                                                       {~optional {~seq #:required? required?:boolean}}
+                                                       {~optional {~seq #:min min-expr:number}}
+                                                       {~optional {~seq #:max max-expr:number}}
+                                                       {~optional {~seq #:step step-expr:number}}} ...
+                                                      label-expr)
      #:with name-kwd (stx->keyword-stx #'name)
      #:with compiled-label-expr (compile-markup (syntax-e #'label-expr))
      #'((name-kwd
@@ -456,9 +482,9 @@
           (haml compiled-label-expr))))]
 
     [({~and {~or radios select} widget-id} name:id
-             options
-             {~optional {~seq #:required? required?:boolean}}
-             label-expr)
+                                           options
+                                           {~optional {~seq #:required? required?:boolean}}
+                                           label-expr)
      #:with name-kwd (stx->keyword-stx #'name)
      #:with compiled-label-expr (compile-markup (syntax-e #'label-expr))
      #'((name-kwd
