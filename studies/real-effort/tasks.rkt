@@ -18,7 +18,7 @@
          congame/components/bot
          (prefix-in bot: (submod congame/components/bot actions)))
 
-(provide task-study format)
+(provide task-study simple-task-study)
 
 ;; Generate the matrices if there is no csv mapping to them
 (define-static-resource matrix-dir "matrices")
@@ -214,6 +214,35 @@
    (list
     (make-step 'start-tasks
                initialize-tasks
+               task-completion
+               #:for-bot bot:continuer)
+    (make-step 'task task #:for-bot task/bot task-completion))))
+
+(define ((initialize-simple-tasks n title [hide-description? #f]))
+  (define n+1-string (number->string (add1 n)))
+  (define n-string (number->string n))
+  (put 'max-wrong-tasks n)
+  (page
+   (haml
+    (.container
+     (:h1 title)
+     (:p "You now have to do " n-string " tasks successfully, and you can get at most " n-string " tasks wrong. Whenever you get a task wrong, you will be given a new task to try. If you get " n+1-string " or more wrong, you automatically fail and drop out of the study.")
+     (toggleable-xexpr "Show/Hide Task Description" (task-description) #:hidden? hide-description?)
+     (button
+      (λ ()
+        (put 'remaining-tasks n)
+        (put 'correct-answers 0)
+        (put 'wrong-answers 0)
+        (put 'current-matrix (random-matrix)))
+      "Start Tasks")))))
+
+(define (simple-task-study n title [hide-description? #f])
+  (make-study
+   "task-study"
+   #:provides '(success? correct-answers wrong-answers)
+   (list
+    (make-step 'start-tasks
+               (initialize-simple-tasks n title hide-description?)
                task-completion
                #:for-bot bot:continuer)
     (make-step 'task task #:for-bot task/bot task-completion))))
