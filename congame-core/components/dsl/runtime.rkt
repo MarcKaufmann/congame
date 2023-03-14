@@ -88,7 +88,7 @@ SCRIPT
   > < >= <= zero? even? empty? equal?
   not void
   get put get/instance put/instance get/global put/global get/instance/global put/instance/global
-  list cons append map list-ref sort max min
+  list cons append map list-ref sort max min build-list range
   first second third fourth fifth sixth seventh eighth ninth tenth rest
   hash hash-ref hash-set hash-set* hash-update
   ~a format number->string string->number symbol->string string->symbol string=?
