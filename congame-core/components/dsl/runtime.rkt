@@ -3,6 +3,7 @@
 (require koyo/haml
          racket/format
          racket/list
+         racket/vector
          racket/match
          gregor
          gregor/period
@@ -88,8 +89,9 @@ SCRIPT
   > < >= <= zero? even? empty? equal?
   not void
   get put get/instance put/instance get/global put/global get/instance/global put/instance/global
-  list cons append map list-ref sort max min build-list range
+  list cons append map list-ref sort max min build-list range list->vector take drop
   first second third fourth fifth sixth seventh eighth ninth tenth rest
+  vector vector->list vector-length vector-map vector-ref vector-set! build-vector vector-copy! vector-take vector-drop vector-empty?
   hash hash-ref hash-set hash-set* hash-update
   ~a format number->string string->number symbol->string string->symbol string=?
   random shuffle
