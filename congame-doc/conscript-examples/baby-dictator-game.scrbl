@@ -63,11 +63,12 @@
          (add1 (get 'pid)))
        (define receiver-payment
          (- 10 payment))
-       (define current-payments
-         (get/instance 'payments (hash)))
-       (define new-payments
-         (hash-set current-payments receiver-id receiver-payment))
-       (put/instance 'payments new-payments)))
+       (with-transaction
+         (define current-payments
+           (get/instance 'payments (hash)))
+         (define new-payments
+           (hash-set current-payments receiver-id receiver-payment))
+         (put/instance 'payments new-payments))))
 }
 
 @step[display-dictator #:pre update-receiver-payment]{
