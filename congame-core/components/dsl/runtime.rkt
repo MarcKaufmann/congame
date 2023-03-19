@@ -84,11 +84,30 @@ SCRIPT
   (parameterize ([current-study-stack '(*root*)])
     (put/instance k v)))
 
+(define (put/moment k v)
+  (put k (moment->iso8601 v)))
+
+(define (put/instance/moment k v)
+  (put/instance k (moment->iso8601 v)))
+
+(define (put/global/moment k v)
+  (put/global k (moment->iso8601 v)))
+
+(define (get/moment k)
+  (iso8601->moment (get k)))
+
+(define (get/instance/moment k)
+  (iso8601->moment (get/instance k)))
+
+(define (get/global/moment k)
+  (iso8601->moment (get/global k)))
+
 (define-initial-env initial-env
   + - * / = modulo remainder quotient round ~r add1 sub1
   > < >= <= zero? even? empty? equal?
   not void
   get put get/instance put/instance get/global put/global get/instance/global put/instance/global
+  get/moment get/instance/moment get/global/moment put/moment put/instance/moment put/global/moment
   list cons append map list-ref sort max min build-list range list->vector take drop make-list
   first second third fourth fifth sixth seventh eighth ninth tenth rest
   vector vector->list vector-length vector-map vector-ref vector-set! build-vector vector-copy! vector-take vector-drop vector-empty? make-vector
