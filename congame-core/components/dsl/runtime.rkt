@@ -98,7 +98,7 @@ SCRIPT
   done next skip
   current-participant-owner?
   ~t today date=? date>=? date>? date<=? date<?
-  moment now now/moment moment>=? moment? moment>? moment<? moment<=? moment=?
+  moment now now/moment moment>=? moment? moment>? moment<? moment<=? moment=? moment->iso8601 iso8601->moment
   +period period years months weeks days hours minutes seconds milliseconds microseconds nanoseconds
   refresh-every
   apply error
