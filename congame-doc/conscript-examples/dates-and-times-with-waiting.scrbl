@@ -4,7 +4,7 @@
 @action[set-start-time]{
   @(ev
     (begin
-      (put 'start-time (now/moment))))
+      (put/moment 'start-time (now/moment))))
 }
 
 @step[welcome]{
@@ -20,7 +20,7 @@
 @action[set-refresh-time]{
   @(ev
     (begin
-      (put
+      (put/moment
         'refresh-time
         (+period (now/moment) (period [seconds 20])))))
 }
@@ -35,7 +35,7 @@
 @action[check-refresh-move-on]{
   @(ev
      (begin
-       (when (moment>=? (now/moment) (get 'refresh-time))
+       (when (moment>=? (now/moment) (get/moment 'refresh-time))
          (skip))))
 }
 
@@ -84,7 +84,7 @@
   #:transitions
   [welcome --> wait-then-click-to-move-on
            --> @(ev (lambda ()
-                      (cond [(moment>=? (now/moment) (get 'start-time))
+                      (cond [(moment>=? (now/moment) (get/moment 'start-time))
                              'wait-with-automatic-refresh-until-move-on]
                             [else
                              'wait-then-click-to-move-on])))]
