@@ -15,8 +15,7 @@
     @submit-button[]}
 }
 
-@step[variable-tasks
-      #:dynamic (variable-task-study
+@step[variable-tasks #:dynamic (variable-task-study
                   'variable-tasks
                   '([n allocation]
                     [title (const "Allocated tasks")]
