@@ -190,6 +190,9 @@
      #:with (compiled-import ...) (map compile-stmt (syntax-e #'((import mod-path id) ...)))
      #'(begin compiled-import ...)]
 
+    [(step step-id:id #:dynamic e:expr)
+     #'(define step-id (interpret 'e *env*))]
+
     [(step name:id {~optional {~seq #:pre pre-action-id:id}} content ...+)
      #:fail-when (eq? (syntax-e #'name) 'end) "'end' is not a valid step id"
      #:with (compiled-content ...) (map compile-markup (syntax-e (group-by-paragraph #'(content ...))))

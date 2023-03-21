@@ -18,7 +18,10 @@
          congame/components/bot
          (prefix-in bot: (submod congame/components/bot actions)))
 
-(provide task-study simple-task-study)
+(provide
+ task-study
+ simple-task-study
+ variable-task-study)
 
 ;; Generate the matrices if there is no csv mapping to them
 (define-static-resource matrix-dir "matrices")
@@ -246,3 +249,11 @@
                task-completion
                #:for-bot bot:continuer)
     (make-step 'task task #:for-bot task/bot task-completion))))
+
+
+(define (variable-task-study step-name require-bindings provide-bindings)
+  (make-step/study
+   step-name
+   task-study
+   #:require-bindings require-bindings
+   #:provide-bindings provide-bindings))
