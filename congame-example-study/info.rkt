@@ -29,4 +29,5 @@
     (congame-example-study/quizzes info-econ-quiz2)
     (congame-example-study/quizzes info-econ-quiz3)
     (congame-example-study/quizzes info-econ-quiz4)
-    (congame-example-study/instructor-review instructor-review/study)))
+    (congame-example-study/instructor-review instructor-review/study)
+    (congame-example-study/reproducible-bug reproducible-bug-study)))
