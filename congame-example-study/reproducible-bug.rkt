@@ -6,14 +6,17 @@
 ;;; - formular
 ;;; - get and put (which can almost surely be removed)
 ;;; - transition-graph
+;;; - skip
 ;;;
 ;;; We should probably boil it down to something that requires as few of these
 ;;; features as possible, to rule out / in that it is an interaction with one of
 ;;; those features that causes it. My guess is that all it needs is that we
-;;; define some variable(s) somewhere (in the first set of substudies?), and
-;;; then that we run another substudy. What is weird is that this problem does
-;;; not occur when I only repeat studies of the final type. Somehow it requires
-;;; the earlier studies too, which I don't get.
+;;; define some variable(s) somewhere (in the first set of substudies?), that we
+;;; have skip, and then that we run another substudy. What is weird is that this
+;;; problem does not occur when I only repeat studies of the final type. Somehow
+;;; it requires the earlier studies too, which I don't get.
+;;;
+;;; Worth trying out whether the first substudy by itself causes all the problems, as it does not have an empty step that displays the page before the `skip`.
 
 (require congame/components/study
          congame/components/formular
@@ -42,12 +45,7 @@
      (formular
       (haml
        (:div
-        (#:inv (radios
-                "Which alternative do you prefer?"
-                '(
-                  ("Safe"  . "A: You receive the safe alternative (see above) with certainty (100%).")
-                  ("Risky" . "B: You receive 800 with 50% chance and in the other 50% of cases you receive 0.")
-       )))
+        (#:inv (input-number "number"))
         (:button.button.next-button ((:type "submit")) "Next")))
       (lambda (#:inv inv)
         (put 'inv inv)))))))
