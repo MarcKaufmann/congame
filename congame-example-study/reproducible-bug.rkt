@@ -1,5 +1,20 @@
 #lang racket/base
 
+;;; Notes
+;;;
+;;; This example relies on
+;;; - formular
+;;; - get and put (which can almost surely be removed)
+;;; - transition-graph
+;;;
+;;; We should probably boil it down to something that requires as few of these
+;;; features as possible, to rule out / in that it is an interaction with one of
+;;; those features that causes it. My guess is that all it needs is that we
+;;; define some variable(s) somewhere (in the first set of substudies?), and
+;;; then that we run another substudy. What is weird is that this problem does
+;;; not occur when I only repeat studies of the final type. Somehow it requires
+;;; the earlier studies too, which I don't get.
+
 (require congame/components/study
          congame/components/formular
          congame/components/transition-graph
