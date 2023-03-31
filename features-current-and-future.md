@@ -1,3 +1,18 @@
+# From conscript
+
+Styling: add some padding below final button.
+
+Moritz: 
+
+- did they have all this info on single page? It's bad.
+- I forgot which type I was
+- Tell people that submit-button is necessary for forms, throw an error or warning otherwise
+  - Throw error, provide other form otherwise if one wants to be cleverer
+- The --> notation is ambiguous:
+  [a --> b --> c --> d]
+  [e --> b --> f --> g]
+  Does not work as expected, since b either will always go to c or always to f, but not to f if it came from e and so on.
+
 # Completed Features
 
 - transition graphs that allow adding transitions at the study level rather than the step level
