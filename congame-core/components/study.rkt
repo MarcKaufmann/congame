@@ -786,7 +786,7 @@ QUERY
   (log-study-debug "run step ~e for participant ~s" (step-id the-step) (current-participant-id))
   (update-participant-progress! (step-id the-step))
   (define res
-    (call-with-composable-continuation
+    (call-with-current-continuation
      (lambda (return)
        (send/suspend/dispatch/protect
         (lambda (embed/url)
