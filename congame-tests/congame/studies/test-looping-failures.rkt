@@ -4,6 +4,11 @@
          congame/components/study
          koyo/haml)
 
+;; The point of this test is to check that we are able to catch a
+;; failure then run the substudy again, then catch the failure again,
+;; repeat, and eventually succeed.  The idea is to ensure exception
+;; handlers don't "disappear" after use.
+
 (provide
  test-looping-failures
  make-test-looping-failures-bot)

@@ -740,21 +740,22 @@ QUERY
                    resume-stack
                    new-study-stack
                    (current-participant-id))
-  (with-handlers ([exn:fail:study?
-                   (lambda (e)
-                     (define hdl (study-failure-handler s))
-                     (define the-step (exn:fail:study-step e))
-                     (define the-reason (exn:fail:study-reason e))
-                     (cond
-                       [hdl
-                        (parameterize ([current-study-stack new-study-stack])
-                          (define next-step-id (hdl the-step the-reason))
-                          (define next-step (study-find-step s next-step-id))
-                          (run-step req s next-step))]
-                       [root?
-                        (error 'run-study "fail~n  step: ~e~n  reason: ~a" the-step the-reason)]
-                       [else
-                        (fail the-reason the-step)]))])
+  (define (failure-hdl e)
+    (define hdl (study-failure-handler s))
+    (define the-step (exn:fail:study-step e))
+    (define the-reason (exn:fail:study-reason e))
+    (cond
+      [hdl
+       (with-handlers ([exn:fail:study? failure-hdl])
+         (parameterize ([current-study-stack new-study-stack])
+           (define next-step-id (hdl the-step the-reason))
+           (define next-step (study-find-step s next-step-id))
+           (run-step req s next-step)))]
+      [root?
+       (error 'run-study "fail~n  step: ~e~n  reason: ~a" the-step the-reason)]
+      [else
+       (fail the-reason the-step)]))
+  (with-handlers ([exn:fail:study? failure-hdl])
     (parameterize ([current-study-stack new-study-stack])
       (cond
         ;; An empty resume stack means that this is the first time we've
