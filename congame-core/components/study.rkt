@@ -786,6 +786,11 @@ QUERY
 (define (run-step req s the-step)
   (log-study-debug "run step ~e for participant ~s" (step-id the-step) (current-participant-id))
   (update-participant-progress! (step-id the-step))
+  ;; This continuation is currently necessary because we need to be
+  ;; able to return from a substudy once it is finished, without
+  ;; generating an intermediate response, which s/s/d/p requires.
+  ;;
+  ;; Think twice before trying to get rid of this.
   (define res
     (call-with-current-continuation
      (lambda (return)
