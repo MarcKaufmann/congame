@@ -432,7 +432,7 @@
      #'(interpret 'compiled-e *env*)]
     [(splicing-ev e)
      #:with compiled-e (compile-expr-maybe-markup #'e)
-     #'(interpret 'compiled-e *env*)]))
+     #'(unquote-splicing (interpret 'compiled-e *env*))]))
 
 (define (compile-action-expr stx)
   (syntax-parse stx
