@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require component
+         (only-in define2 [λ λ2])
          (prefix-in forms: (only-in forms form))
          (except-in forms form)
          (for-syntax racket/base) ; Needed to use strings in define-static-resource. Why? Just Cause.
@@ -247,12 +248,12 @@
    (:div.container
     (formular
      #:bot
-     ([good (#:what-if-fail? "no-extra-no-participation-fee")
-            (#:how-many-required-tasks? n-tasks)])
+     ([good (#:what-if? "no-extra-no-participation-fee")
+            (#:how-many n-tasks)])
      (haml
       (:div
        (:p "The Study Instructions are repeated below.")
-       (#:what-if-fail?
+       (#:what-if?
         (radios
          "For example, suppose that after you complete the required tasks and make your choices, you end up with extra tasks. What happens if you fail the extra tasks -- either due to getting too many tasks wrong or not attempting them?"
          '(("no-payment-at-all" . "You will receive no payment at all")
@@ -261,7 +262,7 @@
          #:validators
          (list (is-equal "no-extra-no-participation-fee"
                          #:message "No. You receive payment for required tasks, but not for the participation fee."))))
-       (#:how-many-required-tasks?
+       (#:how-many
         (radios
          "How many required tasks do you have to do?"
          `(("0" . "0")
@@ -273,9 +274,8 @@
        (:button.button
         ([:type "submit"])
         "Submit")))
-     (lambda (#:what-if-fail? what-if?
-              #:how-many-required-tasks? how-many?)
-       (put 'comprehension-test (list what-if? how-many?)))))))
+     (λ2 (#:! what-if? #:! how-many)
+       (put 'comprehension-test (list what-if? how-many)))))))
 
 (define (test-comprehension/bot)
   (formular-autofill 'good))
@@ -749,17 +749,15 @@
      (:div.container
       (formular
        #:bot
-       ([good (#:checked? #t)]
-        [bad (#:checked? #f)])
+       ([good (#:completion-code-entered #t)]
+        [bad (#:completion-code-entered #f)])
        (haml
         (:div
-         (#:checked?
+         (#:completion-code-entered
           (checkbox "I have entered the completion code on prolific"))
          (:button.button
           ([:type "submit"])
-          "Finish Tutorial")))
-       (lambda (#:checked? checked?)
-         (put 'completion-code-entered checked?))))))
+          "Finish Tutorial")))))))
 
   (define code (get 'completion-code))
   (page
@@ -798,13 +796,7 @@
          (#:OS
           (input-text "What operating system and version are you using? (Mac, Windows, Linux (what flavor), Android)")))
         (:button.button.next-button ((:type "submit")) "Submit")))
-      (lambda (#:browser browser
-               #:browser-version browser-version
-               #:OS OS)
-        (put (string->symbol (string-append survey-name "browser-OS-survey"))
-             (hash 'browser browser
-                   'browser-version browser-version
-                   'OS OS))))))))
+      (make-put-form/hash (string->symbol (string-append survey-name "browser-OS-survey"))))))))
 
 ;;; MAIN STUDY
 

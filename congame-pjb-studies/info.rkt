@@ -5,6 +5,7 @@
                "component-lib"
                "congame-core"
                "congame-price-lists"
+               "define2"
                "forms-lib"
                "gregor-lib"
                "htdp-lib"

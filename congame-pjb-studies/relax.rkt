@@ -120,6 +120,12 @@
                      [:src (resource-uri tracks
                                          (string-append "snip-" track-path))])))))
 
+(define (yn-radios label)
+  (map-validator
+   (λ (s) (string=? s "yes"))
+   (radios label '(("yes" . "Yes")
+                   ("no"  . "No")))))
+
 (define (survey-of-tracks)
   (page
    (haml
@@ -131,33 +137,19 @@
              (#:refresh-page-for-button? "no")
              (#:heard-track? "yes")
              (#:own-track "wave-sounds")
-             (#:relaxing-wave-sounds 6)
-             (#:relaxing-guided-meditation 2)
-             (#:relaxing-classical-piano 2)
-             (#:relaxing-edm 7)
-             (#:motivating-wave-sounds 5)
-             (#:motivating-guided-meditation 5)
-             (#:motivating-classical-piano 5)
-             (#:motivating-edm 7)])
+             (#:wave-sounds-relaxing-score 6)
+             (#:guided-meditation-relaxing-score 2)
+             (#:classical-piano-relaxing-score 2)
+             (#:edm-relaxing-score 7)
+             (#:wave-sounds-motivating-score 5)
+             (#:guided-meditation-motivating-score 5)
+             (#:classical-piano-motivating-score 5)
+             (#:edm-motivating-score 7)])
       (haml
        (:div
-        (#:refresh-page-for-sound?
-         (radios
-          "Did you have to refresh the page to either hear the audio?"
-          '(("yes" . "Yes")
-            ("no"  . "No"))))
-
-        (#:refresh-page-for-button?
-         (radios
-          "Did you have to refresh the previous page because the sound kept repeating?"
-          '(("yes" . "Yes")
-            ("no"  . "No"))))
-
-        (#:heard-track?
-         (radios
-          "Did you hear the track, or was there no sound yet the continue button appeared?"
-          '(("yes" . "Yes")
-            ("no"  . "No"))))
+        (#:refresh-page-for-sound? (yn-radios "Did you have to refresh the page to either hear the audio?"))
+        (#:refresh-page-for-button? (yn-radios "Did you have to refresh the previous page because the sound kept repeating?"))
+        (#:heard-track? (yn-radios "Did you hear the track, or was there no sound yet the continue button appeared?"))
 
         (#:own-track
          (radios
@@ -165,73 +157,31 @@
           '(("wave-sounds" . "Wave Sounds")
             ("guided-meditation" . "Guided Meditation")
             ("classical-piano" . "Classical Piano")
-            ("edm" . "Electronic Dance Music (EDM)"))
-          ))
+            ("edm" . "Electronic Dance Music (EDM)"))))
 
         (:div.group
-         (:label  "Rate each type of track below how relaxing they are on a scale from 1 to 7, where 1 means 'ennervating', 4 means 'neutral/no effect', and 7 means 'deeply relaxing'. Play the 20-second snippets below to decide.")
-         (:div
-          (#:relaxing-wave-sounds
-           (input-number "Wave Sounds" #:min 1 #:max 7)))
-         (:div
-          (#:relaxing-guided-meditation
-           (input-number "Guided Meditation" #:min 1 #:max 7)))
-         (:div
-          (#:relaxing-classical-piano
-           (input-number "Classical Piano" #:min 1 #:max 7)))
-         (:div
-          (#:relaxing-edm
-           (input-number "Electronic Dance Music (EDM)" #:min 1 #:max 7))))
+         (:label "Rate each type of track below how relaxing they are on a scale from 1 to 7, where 1 means 'ennervating', 4 means 'neutral/no effect', and 7 means 'deeply relaxing'. Play the 20-second snippets below to decide.")
+         (#:wave-sounds-relaxing-score (input-number "Wave Sounds" #:min 1 #:max 7))
+         (#:guided-meditation-relaxing-score (input-number "Guided Meditation" #:min 1 #:max 7))
+         (#:classical-piano-relaxing-score (input-number "Classical Piano" #:min 1 #:max 7))
+         (#:edm-relaxing-score (input-number "Electronic Dance Music (EDM)" #:min 1 #:max 7)))
 
         (:div.group
          (:label  "Rate each type of track below how motivating they are on a scale from 1 to 7, where 1 means 'very demotivating', 4 means 'neutral/no effect', and 7 means 'deeply motivating'. Play the 20-second snippets below to decide.")
-         (:div
-          (#:motivating-wave-sounds
-           (input-number "Wave Sounds" #:min 1 #:max 7)))
-         (:div
-          (#:motivating-guided-meditation
-           (input-number "Guided Meditation" #:min 1 #:max 7)))
-         (:div
-          (#:motivating-classical-piano
-           (input-number "Classical Piano" #:min 1 #:max 7)))
-         (:div
-          (#:motivating-edm
-           (input-number "Electronic Dance Music (EDM)" #:min 1 #:max 7))))
+         (#:wave-sounds-motivating-score (input-number "Wave Sounds" #:min 1 #:max 7))
+         (#:guided-meditation-motivating-score (input-number "Guided Meditation" #:min 1 #:max 7))
+         (#:classical-piano-motivating-score (input-number "Classical Piano" #:min 1 #:max 7))
+         (#:edm-motivating-score (input-number "Electronic Dance Music (EDM)" #:min 1 #:max 7)))
 
-        (:div ([:class "group"])
-              (:h4 "Sound Snippets")
-              (figure-with-snippet-track 'wave-sounds)
-              (figure-with-snippet-track 'guided-meditation)
-              (figure-with-snippet-track 'classical-piano)
-              (figure-with-snippet-track 'edm))
+        (:div
+         ([:class "group"])
+         (:h4 "Sound Snippets")
+         (figure-with-snippet-track 'wave-sounds)
+         (figure-with-snippet-track 'guided-meditation)
+         (figure-with-snippet-track 'classical-piano)
+         (figure-with-snippet-track 'edm))
         (:button.button.next-button ((:type "submit")) "Submit")))
-      (lambda (#:refresh-page-for-sound? refresh-page-for-sound?
-               #:refresh-page-for-button? refresh-page-for-button?
-               #:heard-track? heard-track?
-               #:own-track own-track
-               #:relaxing-wave-sounds relaxing-wave-sounds
-               #:relaxing-guided-meditation relaxing-guided-meditation
-               #:relaxing-classical-piano relaxing-classical-piano
-               #:relaxing-edm relaxing-edm
-               #:motivating-wave-sounds motivating-wave-sounds
-               #:motivating-guided-meditation motivating-guided-meditation
-               #:motivating-classical-piano motivating-classical-piano
-               #:motivating-edm motivating-edm)
-
-        (put 'relaxation-survey
-             (hash 'refresh-page-for-button? (string=? refresh-page-for-button? "yes")
-                   'refresh-page-for-sound? (string=? refresh-page-for-sound? "yes")
-                   'heard-track? (string=? heard-track? "yes")
-                   'own-track own-track
-                   'wave-sounds-relaxing-score relaxing-wave-sounds
-                   'guided-meditation-relaxing-score relaxing-guided-meditation
-                   'classical-piano-relaxing-score relaxing-classical-piano
-                   'edm-relaxing-score relaxing-edm
-                   'wave-sounds-motivating-score motivating-wave-sounds
-                   'guided-meditation-motivating-score motivating-guided-meditation
-                   'classical-piano-motivating-score motivating-classical-piano
-                   'edm-motivating-score motivating-edm
-                   ))))))))
+      (make-put-form/hash 'relaxation-survey))))))
 
 (define (survey-of-tracks/bot)
   (formular-autofill 'good))

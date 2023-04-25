@@ -703,14 +703,7 @@
           (input-number "On a scale from 0 (very bad) to 5 (very good), how good is the submission?"
                         #:min 0 #:max 5))
          (:button.button.next-button ([:type "submit"]) "Submit")))
-       (lambda (#:how-good-is-the-submission how-good-is-the-submission)
-         (put 'reviews
-              (cons
-               (~> r
-                   (hash-set 'submitter-id (get 'current-assignment))
-                   (hash-set 'reviewer-id (current-participant-id))
-                   (hash-set 'how-good-is-the-submission how-good-is-the-submission))
-               (get 'reviews '()))))))))))
+       (make-put-form/cons 'reviews)))))))
 
 (define (review-R-intro-pdf-handler)
   (define subs (get 'current-submissions))

@@ -34,9 +34,7 @@
       (haml
        (:div
         (#:dist (input-number "number"))
-        (:button.button.next-button ((:type "submit")) "Next")))
-      (lambda (#:dist dist)
-        (put 'dist dist)))))))
+        (:button.button.next-button ((:type "submit")) "Next"))))))))
 
 (define (make-investment)
   (page
@@ -46,9 +44,7 @@
       (haml
        (:div
         (#:inv (input-number "number"))
-        (:button.button.next-button ((:type "submit")) "Next")))
-      (lambda (#:inv inv)
-        (put 'inv inv)))))))
+        (:button.button.next-button ((:type "submit")) "Next"))))))))
 
 (define (update-data-distribution)
   (void))

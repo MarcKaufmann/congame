@@ -12,8 +12,11 @@
          (prefix-in study: "study.rkt"))
 
 (provide
+ make-put-form/cons
+ make-put-form/hash
  formular
  formular-autofill
+ map-validator
  checkbox
  radios
  select
@@ -34,14 +37,40 @@
   (widget-input #:type "range"
                 #:attributes attributes))
 
+(define put-form
+  (make-keyword-procedure
+   (lambda (kws kw-args)
+     (for ([kwd (in-list kws)]
+           [arg (in-list kw-args)])
+       (study:put (string->symbol (keyword->string kwd)) arg)))))
+
+(define (make-put-form/cons key)
+  (make-keyword-procedure
+   (lambda (kws kw-args)
+     (define ht
+       (for/hasheq ([kwd (in-list kws)]
+                    [arg (in-list kw-args)])
+         (values (string->symbol (keyword->string kwd)) arg)))
+     (study:put key (cons ht (study:get key null))))))
+
+(define (make-put-form/hash key)
+  (make-keyword-procedure
+   (lambda (kws kw-args)
+     (define ht
+       (for/hasheq ([kwd (in-list kws)]
+                    [arg (in-list kw-args)])
+         (values (string->symbol (keyword->string kwd)) arg)))
+     (study:put key ht))))
+
 ;; Building up an intermediate representation of formualrs would allow
 ;; us to compose smaller formulars into larger ones.  We may want to
 ;; do this eventually if reusability becomes a concern.
 (define-syntax (formular stx)
   (syntax-parse stx
-    [(_ (~optional
-         (~seq #:bot ([bot-id:id (bot-fld:keyword bot-value:expr) ...] ...)))
-        form action-e)
+    [(_ {~optional
+         {~seq #:bot ([bot-id:id (bot-fld:keyword bot-value:expr) ...] ...)}}
+        form
+        {~optional action-e})
      #:with rw (format-id stx "rw")
      #:with tbl (format-id stx "tbl")
      #:with ((kwd fld) ...)
@@ -99,7 +128,7 @@
            (unless (memq fld-kwd bot-kwds)
              (raise-syntax-error 'formular (format "bot ~a does not declare field ~a" bot-id fld-kwd) bot-id-stx)))))
 
-     #'(let ([action-fn action-e]
+     #'(let ([action-fn {~? action-e put-form}]
              [field-id fld] ...)
          (let ([tbl (make-hasheq
                      (list (cons 'kwd (cons (symbol->string 'field-id) field-id)) ...))])
@@ -179,6 +208,15 @@
   (bot:click-all elts-to-click)
   (bot:type-all elts-to-type)
   (m:element-click! (bot:find "button[type=submit]")))
+
+(define ((map-validator proc input) meth)
+  (match meth
+    ['validator
+     (ensure
+      (input 'validator)
+      (lambda (v)
+        `(ok . ,(proc v))))]
+    [_ (input meth)]))
 
 (define ((checkbox label #:required? [required? #t]) meth)
   (match meth
@@ -333,3 +371,15 @@
   (if required?
       (cons (required) l)
       l))
+
+(module+ test
+  (require rackunit
+           web-server/http)
+  (check-equal?
+   (((map-validator string->symbol (input-text "example")) 'validator)
+    (binding:form #"input" #"hello"))
+   '(ok . hello))
+  (check-equal?
+   (((map-validator (λ (n) (* n n)) (input-number "example")) 'validator)
+    (binding:form #"input" #"42"))
+   '(ok . 1764)))
