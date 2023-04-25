@@ -7,39 +7,155 @@
 
 (provide pre-survey)
 
-(define (stub)
-  (page
-   (haml
-    (.container
-     @:h1{Stub}
-     @button[void]{Next}))))
-
 (define (welcome)
   (page
    (haml
     (.container
      @:h1{Welcome}
 
-     @:p{Thank you for participating in this survey.}
+     @:p{Thank you for participating in this survey. Since this is an anonymous survey, if you close this window your progress will be lost and you will have to restart again. So make sure to only close the window once you have finished the whole survey, received the completion code, and entered it on Prolific.}
 
-     @button[void]{Start Survey}))))
+     @(formular
+       (haml
+        (:div
+         (#:prolific-id (input-text "Please provide your prolific ID."))
+         submit-button)))))))
+
 
 (define completion-code
-  "BLA")
+  "BACH9X17K")
 
-(define (do-you-have-BA)
+(define (page-from-formular f)
   (page
    (haml
     (.container
+      f))))
+
+(define (yn-radios label)
+  (map-validator
+   string->symbol
+   (radios label
+           '(("yes" . "Yes")
+             ("no"  . "No")))))
+
+(define submit-button
+  (haml (:button.button.next-button ([:type "submit"]) "Submit")))
+
+#;(define (do-you-have-BA)
+  (page-from-formular
+   (formular
+    (haml
+     (:div
+      (#:has-BA? (yn-radios "Do you have a undergraduate/bachelor degree?"))
+      submit-button)))))
+
+(define (do-you-have-BA)
+    (page
+     (haml
+      (.container
+       (:h3 "Bachelor/Undergraduate Degree")
+       (formular
+        (haml
+         (:div
+          (#:has-BA? (yn-radios "Do you have a undergraduate/bachelor degree?"))
+          submit-button)))))))
+
+(define (when-got-BA)
+  (page
+   (haml
+    (.container
+     (:h3 "Bachelor/Undergraduate Degree")
      (formular
       (haml
        (:div
-        (#:has-BA? (radios "Do you have a bachelor or undergraduate degree?"
-                           '(("yes" . "Yes")
-                             ("no"  . "No"))))
-        (:button.button.next-button ([:type "submit"]) "Submit")))
-      (lambda (#:has-BA? has-BA?)
-        (put 'has-BA? (string->symbol has-BA?))))))))
+        (#:when-got-BA (input-date "When did you get your undergraduate/bachelor degree?"))
+        submit-button)))))))
+
+(define (BA-in-progress)
+  (page
+   (haml
+    (.container
+     (:h3 "Bachelor/Undergraduate Degree")
+     (formular
+      (haml
+       (:div
+        (#:BA-in-progress? (yn-radios "Are you in the progress of getting a undergraduate/bachelor degree?"))
+        submit-button)))))))
+
+(define (BA-info)
+  (define BA-in-progress? (equal? (get 'BA-in-progress? #f) 'yes))
+  (page
+   (haml
+    (.container
+     (:h3 "Bachelor/Undergraduate Degree")
+     (formular
+      (haml
+       (:div
+        (.group
+         (:label (format "What ~a the focus of your undergraduate/bachelor? Select all that apply."
+                         (if BA-in-progress? "is" "was")))
+         (#:computer-science (selectbox "Computer Science"))
+         (#:data-science (selectbox "Data Science/Business Analytics"))
+         (#:economics (selectbox "Economics"))
+         (#:engineering (selectbox "Engineering"))
+         (#:humanities (selectbox "Humanities (Philosophy, History, ...)"))
+         (#:natural-science (selectbox "Natural Science (Maths, Physics, ...)"))
+         (#:social-science (selectbox "Social Science other than Economics (Sociology, Anthropology, ...)"))
+         (#:other (selectbox "Other")))
+        (.group
+         (:label (format "Where ~a you studying for your undergraduate/bachelor? Select all where you spent one or more semesters." (if BA-in-progress? "are" "were")))
+         (#:BA-africa (selectbox "Africa"))
+         (#:BA-asia (selectbox "Asia"))
+         (#:BA-australia (selectbox "Australia"))
+         (#:BA-central-eastern-europe (selectbox "Central and Eastern Europe"))
+         (#:BA-north-america (selectbox "North America"))
+         (#:BA-south-america (selectbox "South America"))
+         (#:BA-western-europe (selectbox "Western Europe")))
+        submit-button)))))))
+
+(define (study-abroad)
+  (page
+   (haml
+    (.container
+     (:h3 "Study Abroad")
+     (formular
+      (haml
+       (:div
+        (#:study-abroad? (yn-radios "Have you ever considered studying abroad?"))
+        submit-button)))))))
+
+(define (places-study-abroad)
+  (page
+   (haml
+    (.container
+     (:h3 "Study Abroad")
+     (formular
+      (haml
+       (:div
+        (:h3 "Which of the following places have you ever considered for studying abroad? Select all that apply.")
+        (#:consider-africa (selectbox "Africa"))
+        (#:consider-asia (selectbox "Asia"))
+        (#:consider-australia (selectbox "Australia"))
+        (#:consider-central-eastern-europe (selectbox "Central and Eastern Europe"))
+        (#:consider-north-america (selectbox "North America"))
+        (#:consider-south-america (selectbox "South America"))
+        (#:consider-western-europe (selectbox "Western Europe"))
+        submit-button)))))))
+
+(define (attention-check)
+  (page
+   (haml
+    (.container
+     (:p "The question regarding about cities you are about to be asked is simple: when asked for your favorite city to visit, you must type 'Lagos'. This is an attention check.")
+     (formular
+      (haml
+       (:div
+        (:h3 "Your favorite city")
+        (#:favorite-city (input-text "Based on the instructions above, what is your favorite city to visit?"))
+        submit-button))
+      (lambda (#:favorite-city favorite-city)
+        (put 'favorite-city favorite-city)
+        (put 'pass-attention-check? (string=? (string-downcase favorite-city) "lagos"))))))))
 
 (define (thank-you)
   (page
@@ -47,7 +163,9 @@
     (.container
      @:h1{Thank you!}
 
-     @:p{Thank you for participating in this survey. The completion code is @completion-code, please submit it on prolific to complete this study.} ))))
+     @:p{Thank you for participating in this survey. The completion code is @(:strong completion-code), please submit it on prolific to complete this study.}
+
+     @:p{The prolific ID that you provided is @(:strong (get 'prolific-id "#<error: could not find your ID, please contact us")). If this is not correct, please contact us.}))))
 
 (define pre-survey
   (make-study
@@ -58,34 +176,32 @@
              --> ,(lambda ()
                     (case (get 'has-BA?)
                       [(yes) (goto when-got-BA)]
-                      [(no)  (goto no-BA)])))
+                      [(no)  (goto BA-in-progress)])))
 
-    (when-got-BA --> focus-of-BA)
+    (when-got-BA --> BA-info)
 
-    (no-BA --> BA-in-progress
-           --> ,(lambda ()
-                  (case (get 'BA-in-progress?)
-                    [(yes) (goto focus-of-BA)]
-                    [(no)  (goto study-abroad)])))
+    (BA-in-progress --> ,(lambda ()
+                           (case (get 'BA-in-progress?)
+                             [(yes) (goto BA-info)]
+                             [(no)  (goto study-abroad)])))
 
-    (focus-of-BA --> study-abroad)
+    (BA-info --> study-abroad
+             --> ,(lambda ()
+                    (case (get 'study-abroad?)
+                      [(yes) (goto places-study-abroad)]
+                      [(no)  (goto attention-check)])))
 
-    (study-abroad --> ,(lambda ()
-                            (case (get 'study-abroad?)
-                              [(yes) (goto places-study-abroad)]
-                              [(no)  (goto thank-you)])))
-
-    (places-study-abroad --> thank-you)
+    (places-study-abroad --> attention-check --> thank-you)
 
     (thank-you --> thank-you))
 
    (list
     (make-step 'welcome welcome)
     (make-step 'do-you-have-BA do-you-have-BA)
-    (make-step 'when-got-BA stub)
-    (make-step 'no-BA stub)
-    (make-step 'focus-of-BA stub)
-    (make-step 'BA-in-progress stub)
-    (make-step 'study-abroad stub)
-    (make-step 'places-study-abroad stub)
+    (make-step 'when-got-BA when-got-BA)
+    (make-step 'BA-info BA-info)
+    (make-step 'BA-in-progress BA-in-progress)
+    (make-step 'study-abroad study-abroad)
+    (make-step 'places-study-abroad places-study-abroad)
+    (make-step 'attention-check attention-check)
     (make-step 'thank-you thank-you))))

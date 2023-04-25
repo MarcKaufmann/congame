@@ -26,6 +26,7 @@
  input-range
  input-text
  input-time
+ selectbox
  textarea)
 
 ; FIXME: Move these to `forms` package eventually
@@ -217,6 +218,20 @@
       (lambda (v)
         `(ok . ,(proc v))))]
     [_ (input meth)]))
+
+(define ((selectbox label #:required? [required? #f]) meth)
+  (match meth
+    ['validator
+     (if required?
+         (ensure binding/boolean (required))
+         (ensure binding/boolean))]
+
+    ['widget
+     (lambda (name value errors)
+       (haml
+        (:div
+         (:label ((widget-checkbox) name value errors) label)
+         ,@((widget-errors) name value errors))))]))
 
 (define ((checkbox label #:required? [required? #t]) meth)
   (match meth
