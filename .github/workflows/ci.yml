@@ -36,12 +36,12 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('**/info.rkt') }}-${{ hashFiles('ci/setup-catalogs.sh') }}
 
     - name: Install Racket
-      uses: Bogdanp/setup-racket@v1.10
+      uses: Bogdanp/setup-racket@v1.8.1
       with:
         architecture: 'x64'
         distribution: 'full'
         variant: 'CS'
-        version: '8.8'
+        version: '8.5'
 
     - name: Install Racket deps
       run: |
@@ -107,12 +107,12 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('**/info.rkt') }}-${{ hashFiles('ci/setup-catalogs.sh') }}
 
     - name: Install Racket
-      uses: Bogdanp/setup-racket@v1.10
+      uses: Bogdanp/setup-racket@v1.8.1
       with:
         architecture: 'x64'
         distribution: 'full'
         variant: 'CS'
-        version: '8.8'
+        version: '8.5'
 
     - name: Install Racket deps
       run: |
