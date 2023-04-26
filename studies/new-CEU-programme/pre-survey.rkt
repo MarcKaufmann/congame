@@ -121,7 +121,7 @@
      (formular
       (haml
        (:div
-        (#:study-abroad? (yn-radios "Have you ever considered studying abroad?"))
+        (#:study-abroad? (yn-radios "Have you considered pursuing education in a different country?"))
         submit-button)))))))
 
 (define (places-study-abroad)
