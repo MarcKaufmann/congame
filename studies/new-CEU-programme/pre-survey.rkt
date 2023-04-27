@@ -19,6 +19,7 @@
        (haml
         (:div
          (#:prolific-id (input-text "Please provide your prolific ID."))
+         (#:country (input-text "In what country do you currently reside?"))
          submit-button)))))))
 
 
