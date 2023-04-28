@@ -104,14 +104,7 @@
          (#:social-science (selectbox "Social Science other than Economics (Sociology, Anthropology, ...)"))
          (#:other (selectbox "Other")))
         (.group
-         (:label (format "Where ~a you studying for your undergraduate/bachelor? Select all where you spent one or more semesters." (if BA-in-progress? "are" "were")))
-         (#:BA-africa (selectbox "Africa"))
-         (#:BA-asia (selectbox "Asia"))
-         (#:BA-australia (selectbox "Australia"))
-         (#:BA-central-eastern-europe (selectbox "Central and Eastern Europe"))
-         (#:BA-north-america (selectbox "North America"))
-         (#:BA-south-america (selectbox "South America"))
-         (#:BA-western-europe (selectbox "Western Europe")))
+         (#:BA-location (input-text (format "Where ~a you studying for your undergraduate/bachelor? Select all where you spent one or more semesters." (if BA-in-progress? "are" "were")))))
         submit-button)))))))
 
 (define (study-abroad)
@@ -133,7 +126,7 @@
      (formular
       (haml
        (:div
-        (:h3 "Which of the following places have you ever considered for studying abroad? Select all that apply.")
+        (:h3 "Which of the following places would you consider for studying abroad? Select all that apply.")
         (#:consider-africa (selectbox "Africa"))
         (#:consider-asia (selectbox "Asia"))
         (#:consider-australia (selectbox "Australia"))
@@ -141,6 +134,25 @@
         (#:consider-north-america (selectbox "North America"))
         (#:consider-south-america (selectbox "South America"))
         (#:consider-western-europe (selectbox "Western Europe"))
+        submit-button)))))))
+
+(define (where-in-western-europe)
+  (page
+   (haml
+    (.container
+     (:h3 "Study Abroad")
+     (formular
+      (haml
+       (:div
+        (.group
+         (:h3 "Which of the following regions in Western Europe would you consider for studying abroad? Select all that apply.")
+         (#:consider-scandinavia (selectbox "Denmark, Finland, Norway, Sweden"))
+         (#:consider-english (selectbox "Ireland, United Kingdom"))
+         (#:consider-german (selectbox "Austria, Germany, Switzerland"))
+         (#:consider-italy (selectbox "France"))
+         (#:consider-france (selectbox "Italy"))
+         (#:consider-iberia (selectbox "Portugal, Spain"))
+         (#:consider-benelux (selectbox "Belgium, Netherlands, Luxembourg")))
         submit-button)))))))
 
 (define (attention-check)
@@ -192,7 +204,12 @@
                       [(yes) (goto places-study-abroad)]
                       [(no)  (goto attention-check)])))
 
-    (places-study-abroad --> attention-check --> thank-you)
+    (places-study-abroad --> ,(lambda ()
+                                (if (get 'consider-western-europe)
+                                  (goto where-in-western-europe)
+                                  (goto attention-check))))
+
+    (where-in-western-europe --> attention-check --> thank-you)
 
     (thank-you --> thank-you))
 
@@ -204,5 +221,6 @@
     (make-step 'BA-in-progress BA-in-progress)
     (make-step 'study-abroad study-abroad)
     (make-step 'places-study-abroad places-study-abroad)
+    (make-step 'where-in-western-europe where-in-western-europe)
     (make-step 'attention-check attention-check)
     (make-step 'thank-you thank-you))))
