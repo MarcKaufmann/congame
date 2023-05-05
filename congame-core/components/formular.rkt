@@ -13,6 +13,8 @@
 
 (provide
  make-put-form/cons
+ make-put-form/cons-hash
+ make-put-form/cons/instance
  make-put-form/hash
  formular
  formular-autofill
@@ -38,21 +40,40 @@
   (widget-input #:type "range"
                 #:attributes attributes))
 
+(define (kwd->symbol kwd)
+  (string->symbol (keyword->string kwd)))
+
 (define put-form
   (make-keyword-procedure
    (lambda (kws kw-args)
      (for ([kwd (in-list kws)]
            [arg (in-list kw-args)])
-       (study:put (string->symbol (keyword->string kwd)) arg)))))
+       (study:put (kwd->symbol kwd) arg)))))
 
-(define (make-put-form/cons key)
+(define (make-put-form/cons-hash key)
   (make-keyword-procedure
    (lambda (kws kw-args)
      (define ht
        (for/hasheq ([kwd (in-list kws)]
                     [arg (in-list kw-args)])
-         (values (string->symbol (keyword->string kwd)) arg)))
+         (values (kwd->symbol kwd) arg)))
      (study:put key (cons ht (study:get key null))))))
+
+(define (make-put-form/cons)
+  (make-keyword-procedure
+   (lambda (kws kw-args)
+     (for ([kwd (in-list kws)]
+           [arg (in-list kw-args)])
+       (define key (kwd->symbol kwd))
+       (study:put key (cons arg (study:get key null)))))))
+
+(define (make-put-form/cons/instance)
+  (make-keyword-procedure
+   (lambda (kws kw-args)
+     (for([kwd (in-list kws)]
+          [arg (in-list kw-args)])
+       (define key (kwd->symbol kwd))
+       (study:put/instance key (cons arg (study:get/instance key null)))))))
 
 (define (make-put-form/hash key)
   (make-keyword-procedure
