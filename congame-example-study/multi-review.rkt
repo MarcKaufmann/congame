@@ -703,7 +703,7 @@
           (input-number "On a scale from 0 (very bad) to 5 (very good), how good is the submission?"
                         #:min 0 #:max 5))
          (:button.button.next-button ([:type "submit"]) "Submit")))
-       (make-put-form/cons 'reviews)))))))
+       (make-put-form/cons-hash 'reviews)))))))
 
 (define (review-R-intro-pdf-handler)
   (define subs (get 'current-submissions))
