@@ -120,7 +120,7 @@
   (page
    (haml
     (.container
-     (:h1 "Please for the next phase to start")))))
+     (:h1 "Please wait for the next phase to start")))))
 
 (define (phase-button phase)
   (button (lambda ()
