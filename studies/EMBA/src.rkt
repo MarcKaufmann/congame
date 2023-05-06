@@ -29,7 +29,7 @@
 
 (define (input-dampening product)
   (input-number
-   (format "By how many units does total demand of ~a go up if one consumer buys one extra coffee?" product)
+   (format "By how many units does total demand of ~a go up if one consumer buys one extra ~a?" product product)
    #:step 0.01))
 
 (define (product-dampening)
@@ -146,15 +146,15 @@
 
 (define ids-to-labels
     (hash 'steak-impact                    "Steaks"
-          'flights-impact                  "Coffee"
-          'coffee-impact                   "Flights"
+          'flights-impact                  "Flights"
+          'coffee-impact                   "coffee"
           'src-contribution                "Socially Responsible Consumption"
           'src-contribution-animal-rights  "SRC Animal Rights"
           'src-contribution-human-rights   "SRC Human Rights"
           'src-contribution-climate-change "SRC Climate Change"
           'steak-impact-after              "Steaks (after)"
-          'flights-impact-after            "Coffee (after)"
-          'coffee-impact-after             "Flights (after)"
+          'flights-impact-after            "Flights (after)"
+          'coffee-impact-after             "Coffee (after)"
           'src-contribution-after          "Socially Responsible Consumption (after)"
           'prediction-IDM                  "Prediction for IDM"
           'prediction-single               "Prediction for SINGLE"
