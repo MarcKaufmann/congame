@@ -256,7 +256,7 @@
     (make-step 'admin admin)
     (make-step 'admin-src-before
                (admin-show-averages
-                (list 'coffee-impact 'flights-impact 'steak-impact 'src-contribution 'src-contribution-animal-rights 'src-contribution-human-rights)))
+                (list 'coffee-impact 'flights-impact 'steak-impact 'src-contribution 'src-contribution-animal-rights 'src-contribution-human-rights 'src-contribution-climate-change)))
     (make-step 'admin-predictions
                (admin-show-averages
                 (list 'prediction-IDM 'prediction-single 'prediction-multi 'prediction-full)))
