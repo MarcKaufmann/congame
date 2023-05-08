@@ -3,7 +3,7 @@
 (require "get-data.rkt")
 
 (define study-id 15)
-(define instance-id 41)
+(define instance-id 42)
 (define api-url "https://totalinsightmanagement.com/api/v1/")
 (define data-path "/Users/kaufmannm/research/CEU-survey")
 
@@ -29,6 +29,7 @@
     natural-science
     social-science
     other
+    BA-location
     BA-africa
     BA-asia
     BA-australia
@@ -44,11 +45,18 @@
     consider-north-america
     consider-south-america
     consider-western-europe
+    consider-scandinavia
+    consider-english
+    consider-german
+    consider-italy
+    consider-france
+    consider-iberia
+    consider-benelux
     favorite-city
     pass-attention-check?))
 
 (get-and-write-data #:study-id study-id
                     #:iids (list instance-id)
                     #:api-url api-url
-                    #:path (build-path data-path "prolific-results1.csv")
+                    #:path (build-path data-path "prolific-results2.csv")
                     #:vars-to-keep vars-to-keep)
