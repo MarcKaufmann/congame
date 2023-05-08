@@ -104,7 +104,7 @@
          (#:social-science (selectbox "Social Science other than Economics (Sociology, Anthropology, ...)"))
          (#:other (selectbox "Other")))
         (.group
-         (#:BA-location (input-text (format "Where ~a you studying for your undergraduate/bachelor? Select all where you spent one or more semesters." (if BA-in-progress? "are" "were")))))
+         (#:BA-location (input-text (format "In which country ~a you studying for your undergraduate/bachelor? (If you studied remotely, state the country in which the college/university institution is located.)" (if BA-in-progress? "are" "were")))))
         submit-button)))))))
 
 (define (study-abroad)
