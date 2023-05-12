@@ -103,9 +103,12 @@
          (get/instance 'nonces hasheqv)))
      (when (equal? (hash-ref nonces pid) nonce)
        (send-email-reminder pid nonce)
+       (define new-nonce (generate-random-string))
+       (put/instance 'nonces (hash-set nonces pid new-nonce))
+       ;; FIXME: The call to request-update does not work, because it doesn't know the `current-broker`
        (schedule-at
         (+minutes (now/moment) 1)
-        (request-update pid nonce))))))
+        (request-update pid new-nonce))))))
 
 ;; TODO: Why not change the nonce when `request-update` is called and the email has been sent? Then I don't need the code in multiple places.
 ;; TODO: Only add a new email request if the person still is subscribed
