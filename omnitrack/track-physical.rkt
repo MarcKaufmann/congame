@@ -55,7 +55,7 @@
   (page
    (haml
     (.container
-     (:h1 "Sleep Questionnaire")
+     (:h1 "Sleep Times Last Night")
 
      (formular
       (haml
@@ -98,17 +98,19 @@
       #:database db
       #:participant (lookup-study-participant/by-id db pid)))
    (lambda ()
-     (define nonces
-       (parameterize ([current-study-stack null])
-         (get/instance 'nonces hasheqv)))
-     (when (equal? (hash-ref nonces pid) nonce)
-       (send-email-reminder pid nonce)
-       (define new-nonce (generate-random-string))
-       (put/instance 'nonces (hash-set nonces pid new-nonce))
-       ;; FIXME: The call to request-update does not work, because it doesn't know the `current-broker`
-       (schedule-at
-        (+minutes (now/moment) 1)
-        (request-update pid new-nonce))))))
+     (parameterize ([current-study-stack null])
+       (define nonces
+         (get/instance 'nonces hasheqv))
+       (when (equal? (hash-ref nonces pid) nonce)
+         (send-email-reminder pid nonce)
+         (define new-nonce (generate-random-string))
+         (put/instance 'nonces (hash-set nonces pid new-nonce))
+         ;; FIXME: The call to request-update does not work,
+         ;; - initially because it doesn't know the `current-broker`
+         ;; - after moving parameterize ([current-study-stack null]), failed with not being able to convert #f to string in database
+         (schedule-at
+          (+minutes (now/moment) 1)
+          (request-update pid new-nonce)))))))
 
 ;; TODO: Why not change the nonce when `request-update` is called and the email has been sent? Then I don't need the code in multiple places.
 ;; TODO: Only add a new email request if the person still is subscribed
