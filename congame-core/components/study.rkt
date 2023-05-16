@@ -210,8 +210,8 @@ QUERY
 ;; makes it easy to get & store group-level data, implemented on top
 ;; of {put,get}/instance.
 (define (put/instance k v)
-  (log-study-debug "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s"
-                   (current-study-ids) k v (current-participant-id))
+  (log-study-debug "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s~n  current-git-sha: ~s~n"
+                   (current-study-ids) k v (current-participant-id) (current-git-sha))
   (with-database-transaction [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_instance_data(
