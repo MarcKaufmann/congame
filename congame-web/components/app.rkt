@@ -229,8 +229,6 @@
         (wrap-profiler)))
 
   (current-broker broker)
-  (when config:debug
-    (current-continuation-key-cookie-secure? #f))
   (current-continuation-wrapper stack)
   (current-reverse-uri-fn reverse-uri)
   (current-resource-uri-fn
@@ -239,7 +237,6 @@
          (reverse-uri 'serve-resource-page (resource-id r) subr)
          (reverse-uri 'serve-resource-page (resource-id r)))))
   (current-production-error-page production-error-page)
-  (current-git-sha config:git-sha)
   (current-unescaped-tags html-unescaped-tags)
   (current-xexpr-wrapper tpl:page/xexpr)
 

@@ -10,9 +10,11 @@
          congame-web/components/user
          (prefix-in config: congame-web/config)
          congame/components/registry
+         congame/components/study
          db
          (prefix-in dbg: debugging/server)
          deta/reflect
+         koyo/continuation
          koyo/database
          koyo/database/migrator
          koyo/flash
@@ -40,14 +42,15 @@
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth broker broker-admin db flashes mailer migrator replications sessions uploader users) make-app]
+  [app (auth broker broker-admin db flashes mailer migrator params replications sessions uploader users) make-app]
   [auth (sessions users) make-auth-manager]
   ;; TODO: Check this still holds.
   ;; Some of our jobs depend on the mailer so we need the explicit
   ;; dep. here to avoid running into issues like:
   ;; https://github.com/MarcKaufmann/projection-bias-experiment/issues/57
-  [broker (db mailer) (lambda (db _mailer)
-                        (make-broker db))]
+  [broker (db mailer params)
+          (lambda (db _mailer _params)
+            (make-broker db))]
   [broker-admin (broker) (make-broker-admin-factory "/admin/jobs")]
   [db (make-database-factory
        (lambda ()
@@ -62,6 +65,10 @@
                                #:sender config:support-email
                                #:common-variables config:common-mail-variables)]
   [migrator (db) (make-migrator-factory migrations-path)]
+  [params () (lambda ()
+               (current-continuation-key-cookie-secure? (not config:debug))
+               (current-git-sha config:git-sha)
+               (void))]
   [replications (db hasher) (λ (db hasher)
                               (make-replication-manager db hasher migrations-path))]
   [server (app) (compose1
