@@ -43,7 +43,7 @@
 (define (sleep-question)
   (define nonce (generate-random-string))
   (with-study-transaction
-    (parameterize ([current-study-stack null])
+    (parameterize ([current-study-stack '(*root*)])
       (define nonces (get/instance 'nonces hasheqv))
       (put/instance 'nonces (hash-set nonces (current-participant-id) nonce))
       (schedule-at
@@ -98,7 +98,7 @@
       #:database db
       #:participant (lookup-study-participant/by-id db pid)))
    (lambda ()
-     (parameterize ([current-study-stack null])
+     (parameterize ([current-study-stack '(*root*)])
        (define nonces
          (get/instance 'nonces hasheqv))
        (when (equal? (hash-ref nonces pid) nonce)
@@ -128,7 +128,7 @@
         (λ ()
           (with-study-transaction
             (put 'subscribed #t)
-            (parameterize ([current-study-stack null])
+            (parameterize ([current-study-stack '(*root*)])
               (define nonce (generate-random-string))
               (define nonces (get/instance 'nonces (hasheqv)))
               (put/instance 'nonces (hash-set nonces (current-participant-id) nonce))
