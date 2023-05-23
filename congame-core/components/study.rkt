@@ -347,6 +347,9 @@ QUERY
 (define current-renderer
   (make-parameter 'no-renderer))
 
+;; The point of this is to wrap rendering in a thunk so that we may
+;; re-run the rendering part upon form validation error, but not the
+;; rest of the step (i.e. the stuff before the page).
 (define-syntax-parser page
   [(_ {~optional {~seq #:validator validator-expr:expr}} e)
    #'(letrec ([render
