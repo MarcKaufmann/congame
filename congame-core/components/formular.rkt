@@ -95,12 +95,15 @@
         {~optional action-e})
      #:with rw (format-id stx "rw")
      #:with tbl (format-id stx "tbl")
-     #:with ((kwd fld) ...)
+     #:with ((kwd fld def) ...)
      (let loop ([stx #'form]
                 [pairs null])
        (syntax-parse stx
          [(kwd:keyword fld)
-          (cons #'(kwd fld) pairs)]
+          (cons #'(kwd fld "") pairs)]
+
+         [(kwd:keyword fld {#:default def:expr})
+          (cons #'(kwd fld def) pairs)]
 
          [(e ...)
           (apply append (map (λ (stx) (loop stx null))
@@ -114,7 +117,8 @@
      #:with patched-form
      (let loop ([stx #'form])
        (syntax-parse stx
-         [(kwd:keyword _)
+         [{~or (kwd:keyword _)
+               (kwd:keyword _ _)}
           #'(let ([entry (hash-ref tbl 'kwd)])
               (rw (car entry) ((cdr entry) 'widget)))]
 
@@ -122,6 +126,17 @@
           #`(#,@(map loop (syntax-e #'(e ...))))]
 
          [e #'e]))
+     #:with defaults
+     (with-syntax ([(fld&def ...)
+                    (apply
+                     append
+                     (for/list ([fld (in-list (syntax-e #'(field-id ...)))]
+                                [def (in-list (syntax-e #'(def ...)))]
+                                #:unless (string=? (syntax-e def) ""))
+                       (define fld-str
+                         (datum->syntax fld (symbol->string (syntax-e fld))))
+                       (list fld-str def)))])
+       #'(hash fld&def ...))
 
      (define maybe-dupe-kwd
        (for/fold ([counts (hash)]
@@ -155,6 +170,7 @@
          (let ([tbl (make-hasheq
                      (list (cons 'kwd (cons (symbol->string 'field-id) field-id)) ...))])
            (study:form
+            #:defaults defaults
             (form* ([field-id (field-id 'validator)] ...)
               (cons
                (list 'kwd ...)
