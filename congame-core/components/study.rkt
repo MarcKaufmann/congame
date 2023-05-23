@@ -456,8 +456,11 @@ QUERY
                     action-widgets)))))))])
     label)))
 
-(define/widget (form f action render #:id [id ""] #:enctype [enctype "multipart/form-data"])
-  (match (form-run f this-request)
+(define/widget (form f action render
+                     #:id [id ""]
+                     #:enctype [enctype "multipart/form-data"]
+                     #:defaults [defaults (hash)])
+  (match (form-run f this-request #:defaults defaults)
     [(list 'passed res _)
      (redirect/get/forget/protect)
      (action res)
