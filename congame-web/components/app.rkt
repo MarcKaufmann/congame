@@ -75,8 +75,8 @@
                            (- (current-inexact-monotonic-milliseconds) start-ms)))))])
     (disp conn req)))
 
-(define/contract (make-app auth broker broker-admin db flashes mailer _migrator reps sessions uploads users)
-  (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? replication-manager? session-manager? uploader? user-manager? app?)
+(define/contract (make-app auth broker broker-admin db flashes mailer _migrator _params reps sessions uploads users)
+  (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? void? replication-manager? session-manager? uploader? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
