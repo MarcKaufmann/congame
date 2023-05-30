@@ -3,7 +3,9 @@
 (require congame/components/formular
          congame/components/study
          (only-in forms required)
-         koyo/haml)
+         koyo/haml
+         racket/list
+         racket/match)
 
 (provide
  inline-study)
@@ -23,6 +25,22 @@
         ,@(~all-errors)
         (:button ([:type "submit"]) "Submit"))))))))
 
+(define (dynamic)
+  (page
+   (haml
+    (.container
+     (formular
+      #:fields ([a (input-text "field a")]
+                [b (input-text "field b")])
+      (match (shuffle (list a b))
+        [(list f1 f2)
+         (haml
+          (:div
+           (:ul
+            (:li "F1: " f1)
+            (:li "F2: " f2))
+           (:button ([:type "submit"]) "Submit")))]))))))
+
 (define (done)
   (page
    (haml
@@ -34,4 +52,5 @@
    "inline-study"
    (list
     (make-step 'info info)
+    (make-step 'dynamic dynamic)
     (make-step 'done done))))

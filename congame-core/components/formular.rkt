@@ -33,16 +33,11 @@
  input-time
  textarea)
 
-#;
-(formular
- #:fields ([m (input-text)]
-           [b (input-text)])
- (match (shuffle (list m b))
-   [(list f-1 f2)
-    (:p "Who do you llike better? " f1 " or " f2)]))
-
 (define (kwd->symbol kwd)
   (string->symbol (keyword->string kwd)))
+
+(define (symbol->kwd sym)
+  (string->keyword (symbol->string sym)))
 
 (define put-form
   (make-keyword-procedure
@@ -100,8 +95,14 @@
 (define-syntax (formular stx)
   (syntax-parse stx
     #:literals (~error ~errors ~all-errors)
-    [(_ {~optional
-         {~seq #:bot ([bot-id:id (bot-fld:keyword bot-value:expr) ...] ...)}}
+    [(_ {~alt
+         {~optional
+          {~seq #:bot ([bot-id:id (bot-fld:keyword bot-value:expr) ...] ...)}}
+         {~optional
+          {~seq #:fields ([dynamic-field-id:id dynamic-field:expr] ...)}
+          #:defaults ([(dynamic-field-id 1) null]
+                      [(dynamic-field 1) null])}}
+        ...
         form
         {~optional action-e})
      #:with rw (format-id stx "rw")
@@ -149,6 +150,12 @@
          [(e ...)
           #`(#,@(map loop (syntax-e #'(e ...))))]
 
+         [e:id
+          #:when (memq (syntax->datum #'e)
+                       (syntax->datum #'(dynamic-field-id ...)))
+          #'(let ([entry (hash-ref tbl 'e)])
+              (rw (car entry) ((cdr entry) 'widget)))]
+
          [e #'e]))
      #:with defaults
      (with-syntax ([(fld&def ...)
@@ -190,15 +197,21 @@
              (raise-syntax-error 'formular (format "bot ~a does not declare field ~a" bot-id fld-kwd) bot-id-stx)))))
 
      #'(let ([action-fn {~? action-e put-form}]
-             [field-id fld] ...)
+             [field-id fld] ...
+             [dynamic-field-id dynamic-field] ...)
          (let ([tbl (make-hasheq
-                     (list (cons 'kwd (cons (symbol->string 'field-id) field-id)) ...))])
+                     (list
+                      (cons 'kwd (cons (symbol->string 'field-id) field-id)) ...
+                      (cons 'dynamic-field-id (cons (symbol->string 'dynamic-field-id) dynamic-field-id)) ...))])
            (study:form
             #:defaults defaults
-            (form* ([field-id (field-id 'validator)] ...)
+            (form* ([field-id (field-id 'validator)]
+                    ...
+                    [dynamic-field-id (dynamic-field-id 'validator)]
+                    ...)
               (cons
-               (list 'kwd ...)
-               (list field-id ...)))
+               (list 'kwd ... (symbol->kwd 'dynamic-field-id) ...)
+               (list field-id ... dynamic-field-id ...)))
             (lambda (res)
               (define vals-by-kwd
                 (for/hasheq ([k (in-list (car res))]
