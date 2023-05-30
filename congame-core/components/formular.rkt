@@ -12,6 +12,9 @@
          (prefix-in study: "study.rkt"))
 
 (provide
+ ~error
+ ~errors
+ ~all-errors
  make-put-form/cons
  make-put-form/cons-hash
  make-put-form/cons/instance
@@ -28,17 +31,15 @@
  input-range
  input-text
  input-time
- selectbox
  textarea)
 
-; FIXME: Move these to `forms` package eventually
-(define (widget-date #:attributes [attributes null])
-  (widget-input #:type "date"
-                #:attributes attributes))
-
-(define (widget-range #:attributes [attributes null])
-  (widget-input #:type "range"
-                #:attributes attributes))
+#;
+(formular
+ #:fields ([m (input-text)]
+           [b (input-text)])
+ (match (shuffle (list m b))
+   [(list f-1 f2)
+    (:p "Who do you llike better? " f1 " or " f2)]))
 
 (define (kwd->symbol kwd)
   (string->symbol (keyword->string kwd)))
@@ -84,11 +85,21 @@
          (values (string->symbol (keyword->string kwd)) arg)))
      (study:put key ht))))
 
+(define-syntax (~error stx)
+  (raise-syntax-error stx "the ~error form may only be used inside (formular ...)"))
+
+(define-syntax (~errors stx)
+  (raise-syntax-error stx "the ~errors form may only be used inside (formlar ...)"))
+
+(define-syntax (~all-errors stx)
+  (raise-syntax-error stx "the ~all-errors form may only be used inside (formlar ...)"))
+
 ;; Building up an intermediate representation of formualrs would allow
 ;; us to compose smaller formulars into larger ones.  We may want to
 ;; do this eventually if reusability becomes a concern.
 (define-syntax (formular stx)
   (syntax-parse stx
+    #:literals (~error ~errors ~all-errors)
     [(_ {~optional
          {~seq #:bot ([bot-id:id (bot-fld:keyword bot-value:expr) ...] ...)}}
         form
@@ -117,6 +128,19 @@
      #:with patched-form
      (let loop ([stx #'form])
        (syntax-parse stx
+         #:literals (~error ~errors ~all-errors)
+         [(~error kwd:keyword)
+          #'(let ([entry (hash-ref tbl 'kwd)])
+              (rw (car entry) (widget-errors)))]
+
+         [(~errors kwd:keyword ...+)
+          #:with (entry-id ...) (generate-temporaries #'(kwd ...))
+          #'(let ([entry-id (hash-ref tbl 'kwd)] ...)
+              (:div (rw (car entry-id) (widget-errors)) ...))]
+
+         [(~all-errors)
+          #'(rw "input_1" (widget-all-errors))]
+
          [{~or (kwd:keyword _)
                (kwd:keyword _ _)}
           #'(let ([entry (hash-ref tbl 'kwd)])
@@ -256,33 +280,47 @@
         `(ok . ,(proc v))))]
     [_ (input meth)]))
 
-(define ((selectbox label #:required? [required? #f]) meth)
+
+;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define ((widget-all-errors) _name _value errors)
+  (list
+   (haml
+    (:ul.errors
+     ,@(for/list ([pair (in-list errors)])
+         (haml (:li (cdr pair))))))))
+
+; FIXME: Move these to `forms` package eventually
+(define (widget-date #:attributes [attributes null])
+  (widget-input #:type "date"
+                #:attributes attributes))
+
+(define (widget-time #:attributes [attributes null])
+  (widget-input #:type "time"
+                #:attributes attributes))
+
+(define (widget-range #:attributes [attributes null])
+  (widget-input #:type "range"
+                #:attributes attributes))
+
+
+;; validators ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define ((checkbox [label #f] #:required? [required? #t]) meth)
   (match meth
     ['validator
-     (if required?
-         (ensure binding/boolean (required))
-         (ensure binding/boolean))]
+     (apply ensure binding/boolean (cons/required? required? null))]
 
     ['widget
      (lambda (name value errors)
-       (haml
-        (:div
-         (:label ((widget-checkbox) name value errors) label)
-         ,@((widget-errors) name value errors))))]))
-
-(define ((checkbox label #:required? [required? #t]) meth)
-  (match meth
-    ['validator
-     (if required?
-         (ensure binding/boolean (required))
-         (ensure binding/boolean))]
-
-    ['widget
-     (lambda (name value errors)
-       (haml
-        (.group
-         (:label ((widget-checkbox) name value errors) label)
-         ,@((widget-errors) name value errors))))]))
+       (define elt
+         ((widget-checkbox) name value errors))
+       (if label
+           (haml
+            (.group
+             (:label elt label)
+             ,@((widget-errors) name value errors)))
+           elt))]))
 
 (define ((radios label
                  options
@@ -317,7 +355,7 @@
           ((widget-select options) name value errors) label)
          ,@((widget-errors) name value errors))))]))
 
-(define ((input-file label
+(define ((input-file [label #f]
                      #:required? [required? #t]
                      #:validators [validators null]) meth)
   (match meth
@@ -326,42 +364,47 @@
 
     ['widget
      (lambda (name value errors)
-       (haml
-        (.group
-         (:label
-          ((widget-file) name value errors) label)
-         ,@((widget-errors) name value errors))))]))
+       (define elt
+         ((widget-file) name value errors))
+       (if label
+           (haml
+            (.group
+             (:label elt label)
+             ,@((widget-errors) name value errors)))
+           elt))]))
 
-(define (input-number-type widget)
-  (define ((result-input label
-                         #:min [min -inf.0]
-                         #:max [max +inf.0]
-                         #:step [step 1]
-                         #:required? [required? #t]
-                         #:validators [validators null]) meth)
+(define (make-number-input widget)
+  (define ((proc [label #f]
+                 #:min [min -inf.0]
+                 #:max [max +inf.0]
+                 #:step [step 1]
+                 #:required? [required? #t]
+                 #:validators [validators null]) meth)
     (match meth
       ['validator
        (apply ensure binding/number (cons/required? required? (list* (to-real) (range/inclusive min max) validators)))]
       ['widget
        (lambda (name value errors)
-         (haml
-          (.group
-           (:label
-            ((widget #:attributes `((min ,(if (= min -inf.0) "" (number->string min)))
-                                    (max ,(if (= max +inf.0) "" (number->string max)))
-                                    (step ,(number->string step))))
-             name value errors)
-            label)
-           ,@((widget-errors) name value errors))))]))
-  result-input)
+         (define elt
+           ((widget #:attributes `((min ,(if (= min -inf.0) "" (number->string min)))
+                                   (max ,(if (= max +inf.0) "" (number->string max)))
+                                   (step ,(number->string step))))
+            name value errors))
+         (if label
+             (haml
+              (.group
+               (:label elt label)
+               ,@((widget-errors) name value errors)))
+             elt))]))
+  proc)
 
 (define input-number
-  (input-number-type widget-number))
+  (make-number-input widget-number))
 
 (define input-range
-  (input-number-type widget-range))
+  (make-number-input widget-range))
 
-(define ((input-text label
+(define ((input-text [label #f]
                      #:required? [required? #t]
                      #:validators [validators null]) meth)
   (match meth
@@ -369,11 +412,14 @@
      (apply ensure binding/text (cons/required? required? validators))]
     ['widget
      (lambda (name value errors)
-       (haml
-        (.group
-         (:label
-          ((widget-text) name value errors) label)
-         ,@((widget-errors) name value errors))))]))
+       (define elt
+         ((widget-text) name value errors))
+       (if label
+           (haml
+            (.group
+             (:label elt label)
+             ,@((widget-errors) name value errors)))
+           elt))]))
 
 (define ((textarea label
                    #:required? [required? #t]
@@ -388,10 +434,7 @@
          (:label label ((widget-textarea) name value errors))
          ,@((widget-errors) name value errors))))]))
 
-(define (widget-time #:attributes [attributes null])
-  (widget-input #:type "time" #:attributes attributes))
-
-(define ((input-time label
+(define ((input-time [label #f]
                      #:required? [required? #t]
                      #:validators [validators null]) meth)
   (match meth
@@ -399,12 +442,16 @@
      (apply ensure binding/text (cons/required? required? validators))]
     ['widget
      (lambda (name value errors)
-       (haml
-        (.group
-         (:label label ((widget-time) name value errors))
-         ,@((widget-errors) name value errors))))]))
+       (define elt
+         ((widget-time) name value errors))
+       (if label
+           (haml
+            (.group
+             (:label label elt)
+             ,@((widget-errors) name value errors)))
+           elt))]))
 
-(define ((input-date label
+(define ((input-date [label #f]
                      #:required? [required? #t]
                      #:validators [validators null]) meth)
   (match meth
@@ -412,17 +459,22 @@
      (apply ensure binding/text (cons/required? required? validators))]
     ['widget
      (lambda (name value errors)
-       (haml
-        (.group
-         (:label label ((widget-date) name value errors))
-         ,@((widget-errors) name value errors))))]))
+       (define elt
+         ((widget-date) name value errors))
+       (if label
+           (haml
+            (.group
+             (:label label elt)
+             ,@((widget-errors) name value errors)))
+           elt))]))
 
-;;; help ;;;;;;;;;;;;;;;;;;;;
+;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (cons/required? required? l)
-  (if required?
-      (cons (required) l)
-      l))
+  (cond
+    [(string? required?) (cons (required #:message required?) l)]
+    [required? (cons (required) l)]
+    [else l]))
 
 (module+ test
   (require rackunit
