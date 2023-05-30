@@ -41,6 +41,39 @@
             (:li "F2: " f2))
            (:button ([:type "submit"]) "Submit")))]))))))
 
+(define (matrix)
+  (page
+   (haml
+    (.container
+     (formular
+      (haml
+       (:div
+        (#:computer
+         (make-radios
+          '((mac1 . ("Apple Mac" "White"))
+            (mac2 . ("Apple Mac" "Gray"))
+            (dell1 . ("Dell" "Blue"))
+            (dell2 . ("Dell" "Navy")))
+          (lambda (options make-radio)
+            (haml
+             (:table
+              (:thead
+               (:tr
+                (:th "")
+                (:th "Brand")
+                (:th "Color")))
+              (:tbody
+               ,@(for/list ([pair (in-list options)])
+                   (define option (car pair))
+                   (define data (cdr pair))
+                   (haml
+                    (:tr
+                     (:td (make-radio option))
+                     (:td (car data))
+                     (:td (cadr data))))))))))
+         {#:default "mac2"})
+        (:button ([:type "submit"]) "Submit"))))))))
+
 (define (done)
   (page
    (haml
@@ -53,4 +86,5 @@
    (list
     (make-step 'info info)
     (make-step 'dynamic dynamic)
+    (make-step 'matrix matrix)
     (make-step 'done done))))

@@ -9,7 +9,8 @@
          racket/match
          racket/port
          (prefix-in bot: (submod "bot.rkt" actions))
-         (prefix-in study: "study.rkt"))
+         (prefix-in study: "study.rkt")
+         web-server/http)
 
 (provide
  ~error
@@ -31,7 +32,8 @@
  input-range
  input-text
  input-time
- textarea)
+ textarea
+ make-radios)
 
 (define (kwd->symbol kwd)
   (string->symbol (keyword->string kwd)))
@@ -492,6 +494,35 @@
              (:label label elt)
              ,@((widget-errors) name value errors)))
            elt))]))
+
+(define ((make-radios options
+                      render-proc
+                      #:required? [required? #t]
+                      #:validators [validators null]
+                      #:attributes [attributes null]) meth)
+  (match meth
+    ['validator
+     (apply ensure binding/text (cons/required? required? validators))]
+
+    ['widget
+     (lambda (name value errors)
+       (define (make-radio option [label ""])
+         (define the-value (and value (string->symbol (bytes->string/utf-8 (binding:form-value value)))))
+         (define attributes*
+           (if (eq? the-value option)
+               (cons '(checked "") attributes)
+               attributes))
+         `(label
+           (input
+            ([name ,name]
+             [type "radio"]
+             [value ,(symbol->string option)]
+             ,@attributes*))
+           ,label))
+       (haml
+        (.group
+         (render-proc options make-radio)
+         ,@((widget-errors) name value errors))))]))
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
