@@ -319,7 +319,9 @@
 
 ;; validators ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define ((checkbox [label #f] #:required? [required? #t]) meth)
+(define ((checkbox [label #f]
+                   #:required? [required? #t]
+                   #:attributes [attributes null]) meth)
   (match meth
     ['validator
      (apply ensure binding/boolean (cons/required? required? null))]
@@ -327,7 +329,7 @@
     ['widget
      (lambda (name value errors)
        (define elt
-         ((widget-checkbox) name value errors))
+         ((widget-checkbox #:attributes attributes) name value errors))
        (if label
            (haml
             (.group
@@ -338,7 +340,8 @@
 (define ((radios label
                  options
                  #:required? [required? #t]
-                 #:validators [validators null]) meth)
+                 #:validators [validators null]
+                 #:attributes [attributes null]) meth)
   (match meth
     ['validator
      (apply ensure binding/text (cons/required? required? validators))]
@@ -349,13 +352,14 @@
         (.group
          (:label.radio-group
           label
-          ((widget-radio-group options) name value errors))
+          ((widget-radio-group options #:attributes attributes) name value errors))
          ,@((widget-errors) name value errors))))]))
 
 (define ((select label
                  options
                  #:required? [required? #t]
-                 #:validators [validators null]) meth)
+                 #:validators [validators null]
+                 #:attributes [attributes null]) meth)
   (match meth
     ['validator
      (apply ensure binding/text (cons/required? required? validators))]
@@ -365,12 +369,13 @@
        (haml
         (.group
          (:label
-          ((widget-select options) name value errors) label)
+          ((widget-select options #:attributes attributes) name value errors) label)
          ,@((widget-errors) name value errors))))]))
 
 (define ((input-file [label #f]
                      #:required? [required? #t]
-                     #:validators [validators null]) meth)
+                     #:validators [validators null]
+                     #:attributes [attributes null]) meth)
   (match meth
     ['validator
      (apply ensure binding/file (cons/required? required? validators))]
@@ -378,7 +383,7 @@
     ['widget
      (lambda (name value errors)
        (define elt
-         ((widget-file) name value errors))
+         ((widget-file #:attributes attributes) name value errors))
        (if label
            (haml
             (.group
@@ -392,16 +397,19 @@
                  #:max [max +inf.0]
                  #:step [step 1]
                  #:required? [required? #t]
-                 #:validators [validators null]) meth)
+                 #:validators [validators null]
+                 #:attributes [attributes null]) meth)
     (match meth
       ['validator
        (apply ensure binding/number (cons/required? required? (list* (to-real) (range/inclusive min max) validators)))]
       ['widget
        (lambda (name value errors)
          (define elt
-           ((widget #:attributes `((min ,(if (= min -inf.0) "" (number->string min)))
-                                   (max ,(if (= max +inf.0) "" (number->string max)))
-                                   (step ,(number->string step))))
+           ((widget #:attributes (append
+                                  `((min ,(if (= min -inf.0) "" (number->string min)))
+                                    (max ,(if (= max +inf.0) "" (number->string max)))
+                                    (step ,(number->string step)))
+                                  attributes))
             name value errors))
          (if label
              (haml
@@ -419,14 +427,15 @@
 
 (define ((input-text [label #f]
                      #:required? [required? #t]
-                     #:validators [validators null]) meth)
+                     #:validators [validators null]
+                     #:attributes [attributes null]) meth)
   (match meth
     ['validator
      (apply ensure binding/text (cons/required? required? validators))]
     ['widget
      (lambda (name value errors)
        (define elt
-         ((widget-text) name value errors))
+         ((widget-text #:attributes attributes) name value errors))
        (if label
            (haml
             (.group
@@ -436,7 +445,8 @@
 
 (define ((textarea label
                    #:required? [required? #t]
-                   #:validators [validators null]) meth)
+                   #:validators [validators null]
+                   #:attributes [attributes null]) meth)
   (match meth
     ['validator
      (apply ensure binding/text (cons/required? required? validators))]
@@ -444,19 +454,20 @@
      (lambda (name value errors)
        (haml
         (.group
-         (:label label ((widget-textarea) name value errors))
+         (:label label ((widget-textarea #:attributes attributes) name value errors))
          ,@((widget-errors) name value errors))))]))
 
 (define ((input-time [label #f]
                      #:required? [required? #t]
-                     #:validators [validators null]) meth)
+                     #:validators [validators null]
+                     #:attributes [attributes null]) meth)
   (match meth
     ['validator
      (apply ensure binding/text (cons/required? required? validators))]
     ['widget
      (lambda (name value errors)
        (define elt
-         ((widget-time) name value errors))
+         ((widget-time #:attributes attributes) name value errors))
        (if label
            (haml
             (.group
@@ -466,14 +477,15 @@
 
 (define ((input-date [label #f]
                      #:required? [required? #t]
-                     #:validators [validators null]) meth)
+                     #:validators [validators null]
+                     #:attributes [attributes null]) meth)
   (match meth
     ['validator
      (apply ensure binding/text (cons/required? required? validators))]
     ['widget
      (lambda (name value errors)
        (define elt
-         ((widget-date) name value errors))
+         ((widget-date #:attributes attributes) name value errors))
        (if label
            (haml
             (.group
