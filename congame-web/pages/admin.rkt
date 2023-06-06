@@ -973,10 +973,12 @@
   (redirect-to (reverse-uri 'study-instances-page)))
 
 (define (~study-var deserialized-v)
-  (with-output-to-string
-    (lambda ()
-      (define deserialized deserialized-v)
-      (pretty-write (->jsexpr deserialized)))))
+  (with-handlers ([exn:fail?
+                   (lambda (e)
+                     (format "<error: ~.a>" (exn-message e)))])
+    (with-output-to-string
+      (lambda ()
+        (pretty-write (->jsexpr deserialized-v))))))
 
 
 ;; tags ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
