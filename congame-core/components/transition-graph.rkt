@@ -76,10 +76,25 @@
   (syntax-parse stx
     #:literals (-->)
     [(_ [arrows:arrow] ...+)
+     ;; Check for entries without any edges (eg. [a]).
      (for ([edge-stx (in-list (syntax-e #'((arrows.child ...) ...)))]
            [arrow-stx (in-list (syntax-e #'(arrows ...)))])
        (when (null? (syntax-e edge-stx))
          (raise-syntax-error 'transition-graph "nodes in a graph must point to other nodes" stx arrow-stx)))
+
+     ;; Check for steps with multiple targets.
+     (for ([edges-stx (in-list (syntax-e #'((arrows.child ...) ...)))])
+       (for/fold ([nodes (hasheq)])
+                 ([edge-stx (in-list (syntax-e edges-stx))])
+         (syntax-parse edge-stx
+           #:literals (quote)
+           #:datum-literals (cons)
+           [(cons (quote a:id) _)
+            (define sym (syntax-e #'a))
+            (when (hash-has-key? nodes sym)
+              (raise-syntax-error 'transition-graph "a step cannot transition to more than one follow-up step" stx edge-stx))
+            (hash-set nodes sym #t)])))
+
      #'(hasheq
         'comptime (list arrows.transition ... ...)
         'runtime (list arrows.child ... ...))]))
@@ -124,3 +139,14 @@
     [else
      (define message (format "failed to generate PDF~n  error: ~a" (port->string stderr)))
      (error 'comptime-transitions->dot message)]))
+
+(module+ test
+  (require rackunit
+           syntax/macro-testing)
+
+  (check-exn
+   #rx"cannot transition to more than one follow-up step"
+   (lambda ()
+     (convert-compile-time-error
+      (let ()
+        (transition-graph [a --> b --> a --> c]))))))
