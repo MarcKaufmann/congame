@@ -38,9 +38,6 @@
 (define (kwd->symbol kwd)
   (string->symbol (keyword->string kwd)))
 
-(define (symbol->kwd sym)
-  (string->keyword (symbol->string sym)))
-
 (define put-form
   (make-keyword-procedure
    (lambda (kws kw-args)
@@ -155,7 +152,8 @@
          [e:id
           #:when (memq (syntax->datum #'e)
                        (syntax->datum #'(dynamic-field-id ...)))
-          #'(let ([entry (hash-ref tbl 'e)])
+          #:with kwd (datum->syntax #'e (string->keyword (symbol->string (syntax-e #'e))))
+          #'(let ([entry (hash-ref tbl 'kwd)])
               (rw (car entry) ((cdr entry) 'widget)))]
 
          [e #'e]))
@@ -170,6 +168,9 @@
                          (datum->syntax fld (symbol->string (syntax-e fld))))
                        (list fld-str def)))])
        #'(hash fld&def ...))
+     #:with (dynamic-field-kwd ...)
+     (for/list ([stx (in-list (syntax-e #'(dynamic-field-id ...)))])
+       (datum->syntax stx (string->keyword (symbol->string (syntax-e stx)))))
 
      (define maybe-dupe-kwd
        (for/fold ([counts (hash)]
@@ -185,7 +186,12 @@
        (raise-syntax-error 'formular "duplicate field" stx maybe-dupe-kwd))
 
      (when (attribute bot-id)
-       (define fld-kwds (sort (map syntax->datum (syntax-e #'(kwd ...))) keyword<?))
+       (define fld-kwds
+         (sort
+          (append
+           (map syntax->datum (syntax-e #'(kwd ...)))
+           (map syntax->datum (syntax-e #'(dynamic-field-kwd ...))))
+          keyword<?))
        (for ([bot-id-stx (in-list (syntax-e #'(bot-id ...)))]
              [bot-kwd-stxs (in-list (syntax-e #'((bot-fld ...) ...)))])
          (define bot-id (syntax->datum bot-id-stx))
@@ -204,7 +210,7 @@
          (let ([tbl (make-hasheq
                      (list
                       (cons 'kwd (cons (symbol->string 'field-id) field-id)) ...
-                      (cons 'dynamic-field-id (cons (symbol->string 'dynamic-field-id) dynamic-field-id)) ...))])
+                      (cons 'dynamic-field-kwd (cons (symbol->string 'dynamic-field-id) dynamic-field-id)) ...))])
            (study:form
             #:defaults defaults
             (form* ([field-id (field-id 'validator)]
@@ -212,7 +218,7 @@
                     [dynamic-field-id (dynamic-field-id 'validator)]
                     ...)
               (cons
-               (list 'kwd ... (symbol->kwd 'dynamic-field-id) ...)
+               (list 'kwd ... 'dynamic-field-kwd ...)
                (list field-id ... dynamic-field-id ...)))
             (lambda (res)
               (define vals-by-kwd
@@ -252,13 +258,16 @@
   ;; with each one individually and waiting on their animations.
   (define-values (elts-to-click elts-to-type)
     (for/fold ([elts-to-click null]
-               [elts-to-type  (hash)]
+               [elts-to-type (hash)]
                #:result (values (reverse elts-to-click) elts-to-type))
               ([(field-id value) (hash-ref meta bot-id)] #:when value)
       (define field-el (bot:find (format "[name=~a]" field-id)))
       (unless field-el
         (error 'formular-autofill (format "could not find field ~a" field-id)))
-      (define field-type (m:element-attribute field-el "type"))
+      (define field-type
+        (or
+         (m:element-attribute field-el "type")
+         (m:element-tag field-el)))
       (case field-type
         [("text")
          (values elts-to-click (hash-set elts-to-type field-el value))]
@@ -275,10 +284,10 @@
          (define the-radio (bot:find (format "[name=~a][value='~a']" field-id value)))
          (values (cons the-radio elts-to-click) elts-to-type)]
 
-        ; FIXME: Marc thinks the bot:find won't work, since we need to get the option field with [value='value'], which is a child of select with name [name=field-id]. The space between them should select the child.
         [("select")
-         (define the-select (bot:find (format "[name=~a] [value='~a']" field-id value)))
-         (values (cons the-select elts-to-click) elts-to-type)]
+         (define the-select (bot:find (format "[name=~a]" field-id)))
+         (define the-option (bot:element-find the-select (format "[value='~a']" value)))
+         (values (cons the-option elts-to-click) elts-to-type)]
 
         [else
          (error 'formular-autofill (format "unhandled field type ~a" field-type))])))
