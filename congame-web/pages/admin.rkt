@@ -1010,7 +1010,6 @@
               (:form
                ([:action (embed/url loop)]
                 [:method "POST"])
-               (:h1 "Create Tag")
                (rw "name" (field-group "Name"))
                (:button ([:type "submit"]) "Create"))))))])))))
 
