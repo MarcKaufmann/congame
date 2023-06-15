@@ -40,18 +40,33 @@
             (->minutes t)
             (->seconds t)))
 
-(define (sleep-question)
+
+;; TODO: Extract to reusable module.
+(define (call-with-nonce pid proc)
   (define nonce (generate-random-string))
   (with-study-transaction
-    (parameterize ([current-study-stack '(*root*)])
-      (define nonces (get/instance 'nonces hasheqv))
-      (put/instance 'nonces (hash-set nonces (current-participant-id) nonce))
-      (schedule-at
-       (+minutes (now/moment) 1)
-       (request-update
-        (current-participant-id)
-        nonce))))
+    (define nonces (get/instance #:root '*nonce* 'nonces hasheqv))
+    (put/instance #:root '*nonce* 'nonces (hash-set nonces pid nonce))
+    (proc nonce)))
 
+;; TODO: Ditto.
+(define (call-if-nonce-matches pid nonce proc)
+  (define nonces (get/instance #:root '*nonce* 'nonces hasheqv))
+  (when (equal? (hash-ref nonces pid #f) nonce)
+    (proc)))
+
+(define (schedule-question-email pid)
+  (call-with-nonce
+   pid
+   (lambda (nonce)
+     (schedule-at
+      (+seconds (now/moment) 1) ;; FIXME(marc): should be +days
+      (request-update pid nonce)))))
+
+
+(define (sleep-question)
+  (schedule-question-email
+   (current-participant-id))
   (page
    (haml
     (.container
@@ -98,16 +113,13 @@
       #:database db
       #:participant (lookup-study-participant/by-id db pid)))
    (lambda ()
-     (parameterize ([current-study-stack '(*root*)])
-       (define nonces
-         (get/instance 'nonces hasheqv))
-       (when (equal? (hash-ref nonces pid) nonce)
-         (send-email-reminder pid nonce)
-         (define new-nonce (generate-random-string))
-         (put/instance 'nonces (hash-set nonces pid new-nonce))
-         (schedule-at
-          (+minutes (now/moment) 1)
-          (request-update pid new-nonce)))))))
+     (call-if-nonce-matches
+      pid nonce
+      (lambda ()
+        (send-email-reminder pid nonce)
+        (call-with-nonce
+         (lambda ()
+           (schedule-question-email pid))))))))
 
 ;; TODO: Why not change the nonce when `request-update` is called and the email has been sent? Then I don't need the code in multiple places.
 ;; TODO: Only add a new email request if the person still is subscribed
