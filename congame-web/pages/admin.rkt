@@ -50,9 +50,15 @@
 (define datetime-format
   "YYYY-MM-dd HH:mm:ss")
 
-(define/contract ((studies-page db) _req)
+(define/contract ((studies-page db) req)
   (-> database? (-> request? response?))
-  (define studies (list-studies db))
+  (define tab (or (bindings-ref-symbol (request-bindings/raw req) 'tab) 'all))
+  (define studies
+    (list-studies
+     #:owner (and
+              (eq? tab 'my-studies)
+              (user-id (current-user)))
+     db))
   (define replications (list-replications db))
   (define tags (list-tags db))
   (send/suspend/dispatch/protect
@@ -62,7 +68,12 @@
        (haml
         (:div
          (:section.studies
-          (:h1 "Studies")
+          (:h1
+           "Studies ("
+           (:a ([:href (reverse-uri 'admin:studies-page #:query '((tab . "all")))]) "all")
+           " | "
+           (:a ([:href (reverse-uri 'admin:studies-page #:query '((tab . "my-studies")))]) "my studies")
+           ")")
           (:h4
            (:a
             ([:href (reverse-uri 'admin:create-study-page)])

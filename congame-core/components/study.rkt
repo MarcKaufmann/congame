@@ -1155,12 +1155,16 @@ QUERY
 (define (current-participant-owner?)
   (equal? (current-participant-user-id) (current-study-instance-owner-id)))
 
-(define/contract (list-studies db)
-  (-> database? (listof study-meta?))
+(define/contract (list-studies db #:owner [owner-id #f])
+  (->* (database?)
+       (#:owner (or/c #f id/c))
+       (listof study-meta?))
+  (define q
+    (~> (from study-meta #:as s)
+        (order-by ([s.created-at #:desc]))))
   (with-database-connection [conn db]
     (sequence->list
-     (in-entities conn (~> (from study-meta #:as s)
-                           (order-by ([s.created-at #:desc])))))))
+     (in-entities conn (if owner-id (~> q (where (= s.owner-id ,owner-id))) q)))))
 
 (define/contract (list-study-instances db study-id)
   (-> database? id/c (listof study-instance?))
