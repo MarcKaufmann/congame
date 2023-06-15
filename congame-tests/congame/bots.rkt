@@ -62,6 +62,7 @@
            (define slug name)
            (define the-study
              (insert-one! conn (make-study-meta
+                                #:owner-id (user-id bot-user)
                                 #:name name
                                 #:slug slug
                                 #:racket-id racket-id)))
