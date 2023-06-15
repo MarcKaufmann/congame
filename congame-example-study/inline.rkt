@@ -11,7 +11,16 @@
 (provide
  inline-study)
 
+(define (start-timer)
+  (put #:root '*timer* 'start-time (current-seconds)))
+
+(define (end-timer)
+  (define t (current-seconds))
+  (put #:root '*timer* 'end-time t)
+  (- t (get #:root '*timer* 'start-time)))
+
 (define (info)
+  (start-timer)
   (page
    (haml
     (.container
@@ -93,6 +102,7 @@
   (formular-autofill 'ok))
 
 (define (select-step)
+  (put 'duration (end-timer))
   (page
    (haml
     (.container

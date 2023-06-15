@@ -131,11 +131,12 @@
            (update-one! conn _))))
 
 (define (put k v
+             #:root [root-id '*root*]
              #:round [round-name (current-round-name)]
              #:group [group-name (current-group-name)])
   (log-study-debug
-   "put~n  stack: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s"
-   (current-study-ids) round-name group-name k v (current-participant-id))
+   "put~n  stack: ~s~n  root: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s"
+   (current-study-ids) root-id round-name group-name k v (current-participant-id))
   (with-database-connection [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_data (
@@ -148,7 +149,7 @@ INSERT INTO study_data (
   last_put_at = CURRENT_TIMESTAMP
 QUERY
                 (current-participant-id)
-                (current-study-array)
+                (current-study-array root-id)
                 round-name
                 group-name
                 (symbol->string k)
@@ -157,18 +158,19 @@ QUERY
 
 (define (get k [default (lambda ()
                           (error 'get "value not found for key ~.s" k))]
+             #:root [root-id '*root*]
              #:round [round-name (current-round-name)]
              #:group [group-name (current-group-name)])
   (log-study-debug
-   "get~n  stack: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  participant-id: ~s"
-   (current-study-ids) round-name group-name k (current-participant-id))
+   "get~n  stack: ~s~n  root: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  participant-id: ~s"
+   (current-study-ids) root-id round-name group-name k (current-participant-id))
   (with-database-connection [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_data" #:as d)
                                   (select d.value)
                                   (where (and
                                           (= d.participant-id ,(current-participant-id))
-                                          (= d.study-stack ,(current-study-array))
+                                          (= d.study-stack ,(current-study-array root-id))
                                           (= d.round-name ,round-name)
                                           (= d.group-name ,group-name)
                                           (= d.key ,(symbol->string k)))))))
@@ -209,9 +211,11 @@ QUERY
 ;; Additionally, we may want a variant of {put,get}/instance that
 ;; makes it easy to get & store group-level data, implemented on top
 ;; of {put,get}/instance.
-(define (put/instance k v)
-  (log-study-debug "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s~n  current-git-sha: ~s~n"
-                   (current-study-ids) k v (current-participant-id) (current-git-sha))
+(define (put/instance k v
+                      #:root [root-id '*root*])
+  (log-study-debug
+   "put/instance~n  stack: ~s~n  key: ~s~n  value: ~s~n  root: ~s~n  participant-id: ~s~n  current-git-sha: ~s~n"
+   (current-study-ids) k v root-id (current-participant-id) (current-git-sha))
   (with-database-transaction [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_instance_data(
@@ -224,15 +228,18 @@ INSERT INTO study_instance_data(
   last_put_at = CURRENT_TIMESTAMP
 QUERY
                 (current-study-instance-id)
-                (current-study-array)
+                (current-study-array root-id)
                 (symbol->string k)
                 (serialize* v)
                 (current-git-sha))))
 
-(define (get/instance k [default (lambda ()
-                                   (error 'get/instance "value not found for key ~.s" k))])
-  (log-study-debug "get/instance~n  stack: ~s~n  key: ~s~n  participant-id: ~s"
-                   (current-study-ids) k (current-participant-id))
+(define (get/instance k
+                      [default (lambda ()
+                                 (error 'get/instance "value not found for key ~.s" k))]
+                      #:root [root-id '*root*])
+  (log-study-debug
+   "get/instance~n  stack: ~s~n  key: ~s~n  root: ~s~n  participant-id: ~s"
+   (current-study-ids) k root-id (current-participant-id))
   (with-database-transaction [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_instance_data" #:as d)
@@ -250,8 +257,10 @@ QUERY
 (define (current-study-ids)
   (reverse (current-study-stack)))
 
-(define (current-study-array)
-  (list->pg-array (map symbol->string (current-study-ids))))
+(define (current-study-array [root-id '*root*])
+  (list->pg-array
+   (for/list ([id (in-list (current-study-ids))])
+     (symbol->string (if (eq? id '*root*) root-id id)))))
 
 
 ;; payments ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
