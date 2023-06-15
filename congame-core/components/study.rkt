@@ -286,7 +286,7 @@ QUERY
 ;; Eventually, we should rip it out.
 (define-schema study-payment
   #:table "payments"
-  ([participant-id integer/f]
+  ([participant-id id/f]
    [(timestamp (now/moment)) datetime-tz/f]
    [payment-name string/f]
    [payment (numeric/f 6 2)]))
@@ -1019,7 +1019,8 @@ QUERY
 
 (define-schema study-meta
   #:table "studies"
-  ([id integer/f #:primary-key #:auto-increment]
+  ([id id/f #:primary-key #:auto-increment]
+   [owner-id id/f]
    [name string/f #:contract non-empty-string?]
    [(type 'racket) symbol/f #:contract (or/c 'racket 'dsl)]
    [slug string/f #:contract non-empty-string?]
@@ -1029,9 +1030,9 @@ QUERY
 
 (define-schema study-instance
   #:table "study_instances"
-  ([id integer/f #:primary-key #:auto-increment]
-   [study-id integer/f]
-   [owner-id integer/f]
+  ([id id/f #:primary-key #:auto-increment]
+   [study-id id/f]
+   [owner-id id/f]
    [name string/f #:contract non-empty-string?]
    [slug string/f #:contract non-empty-string?]
    [(enrollment-code (generate-random-string 16)) string/f]
@@ -1040,15 +1041,15 @@ QUERY
 
 (define-schema researcher&instance
   #:virtual
-  ([researcher-id integer/f]
+  ([researcher-id id/f]
    [researcher-username string/f]
-   [instance-id integer/f]
+   [instance-id id/f]
    [instance-name string/f]
    [created-at datetime-tz/f]))
 
 (define-schema study-instance-var
   #:table "study_instance_data"
-  ([instance-id integer/f]
+  ([instance-id id/f]
    [stack (array/f string/f) #:name "study_stack"]
    [id symbol/f #:name "key"]
    [value binary/f]
@@ -1066,19 +1067,19 @@ QUERY
 
 (define-schema study-participant
   #:table "study_participants"
-  ([id integer/f #:primary-key #:auto-increment]
+  ([id id/f #:primary-key #:auto-increment]
    [(current-round-name "") string/f]
    [(current-group-name "") string/f]
-   [user-id integer/f]
-   [instance-id integer/f]
+   [user-id id/f]
+   [instance-id id/f]
    [(progress #()) (array/f string/f)]
    [(enrolled-at (now/moment)) datetime-tz/f]))
 
 (define-schema study-participant/admin
   #:virtual
-  ([id integer/f]
-   [user-id integer/f]
-   [instance-id integer/f]
+  ([id id/f]
+   [user-id id/f]
+   [instance-id id/f]
    [email string/f]
    [roles (array/f symbol/f)]
    [progress (array/f string/f)]

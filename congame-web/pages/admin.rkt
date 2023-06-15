@@ -199,6 +199,7 @@
                                   "")])
               (with-database-connection [conn db]
                 (insert-one! conn (make-study-meta
+                                   #:owner-id (user-id (current-user))
                                    #:name name
                                    #:slug slug
                                    #:type type
