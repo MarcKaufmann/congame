@@ -105,9 +105,6 @@
          (send-email-reminder pid nonce)
          (define new-nonce (generate-random-string))
          (put/instance 'nonces (hash-set nonces pid new-nonce))
-         ;; FIXME: The call to request-update does not work,
-         ;; - initially because it doesn't know the `current-broker`
-         ;; - after moving parameterize ([current-study-stack null]), failed with not being able to convert #f to string in database
          (schedule-at
           (+minutes (now/moment) 1)
           (request-update pid new-nonce)))))))
