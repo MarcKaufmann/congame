@@ -1,6 +1,7 @@
 #lang scribble/manual
 
 @(require (for-label congame/components/study
+                     congame/components/transition-graph
                      (only-in forms form? widget-renderer/c)
                      racket/base
                      racket/contract
@@ -13,7 +14,7 @@
 @section{Studies}
 
 A @deftech{study} is a series of @tech{steps} and a transition graph
-that controls which steps lead into which.
+that controls which steps transition to which steps.
 
 @defproc[(study? [v any/c]) boolean?]{
   Returns @racket[#t] when @racket[v] is a study.
@@ -27,6 +28,13 @@ that controls which steps lead into which.
                      [#:view-handler view-handler (or/c #f (-> request? response?)) #f]
                      [#:failure-handler failure-handler (or/c #f (-> step? any/c step-id/c)) #f]) study?]{
 
+  Creates a @tech{study} that can be run by @racket[run-study]. The
+  @racket[name] argument is used in debugging and in the admin interface. Any
+  step that is part of the study has to be listed in @racket[steps].
+
+  The @racket[#:transitions] argument has to be a @racket[transition-graph] that
+  provides all the transitions between the steps. See @racket[transition-graph]
+  for details.
 }
 
 
@@ -100,27 +108,36 @@ a participant or collect information from them (or both).
          #:contracts
          [(validator-expr (-> any/c xexpr?))]]{
 
-  Within a @tech{step}, this form delimits where the setup actions of
-  a step end.  Once execution of a step reaches this form, the next
-  time the step is executed, the setup actions will be skipped.
+  Within a @tech{step}, @racket[page] ensures that the setup actions are not run
+  again in case the page contains a form that is submitted and fails validation.
+  Specifically, consider a page containing a form:
 
   For example:
 
   @codeblock|{
-    (define (step-with-setup)
+    (define (step-with-setup-and-form)
       (perform-a-once)
       (perform-b-once)
       (page
-       (haml
-        (:p "Some text..."))))
+       (begin
+         (perform-c-again)
+         (haml
+           (:h1 "The Form")
+           ;; some form
+           ;; ...
+           ))))
   }|
 
-  When the user lands on @racket[step-with-setup] the first time,
-  @racket[perform-a-once] and @racket[perform-b-once] will be called.
-  Subsequently, if the user reloads the page, it will be as if only
-  the expressions under the @racket[page] form make up the step.  If
-  control never reaches the @racket[page] form, the setup actions will
-  get run again.
+  When the user lands on @racket[step-with-setup-and-form] the first time,
+  resumes there, or refreshes the page, @racket[perform-a-once] and
+  @racket[perform-b-once] will be called. If the user submits the form and it
+  fails validation, the page will be reloaded showing the error messages and the
+  fields filled with the inputs that were valid. However, neither
+  @racket[perform-a-once] nor @racket[perform-b-once] will be run again, while
+  @racket[perform-c-again] will be run again.
+
+  It is possible to pass a custom validator for @racket[xexpr]s to @racket[page]
+  to provide better error messages.
 }
 
 @deftogether[(
@@ -213,4 +230,45 @@ scope} is shared between participants to a @tech{study instance}.
 
 @defparam[current-group-name group-name string?]{
   Controls the current group for participants in a study.
+}
+
+@defmodule[congame/components/transition-graph]
+
+@defform[(transition-graph transition-clause ...+)
+         #:grammar
+         [(transition-clause (code:line [id transition-entry ...+]))
+
+          (transition-entry (code:line --> transition-target))
+
+          (transition-target (code:line id)
+                             (code:line (unquote transition-lambda)))
+
+          (transition-lambda (code:line (lambda () transition-expr ...+))
+                             (code:line (lambda name:id () transition-expr ...+)))
+
+          (transition-expr (code:line (done))
+                           (code:line (fail expr))
+                           (code:line (goto id:id))
+                           (code:line expr))]
+         ]{
+
+  A @racket[transition-graph] consists of one or more transition-entries. For
+  example:
+
+  @racketblock[
+  (make-study
+    "some study"
+    #:transitions
+    (transition-graph
+      [a --> b --> ,(lambda ()
+                      (if succes-step-b?
+                        (goto bad-ending)
+                        (goto good-ending)))]
+      [fail-ending --> fail-ending]
+      [good-ending --> good-ending])
+    (list
+      (make-step 'a a)
+      (make-step 'b b)
+      (make-step 'c c)))
+  ]
 }

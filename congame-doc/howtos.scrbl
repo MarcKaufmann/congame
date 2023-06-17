@@ -22,14 +22,12 @@ and the name of the new study is @racket[test-study]. Then in the
 You then should install this new package, and upon the next launch,
 congame should pick up this new study.
 
-If this does not work, you may have to remove the @filepath{compiled}
-folder in @filepath{congame-web/} so that the cache (which contains
-the installed studies) gets refreshed.
+If this does not work, you may have to remove the @filepath{compiled} folder in
+@filepath{congame-web/studies/} so that the cache (which contains the installed
+studies) gets refreshed.
 
-To add a new study from an already installed package, you should only
-have to update the @filepath{info.rkt} file of the package, as well as
-refresh the cache.
-
+To add a new study from an already installed package, you should
+update the @filepath{info.rkt} file of the package, recompile the package via @exec{raco setup <package-name>}, and then refresh the cache.
 
 @section{How to pass values from a substudy to its caller}
 
