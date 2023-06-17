@@ -11,3 +11,5 @@
                "sentry-lib"
                "web-server-lib"))
 (define build-deps '())
+(define congame-studies
+  '((studies/excuses/edpb edpb-pilot)))
