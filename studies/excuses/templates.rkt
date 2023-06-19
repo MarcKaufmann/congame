@@ -3,7 +3,7 @@
 (require congame/components/study
          koyo/haml)
 
-(provide instructions)
+(provide instructions task-description)
 
 (define config
   (hash 'day2-date "tomorrow"
@@ -19,7 +19,7 @@
   (page
    (haml
     @.container{
-      @:h1{Instructions and consent}
+      @:h1{Instructions}
 
       @:p{This study consists of two sessions. If you decide to take part, the first session will start immediately after you give consent to participate. You can complete the second session anytime @conf['day2-date] between 6 AM and midnight (Pacific Time). You will receive a completion bonus of @conf['session1-bonus] USD for completing the first session, plus @conf['session2-bonus] USD if you complete the second session as well. You can earn additional income that will depend on your decisions in the first session and your performance in the task that we describe below. The average additional income will be around @conf['estimated-performance-bonus] USD. The two sessions will take around @conf['estimated-time] minutes to complete each.}
 
@@ -67,17 +67,21 @@
 
       @:p{You will receive all payments (completion bonuses plus additional income) via the Prolific payment system, within three days after completing the second session. If you only complete the first session, you will only receive the completion bonus for the first session, within three days after the corresponding second session.}
 
-
-      @:h2{Further information}
-
-      @:p{The purpose of this research is to examine how people make decisions for work over time.}
-
-      @:p{This study is conducted by Flora Drucker and Marc Kaufmann and financed by Central European University. If you accept to participate in the study, you may still change your mind and quit at any time. However, please note that you will only receive the completion bonus for any session if you complete it, and you will only receive the additional income if you complete both sessions.}
-
-      @:p{Participation in this study is not associated with any foreseeable risk or benefit. Your answers will be collected confidentially and anonymously (the researchers will not be able to link decisions and participants' identity beyond the Prolific ID provided). At the data analysis stage your Prolific ID will be changed to a random identifying number, and the Prolific IDs will be deleted. In case the results of the study are published, there can be no references to your identity. Data anonymity is guaranteed.}
-
-      @:p{This study received a research ethics approval from the Ethical Research Committee of Central European University.}
-
-      @:p{If you have any questions or concerns regarding this study, please contact us at @"admin@totalinsightmanagement.com" or @"lucafloradrucker.research@gmail.com".}
-
       @button[void]{Continue}})))
+
+
+(define (task-description)
+  (page
+   (haml
+    (.container
+     @:h1{Task Description}
+
+     @:p{In this study, you will have to do a series of simple tasks. This task consists of categorizing abstracts (short summaries of research papers) by topics. Specifically, we will give specific topics, and you should choose which topic this abstract belongs to.}
+
+     @:p{For example, we might provide you with the following topics FIXME and the following abstract FIXME.}
+
+     @:p{This abstract belongs to the FIXME and FIXME categories.}
+
+     @:p{Now it is your turn to do 3 tasks: continue to the next page to categorize 3 abstracts.}
+
+     @button[void]{Continue}))))

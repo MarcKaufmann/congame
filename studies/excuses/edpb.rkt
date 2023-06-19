@@ -1,9 +1,11 @@
 #lang at-exp racket/base
 
-(require congame/components/study
-         congame/components/transition-graph
+(require racket/format
          koyo/haml
-         "instructions.rkt")
+         congame/components/study
+         congame/components/transition-graph
+         congame/components/formular
+         "templates.rkt")
 
 (provide edpb-pilot)
 
@@ -17,15 +19,34 @@
     @.container{
       @:h1{The Study}
 
-      @:p{Thank you for participating in this study exploring decisions over task allocations.}
+      @:p{Thank you for participating in this study examining how people make decisions for work over time.}
 
-      @:p{The research is conducted by Marc Kaufmann and financed by the Central European University. Your participation is voluntary and you may withdraw at any time. Participation in the study is not associated with any forseeable risks or benefits beyond the monetary compensation.}
+      @:p{This study is conducted by Flora Drucker and Marc Kaufmann and financed by Central European University. Your participation is voluntary and if you accept to participate, you may withdraw at any time. However, please note that you will receive some bonuses if you complete specific parts of the study. This is described in more detail on the Instructions page.}
 
-      @:p{If you have concerns or questions, please contact the principal investigator, Marc Kaufmann, at @"kaufmannm@ceu.edu" or by direct message via Prolific. Report technical problems to @"admin@totalinsightmanagement.com".}
+      @:p{Participation in this study is not associated with any foreseeable risk or benefit. Your answers will be collected confidentially and anonymously (the researchers will not be able to link decisions and participants' identity beyond the Prolific ID provided). At the data analysis stage your Prolific ID will be changed to a random identifying number, and the Prolific IDs will be deleted. In case the results of the study are published, there can be no references to your identity. Data anonymity is guaranteed.}
+
+      @:p{This study received a research ethics approval from the Ethical Research Committee of Central European University.}
+
+      @:p{If you have any questions or concerns regarding this study, please contact us at @"admin@totalinsightmanagement.com" or @"lucafloradrucker.research@gmail.com".}
 
       @button[void]{Continue}})))
 
-;;;;;;;;;;;;;;;; STUDIES
+(define submit-button
+  (haml
+   (:button.button.next-button ([:type "submit"]) "Submit")))
+
+(define (hypothetical-time-choice)
+  (page
+   (haml
+    (.container
+     (formular
+      (haml
+       (:div
+        (#:patience
+         (input-number
+          "How willing are you to give up something that is beneficial for you today in order to benefit more from that in the future? (0 means not willing at all, 10 means very willing)"
+          #:min 0 #:max 10))
+        submit-button)))))))
 
 (define ((stub title))
   (page
@@ -34,12 +55,12 @@
      (:h1 title)
      (button void "Next")))))
 
-(define (fail-ending)
+(define (no-consent-ending)
   (page
    (haml
     (.container
-     (:h1 "You cannot continue")
-     (:p "Unforuntately you failed the tutorial, so you cannot continue in this study. Please return the study.")))))
+     (:h1 "You decided not to participate in the study")
+     @:p{Thank you for participating this far. Please provide the code NOCONSENT on prolific to receive your default participation fee.}))))
 
 (define (final)
   (page
@@ -48,13 +69,134 @@
      (:h1 "Thank you for participating")))))
 
 (define (tutorial-tasks-stub)
+  ; FIXME
   (page
    (haml
     (.container
-     (:h1 "Click below to pass the tutorial tasks")
-     (button (lambda ()
-               (put 'pass-tutorial? #t))
-             "Pass the tutorial")))))
+     (:h1 "Do the tutorial tasks")
+     (button void "Continue")))))
+
+(define (consent)
+  (page
+   (haml
+    (.container
+     (:h1 "Consent")
+
+     @:p{You have now completed the introduction to the study: you have read the instructions, the task description, and the payment conditions. Based on this, you can now decide whether to participate in the study and continue, or whether to stop after the introduction ends.}
+
+     (formular
+      (haml
+       (:div
+        (#:consent-given?
+         (radios "" '(("agree"    . "I agree to participate in the study")
+                      ("disagree" . "I do not agree to participate in the study and stop here"))))
+        submit-button))
+      (lambda (#:consent-given? consent?)
+        (put 'consent-given? (string=? consent? "agree"))))))))
+
+;; TODO: participants can take the comprehension test 3 times (fail twice), then they are out.
+(define (comprehension-test)
+  (define attempt
+    (cond [(get #:round "" 'attempt #f) => values]
+          [else (begin0 1
+                  (put #:round "" 'attempt 1))]))
+  (set-current-round-name! (~a "attempt " attempt))
+  (page
+   (haml
+    (.container
+     (:h1 (format "Comprehension Test (~a attempt)" attempt))
+
+     ;; FIXME: add actual comprehension questions
+     ;; FIXME: provide information (instructions etc) to answer the questions at the bottom of the comprehension form.
+     (formular
+      (haml
+       (:div
+        (#:comprehension1
+         (radios
+          "What is 1 + 1? FIXME"
+          '(("0" . "0")
+            ("1" . "1")
+            ("2" . "2")
+            ("?" . "I don't know"))))
+        submit-button))
+        (lambda (#:comprehension1 comprehension1)
+          (define score
+            (apply
+             +
+             (map
+              (λ (b) (if b 1 0))
+              (list
+               (string=? comprehension1 "2")))))
+          (put
+           #:round "" 'attempt (add1 (get #:round "" 'attempt)))
+          (put 'comprehension-test-score score)))))))
+
+(define max-attempts 3)
+
+(define (repeat-comprehension-test)
+  (define next-attempt
+    (get #:round "" 'attempt))
+  (page
+   (haml
+    (.container
+     (:h1 (format
+           "You failed the comprehension times for the ~a time"
+           (case (sub1 next-attempt)
+             [(1) "first"]
+             [(2) "second"])))
+
+     @:p{Remember: You can fail the test at most @(~a max-attempts) times, otherwise you drop out of the study without payments. Try again.}
+
+     (button void "Go to comprehension test")))))
+
+(define (fail-comprehension-test)
+  (page
+   (haml
+    (.container
+     @:h1{You failed the comprehension test too many times}
+
+     @:p{Unfortunately, you failed the comprehension test too many times. Please return the study.}))))
+
+;;;;;;;;;;;;;;;; STUDIES
+
+(define (comprehension-test-success?)
+  (> (get 'comprehension-test-score) 0))
+
+(define tutorial
+  (make-study
+   "edpb-tutorial"
+   #:transitions
+   (transition-graph
+    [welcome --> hypothetical-time-choice
+             --> instructions
+             --> task-description
+             ; TODO: Do we really want tutorial tasks? The more uncertainty, the better maybe.
+             --> tutorial-tasks
+             --> comprehension-test
+             --> ,(lambda ()
+                    (cond [(comprehension-test-success?)
+                           (set-current-round-name! "")
+                           done]
+
+                          [(<= (get #:round "" 'attempt) max-attempts)
+                           (goto repeat-comprehension-test)]
+
+                          [else
+                           (set-current-round-name! "")
+                           (goto fail-comprehension-test)]))]
+    [repeat-comprehension-test --> comprehension-test]
+    [fail-comprehension-test --> fail-comprehension-test])
+
+   (list
+    (make-step 'welcome welcome)
+    (make-step 'instructions instructions)
+    (make-step 'hypothetical-time-choice hypothetical-time-choice)
+    (make-step 'task-description task-description)
+    (make-step 'comprehension-test comprehension-test)
+    (make-step 'tutorial-tasks tutorial-tasks-stub)
+    (make-step 'repeat-comprehension-test repeat-comprehension-test)
+    (make-step 'fail-comprehension-test fail-comprehension-test))))
+
 
 (define day1
   (make-study
@@ -84,32 +226,25 @@
     (make-step 'work-day2 (stub "Work day 2"))
     (make-step 'exit-survey (stub "Exit survey")))))
 
-  
 (define edpb-pilot
   (make-study
    "edpb pilot"
    #:transitions
    (transition-graph
-    [welcome --> instructions
-             --> hypothetical-time-choice
-             ; TODO: Do we really want tutorial tasks? The more uncertainty, the better maybe.
-             --> tutorial-tasks
-             --> consent
-             --> ,(lambda ()
-                    (cond [(get 'pass-tutorial?) (goto day1)]
-                          [else (goto fail-ending)]))]
+    [tutorial --> consent
+              --> ,(lambda ()
+                     (cond [(get 'consent-given?) (goto day1)]
+                           [else (goto no-consent-ending)]))]
+
     [day1 --> day2 --> send-completion-email --> final]
     [final --> final]
-    [fail-ending --> fail-ending])
+    [no-consent-ending --> no-consent-ending])
 
    (list
-    (make-step 'welcome welcome)
-    (make-step 'instructions instructions)
-    (make-step 'hypothetical-time-choice (stub "Hypothetical Time Choice"))
-    (make-step 'tutorial-tasks tutorial-tasks-stub)
-    (make-step 'consent (stub "Consent"))
+    (make-step/study 'tutorial tutorial)
+    (make-step 'consent consent)
     (make-step/study 'day1 day1)
     (make-step/study 'day2 day2)
     (make-step 'send-completion-email (stub "Send Completion Email"))
     (make-step 'final final)
-    (make-step 'fail-ending fail-ending))))
+    (make-step 'no-consent-ending no-consent-ending))))
