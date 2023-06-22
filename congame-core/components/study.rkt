@@ -246,7 +246,7 @@ QUERY
                                   (select d.value)
                                   (where (and
                                           (= d.instance-id ,(current-study-instance-id))
-                                          (= d.study-stack ,(current-study-array))
+                                          (= d.study-stack ,(current-study-array root-id))
                                           (= d.key ,(symbol->string k)))))))
 
     (cond
@@ -1436,27 +1436,52 @@ QUERY
 
 (module+ accessors
   (provide
-   put/top
    get/top
+   get/instance/top
+   put/top
    put/instance/top
-   get/instance/top)
+   make-get/root
+   make-get/top
+   make-get/top/root
+   make-put/root
+   make-put/top
+   make-put/top/root)
 
-  (define (put/top k v #:root [root-id '*root*])
-    (parameterize ([current-study-stack '(*root*)])
-      (put k v #:root root-id)))
+  ; TODO: We could get rid of the need to pass in err-name with some macrology. Probably not worth the lack of composition.
+  (define ((make-put/root putter root-id) k v)
+    (putter k v #:root root-id))
 
-  (define (get/top k [default (lambda ()
-                                (error 'get "value not found for key ~.s" k))]
-                   #:root [root-id '*root*] )
-    (parameterize ([current-study-stack '(*root*)])
-      (get k default #:root root-id)))
+  (define ((make-get/root getter root-id [err-name 'make-get/root]) k [default (lambda ()
+                                                    (error err-name "value not found for key '~.s' and root id '~.s'" k root-id))])
+    (getter k default #:root root-id))
 
-  (define (put/instance/top k v #:root [root-id '*root*])
+  ; TODO: write some tests of these via bots
+  (define ((make-put/top putter) k v #:root [root-id '*root*])
     (parameterize ([current-study-stack '(*root*)])
-      (put/instance k v #:root root-id)))
+      (putter k v #:root root-id)))
 
-  (define (get/instance/top k [default (lambda ()
-                                         (error 'get "value not found for key ~.s" k))]
-                            #:root [root-id '*root*])
+  ; We have to put `#:root` before default, otherwise we cannot use `root-id` in the error message.
+  (define ((make-get/top getter [err-name 'make-get/top])
+           k
+           #:root [root-id '*root*]
+           [default (lambda ()
+                      (error err-name "value not found for key '~.s' and root id '~.s'" k root-id))])
     (parameterize ([current-study-stack '(*root*)])
-      (get/instance k default #:root root-id))))
+      (getter k default #:root root-id)))
+
+  (define ((make-put/top/root putter root-id) k v)
+    (parameterize ([current-study-stack '(*root*)])
+      (putter k v #:root root-id)))
+
+  (define ((make-get/top/root getter root-id [err-name 'make-get/top/root])
+           k [default (lambda ()
+                        (error err-name "value not found for key '~.s' and root id '~.s'" k root-id))])
+    (parameterize ([current-study-stack '(*root*)])
+      (getter k default #:root root-id)))
+
+
+  (define put/top (make-put/top put))
+  (define put/instance/top (make-put/top put/instance))
+
+  (define get/top (make-get/top get 'get/top))
+  (define get/instance/top (make-get/top get/instance 'get/instance/top)))

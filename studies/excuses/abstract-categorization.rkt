@@ -32,7 +32,20 @@
 ;; - So I can store it either as a hash, or as a serializable struct.
 
 (provide
- upload-abstracts)
+ abstracts-config)
+
+; TODO: If we use this pattern a lot, we can define a macro to define-accessors
+(define get/abstracts
+  (make-get/top/root get '*abstracts*))
+
+(define put/abstracts
+  (make-put/top/root put '*abstracts*))
+
+(define get/instance/abstracts
+  (make-get/top/root get/instance '*abstracts*))
+
+(define put/instance/abstracts
+  (make-put/top/root put/instance '*abstracts*))
 
 (serializable-struct abstract [text categories non-categories]
   #:transparent
@@ -96,15 +109,15 @@
         submit-button))
       (lambda (#:abstracts abstracts
                #:header? header?)
-        (put 'header? header?)
-        (put/instance/top 'abstracts (if header? (cdr abstracts) abstracts))))))))
+        (put/abstracts 'header? header?)
+        (put/instance/abstracts 'abstracts (if header? (cdr abstracts) abstracts))))))))
 
 (define (display-abstracts)
   (haml
    (:div
     (:h3 "Abstracts")
     (:ul
-     ,@(for/list ([a (get/instance/top 'abstracts)])
+     ,@(for/list ([a (get/instance/abstracts 'abstracts)])
          (haml
           (:li (with-output-to-string
                  (lambda ()
@@ -112,7 +125,7 @@
 
 
 (define (check-abstracts)
-  (define abstracts (get/instance/top 'abstracts))
+  (define abstracts (get/instance/abstracts 'abstracts))
   (page
    (haml
     (.container
@@ -133,18 +146,46 @@
   (page
    (haml
     (.container
+
+     (button void "Finish Abstract Setup")
+
      (display-abstracts)))))
 
-(define upload-abstracts
+(define abstracts-config
   (make-study
-   "upload-abstracts-study"
+   "configure abstracts"
    #:transitions
    (transition-graph
     [upload-abstracts --> check-abstracts
                       --> show-abstracts
-                      --> show-abstracts])
+                      --> ,(lambda () done)])
 
    (list
     (make-step 'upload-abstracts upload-abstracts/page)
     (make-step 'check-abstracts check-abstracts)
     (make-step 'show-abstracts show-abstracts))))
+
+(define (abstract-task/page abs-task n total)
+  (match-define (abstract a category non-category) abs-task)
+  (page
+   (haml
+    (.container
+     (:h2 (format "Categorize Abstract ~a out of ~a" n total))
+     (:p (format "Decide whether this abstract is about ~a or not." category))
+
+     (:h4 "The Abstract")
+     (:p a)
+     (button void category #:to-step-id 'categorize-in)
+     (button void non-category #:to-step-id 'categorize-out)))))
+
+; FIXME: syntactic sugar: (define (abstract-task @abstract @n @total) ...)
+(define (abstract-task)
+  (define abs-task (get 'abstract))
+  (define n (get 'n))
+  (define total (get 'total))
+  (abstract-task/page abs-task n total))
+
+;; A sequence of abstract categorization tasks is defined by:
+;; - a common category (a single category such as "Gender")
+;; - a common non-category ("Other" by default)
+;; - the number of abstract tasks to do

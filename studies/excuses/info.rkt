@@ -14,4 +14,4 @@
 (define build-deps '())
 (define congame-studies
   '((studies/excuses/edpb edpb-pilot)
-    (studies/excuses/abstract-categorization upload-abstracts)))
+    (studies/excuses/abstract-categorization abstracts-config)))
