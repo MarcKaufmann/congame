@@ -1433,3 +1433,30 @@ QUERY
                  [current-resume-stack (current-participant-progress mgr)]
                  [current-resume-done? (box #f)])
     (f)))
+
+(module+ accessors
+  (provide
+   put/top
+   get/top
+   put/instance/top
+   get/instance/top)
+
+  (define (put/top k v #:root [root-id '*root*])
+    (parameterize ([current-study-stack '(*root*)])
+      (put k v #:root root-id)))
+
+  (define (get/top k [default (lambda ()
+                                (error 'get "value not found for key ~.s" k))]
+                   #:root [root-id '*root*] )
+    (parameterize ([current-study-stack '(*root*)])
+      (get k default #:root root-id)))
+
+  (define (put/instance/top k v #:root [root-id '*root*])
+    (parameterize ([current-study-stack '(*root*)])
+      (put/instance k v #:root root-id)))
+
+  (define (get/instance/top k [default (lambda ()
+                                         (error 'get "value not found for key ~.s" k))]
+                            #:root [root-id '*root*])
+    (parameterize ([current-study-stack '(*root*)])
+      (get/instance k default #:root root-id))))

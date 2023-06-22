@@ -33,7 +33,7 @@
       f))))
 
 (define (yn-radios label)
-  (map-validator
+  (map-to-type
    string->symbol
    (radios label
            '(("yes" . "Yes")

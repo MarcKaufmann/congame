@@ -22,7 +22,8 @@
  make-put-form/hash
  formular
  formular-autofill
- map-validator
+ map-to-type
+ map-to-type/handler
  checkbox
  radios
  select
@@ -295,13 +296,30 @@
   (bot:type-all elts-to-type)
   (m:element-click! (bot:find "button[type=submit]")))
 
-(define ((map-validator proc input) meth)
+(define ((map-to-type proc input) meth)
   (match meth
     ['validator
      (ensure
       (input 'validator)
       (lambda (v)
         `(ok . ,(proc v))))]
+    [_ (input meth)]))
+
+; FIXME: put contract on this
+(define ((map-to-type/handler proc input
+                              #:the-exn? the-exn?
+                              #:err-message [message (lambda (e)
+                                                       (exn-message e))])
+         meth)
+  (match meth
+    ['validator
+     (ensure
+      (input 'validator)
+      (lambda (v)
+        (with-handlers ([the-exn?
+                         (lambda (e)
+                           `(err . ,(message e)))])
+          `(ok . ,(proc v)))))]
     [_ (input meth)]))
 
 
@@ -545,10 +563,20 @@
   (require rackunit
            web-server/http)
   (check-equal?
-   (((map-validator string->symbol (input-text "example")) 'validator)
+   (((map-to-type string->symbol (input-text "example")) 'validator)
     (binding:form #"input" #"hello"))
    '(ok . hello))
   (check-equal?
-   (((map-validator (λ (n) (* n n)) (input-number "example")) 'validator)
+   (((map-to-type (λ (n) (* n n)) (input-number "example")) 'validator)
     (binding:form #"input" #"42"))
    '(ok . 1764)))
+
+;; common tools, helpers, utilities
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(module+ tools
+  (provide submit-button)
+
+  (define submit-button
+    (haml
+     (:button.button.next-button ([:type "submit"]) "Submit"))))

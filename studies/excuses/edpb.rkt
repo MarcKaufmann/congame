@@ -5,6 +5,7 @@
          congame/components/study
          congame/components/transition-graph
          congame/components/formular
+         (submod congame/components/formular tools)
          "templates.rkt")
 
 (provide edpb-pilot)
@@ -30,10 +31,6 @@
       @:p{If you have any questions or concerns regarding this study, please contact us at @"admin@totalinsightmanagement.com" or @"lucafloradrucker.research@gmail.com".}
 
       @button[void]{Continue}})))
-
-(define submit-button
-  (haml
-   (:button.button.next-button ([:type "submit"]) "Submit")))
 
 (define (hypothetical-time-choice)
   (page
@@ -184,6 +181,7 @@
                           [else
                            (set-current-round-name! "")
                            (goto fail-comprehension-test)]))]
+
     [repeat-comprehension-test --> comprehension-test]
     [fail-comprehension-test --> fail-comprehension-test])
 

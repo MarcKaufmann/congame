@@ -121,7 +121,7 @@
                                          (string-append "snip-" track-path))])))))
 
 (define (yn-radios label)
-  (map-validator
+  (map-to-type
    (λ (s) (string=? s "yes"))
    (radios label '(("yes" . "Yes")
                    ("no"  . "No")))))
