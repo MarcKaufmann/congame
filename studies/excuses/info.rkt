@@ -5,11 +5,13 @@
                "component-lib"
                "congame-core"
                "congame-web"
-               "gregor-lib"
+               "csv-reading"
                "forms-lib"
+               "gregor-lib"
                "koyo-lib"
                "sentry-lib"
                "web-server-lib"))
 (define build-deps '())
 (define congame-studies
-  '((studies/excuses/edpb edpb-pilot)))
+  '((studies/excuses/edpb edpb-pilot)
+    (studies/excuses/abstract-categorization upload-abstracts)))

@@ -1,11 +1,18 @@
 #lang racket/base
 
-(require racket/serialize
+(require racket/generic
+         racket/match
+         racket/port
+         racket/pretty
+         racket/serialize
+         web-server/http
+         csv-reading
          koyo/haml
          congame/components/export
          congame/components/formular
          congame/components/study
-         (submod congame/componeents/study accessors)
+         congame/components/transition-graph
+         (submod congame/components/study accessors)
          (submod congame/components/formular tools))
 
 ;; How to the whole task work
@@ -32,14 +39,45 @@
   #:methods gen:jsexprable
   [(define (->jsexpr s)
      (match-define (abstract text categories non-categories) s)
-     (hasheq 'abstract text
-             'categories categories
-             'non-categories non-categories))])
+     (hash 'abstract text
+           'categories categories
+           'non-categories non-categories))])
 
 (define *ABSTRACTS* #f)
 
-;; WIP: use Neil van dyke's csv-reading and be done with it. One more dependency, but so what. Life's too short.
-(define (upload-abstracts)
+(struct exn:fail:->abstract exn:fail ())
+
+(define (exn:fail:csv-reader? e)
+  (and (exn:fail? e)
+       (regexp-match? #rx"%csv-reading" (exn-message e))))
+
+(define (->abstract r)
+  (if (not (= 3 (length r)))
+      (raise (exn:fail:->abstract (format "row does not contain exactly three items: ~a" r) (current-continuation-marks)))
+      (abstract (car r) (cadr r) (caddr r))))
+
+(define (yn-radios label)
+  (map-to-type
+   (lambda (s) (string=? s "yes"))
+   (radios label '(("yes" . "Yes")
+                   ("no"  . "No")))))
+
+; TODO: This call is ugly, change interface to string these together more conveniently. Pass in association list of lambdas and exceptions?
+(define (input-abstracts label)
+  (map-to-type/handler
+   (lambda (rows)
+     (map ->abstract rows))
+   (map-to-type/handler
+    (lambda (csv-file)
+      (csv->list
+       (binding:file/port-in csv-file)))
+    (input-file label)
+    #:the-exn? exn:fail:csv-reader?
+    #:err-message (lambda (_e)
+                    (format "error reading csv: we expect comma (,) not semicolon (;) as separator, and exactly 3 columns with text.~n You may also want to check for the BOM.)")))
+   #:the-exn? exn:fail:->abstract?))
+
+(define (upload-abstracts/page)
   (page
    (haml
     (.container
@@ -53,16 +91,60 @@
      (formular
       (haml
        (:div
-        (#:abstracts-csv (input-file "csv with abstracts and categories"))
+        (#:abstracts (input-abstracts "csv file with abstracts and categories"))
+        (#:header? (yn-radios "Is the first row of the csv file a header row?"))
         submit-button))
-      (lambda (#:abstracts-csv abstracts-csv)
-        (define upload
-          (upload-file! abstracts-csv))
-        (put/top 'abstracts upload #:root '*abstracts*)
-        (define abstracts
-          (call-with-input-file abstracts-csv
-            (lambda (in)
-              (for/list ([line (in-lines in)])
-                (match-define (list abst wl))))))
+      (lambda (#:abstracts abstracts
+               #:header? header?)
+        (put 'header? header?)
+        (put/instance/top 'abstracts (if header? (cdr abstracts) abstracts))))))))
 
-        ))))))
+(define (display-abstracts)
+  (haml
+   (:div
+    (:h3 "Abstracts")
+    (:ul
+     ,@(for/list ([a (get/instance/top 'abstracts)])
+         (haml
+          (:li (with-output-to-string
+                 (lambda ()
+                   (pretty-write (->jsexpr a)))))))))))
+
+
+(define (check-abstracts)
+  (define abstracts (get/instance/top 'abstracts))
+  (page
+   (haml
+    (.container
+     (:h1 "Check Abstracts")
+
+     (:p "If you are fine with the abstracts, click 'Continue'. If you want to upload other abstracts, click 'Upload Abstracts' instead, which will overwrite the existing abstracts.")
+
+     (button
+      (lambda ()
+        (set! *ABSTRACTS* abstracts))
+      "Keep Abstracts")
+
+     (button void "Upload other abstracts" #:to-step-id 'upload-abstracts)
+
+     (display-abstracts)))))
+
+(define (show-abstracts)
+  (page
+   (haml
+    (.container
+     (display-abstracts)))))
+
+(define upload-abstracts
+  (make-study
+   "upload-abstracts-study"
+   #:transitions
+   (transition-graph
+    [upload-abstracts --> check-abstracts
+                      --> show-abstracts
+                      --> show-abstracts])
+
+   (list
+    (make-step 'upload-abstracts upload-abstracts/page)
+    (make-step 'check-abstracts check-abstracts)
+    (make-step 'show-abstracts show-abstracts))))
