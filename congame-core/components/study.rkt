@@ -1448,11 +1448,11 @@ QUERY
    make-put/top/root)
 
   ; TODO: We could get rid of the need to pass in err-name with some macrology. Probably not worth the lack of composition.
-  (define ((make-put/root putter root-id) k v)
+  (define ((make-put/root putter #:root root-id) k v)
     (putter k v #:root root-id))
 
-  (define ((make-get/root getter root-id [err-name 'make-get/root]) k [default (lambda ()
-                                                    (error err-name "value not found for key '~.s' and root id '~.s'" k root-id))])
+  (define ((make-get/root getter #:root root-id [err-name 'make-get/root]) k [default (lambda ()
+                                                    (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (current-round-name)))])
     (getter k default #:root root-id))
 
   ; TODO: write some tests of these via bots
@@ -1465,17 +1465,17 @@ QUERY
            k
            #:root [root-id '*root*]
            [default (lambda ()
-                      (error err-name "value not found for key '~.s' and root id '~.s'" k root-id))])
+                      (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (current-round-name)))])
     (parameterize ([current-study-stack '(*root*)])
       (getter k default #:root root-id)))
 
-  (define ((make-put/top/root putter root-id) k v)
+  (define ((make-put/top/root putter #:root root-id) k v)
     (parameterize ([current-study-stack '(*root*)])
       (putter k v #:root root-id)))
 
-  (define ((make-get/top/root getter root-id [err-name 'make-get/top/root])
+  (define ((make-get/top/root getter #:root root-id [err-name 'make-get/top/root])
            k [default (lambda ()
-                        (error err-name "value not found for key '~.s' and root id '~.s'" k root-id))])
+                        (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (current-round-name)))])
     (parameterize ([current-study-stack '(*root*)])
       (getter k default #:root root-id)))
 

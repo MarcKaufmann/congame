@@ -1,9 +1,11 @@
 #lang racket/base
 
-(require racket/generic
+(require racket/format
+         racket/generic
          racket/match
          racket/port
          racket/pretty
+         racket/random
          racket/serialize
          web-server/http
          csv-reading
@@ -32,20 +34,21 @@
 ;; - So I can store it either as a hash, or as a serializable struct.
 
 (provide
- abstracts-config)
+ abstracts-config
+ abstract-tasks)
 
 ; TODO: If we use this pattern a lot, we can define a macro to define-accessors
 (define get/abstracts
-  (make-get/top/root get '*abstracts*))
+  (make-get/top/root get #:root '*abstracts*))
 
 (define put/abstracts
-  (make-put/top/root put '*abstracts*))
+  (make-put/top/root put #:root '*abstracts*))
 
 (define get/instance/abstracts
-  (make-get/top/root get/instance '*abstracts*))
+  (make-get/top/root get/instance #:root '*abstracts*))
 
 (define put/instance/abstracts
-  (make-put/top/root put/instance '*abstracts*))
+  (make-put/top/root put/instance #:root '*abstracts*))
 
 (serializable-struct abstract [text categories non-categories]
   #:transparent
@@ -165,27 +168,165 @@
     (make-step 'check-abstracts check-abstracts)
     (make-step 'show-abstracts show-abstracts))))
 
-(define (abstract-task/page abs-task n total)
+(define (abstract-task/page abs-task i total cat non-cat)
   (match-define (abstract a category non-category) abs-task)
   (page
    (haml
     (.container
-     (:h2 (format "Categorize Abstract ~a out of ~a" n total))
+     (:h2 (format "Categorize Abstract ~a out of ~a" i total))
      (:p (format "Decide whether this abstract is about ~a or not." category))
 
+     ; FIXME: use cat an non-cat to check if the answer is right.
      (:h4 "The Abstract")
      (:p a)
      (button void category #:to-step-id 'categorize-in)
      (button void non-category #:to-step-id 'categorize-out)))))
 
-; FIXME: syntactic sugar: (define (abstract-task @abstract @n @total) ...)
-(define (abstract-task)
-  (define abs-task (get 'abstract))
-  (define n (get 'n))
-  (define total (get 'total))
-  (abstract-task/page abs-task n total))
-
 ;; A sequence of abstract categorization tasks is defined by:
 ;; - a common category (a single category such as "Gender")
 ;; - a common non-category ("Other" by default)
-;; - the number of abstract tasks to do
+;; - the list of abstracts to do
+;; TODO: If we decide that failed abstracts need to be replaced, then we need to pass in the number of tasks to do as well as a list of abstracts sufficiently long to go through. For now, have a fixed number to categorize.
+
+(define ((stub title [final? #f]))
+  (page
+   (haml
+    (.container
+     (:h1 title)
+     (unless final?
+       (haml
+        (button void "Next")))))))
+
+; It would be nice to be able to use syntactic sugar of the form
+; (define-study (abstract-tasks* category non-category loa) ... instead of requires
+(define (abstract-tasks*)
+
+  (define get/loop
+    (make-get/root get #:root '*loop*))
+  (define put/loop
+    (make-put/root put #:root '*loop*))
+
+  (define (round-name i)
+    (~a "abstract " i))
+
+  (define (set-state! index abstracts)
+    ; Assumes that `abstracts` is a non-empty list of abstracts
+    ; FIXME: Add contract for this property.
+    (set-current-round-name! (round-name index))
+    (put/loop 'index index)
+    (put/loop 'next-abstract (car abstracts))
+    (put/loop 'remaining-abstracts (cdr abstracts)))
+
+  (define (setup)
+    (define loa (get 'abstracts))
+    ; FIXME: assumes loa is non-empty list of abstracts. Ensure and/or check this somewhere.
+    (define old-round-name (current-round-name))
+    (put #:round "" 'old-round-name old-round-name)
+    (put #:round "" 'total (length loa))
+    (set-state! 1 loa)
+    (skip))
+
+; FIXME: syntactic sugar: (define (abstract-task @abstract @n @total) ...)
+  (define (abstract-task)
+    (define abs-task (get/loop 'next-abstract))
+    (define i (get/loop 'index))
+    (define total (get #:round "" 'total))
+    (define category (get #:round "" 'category))
+    (define non-category (get #:round "" 'non-category))
+    (abstract-task/page abs-task i total category non-category))
+
+  (define (loop)
+    (define abstracts
+      (get/loop 'remaining-abstracts))
+
+    (cond [(null? abstracts)
+           (set-current-round-name! (get #:round "" 'old-round-name))
+           (skip)]
+
+          [else
+           (define new-index (add1 (get/loop 'index)))
+           (set-state! new-index abstracts)
+           (skip 'one-task)]))
+
+  (make-study
+   "sequence of n abstracts"
+   #:requires '(abstracts category non-category)
+   #:transitions
+   (transition-graph
+    [setup-loop --> one-task
+                --> loop
+                --> ,(lambda () done)]
+    [categorize-in --> loop]
+    [categorize-out --> loop])
+   (list
+    (make-step 'setup-loop setup)
+    (make-step 'loop loop)
+    (make-step 'one-task abstract-task)
+    (make-step 'categorize-in (stub "Categorize in"))
+    (make-step 'categorize-out (stub "Categorize out")))))
+
+(define easy-abstracts
+  (list
+   (abstract "The first" "Gender" "Equality")
+   (abstract "The second" "Gender" "Sport")
+   (abstract "The third" "Sport" "Gender")
+   (abstract "The fourth" "Sport" "Equality")))
+
+; FIXME: This assumes that cat and non-cat are a single category.
+; We'll have to see if that holds.
+(define (collect-abstracts n cat non-cat)
+  (define (abstract-matches-cat a)
+    (substring (abstract-categories a) cat))
+  (define (abstract-matches-non-cat a)
+    (if (string=? "Other" non-cat)
+        (not (substring (abstract-non-categories a) cat))
+        (substring (abstract-non-categories a) non-cat)))
+
+  (define all-abstracts *ABSTRACTS*)
+  (define all-matching-abstracts
+    (filter
+     (lambda (a)
+       (or (and (abstract-matches-cat a)
+                (not (abstract-matches-non-cat a)))
+           (and (not (abstract-matches-cat a))
+                (abstract-matches-non-cat a))))
+     all-abstracts))
+
+  (random-sample all-matching-abstracts n))
+
+(define (initialize-abstracts)
+  ; FIXME: The following is to scaffold for now
+  (define n 2)
+  (define category "Gender")
+  (define non-category "Other")
+  (put 'total-abstracts n)
+  (put 'category category)
+  (put 'non-category non-category)
+  (put 'abstracts-to-do (collect-abstracts n category non-category))
+  (skip))
+
+; TODO: Next have the study generate the right abstracts for a given set, e.g. N tasks with categories SOMECATEGORY vs OTHER (meaning not the first category).
+; Then this gets saved and the abstract tasks run. Check which of `category` and `non-category` still need to be passed in.
+; Then create the tutorial tasks.
+; Then create a single question where the person chooses, and use that as the input for the abstract tasks.
+; Then create three questions where the person chooses, implement choice-that-matters, and use that to determine work.
+(define abstract-tasks
+  (make-study
+   "abstract-tasks"
+   #:transitions
+   (transition-graph
+    [initialize --> tasks
+                --> thank-you
+                --> thank-you])
+   (list
+    (make-step 'initialize initialize-abstracts)
+    (make-step/study
+     'tasks
+     ; TODO: syntactic sugar where we can write
+     ; (abstract-tasks* easy-abstracts "Gender" "Other") instead of
+     ; passing #:require-bindings, with some notation to differentiate in-memory values from DB values.
+     (abstract-tasks*)
+     #:require-bindings `([abstracts    (const ,easy-abstracts)]
+                          [category     (const "Gender")]
+                          [non-category (const "Other")]))
+    (make-step 'thank-you (stub "Thank you" #t)))))
