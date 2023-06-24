@@ -7,6 +7,7 @@
          racket/pretty
          racket/random
          racket/serialize
+         racket/string
          web-server/http
          csv-reading
          koyo/haml
@@ -138,7 +139,8 @@
 
      (button
       (lambda ()
-        (set! *ABSTRACTS* abstracts))
+        (set! *ABSTRACTS* abstracts)
+        (put/instance/top 'abstracts abstracts))
       "Keep Abstracts")
 
      (button void "Upload other abstracts" #:to-step-id 'upload-abstracts)
@@ -169,18 +171,18 @@
     (make-step 'show-abstracts show-abstracts))))
 
 (define (abstract-task/page abs-task i total cat non-cat)
-  (match-define (abstract a category non-category) abs-task)
+  (match-define (abstract a _category _non-category) abs-task)
   (page
    (haml
     (.container
      (:h2 (format "Categorize Abstract ~a out of ~a" i total))
-     (:p (format "Decide whether this abstract is about ~a or not." category))
+     (:p (format "Decide whether this abstract is about ~a or not." cat))
 
      ; FIXME: use cat an non-cat to check if the answer is right.
      (:h4 "The Abstract")
      (:p a)
-     (button void category #:to-step-id 'categorize-in)
-     (button void non-category #:to-step-id 'categorize-out)))))
+     (button void cat #:to-step-id 'categorize-in)
+     (button void non-cat #:to-step-id 'categorize-out)))))
 
 ;; A sequence of abstract categorization tasks is defined by:
 ;; - a common category (a single category such as "Gender")
@@ -265,34 +267,26 @@
     (make-step 'categorize-in (stub "Categorize in"))
     (make-step 'categorize-out (stub "Categorize out")))))
 
-(define easy-abstracts
-  (list
-   (abstract "The first" "Gender" "Equality")
-   (abstract "The second" "Gender" "Sport")
-   (abstract "The third" "Sport" "Gender")
-   (abstract "The fourth" "Sport" "Equality")))
-
 ; FIXME: This assumes that cat and non-cat are a single category.
 ; We'll have to see if that holds.
-(define (collect-abstracts n cat non-cat)
+(define (get-matching-abstracts loa n cat non-cat)
   (define (abstract-matches-cat a)
-    (substring (abstract-categories a) cat))
+    (string-contains? (abstract-categories a) cat))
   (define (abstract-matches-non-cat a)
     (if (string=? "Other" non-cat)
-        (not (substring (abstract-non-categories a) cat))
-        (substring (abstract-non-categories a) non-cat)))
+        (string-contains? (abstract-non-categories a) cat)
+        (string-contains? (abstract-categories a) non-cat)))
 
-  (define all-abstracts *ABSTRACTS*)
   (define all-matching-abstracts
     (filter
      (lambda (a)
-       (or (and (abstract-matches-cat a)
-                (not (abstract-matches-non-cat a)))
-           (and (not (abstract-matches-cat a))
-                (abstract-matches-non-cat a))))
-     all-abstracts))
+       (let ([mc (abstract-matches-cat a)]
+             [mnc (abstract-matches-non-cat a)])
+         (and (or mc mnc)
+              (not (and mc mnc)))))
+     loa))
 
-  (random-sample all-matching-abstracts n))
+  (random-sample all-matching-abstracts n #:replacement? #f))
 
 (define (initialize-abstracts)
   ; FIXME: The following is to scaffold for now
@@ -302,11 +296,51 @@
   (put 'total-abstracts n)
   (put 'category category)
   (put 'non-category non-category)
-  (put 'abstracts-to-do (collect-abstracts n category non-category))
+  (put 'abstracts-to-do (get-matching-abstracts (get/instance/top 'abstracts) n category non-category))
   (skip))
 
-; TODO: Next have the study generate the right abstracts for a given set, e.g. N tasks with categories SOMECATEGORY vs OTHER (meaning not the first category).
-; Then this gets saved and the abstract tasks run. Check which of `category` and `non-category` still need to be passed in.
+(define (assigning-roles)
+  (cond [(current-participant-owner?)
+         (put/top 'role 'admin)
+         (skip)]
+        [else
+         (put/top 'role 'participant)
+         (skip)]))
+
+(define (study-open?)
+  (equal? (get/instance/top 'phase #f) 'open))
+
+(define (waiting-page)
+  (cond [(study-open?)
+         (skip)]
+
+        [else
+         (page
+          (haml
+           (.container
+            (:h1 "The study is not yet open")
+
+            (:p "The study is not yet open for participants. Please come back later.")
+            (:p "If you believe this is in error, please send an email to the study admin."))))]))
+
+(define (admin)
+  (page
+   (haml
+    (.container
+     (:h1 "Admin")
+
+     (unless (study-open?)
+       (button void "Setup study" #:to-step-id 'admin-setup))))))
+
+(define (switch-phase-to p #:check-current-phase [cp #f])
+  (define old-phase (get/instance/top 'phase #f))
+  (cond [(or (not cp) (and cp (equal? cp old-phase)))
+         (put/instance/top 'phase p)]
+
+        [else
+         (error 'switch-phase-to "failed because the current phase is ~a, but needs to be ~a to switch phase" old-phase cp)]))
+
+; TODO: Next this gets saved and the abstract tasks run. Check which of `category` and `non-category` still need to be passed in.
 ; Then create the tutorial tasks.
 ; Then create a single question where the person chooses, and use that as the input for the abstract tasks.
 ; Then create three questions where the person chooses, implement choice-that-matters, and use that to determine work.
@@ -315,10 +349,22 @@
    "abstract-tasks"
    #:transitions
    (transition-graph
-    [initialize --> tasks
-                --> thank-you
-                --> thank-you])
+    [assigning-roles --> ,(lambda ()
+                            (let ([role (get 'role)])
+                              (cond [(equal? role 'admin)       (goto admin)]
+                                    [(equal? role 'participant) (goto waiting-page)]
+                                    [else                       (goto error-page)])))]
+    [error-page --> error-page]
+    [admin --> admin]
+    [admin-setup --> ,(lambda ()
+                        (switch-phase-to 'open #:check-current-phase #f)
+                        (goto admin))]
+    [waiting-page --> initialize
+                  --> tasks
+                  --> thank-you
+                  --> thank-you])
    (list
+    (make-step 'assigning-roles assigning-roles)
     (make-step 'initialize initialize-abstracts)
     (make-step/study
      'tasks
@@ -326,7 +372,18 @@
      ; (abstract-tasks* easy-abstracts "Gender" "Other") instead of
      ; passing #:require-bindings, with some notation to differentiate in-memory values from DB values.
      (abstract-tasks*)
-     #:require-bindings `([abstracts    (const ,easy-abstracts)]
+     #:require-bindings `([abstracts    abstracts-to-do]
                           [category     (const "Gender")]
                           [non-category (const "Other")]))
-    (make-step 'thank-you (stub "Thank you" #t)))))
+    (make-step 'thank-you (stub "Thank you" #t))
+    (make-step 'admin admin)
+    (make-step/study 'admin-setup abstracts-config)
+    (make-step 'waiting-page waiting-page)
+    (make-step 'error-page (stub "Error Page")))))
+
+(define easy-abstracts
+  (list
+   (abstract "First" "Gender" "Equality")
+   (abstract "Second" "Gender" "Sport")
+   (abstract "Third" "Sport" "Gender")
+   (abstract "Fourth" "Sport" "Equality")))
