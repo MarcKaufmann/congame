@@ -202,7 +202,21 @@
     (make-step 'show-abstracts show-abstracts))))
 
 (define (abstract-task/page abs-task i total cat non-cat)
-  (match-define (abstract a _category _non-category) abs-task)
+  (match-define (abstract a categories _non-category) abs-task)
+  (define (categorize in/out)
+    (define correct-answer
+      (if (string-contains? categories cat)
+          'in
+          'out))
+    (define correct-answer?
+      (equal? in/out correct-answer))
+    (if correct-answer?
+        (put #:round "" 'correct-answers (add1 (get #:round "" 'correct-answers 0)))
+        (put #:round "" 'incorrect-answers (add1 (get #:round "" 'incorrect-answers 0))))
+    (put #:round "" 'completed-answers
+                   (cons (list in/out correct-answer? abs-task)
+                         (get #:round "" 'completed-answers '()))))
+
   (page
    (haml
     (.container
@@ -212,8 +226,8 @@
      ; FIXME: use cat an non-cat to check if the answer is right.
      (:h4 "The Abstract")
      (:p a)
-     (button void cat #:to-step-id 'categorize-in)
-     (button void non-cat #:to-step-id 'categorize-out)))))
+     (button (lambda () (categorize 'in)) cat)
+     (button (lambda () (categorize 'out)) non-cat)))))
 
 ;; A sequence of abstract categorization tasks is defined by:
 ;; - a common category (a single category such as "Gender")
@@ -288,15 +302,11 @@
    (transition-graph
     [setup-loop --> one-task
                 --> loop
-                --> ,(lambda () done)]
-    [categorize-in --> loop]
-    [categorize-out --> loop])
+                --> ,(lambda () done)])
    (list
     (make-step 'setup-loop setup)
     (make-step 'loop loop)
-    (make-step 'one-task abstract-task)
-    (make-step 'categorize-in (stub "Categorize in"))
-    (make-step 'categorize-out (stub "Categorize out")))))
+    (make-step 'one-task abstract-task))))
 
 ; FIXME: This assumes that cat and non-cat are a single category.
 ; We'll have to see if that holds.
