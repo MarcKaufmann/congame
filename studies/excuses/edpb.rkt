@@ -6,7 +6,9 @@
          congame/components/transition-graph
          congame/components/formular
          (submod congame/components/formular tools)
-         "templates.rkt")
+         (submod congame/components/study accessors)
+         "templates.rkt"
+         "abstract-categorization.rkt")
 
 (provide edpb-pilot)
 
@@ -65,13 +67,6 @@
     (.container
      (:h1 "Thank you for participating")))))
 
-(define (tutorial-tasks-stub)
-  ; FIXME
-  (page
-   (haml
-    (.container
-     (:h1 "Do the tutorial tasks")
-     (button void "Continue")))))
 
 (define (consent)
   (page
@@ -159,39 +154,59 @@
 (define (comprehension-test-success?)
   (> (get 'comprehension-test-score) 0))
 
-(define tutorial
+(define (tutorial)
+  (define (initialize)
+    (put/instance 'n 2)
+    (put 'n 2)
+    (put/instance 'tutorial-example
+                  (random-abstract-matching "Equality" "Other"))
+    (skip))
+
   (make-study
    "edpb-tutorial"
    #:transitions
    (transition-graph
-    [welcome --> hypothetical-time-choice
-             --> instructions
-             --> task-description
-             ; TODO: Do we really want tutorial tasks? The more uncertainty, the better maybe.
-             --> tutorial-tasks
-             --> comprehension-test
-             --> ,(lambda ()
-                    (cond [(comprehension-test-success?)
-                           (set-current-round-name! "")
-                           done]
+    [initialize --> welcome
+                --> hypothetical-time-choice
+                --> instructions
+                --> task-description
+                ; TODO: Do we really want tutorial tasks? The more uncertainty, the better maybe.
+                --> tutorial-tasks
+                --> comprehension-test
+                --> ,(lambda ()
+                       (cond [(comprehension-test-success?)
+                              (set-current-round-name! "")
+                              done]
 
-                          [(<= (get #:round "" 'attempt) max-attempts)
-                           (goto repeat-comprehension-test)]
+                             [(<= (get #:round "" 'attempt) max-attempts)
+                              (goto repeat-comprehension-test)]
 
-                          [else
-                           (set-current-round-name! "")
-                           (goto fail-comprehension-test)]))]
+                             [else
+                              (set-current-round-name! "")
+                              (goto fail-comprehension-test)]))]
 
     [repeat-comprehension-test --> comprehension-test]
     [fail-comprehension-test --> fail-comprehension-test])
 
    (list
+    (make-step 'initialize initialize)
     (make-step 'welcome welcome)
     (make-step 'instructions instructions)
     (make-step 'hypothetical-time-choice hypothetical-time-choice)
-    (make-step 'task-description task-description)
+    ; TODO: Is this type of thunk a good way to hook up functional pages with data? If so, provide syntactic sugar for it.
+    (make-step
+     'task-description
+     (lambda ()
+       (task-description
+        (get/instance 'n)
+        (get/instance 'tutorial-example))))
     (make-step 'comprehension-test comprehension-test)
-    (make-step 'tutorial-tasks tutorial-tasks-stub)
+    (make-step/study
+     'tutorial-tasks
+     (abstract-tasks)
+     #:require-bindings '([n             n]
+                          [category      (const "Gender")]
+                          [non-category  (const "Other")]))
     (make-step 'repeat-comprehension-test repeat-comprehension-test)
     (make-step 'fail-comprehension-test fail-comprehension-test))))
 
@@ -224,22 +239,80 @@
     (make-step 'work-day2 (stub "Work day 2"))
     (make-step 'exit-survey (stub "Exit survey")))))
 
+(define (assigning-roles)
+  (cond [(current-participant-owner?)
+         (put/top 'role 'admin)
+         (skip)]
+        [else
+         (put/top 'role 'participant)
+         (skip)]))
+
+(define (study-open?)
+  (equal? (get/instance/top 'phase #f) 'open))
+
+(define (waiting-page)
+  (cond [(study-open?)
+         (skip)]
+
+        [else
+         (page
+          (haml
+           (.container
+            (:h1 "The study is not yet open")
+
+            (:p "The study is not yet open for participants. Please come back later.")
+            (:p "If you believe this is in error, please send an email to the study admin."))))]))
+
+(define (admin)
+  (page
+   (haml
+    (.container
+     (:h1 "Admin")
+
+     (unless (study-open?)
+       (button void "Setup study" #:to-step-id 'abstracts-admin))))))
+
+(define (switch-phase-to p #:check-current-phase [cp #f])
+  (define old-phase (get/instance/top 'phase #f))
+  (cond [(or (not cp) (and cp (equal? cp old-phase)))
+         (put/instance/top 'phase p)]
+
+        [else
+         (error 'switch-phase-to "failed because the current phase is ~a, but needs to be ~a to switch phase" old-phase cp)]))
+
+
 (define edpb-pilot
   (make-study
    "edpb pilot"
    #:transitions
    (transition-graph
-    [tutorial --> consent
-              --> ,(lambda ()
-                     (cond [(get 'consent-given?) (goto day1)]
-                           [else (goto no-consent-ending)]))]
+    [assigning-roles --> ,(lambda ()
+                            (let ([role (get 'role)])
+                              (cond [(equal? role 'admin)       (goto admin)]
+                                    [(equal? role 'participant) (goto waiting-page)]
+                                    [else                       (goto error-page)])))]
+    [error-page --> error-page]
+    [admin --> admin]
+    [abstracts-admin --> ,(lambda ()
+                            (switch-phase-to 'open #:check-current-phase #f)
+                            (goto admin))]
+    [waiting-page --> tutorial
+                  --> consent
+                  --> ,(lambda ()
+                         (cond [(get 'consent-given?) (goto day1)]
+                               [else (goto no-consent-ending)]))]
 
     [day1 --> day2 --> send-completion-email --> final]
     [final --> final]
     [no-consent-ending --> no-consent-ending])
 
    (list
-    (make-step/study 'tutorial tutorial)
+    (make-step 'assigning-roles assigning-roles)
+    (make-step/study 'tutorial (tutorial))
+    (make-step 'admin admin)
+    (make-step/study 'abstracts-admin abstracts-admin)
+    (make-step 'waiting-page waiting-page)
+    (make-step 'error-page (stub "Error page"))
     (make-step 'consent consent)
     (make-step/study 'day1 day1)
     (make-step/study 'day2 day2)

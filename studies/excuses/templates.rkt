@@ -1,12 +1,13 @@
 #lang at-exp racket
 
 (require congame/components/study
-         koyo/haml)
+         koyo/haml
+         "abstract-categorization.rkt")
 
-(provide instructions task-description)
+(provide instructions)
 
 (define config
-  (hash 'day2-date "tomorrow"
+  (hash 'day2-date "TOMORROW"
         'session1-bonus 3
         'session2-bonus 6
         'estimated-performance-bonus 6
@@ -51,7 +52,7 @@
 
       @:p{When you are finished with the tasks, the first session will end and you will receive a link to the second session.}
 
-      @:h2{Second session - @conf['session2-bonus]}
+      @:h2{Second session - @conf['day2-date]}
 
       @:p{In the second session, first you will have to [ categorize ] the [ 15 ] baseline [ abstracts ], and then you will have to do the amount of extra [ abstract categorization ] corresponding to the randomly chosen decision. After you are finished with the tasks, we will ask you to answer a couple of questions about how you made your decisions, and about how well a couple of sentences describe your behavior or attitude in some situations.}
 
@@ -68,20 +69,3 @@
       @:p{You will receive all payments (completion bonuses plus additional income) via the Prolific payment system, within three days after completing the second session. If you only complete the first session, you will only receive the completion bonus for the first session, within three days after the corresponding second session.}
 
       @button[void]{Continue}})))
-
-
-(define (task-description)
-  (page
-   (haml
-    (.container
-     @:h1{Task Description}
-
-     @:p{In this study, you will have to do a series of simple tasks. This task consists of categorizing abstracts (short summaries of research papers) by topics. Specifically, we will give specific topics, and you should choose which topic this abstract belongs to.}
-
-     @:p{For example, we might provide you with the following topics FIXME and the following abstract FIXME.}
-
-     @:p{This abstract belongs to the FIXME and FIXME categories.}
-
-     @:p{Now it is your turn to do 3 tasks: continue to the next page to categorize 3 abstracts.}
-
-     @button[void]{Continue}))))
