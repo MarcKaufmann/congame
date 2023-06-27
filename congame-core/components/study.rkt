@@ -592,21 +592,25 @@ QUERY
       (continue)))
   (step/study id handler void #f transition s))
 
-(define/contract (wrap-sub-study s wrapper)
+(define/contract (map-step s proc)
+  (-> step? (-> handler/c handler/c) step?)
+  (cond
+    [(step/study? s)
+     (make-step/study
+      (step-id s)
+      (map-study (step/study-study s) proc)
+      (step-transition s))]
+
+    [else
+     (make-step
+      (step-id s)
+      (proc (step-handler s))
+      (step-transition s))]))
+
+(define/contract (map-study s proc)
   (-> study? (-> handler/c handler/c) study?)
   (struct-copy study s [steps (for/list ([a-step (in-list (study-steps s))])
-                                (cond
-                                  [(step/study? a-step)
-                                   (make-step/study
-                                    (step-id a-step)
-                                    (wrap-sub-study (step/study-study a-step) wrapper)
-                                    (step-transition a-step))]
-
-                                  [else
-                                   (make-step
-                                    (step-id a-step)
-                                    (wrapper (step-handler a-step))
-                                    (step-transition a-step))]))]))
+                                (map-step a-step proc))]))
 
 (define current-xexpr-wrapper
   (make-parameter values))
@@ -637,7 +641,8 @@ QUERY
 
 (provide
  current-study-stack
- wrap-sub-study
+ map-step
+ map-study
  make-study
  run-study
  view-study

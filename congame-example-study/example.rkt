@@ -143,11 +143,11 @@
     (make-step 'simple-info-1 simple-info-1)
     (make-step 'listen listen-to-some-music)
     (make-step 'simple-info-2 simple-info-2)
-    (make-step/study 'deep (wrap-sub-study deep-study echo-wrapper))
+    (make-step/study 'deep (map-study deep-study echo-wrapper))
     (make-step 'done done-step))))
 
 (define wrapped-simple-study
-  (wrap-sub-study
+  (map-study
    simple-study
    (lambda (hdl)
      (lambda ()
@@ -180,6 +180,6 @@
                                    (.container
                                     (:h1 "Custom View Handler")
                                     (:p "Your name is " (get 'name))))))))
-    (make-step/study 'simple (wrap-sub-study simple-study echo-wrapper))
+    (make-step/study 'simple (map-study simple-study echo-wrapper))
     (make-step 'give-consent-2 give-consent)
     (make-step 'done done-step))))

@@ -376,7 +376,7 @@
     (make-step 'lobby lobby)
     (make-step 'show-next-review (wrapper/check-review? show-next-review))
     (make-step/study 'next-assignment-reviews
-                     (wrap-sub-study review-study wrapper/check-review?)
+                     (map-study review-study wrapper/check-review?)
                      (λ ()
                        (put 'participant-reviews (append (get 'participant-reviews '()) (get 'next-reviews)))
                        (put 'assignments (cdr (get 'assignments)))
