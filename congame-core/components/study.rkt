@@ -594,18 +594,15 @@ QUERY
 
 (define/contract (map-step s proc)
   (-> step? (-> handler/c handler/c) step?)
-  (cond
-    [(step/study? s)
-     (make-step/study
-      (step-id s)
-      (map-study (step/study-study s) proc)
-      (step-transition s))]
-
-    [else
-     (make-step
-      (step-id s)
-      (proc (step-handler s))
-      (step-transition s))]))
+  (if (step/study? s)
+      (make-step/study
+       (step-id s)
+       (map-study (step/study-study s) proc)
+       (step-transition s))
+      (make-step
+       (step-id s)
+       (proc (step-handler s))
+       (step-transition s))))
 
 (define/contract (map-study s proc)
   (-> study? (-> handler/c handler/c) study?)
