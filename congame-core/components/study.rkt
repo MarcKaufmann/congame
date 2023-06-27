@@ -527,7 +527,10 @@ QUERY
   #:transparent)
 
 (struct step-page (renderer xexpr-validator)
-  #:transparent)
+  #:transparent
+  #:property prop:procedure
+  (λ (p)
+    ((step-page-renderer p))))
 
 (struct study (name requires provides transitions steps view-handler failure-handler)
   #:transparent)
