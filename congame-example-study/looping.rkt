@@ -4,43 +4,60 @@
          racket/format)
 
 (provide
- looping-study)
+ looping-study
+ nested-looping-study)
 
 (define (start)
   (define round-number
     (cond
-      [(get #:round "" 'round-number #f) => values]
+      [(get 'round-number #f) => values]
       [else (begin0 1
-              (put #:round "" 'round-number 1))]))
-  (set-current-round-name! (~a "round " round-number))
+              (put 'round-number 1))]))
+  (put-current-round-name (~a "round " round-number))
   (page
    (button
     void
-    (~a "Start " (current-round-name)))))
+    (~a "Start " (get-current-round-name)))))
 
 (define (loop)
-  (put 'current-time (current-seconds))
+  (put
+   #:round (get-current-round-stack)
+   'current-time (current-seconds))
   (page
    `(div
      "Loopy!"
      ,(button
        (lambda ()
-         (put #:round "" 'round-number (add1 (get #:round "" 'round-number))))
+         (put 'round-number (add1 (get 'round-number))))
        "Continue"))))
 
 (define (end)
   (page
    "Yer done."))
 
-(define looping-study
+(define (make-looping-study [other-steps null] [end-steps (list (make-step 'end end))])
   (make-study
    "looping-study"
    #:requires '()
    #:provides '()
+   (append
+    (list
+     (make-step 'start start))
+    other-steps
+    (list
+     (make-step 'loop loop (lambda ()
+                             (cond
+                               [(string=? (get-current-round-name) "round 3")
+                                (put 'round-number 1) ;; reset round number at the end
+                                next]
+                               [else
+                                'start]))))
+    end-steps)))
+
+(define looping-study
+  (make-looping-study))
+
+(define nested-looping-study
+  (make-looping-study
    (list
-    (make-step 'start start)
-    (make-step 'loop loop (lambda ()
-                            (if (string=? (current-round-name) "round 5")
-                                'end
-                                'start)))
-    (make-step 'end end))))
+    (make-step/study 'nested (make-looping-study null null)))))

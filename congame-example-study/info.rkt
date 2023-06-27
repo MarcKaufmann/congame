@@ -20,6 +20,7 @@
     (congame-example-study/example wrapped-simple-study)
     (congame-example-study/inline inline-study)
     (congame-example-study/looping looping-study)
+    (congame-example-study/looping nested-looping-study)
     (congame-example-study/matchmaking matchmaking-study)
     (congame-example-study/multi-review submit+review-pdf)
     (congame-example-study/multi-review submit+review-research-ideas)

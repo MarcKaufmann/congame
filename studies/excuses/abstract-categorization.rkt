@@ -211,11 +211,11 @@
     (define correct-answer?
       (equal? in/out correct-answer))
     (if correct-answer?
-        (put #:round "" 'correct-answers (add1 (get #:round "" 'correct-answers 0)))
-        (put #:round "" 'incorrect-answers (add1 (get #:round "" 'incorrect-answers 0))))
-    (put #:round "" 'completed-answers
-                   (cons (list in/out correct-answer? abs-task)
-                         (get #:round "" 'completed-answers '()))))
+        (put 'correct-answers (add1 (get 'correct-answers 0)))
+        (put 'incorrect-answers (add1 (get 'incorrect-answers 0))))
+    (put 'completed-answers
+         (cons (list in/out correct-answer? abs-task)
+               (get 'completed-answers '()))))
 
   (page
    (haml
@@ -247,11 +247,16 @@
 ; It would be nice to be able to use syntactic sugar of the form
 ; (define-study (abstract-tasks* category non-category loa) ... instead of requires
 (define (abstract-tasks*)
-
-  (define get/loop
-    (make-get/root get #:root '*loop*))
-  (define put/loop
-    (make-put/root put #:root '*loop*))
+  (define (get/loop k)
+    (get #:root '*loop*
+         #:round (get-current-round-stack)
+         #:group (get-current-group-stack)
+         k))
+  (define (put/loop k v)
+    (put #:root '*loop*
+         #:round (get-current-round-stack)
+         #:group (get-current-group-stack)
+         k v))
 
   (define (round-name i)
     (~a "abstract " i))
@@ -259,7 +264,7 @@
   (define (set-state! index abstracts)
     ; Assumes that `abstracts` is a non-empty list of abstracts
     ; FIXME: Add contract for this property.
-    (set-current-round-name! (round-name index))
+    (put-current-round-name (round-name index))
     (put/loop 'index index)
     (put/loop 'next-abstract (car abstracts))
     (put/loop 'remaining-abstracts (cdr abstracts)))
@@ -267,19 +272,17 @@
   (define (setup)
     (define loa (get 'abstracts))
     ; FIXME: assumes loa is non-empty list of abstracts. Ensure and/or check this somewhere.
-    (define old-round-name (current-round-name))
-    (put #:round "" 'old-round-name old-round-name)
-    (put #:round "" 'total (length loa))
+    (put 'total (length loa))
     (set-state! 1 loa)
     (skip))
 
-; FIXME: syntactic sugar: (define (abstract-task @abstract @n @total) ...)
+  ; FIXME: syntactic sugar: (define (abstract-task @abstract @n @total) ...)
   (define (abstract-task)
     (define abs-task (get/loop 'next-abstract))
     (define i (get/loop 'index))
-    (define total (get #:round "" 'total))
-    (define category (get #:round "" 'category))
-    (define non-category (get #:round "" 'non-category))
+    (define total (get 'total))
+    (define category (get 'category))
+    (define non-category (get 'non-category))
     (abstract-task/page abs-task i total category non-category))
 
   (define (loop)
@@ -287,7 +290,6 @@
       (get/loop 'remaining-abstracts))
 
     (cond [(null? abstracts)
-           (set-current-round-name! (get #:round "" 'old-round-name))
            (skip)]
 
           [else

@@ -653,9 +653,7 @@
       (:th "Participant ID")
       (:th "Email")
       (:th "Enrolled At")
-      (:th "Progress")
-      (:th "Current Round")
-      (:th "Current Group")))
+      (:th "Progress")))
     (:tbody
      ,@(for/list ([p (in-list participants)])
          (haml
@@ -666,9 +664,7 @@
              (~a (study-participant/admin-id p))))
            (:td (study-participant/admin-email p))
            (:td (~t (study-participant/admin-enrolled-at p) datetime-format))
-           (:td (~a (study-participant/admin-progress p)))
-           (:td (study-participant/admin-current-round-name p))
-           (:td (study-participant/admin-current-group-name p)))))))))
+           (:td (~a (study-participant/admin-progress p))))))))))
 
 ;; TODO: Stop showing e-mail and show participant ID instead.
 (define/contract ((view-study-participant-page auth db) _req study-id study-instance-id participant-id)
@@ -756,9 +752,9 @@
            ,@(for/list ([v (in-list vars)])
                (haml
                 (:tr
-                 (:td (:pre (~a (study-var-stack v))))
-                 (:td (study-var-round-name v))
-                 (:td (study-var-group-name v))
+                 (:td (:pre (~s (study-var-stack v))))
+                 (:td (:pre (~s (study-var-round-stack v))))
+                 (:td (:pre (~s (study-var-group-stack v))))
                  (:td (~a (study-var-id v)))
                  (:td (~t (study-var-first-put-at v) datetime-format))
                  (:td (~t (study-var-last-put-at v) datetime-format))

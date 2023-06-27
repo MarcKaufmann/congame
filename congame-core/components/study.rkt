@@ -62,12 +62,12 @@
 (provide
  with-study-transaction
  current-git-sha
- current-round-name
- current-group-name
- set-current-round-name!
- set-current-group-name!
- set-round-name!
- set-group-name!
+ get-current-round-stack
+ get-current-round-name
+ get-current-group-stack
+ get-current-group-name
+ put-current-round-name
+ put-current-group-name
  put
  put/instance
  put/instance-file
@@ -87,60 +87,70 @@
    (lambda (out)
      (s-exp->fasl (serialize v) out))))
 
-(define (current-round-name)
-  (study-participant-current-round-name (current-participant)))
+(define (get-current-round-stack)
+  (let loop ([stack (current-study-stack)])
+    (parameterize ([current-study-stack stack])
+      (cond
+        [(null? stack) null]
+        [else
+         (define reversed-stack
+           (get
+            #:root '*round*
+            'round-stack
+            (list "")))
+         (cons
+          (car (reverse reversed-stack))
+          (loop (cdr stack)))]))))
 
-(define (current-group-name [reload? #f])
-  (if reload?
-      (with-database-connection [conn (current-database)]
-        (query-value conn (~> (from study-participant #:as p)
-                              (where (= p.id ,(current-participant-id)))
-                              (select p.current-group-name))))
-      (study-participant-current-group-name (current-participant))))
+(define (get-current-round-name)
+  (car (get-current-round-stack)))
 
-(define (set-current-round-name! round-name)
-  (define mgr (current-study-manager))
-  (define updated-participant
-    (with-database-connection [conn (current-database)]
-      (~> (current-participant)
-          (set-study-participant-current-round-name _ round-name)
-          (update-one! conn _))))
-  (set-study-manager-participant! mgr updated-participant))
+(define (get-current-group-stack #:participant-id [participant-id (current-participant-id)])
+  (let loop ([stack (current-study-stack)])
+    (parameterize ([current-study-stack stack])
+      (cond
+        [(null? stack) null]
+        [else
+         (define reversed-stack
+           (get
+            #:root '*group*
+            #:participant-id participant-id
+            'group-stack
+            (list "")))
+         (cons
+          (car (reverse reversed-stack))
+          (loop (cdr stack)))]))))
 
-(define (set-current-group-name! group-name)
-  (define mgr (current-study-manager))
-  (define updated-participant
-    (with-database-connection [conn (current-database)]
-      (~> (current-participant)
-          (set-study-participant-current-group-name _ group-name)
-          (update-one! conn _))))
-  (set-study-manager-participant! mgr updated-participant))
+(define (get-current-group-name)
+  (car (get-current-group-stack)))
 
-(define (set-round-name! participant-id round-name)
-  (with-database-connection [conn (current-database)]
-    (and~> (lookup conn (~> (from study-participant #:as p)
-                            (where (= p.id ,participant-id))))
-           (set-study-participant-current-round-name _ round-name)
-           (update-one! conn _))))
+(define (put-current-round-name round-name)
+  (define round-stack
+    (get-current-round-stack))
+  (put #:root '*round*
+       'round-stack (reverse (cons round-name (cdr round-stack)))))
 
-(define (set-group-name! participant-id group-name)
-  (with-database-connection [conn (current-database)]
-    (and~> (lookup conn (~> (from study-participant #:as p)
-                            (where (= p.id ,participant-id))))
-           (set-study-participant-current-group-name _ group-name)
-           (update-one! conn _))))
+(define (put-current-group-name group-name #:participant-id [participant-id (current-participant-id)])
+  (define group-stack
+    (get-current-group-stack #:participant-id participant-id))
+  (put #:root '*group*
+       #:participant-id participant-id
+       'group-stack (reverse (cons group-name (cdr group-stack)))))
 
 (define (put k v
              #:root [root-id '*root*]
-             #:round [round-name (current-round-name)]
-             #:group [group-name (current-group-name)])
+             #:round [round-stack (list "")]
+             #:group [group-stack (list "")]
+             #:participant-id [participant-id (current-participant-id)])
+  (define reversed-round-stack (reverse round-stack))
+  (define reversed-group-stack (reverse group-stack))
   (log-study-debug
    "put~n  stack: ~s~n  root: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s"
-   (current-study-ids) root-id round-name group-name k v (current-participant-id))
+   (current-study-ids) root-id reversed-round-stack reversed-group-stack k v participant-id)
   (with-database-connection [conn (current-database)]
     (query-exec conn #<<QUERY
 INSERT INTO study_data (
-  participant_id, study_stack, round_name, group_name, key, value, git_sha
+  participant_id, study_stack, round_stack, group_stack, key, value, git_sha
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7
 ) ON CONFLICT ON CONSTRAINT study_data_pkey DO UPDATE SET
@@ -148,10 +158,10 @@ INSERT INTO study_data (
   git_sha = EXCLUDED.git_sha,
   last_put_at = CURRENT_TIMESTAMP
 QUERY
-                (current-participant-id)
+                participant-id
                 (current-study-array root-id)
-                round-name
-                group-name
+                (list->pg-array reversed-round-stack)
+                (list->pg-array reversed-group-stack)
                 (symbol->string k)
                 (serialize* v)
                 (current-git-sha))))
@@ -159,20 +169,23 @@ QUERY
 (define (get k [default (lambda ()
                           (error 'get "value not found for key ~.s" k))]
              #:root [root-id '*root*]
-             #:round [round-name (current-round-name)]
-             #:group [group-name (current-group-name)])
+             #:round [round-stack (list "")]
+             #:group [group-stack (list "")]
+             #:participant-id [participant-id (current-participant-id)])
+  (define reversed-round-stack (reverse round-stack))
+  (define reversed-group-stack (reverse group-stack))
   (log-study-debug
    "get~n  stack: ~s~n  root: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  participant-id: ~s"
-   (current-study-ids) root-id round-name group-name k (current-participant-id))
+   (current-study-ids) root-id reversed-round-stack reversed-group-stack k participant-id)
   (with-database-connection [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_data" #:as d)
                                   (select d.value)
                                   (where (and
-                                          (= d.participant-id ,(current-participant-id))
+                                          (= d.participant-id ,participant-id)
                                           (= d.study-stack ,(current-study-array root-id))
-                                          (= d.round-name ,round-name)
-                                          (= d.group-name ,group-name)
+                                          (= d.round-stack ,(list->pg-array reversed-round-stack))
+                                          (= d.group-stack ,(list->pg-array reversed-group-stack))
                                           (= d.key ,(symbol->string k)))))))
 
     (cond
@@ -325,9 +338,9 @@ QUERY
   (-> database? id/c (hash/c string? number?))
   (with-database-connection (conn db)
     (for/hash ([(name amount) (in-entities conn
-                               (~> (from study-payment #:as p)
-                                   (where (= p.participant-id ,pid))
-                                   (select p.payment-name p.payment)))])
+                                           (~> (from study-payment #:as p)
+                                               (where (= p.participant-id ,pid))
+                                               (select p.payment-name p.payment)))])
       (values name amount))))
 
 (define (get-all-payments)
@@ -574,6 +587,9 @@ QUERY
         (match binding
           [`(,dst-id (const ,v))
            (values dst-id v)]
+
+          [`(,dst-id ,(? procedure? src-proc))
+           (values dst-id (src-proc))]
 
           [`(,dst-id ,src-id)
            (values dst-id (get src-id (lambda ()
@@ -884,8 +900,7 @@ QUERY
                     (run-step req the-study the-next-step))]
     [else
      (for/hasheq ([id (in-list (study-provides the-study))])
-       (values id (get id (lambda ()
-                            (error 'run-study "study did not 'put' provided variable: ~s" id)))))]))
+       (values id (get id (λ () (error 'run-study "study did not 'put' provided variable: ~s" id)))))]))
 
 (define (study-next-step s)
   (car (study-steps s)))
@@ -1066,8 +1081,6 @@ QUERY
 (define-schema study-participant
   #:table "study_participants"
   ([id id/f #:primary-key #:auto-increment]
-   [(current-round-name "") string/f]
-   [(current-group-name "") string/f]
    [user-id id/f]
    [instance-id id/f]
    [(progress #()) (array/f string/f)]
@@ -1081,15 +1094,13 @@ QUERY
    [email string/f]
    [roles (array/f symbol/f)]
    [progress (array/f string/f)]
-   [(current-round-name "") string/f]
-   [(current-group-name "") string/f]
    [enrolled-at datetime-tz/f]))
 
 (define-schema study-var
   #:virtual
   ([stack (array/f string/f)]
-   [round-name string/f]
-   [group-name string/f]
+   [round-stack (array/f string/f)]
+   [group-stack (array/f string/f)]
    [id symbol/f]
    [value binary/f]
    [first-put-at datetime-tz/f]
@@ -1097,10 +1108,10 @@ QUERY
   #:methods gen:jsexprable
   [(define/generic ->jsexpr/super ->jsexpr)
    (define (->jsexpr v)
-     (match-define (study-var _ stack round-name group-name id _ first-put-at last-put-at) v)
+     (match-define (study-var _ stack round-stack group-stack id _ first-put-at last-put-at) v)
      (hash 'stack (vector->list stack)
-           'round round-name
-           'group group-name
+           'round (vector->list round-stack)
+           'group (vector->list group-stack)
            'id (symbol->string id)
            'value (->jsexpr/super (study-var-value/deserialized v))
            'first-put-at (moment->iso8601 first-put-at)
@@ -1222,7 +1233,7 @@ QUERY
           (join user #:as u #:on (= u.id p.user-id))
           (where (= p.instance-id ,instance-id))
           (order-by ([p.enrolled-at #:desc]))
-          (select p.id u.id p.instance-id u.username u.roles p.progress p.current-round-name p.current-group-name p.enrolled-at)
+          (select p.id u.id p.instance-id u.username u.roles p.progress p.enrolled-at)
           (project-onto study-participant/admin-schema)))
 
     (sequence->list
@@ -1360,7 +1371,7 @@ QUERY
     (lookup conn (~> (from study-participant #:as p)
                      (join user #:as u #:on (= u.id p.user-id))
                      (where (= p.id ,participant-id))
-                     (select p.id u.id p.instance-id u.username u.roles p.progress p.current-round-name p.current-group-name p.enrolled-at)
+                     (select p.id u.id p.instance-id u.username u.roles p.progress p.enrolled-at)
                      (project-onto study-participant/admin-schema)))))
 
 (define/contract (lookup-study-participant/by-id db participant-id)
@@ -1386,7 +1397,7 @@ QUERY
   (with-database-connection [conn db]
     (sequence->list
      (in-entities conn (~> (from "study_data" #:as d)
-                           (select d.study-stack d.round-name d.group-name d.key d.value d.first-put-at d.last-put-at)
+                           (select d.study-stack d.round-stack d.group-stack d.key d.value d.first-put-at d.last-put-at)
                            (project-onto study-var-schema)
                            (where (= d.participant-id ,participant-id))
                            (order-by ([d.first-put-at #:asc])))))))
@@ -1396,10 +1407,7 @@ QUERY
   (with-database-transaction [conn db]
     (query-exec conn (~> (from "study_participants" #:as p)
                          (where (= p.id ,participant-id))
-                         (update
-                          [progress ,(list->pg-array null)]
-                          [current-round-name ""]
-                          [current-group-name ""])))
+                         (update [progress ,(list->pg-array null)])))
     (query-exec conn (~> (from "study_data" #:as d)
                          (where (= d.participant-id ,participant-id))
                          (delete)))
@@ -1450,7 +1458,7 @@ QUERY
     (putter k v #:root root-id))
 
   (define ((make-get/root getter #:root root-id [err-name 'make-get/root]) k [default (lambda ()
-                                                    (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (current-round-name)))])
+                                                                                        (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (get-current-round-name)))])
     (getter k default #:root root-id))
 
   ; TODO: write some tests of these via bots
@@ -1463,7 +1471,7 @@ QUERY
            k
            #:root [root-id '*root*]
            [default (lambda ()
-                      (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (current-round-name)))])
+                      (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (get-current-round-name)))])
     (parameterize ([current-study-stack '(*root*)])
       (getter k default #:root root-id)))
 
@@ -1473,10 +1481,9 @@ QUERY
 
   (define ((make-get/top/root getter #:root root-id [err-name 'make-get/top/root])
            k [default (lambda ()
-                        (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (current-round-name)))])
+                        (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (get-current-round-name)))])
     (parameterize ([current-study-stack '(*root*)])
       (getter k default #:root root-id)))
-
 
   (define put/top (make-put/top put))
   (define put/instance/top (make-put/top put/instance))

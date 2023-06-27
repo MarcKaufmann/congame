@@ -194,8 +194,8 @@ scope} is shared between participants to a @tech{study instance}.
 
 @defproc[(get [k symbol?]
               [default (or/c any/c (-> any/c)) (λ () (error 'get "value not found for key ~.s" k))]
-              [#:round round-name string? (current-round-name)]
-              [#:group group-name string? (current-group-name)]) any/c]{
+              [#:round round-name string? ""]
+              [#:group group-name string? ""]) any/c]{
 
   Retrieves the value stored under the symbol @racket[k] for the
   current @tech{step scope}.  If no such value exists,
@@ -211,8 +211,8 @@ scope} is shared between participants to a @tech{study instance}.
 
 @defproc[(put [k symbol?]
               [v any/c]
-              [#:round round-name string? (current-round-name)]
-              [#:group group-name string? (current-group-name)]) void?]{
+              [#:round round-name string? ""]
+              [#:group group-name string? ""]) void?]{
 
   Stores @racket[v] under the symbol @racket[k] for the current
   @tech{step scope}.
@@ -224,11 +224,17 @@ scope} is shared between participants to a @tech{study instance}.
   Like @racket[put], but stores data in @tech{instance scope}.
 }
 
-@defparam[current-round-name round-name string?]{
+@deftogether[(
+  @defproc[(get-current-round-name) string?]
+  @defproc[(put-current-round-name [round-name string?]) void?]
+)]{
   Controls the current round for participants in a study.
 }
 
-@defparam[current-group-name group-name string?]{
+@deftogether[(
+  @defproc[(get-current-group-name) string?]
+  @defproc[(put-current-group-name [group-name string?]) void?]
+)]{
   Controls the current group for participants in a study.
 }
 

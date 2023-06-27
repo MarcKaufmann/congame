@@ -89,10 +89,10 @@
 ;; TODO: participants can take the comprehension test 3 times (fail twice), then they are out.
 (define (comprehension-test)
   (define attempt
-    (cond [(get #:round "" 'attempt #f) => values]
+    (cond [(get 'attempt #f) => values]
           [else (begin0 1
-                  (put #:round "" 'attempt 1))]))
-  (set-current-round-name! (~a "attempt " attempt))
+                  (put 'attempt 1))]))
+  (put-current-round-name (~a "attempt " attempt))
   (page
    (haml
     (.container
@@ -119,15 +119,14 @@
               (λ (b) (if b 1 0))
               (list
                (string=? comprehension1 "2")))))
-          (put
-           #:round "" 'attempt (add1 (get #:round "" 'attempt)))
+          (put 'attempt (add1 (get 'attempt)))
           (put 'comprehension-test-score score)))))))
 
 (define max-attempts 3)
 
 (define (repeat-comprehension-test)
   (define next-attempt
-    (get #:round "" 'attempt))
+    (get 'attempt))
   (page
    (haml
     (.container
@@ -175,14 +174,14 @@
                 --> comprehension-test
                 --> ,(lambda ()
                        (cond [(comprehension-test-success?)
-                              (set-current-round-name! "")
+                              (put-current-round-name "")
                               done]
 
-                             [(<= (get #:round "" 'attempt) max-attempts)
+                             [(<= (get 'attempt) max-attempts)
                               (goto repeat-comprehension-test)]
 
                              [else
-                              (set-current-round-name! "")
+                              (put-current-round-name "")
                               (goto fail-comprehension-test)]))]
 
     [repeat-comprehension-test --> comprehension-test]

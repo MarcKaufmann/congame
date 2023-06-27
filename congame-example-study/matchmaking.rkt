@@ -10,7 +10,7 @@
 (define (matchmake)
   (with-study-transaction
     (cond
-      [(string=? (current-group-name #t) "")
+      [(string=? (get-current-group-name) "")
        (define participant-id (current-participant-id))
        (define group-id (get/instance 'group-seq 1))
        (define unmatched (remq participant-id (get/instance 'unmatched null)))
@@ -22,8 +22,8 @@
          [else
           (define group-name (~a "group-" group-id))
           (begin0 #t
-            (set-group-name! (car unmatched) group-name)
-            (set-current-group-name! group-name)
+            (put-current-group-name #:participant-id (car unmatched) group-name)
+            (put-current-group-name group-name)
             (put/instance 'group-seq (add1 group-id))
             (put/instance 'unmatched (cdr unmatched)))])]
 
@@ -53,10 +53,12 @@ SCRIPT
    (haml
     (:div
      (:p
-      (~a "You are in group " (current-group-name)))
+      (~a "You are in group " (get-current-group-name)))
      (button
       (lambda ()
-        (put 'done #t))
+        (put #:round (get-current-round-stack)
+             #:group (get-current-group-stack)
+             'done #t))
       "Continue")))))
 
 (define (end)
