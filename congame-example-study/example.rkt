@@ -151,15 +151,13 @@
    simple-study
    (lambda (hdl)
      (lambda ()
-       (define p (hdl))
-       (wrap-page p (lambda (xepr)
-                      `(div
-                        (h1 "This is our wrapper!")
-                        ,xepr
-                        ,(button
-                          void
-                          #:to-step-id 'done
-                          "End"))))))))
+       (define the-page-thunk
+         (hdl))
+       (page
+        `(div
+          (h1 "This is our wrapper!")
+          ,(the-page-thunk)
+          ,(button void #:to-step-id 'done "End")))))))
 
 (define consent-study
   (make-study

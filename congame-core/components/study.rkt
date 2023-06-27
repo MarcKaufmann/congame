@@ -498,7 +498,6 @@ QUERY
  current-xexpr-wrapper
  step-id
  step-page?
- wrap-page
  study?
  step?
  study-transitions
@@ -529,12 +528,6 @@ QUERY
 
 (struct step-page (renderer xexpr-validator)
   #:transparent)
-
-(define/contract (wrap-page p proc)
-  (-> step-page? procedure? step-page?)
-  (page
-   (proc
-    ((step-page-renderer p)))))
 
 (struct study (name requires provides transitions steps view-handler failure-handler)
   #:transparent)
