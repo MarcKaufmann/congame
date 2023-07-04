@@ -240,14 +240,14 @@
 
 (define (assigning-roles)
   (cond [(current-participant-owner?)
-         (put/top 'role 'admin)
+         (put* 'role 'admin)
          (skip)]
         [else
-         (put/top 'role 'participant)
+         (put* 'role 'participant)
          (skip)]))
 
 (define (study-open?)
-  (equal? (get/instance/top 'phase #f) 'open))
+  (equal? (get/instance* 'phase #f) 'open))
 
 (define (waiting-page)
   (cond [(study-open?)
@@ -272,9 +272,9 @@
        (button void "Setup study" #:to-step-id 'abstracts-admin))))))
 
 (define (switch-phase-to p #:check-current-phase [cp #f])
-  (define old-phase (get/instance/top 'phase #f))
+  (define old-phase (get/instance* 'phase #f))
   (cond [(or (not cp) (and cp (equal? cp old-phase)))
-         (put/instance/top 'phase p)]
+         (put/instance* 'phase p)]
 
         [else
          (error 'switch-phase-to "failed because the current phase is ~a, but needs to be ~a to switch phase" old-phase cp)]))
