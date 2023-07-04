@@ -1442,51 +1442,36 @@ QUERY
 
 (module+ accessors
   (provide
-   get/top
-   get/instance/top
-   put/top
-   put/instance/top
+   get*
+   put*
+   get/instance*
+   put/instance*
    make-get/root
-   make-get/top
-   make-get/top/root
-   make-put/root
-   make-put/top
-   make-put/top/root)
+   make-put/root)
 
-  ; TODO: We could get rid of the need to pass in err-name with some macrology. Probably not worth the lack of composition.
-  (define ((make-put/root putter #:root root-id) k v)
-    (putter k v #:root root-id))
+  (define-syntax-rule (define-top-proc id proc-id)
+    (define id
+      (procedure-rename
+       (make-keyword-procedure
+        (lambda (kws kw-args . args)
+          (parameterize ([current-study-stack '(*root*)])
+            (keyword-apply proc-id kws kw-args args))))
+       'id)))
+  (define-syntax-rule (define-top-procs [id proc-id] ...)
+    (begin (define-top-proc id proc-id) ...))
 
-  (define ((make-get/root getter #:root root-id [err-name 'make-get/root]) k [default (lambda ()
-                                                                                        (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (get-current-round-name)))])
-    (getter k default #:root root-id))
+  (define-top-procs
+    [get* get]
+    [put* put]
+    [get/instance* get/instance]
+    [put/instance* put/instance])
 
-  ; TODO: write some tests of these via bots
-  (define ((make-put/top putter) k v #:root [root-id '*root*])
-    (parameterize ([current-study-stack '(*root*)])
-      (putter k v #:root root-id)))
+  (define (make-get/root getter root-id)
+    (make-keyword-procedure
+     (lambda (kws kw-args . args)
+       (keyword-apply getter kws kw-args args #:root root-id))))
 
-  ; We have to put `#:root` before default, otherwise we cannot use `root-id` in the error message.
-  (define ((make-get/top getter [err-name 'make-get/top])
-           k
-           #:root [root-id '*root*]
-           [default (lambda ()
-                      (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (get-current-round-name)))])
-    (parameterize ([current-study-stack '(*root*)])
-      (getter k default #:root root-id)))
-
-  (define ((make-put/top/root putter #:root root-id) k v)
-    (parameterize ([current-study-stack '(*root*)])
-      (putter k v #:root root-id)))
-
-  (define ((make-get/top/root getter #:root root-id [err-name 'make-get/top/root])
-           k [default (lambda ()
-                        (error err-name "value not found for key '~.s', root id '~.s', and round name '~.s'" k root-id (get-current-round-name)))])
-    (parameterize ([current-study-stack '(*root*)])
-      (getter k default #:root root-id)))
-
-  (define put/top (make-put/top put))
-  (define put/instance/top (make-put/top put/instance))
-
-  (define get/top (make-get/top get 'get/top))
-  (define get/instance/top (make-get/top get/instance 'get/instance/top)))
+  (define (make-put/root putter root-id)
+    (make-keyword-procedure
+     (lambda (kws kw-args . args)
+       (keyword-apply putter kws kw-args args #:root root-id)))))

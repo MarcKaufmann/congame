@@ -41,17 +41,17 @@
  task-description)
 
 ; TODO: If we use this pattern a lot, we can define a macro to define-accessors
-(define get/abstracts
-  (make-get/top/root get #:root '*abstracts*))
+(define get/abstracts*
+  (make-get/root get* '*abstracts*))
 
-(define put/abstracts
-  (make-put/top/root put #:root '*abstracts*))
+(define put/abstracts*
+  (make-put/root put* '*abstracts*))
 
-(define get/instance/top/abstracts
-  (make-get/top/root get/instance #:root '*abstracts*))
+(define get/instance/abstracts*
+  (make-get/root get/instance* '*abstracts*))
 
-(define put/instance/top/abstracts
-  (make-put/top/root put/instance #:root '*abstracts*))
+(define put/instance/abstracts*
+  (make-put/root put/instance* '*abstracts*))
 
 (serializable-struct abstract [text categories non-categories]
   #:transparent
@@ -144,15 +144,15 @@
         submit-button))
       (lambda (#:abstracts abstracts
                #:header? header?)
-        (put/abstracts 'header? header?)
-        (put/instance/top/abstracts 'abstracts (if header? (cdr abstracts) abstracts))))))))
+        (put/abstracts* 'header? header?)
+        (put/instance/abstracts* 'abstracts (if header? (cdr abstracts) abstracts))))))))
 
 (define (display-abstracts)
   (haml
    (:div
     (:h3 "Abstracts")
     (:ul
-     ,@(for/list ([a (get/instance/top/abstracts 'abstracts)])
+     ,@(for/list ([a (get/instance/abstracts* 'abstracts)])
          (haml
           (:li (with-output-to-string
                  (lambda ()
@@ -160,7 +160,7 @@
 
 
 (define (check-abstracts)
-  (define abstracts (get/instance/top/abstracts 'abstracts))
+  (define abstracts (get/instance/abstracts* 'abstracts))
   (page
    (haml
     (.container
@@ -171,7 +171,7 @@
      (button
       (lambda ()
         (set! *ABSTRACTS* abstracts)
-        (put/instance/top/abstracts 'abstracts abstracts))
+        (put/instance/abstracts* 'abstracts abstracts))
       "Keep Abstracts")
 
      (button void "Upload other abstracts" #:to-step-id 'upload-abstracts)
@@ -332,7 +332,7 @@
   (random-sample all-matching-abstracts n #:replacement? #f))
 
 (define (random-abstract-matching cat non-cat)
-  (define loa (get/instance/top/abstracts 'abstracts))
+  (define loa (get/instance/abstracts* 'abstracts))
   (car (get-matching-abstracts loa 1 cat non-cat)))
 
 ; TODO: Next this gets saved and the abstract tasks run. Check which of `category` and `non-category` still need to be passed in.
@@ -344,7 +344,7 @@
     (define n (get 'n))
     (define category (get 'category))
     (define non-category (get 'non-category))
-    (put 'abstracts-to-do (get-matching-abstracts (get/instance/top/abstracts 'abstracts) n category non-category))
+    (put 'abstracts-to-do (get-matching-abstracts (get/instance/abstracts* 'abstracts) n category non-category))
     (skip))
 
   (make-study
