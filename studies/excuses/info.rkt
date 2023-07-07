@@ -13,6 +13,7 @@
                "web-server-lib"))
 (define build-deps '())
 (define congame-studies
-  '((studies/excuses/edpb edpb-pilot)
+  '((studies/excuses/edpb edpb-intro)
+    (studies/excuses/edpb edpb-main)
     (studies/excuses/abstract-categorization abstracts-admin)
     (studies/excuses/abstract-categorization abstract-tasks)))
