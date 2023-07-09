@@ -17,6 +17,7 @@
          "../components/mail.rkt"
          "../components/template.rkt"
          "../components/user.rkt"
+         "../components/prolific.rkt"
          "forms.rkt")
 
 ;; login & logout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -30,6 +31,9 @@
 
   (define return-url
     (bindings-ref (request-bindings/raw req) 'return (reverse-uri 'dashboard-page)))
+
+  (define defaults
+    (hash "username" (get-prolific-email)))
 
   (let loop ([req req])
     (send/suspend/dispatch/protect
@@ -101,6 +105,13 @@
 
 (define/contract ((signup-page auth mailer users) req)
   (-> auth-manager? mailer? user-manager? (-> request? response?))
+  (define prolific?
+    (not (string=? "" (get-prolific-email))))
+
+  (define defaults
+    (hash "username" (get-prolific-email)
+          "usertype" (and prolific? "Prolific")))
+
   (send/suspend/dispatch/protect
    (lambda (embed/url)
      (define (render render-widget [error-message #f])
@@ -109,25 +120,33 @@
         (container
          (render-signup-form (embed/url (signup-page auth mailer users)) render-widget error-message))))
 
-     (match (form-run signup-form req)
+     (match (form-run signup-form req #:defaults defaults)
        [(list 'passed (list username password _usertype) render-widget)
         (with-handlers ([exn:fail:user-manager:username-taken?
                          (lambda _
                            (render render-widget (translate 'error-username-taken)))])
           (define user (user-manager-create! users username password))
           (mailer-send-welcome-email mailer user)
-          (post-signup-page (redirect/get/forget)))]
+          (post-signup-page (redirect/get/forget) username))]
 
        [(list _ _ render-widget)
         (render render-widget)]))))
 
-(define (post-signup-page req)
+(define (post-signup-page req username)
   (page
    #:subtitle (translate 'subtitle-signed-up)
    (haml
     (.container
      (:h1 (translate 'subtitle-signed-up))
-     (:p (translate 'message-post-sign-up))))))
+     (:p (translate
+          (if (prolific-username? username)
+              'message-post-sign-up-prolific
+              'message-post-sign-up)))
+     (:p (if (prolific-username? username)
+             (haml
+              (:a ((:href "https://app.prolific.co/messages/inbox"))
+                  "Go to your message inbox on prolific"))
+             ""))))))
 
 (define/contract ((verify-page flashes users) req user-id verification-code)
   (-> flash-manager? user-manager? (-> request? integer? string? response?))

@@ -14,6 +14,7 @@
          "../pages/all.rkt"
          "auth.rkt"
          "mail.rkt"
+         "prolific.rkt"
          "sentry.rkt"
          "user.rkt")
 
@@ -95,6 +96,7 @@
         ((make-sentry-wrapper config:sentry-dsn
                               #:release config:version
                               #:environment config:environment))
+        (wrap-prolific)
         ((wrap-flash flashes))
         ((wrap-session sessions))
         (wrap-protect-continuations)
