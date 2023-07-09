@@ -34,4 +34,4 @@ Since in many studies it is crucial to send messages to participants, the identi
 
 Currently the process is clunky and requires direct communication (as opposed to some admin functionality) between an admin of the congame server and an admin of the identity server. First, a new api user has to be created on the congame server, which will have an api_key. Then this api key should be used to insert the following information in the identity server's database:
 
-@code{"insert into congame_servers(name, url, key) values ('Dev Congame', 'localhost:5100', '<the-api-key>');"}
+@code{"insert into congame_servers(name, url, key) values ('Dev Congame', 'http://localhost:5100', '<the-api-key>');"}
