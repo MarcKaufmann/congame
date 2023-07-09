@@ -2,9 +2,11 @@
 
 (require racket/format
          koyo/haml
+         koyo/url
          congame/components/study
          congame/components/transition-graph
          congame/components/formular
+         (prefix-in config: (only-in congame-web/config identity-url))
          (submod congame/components/formular tools)
          (submod congame/components/study accessors)
          "templates.rkt"
@@ -20,6 +22,7 @@
 ;; - Change the study so that people have to sign up right away, after providing just their prolific ID and their answer to the patience question (to see selection). That way, we don't need to merge any of the data across studies and I do not have to wait for Bogdan to implement anything. We should still implement talking between instances.
 ;; - create a prolific only signup page, i.e. people have to type in a prolific email or ID. This avoids them signing up with personal emails.
 
+
 ;;;;;;;;;;;;;;;; TEMPLATES ;;;;;;;;;;;;;
 ;;;    Steps that are HTML only      ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -31,13 +34,6 @@
     (.container
      (:h1 title)
      (button void "Next")))))
-
-(define (no-consent-ending)
-  (page
-   (haml
-    (.container
-     (:h1 "You decided not to participate in the study")
-     @:p{Thank you for participating this far. Please provide the code NOCONSENT on prolific to receive your default participation fee.}))))
 
 (define (final)
   (page
@@ -128,7 +124,7 @@
 
 
 
-(define (intro-completion-code)
+(define (no-consent-ending)
   (page
    (haml
     (.container
@@ -136,7 +132,7 @@
 
      (:p (format "To complete the introduction, go now to prolific and enter the following completion code: ~a" (get/instance 'completion-code)))
 
-     (button void "Continue")))))
+     (:p "Since you did not agree to participate in the remainder of the study, you are now done.")))))
 
 (define (thank-you)
   (page
@@ -176,6 +172,8 @@
          submit-button)))})))
 
 (define (signup)
+  (define signup-url
+    (string-append "https://" config:identity-url "/signup"))
   (page
    (haml
     (.container
@@ -184,8 +182,8 @@
      (:p "Since part of the study is today and some in the future, you will need to sign up with your Prolific email, so that you can resume the study at any time without losing your progress. To do so, please follow the following steps:")
 
      (:ul
-      (:li "Go to the signup page")
-      (:li "Type in your prolific email (it is your Prolific ID followed by ...)")
+      (:li "Go to the " (:a ([:href signup-url]) "Signup Page"))
+      (:li "Sign up for an account with your prolific email Type in your prolific email (it is your Prolific ID followed by ...)")
       (:li "Type in a password")
       (:li "You will receive a validation email on Prolific. Click on or copy-paste the validation link therein to validate your account")
       (:li "Log in to your account and start the study <study-name>"))
@@ -268,13 +266,11 @@
    "edpb day 1"
    #:transitions
    (transition-graph
-    [sign-up --> work-choices
-             --> determine-choice-that-counts
-             --> work-day1
-             --> schedule-reminder-email
-             --> ,(lambda () done)])
+    [work-choices --> determine-choice-that-counts
+                  --> work-day1
+                  --> schedule-reminder-email
+                  --> ,(lambda () done)])
    (list
-
     (make-step 'work-choices (stub "Make work choices"))
     (make-step 'determine-choice-that-counts  (stub "Determine choice that counts"))
     (make-step 'work-day1  (stub "Work Day 1"))
@@ -322,7 +318,34 @@
      (:h1 "Admin")
 
      (unless (study-open?)
-       (button void "Setup study" #:to-step-id 'abstracts-admin))))))
+       (haml
+        (:div
+         (:h3 "Abstracts")
+         (button void "Setup study" #:to-step-id 'abstracts-admin))))
+
+     (:h3 "Completion Code")
+
+     (cond [(get/instance 'completion-code #f)
+            => (lambda (c)
+                 (haml (:p "The current completion code is " c)))]
+           [else
+            (haml (:p "No completion code is set."))])
+
+     (button void "Change Completion Code" #:to-step-id 'completion-code-admin)))))
+
+(define (completion-code/admin)
+  (page
+   (haml
+    (.container
+     (formular
+      (haml
+       (:div
+        (#:completion-code (input-text "What is the new completion code?"))
+        submit-button))
+      (lambda (#:completion-code completion-code)
+        (put/instance 'completion-code completion-code)))
+
+     (button void "Cancel")))))
 
 (define (switch-phase-to p #:check-current-phase [cp #f])
   (define old-phase (get/instance* 'phase #f))
@@ -332,43 +355,77 @@
         [else
          (error 'switch-phase-to "failed because the current phase is ~a, but needs to be ~a to switch phase" old-phase cp)]))
 
+(define (open-study-if-ready)
+  (when (and (get/instance 'completion-code #f)
+             (get/instance 'abstracts-set? #f))
+    (switch-phase-to 'open #:check-current-phase #f)))
 
+(define (consent-end-introduction)
+  (page
+   (haml
+    (.container
+     (:h1 "Completion Code for Introduction")
+
+     (:p "You have completed the introduction. Please enter the following completion code on Prolific now before continuing:"
+         (get/instance 'completion-code))
+
+     (:p "Once you have done so, start the main study as soon as possible, if you wait too long, you may not be able to participate.")
+
+     (formular
+      (haml
+       (:div
+        (#:completion-code-entered (checkbox "I have entered my completion code on Prolific (required to continue)"))
+        submit-button)))))))
 
 (define edpb-main
   (make-study
    "edpb main study"
    #:transitions
    (transition-graph
+    ; ROLE ASSIGNMENT
     [assigning-roles --> ,(lambda ()
                             (let ([role (get 'role)])
                               (cond [(equal? role 'admin)       (goto admin)]
                                     [(equal? role 'participant) (goto waiting-page)]
                                     [else                       (goto error-page)])))]
     [error-page --> error-page]
+
+    ; ADMIN
     [admin --> admin]
     [abstracts-admin --> ,(lambda ()
-                            (switch-phase-to 'open #:check-current-phase #f)
+                            (put/instance 'abstracts-set? #t)
+                            (open-study-if-ready)
                             (goto admin))]
+    [completion-code-admin --> ,(lambda ()
+                                  (open-study-if-ready)
+                                  (goto admin))]
+
+    ; PARTICIPANT
     [waiting-page --> tutorial
                   --> consent
                   --> ,(lambda ()
-                         (cond [(get 'consent-given?) (goto signup)]
-                               [else (goto intro-completion-code)]))]
-    [intro-completion-code --> thank-you
-                           --> thank-you]
-    [day1 --> day2 --> send-completion-email --> final]
-    [final --> final]
-    [no-consent-ending --> no-consent-ending])
+                         (cond [(get 'consent-given?) (goto consent-end-introduction)]
+                               [else (goto no-consent-ending)]))]
+
+    [no-consent-ending --> no-consent-ending]
+
+    [consent-end-introduction --> day1
+                              --> day2
+                              --> send-completion-email
+                              --> final
+                              --> final])
 
    (list
     (make-step 'assigning-roles assigning-roles)
     (make-step/study 'tutorial (tutorial))
     (make-step 'admin admin)
+    (make-step 'completion-code-admin completion-code/admin)
     (make-step/study 'abstracts-admin abstracts-admin)
     (make-step 'waiting-page waiting-page)
     (make-step 'error-page (stub "Error page"))
     (make-step 'consent consent)
-    (make-step 'intro-completion-code intro-completion-code)
+    (make-step 'no-consent-ending no-consent-ending)
+    (make-step 'consent-end-introduction consent-end-introduction)
     (make-step 'admin admin)
     (make-step/study 'abstracts-admin abstracts-admin)
     (make-step/study 'day1 day1)
