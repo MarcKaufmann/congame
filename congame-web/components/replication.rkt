@@ -26,7 +26,7 @@
  list-replications
  delete-replication!)
 
-(define environment (getenv "CONGAME_ENVIRONMENT"))
+(define environment (getenv "CONGAME_WEB_ENVIRONMENT"))
 (define staging? (equal? environment "staging"))
 (define environment-prefix (if staging? "staging_" ""))
 
@@ -79,8 +79,8 @@
     (define db-password (generate-random-string))
     (create&replicate-db!
      manager
-     #:database-host (or (getenv "CONGAME_DB_HOST") "127.0.0.1")
-     #:database-port (string->number (or (getenv "CONGAME_DB_PORT") "5432"))
+     #:database-host (or (getenv "CONGAME_WEB_DB_HOST") "127.0.0.1")
+     #:database-port (string->number (or (getenv "CONGAME_WEB_DB_PORT") "5432"))
      #:database-name db-name
      #:database-password db-password
      #:admin-username admin-username
@@ -97,32 +97,32 @@
       (filter
        values
        (list
-        "CONGAME_LOG_LEVEL=debug"
-        "CONGAME_URL_SCHEME=https"
-        (format "CONGAME_URL_HOST=~areplication-~a.totalinsightmanagement.com"
+        "CONGAME_WEB_LOG_LEVEL=debug"
+        "CONGAME_WEB_URL_SCHEME=https"
+        (format "CONGAME_WEB_URL_HOST=~areplication-~a.totalinsightmanagement.com"
                 (string-replace environment-prefix "_" "-")
                 (replication-id rep))
-        "CONGAME_URL_PORT=443"
-        "CONGAME_HTTP_HOST=0.0.0.0"
-        "CONGAME_HTTP_PORT=8000"
-        (env "CONGAME_DB_HOST")
-        (env "CONGAME_DB_PORT")
-        (format "CONGAME_DB_NAME=~a" db-name)
-        (format "CONGAME_DB_USERNAME=~a" db-name)
-        (format "CONGAME_DB_PASSWORD=~a" db-password)
-        "CONGAME_ENVIRONMENT=replication"
-        "CONGAME_PRODUCT_NAME=totalinsightmanagement.com"
-        "CONGAME_SUPPORT_NAME=\"Marc Kaufmann\""
-        "CONGAME_SUPPORT_EMAIL=admin@totalinsightmanagement.com"
-        "CONGAME_IDENTITY_URL=identity.totalinsightmanagement.com"
-        (env "CONGAME_UPLOADS_DIR")
+        "CONGAME_WEB_URL_PORT=443"
+        "CONGAME_WEB_HTTP_HOST=0.0.0.0"
+        "CONGAME_WEB_HTTP_PORT=8000"
+        (env "CONGAME_WEB_DB_HOST")
+        (env "CONGAME_WEB_DB_PORT")
+        (format "CONGAME_WEB_DB_NAME=~a" db-name)
+        (format "CONGAME_WEB_DB_USERNAME=~a" db-name)
+        (format "CONGAME_WEB_DB_PASSWORD=~a" db-password)
+        "CONGAME_WEB_ENVIRONMENT=replication"
+        "CONGAME_WEB_PRODUCT_NAME=totalinsightmanagement.com"
+        "CONGAME_WEB_SUPPORT_NAME=\"Marc Kaufmann\""
+        "CONGAME_WEB_SUPPORT_EMAIL=admin@totalinsightmanagement.com"
+        "CONGAME_WEB_IDENTITY_URL=identity.totalinsightmanagement.com"
+        (env "CONGAME_WEB_UPLOADS_DIR")
         "PLTSTDERR=error debug@GC")))
     (define container-ports (hash container-port "8000"))
     (define container-volumes
       (filter
        values
        (list
-        (let ([uploads-path (getenv "CONGAME_UPLOADS_DIR")])
+        (let ([uploads-path (getenv "CONGAME_WEB_UPLOADS_DIR")])
           (and uploads-path (~a uploads-path ":" uploads-path))))))
     (define container-id
       (launch-container!
@@ -132,7 +132,7 @@
        #:volumes container-volumes
        #:links (case environment
                  [("staging" "production")
-                  (list (getenv "CONGAME_DB_HOST"))]
+                  (list (getenv "CONGAME_WEB_DB_HOST"))]
                  [else
                   null])))
     (update-one! conn (~> rep

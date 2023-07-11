@@ -27,7 +27,7 @@
 
 ;; config values ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(current-option-name-prefix "CONGAME")
+(current-option-name-prefix "CONGAME_WEB")
 
 (define-option version #:default "dev")
 
