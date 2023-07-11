@@ -703,6 +703,8 @@ QUERY
     (cond
       [runtime-transitions
        (let ([transitions runtime-transitions])
+         (define known-steps-str
+           (string-join (map symbol->string (sort (hash-keys known-steps) symbol<?)) ", "))
          (define steps*
            (for/list ([s (in-list steps)])
              (define sid (step-id s))
@@ -714,11 +716,9 @@ QUERY
                        (cond
                          [(symbol? fn-or-id)
                           (unless (hash-has-key? known-steps fn-or-id)
-                            (define unknown-steps
-                              (string-join (map symbol->string (sort (hash-keys known-steps) symbol<?)) ", "))
                             (error 'make-study
-                                   "expected a known step~n  unknown step: ~a~n  known steps: ~a"
-                                   fn-or-id unknown-steps))
+                                   "expected a known step~n  unknown step: ~a~n  known steps: ~a~n  study: ~a"
+                                   fn-or-id known-steps-str name))
                           (λ () fn-or-id)]
                          [else fn-or-id]))
                      (cond
@@ -730,7 +730,7 @@ QUERY
                         (raise-argument-error 'make-study "step?" s)]))]
 
                [else
-                (raise-user-error 'make-study "no transition specified for step ~a in study ~a" sid name)])))
+                (error 'make-study "no transition specified for step ~a in study ~a" sid name)])))
 
          ;; Ensure the first step in the study lines up with the first
          ;; specified transition.
@@ -739,6 +739,10 @@ QUERY
            (findf (λ (s)
                     (eq? (step-id s) first-step-id))
                   steps*))
+         (unless first-step
+           (error 'make-study
+                  "unknown first step: ~a~n  known steps: ~a~n  study: ~a"
+                  first-step-id known-steps-str name))
          (cons first-step (remq first-step steps*)))]
 
       [else

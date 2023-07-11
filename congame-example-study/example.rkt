@@ -3,6 +3,7 @@
 (require (for-syntax racket/base)
          congame/components/resource
          congame/components/study
+         congame/components/transition-graph
          (except-in forms form)
          koyo/haml
          web-server/http)
@@ -139,6 +140,10 @@
 (define simple-study
   (make-study
    "simple-study"
+   #:transitions
+   (transition-graph
+    [simple-info-1 --> listen --> simple-info-2 --> deep --> done]
+    [done --> done])
    (list
     (make-step 'simple-info-1 simple-info-1)
     (make-step 'listen listen-to-some-music)
