@@ -1,7 +1,11 @@
 #lang racket/base
 
 (require racket/contract
+         racket/lazy-require
          racket/list)
+
+(lazy-require
+ ["study.rkt" (study?)])
 
 (provide
  study-registry-allow-conflicts?
@@ -58,7 +62,7 @@
   (hash-set! *study-mod-registry* quoted-mod-path mod-path))
 
 (define/contract (register-study! id s)
-  (-> symbol? any/c void?)
+  (-> symbol? study? void?)
   (when (and (hash-has-key? *study-registry* id)
              (not (study-registry-allow-conflicts?)))
     (raise-user-error 'register-study! "a study with id ~s is already registered" id))

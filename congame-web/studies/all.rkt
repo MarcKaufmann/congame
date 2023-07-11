@@ -40,8 +40,7 @@
                                #'(begin
                                    (define-runtime-module-path-index mod-id mod-path)
                                    (register-study-mod! mod-path mod-id)
-                                   (when (study? study-id)
-                                     (register-study! quoted-study-id study-id)))))
+                                   (register-study! quoted-study-id study-id))))
      #'(begin
          (require req-spec ...)
          reg-spec ...)]))
