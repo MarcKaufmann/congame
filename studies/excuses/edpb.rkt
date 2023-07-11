@@ -1,6 +1,10 @@
 #lang at-exp racket/base
 
-(require racket/format
+(require racket/contract
+         racket/format
+         racket/match
+         racket/serialize
+         (only-in xml xexpr/c)
          koyo/haml
          koyo/url
          congame/components/study
@@ -257,18 +261,128 @@
     (make-step 'repeat-comprehension-test repeat-comprehension-test)
     (make-step 'fail-comprehension-test fail-comprehension-test))))
 
+;;;;; DAY 1
+
+;;; SINGLE CHOICE
+;;;
+;;; All choices have two options.
+;;; Each option has one of two dates: day1 or day2
+;;; Each option has:
+;;;     - a type of task, e.g. abstract categorization with subtype "artificial intelligence" or so on
+;;;     - an amount of tasks, e.g. 25
+;;; For each option, we need to be able to generate the option description
+
+;;; For now, create options and choices for abstract categorization only. Generalize later.
+(serializable-struct option [session type amount]
+  #:transparent)
+
+; o+r is an option + optional reason
+(serializable-struct o+r [option reason]
+  #:transparent)
+
+; choice-set consists in an option A and an option B -- without reasons!
+(serializable-struct choice-set [A B]
+  #:transparent)
+
+; choice-env determines whether there are reasons for each option.
+; So A and B are an option + [Maybe reason]
+(serializable-struct choice-env [A B]
+  #:transparent)
+
+; reasons have a direction ('for or 'against) and some text.
+(serializable-struct reason [dir text]
+  #:transparent)
+
+(define/contract (describe opt ce)
+  (-> (or/c 'A 'B) choice-env? string?)
+  (match-define (choice-env (o+r A RA)
+                            (o+r B RB))
+    ce)
+  (define-values (o r)
+    (case opt
+      [(A) (values A RA)]
+      [(B) (values B RB)]))
+  (match o
+    [(option session type amount)
+     ; FIXME: update to have the type.
+     (format "~a tasks ~a" amount (if (equal? session 'session1) "today" "next session"))]))
+
+(define/contract (abstract-choice ce)
+  ; FIXME: does page return an xexpr?
+  (-> choice-env? any/c)
+  (define (put/choice o)
+    (define choices
+      (get 'work-choices '()))
+    (put 'work-choices
+         (cons (cons o ce) choices)))
+  (page
+   (haml
+    (.container
+     (formular
+      (haml
+       (:div
+        (:div
+         (#:choice (radios
+                    "Choose between the following two options:"
+                    `(("A" . ,(describe 'A ce))
+                      ("B" . ,(describe 'B ce)))))
+         submit-button)
+        ; FIXME: replace this by a flexible radio table with buttons for reasons
+        ))
+      (lambda (#:choice choice)
+        (put/choice choice)))))))
+
+; TODO: Is this better or using rounds to store choice pages? Recursion or for loop?
+(define work-choices
+  (make-study
+   "work choices"
+   #:transitions
+   (transition-graph
+    [choice-page --> ,(lambda ()
+                        (define remaining-choices
+                          (cdr (get 'remaining-choices)))
+                        (put 'remaining-choices remaining-choices)
+                        (cond [(null? remaining-choices)
+                               next]
+                              [else
+                               (goto choice-page)]))])
+   #:requires '(remaining-choices)
+   (list
+    (make-step 'choice-page (lambda ()
+                              (define next-ce
+                                (car (get 'remaining-choices)))
+                              (abstract-choice next-ce))))))
+
+(define (set-treatments)
+  ; FIXME: Needs to be determined once work choices etc display properly
+  (put 'choices-to-make
+       (list
+
+        (choice-env
+         (o+r (option 'session1 '("Equality" "Other") 25) (reason 'for "'tis good"))
+         (o+r (option 'session1 '("Gender" "Other") 25) (reason 'against "dis BAD!")))
+
+        (choice-env
+         (o+r (option 'session2 '("Sport" "Other") 15) (reason 'for "Y not!"))
+         (o+r (option 'session1 '("Sport" "Other") 20) #f))))
+  (skip))
 
 (define day1
   (make-study
    "edpb day 1"
    #:transitions
    (transition-graph
-    [work-choices --> determine-choice-that-counts
-                  --> work-day1
-                  --> schedule-reminder-email
-                  --> ,(lambda () done)])
+    [set-treatments --> work-choices
+                    --> determine-choice-that-counts
+                    --> work-day1
+                    --> schedule-reminder-email
+                    --> ,(lambda () done)])
    (list
-    (make-step 'work-choices (stub "Make work choices"))
+    (make-step 'set-treatments set-treatments)
+    (make-step/study
+     'work-choices
+     work-choices
+     #:require-bindings '([remaining-choices choices-to-make]))
     (make-step 'determine-choice-that-counts  (stub "Determine choice that counts"))
     (make-step 'work-day1  (stub "Work Day 1"))
     (make-step 'schedule-reminder-email  (stub "Schedule reminder email")))))
@@ -373,6 +487,8 @@
        (:div
         (#:completion-code-entered (checkbox "I have entered my completion code on Prolific (required to continue)"))
         submit-button)))))))
+
+
 
 (define edpb-main
   (make-study
