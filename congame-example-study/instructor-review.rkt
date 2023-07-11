@@ -231,7 +231,7 @@
               (put/instance 'phase 'admin-setup)
               'admin-setup]
              [(and grader-email
-                   (equal? (participant-email (current-participant-id))
+                   (equal? (lookup-participant-email (current-participant-id))
                            grader-email))
               'admin]
              [else

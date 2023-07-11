@@ -7,12 +7,16 @@
 (provide
  mailer-send-next-phase-started-email)
 
-(define/contract (mailer-send-next-phase-started-email m recpt study-name)
-  (-> mailer? string? string? void?)
+(define/contract (mailer-send-next-phase-started-email m recpt
+                                                       #:study-name study-name
+                                                       #:identity-url identity-url)
+  (-> mailer? string?
+      #:study-name string?
+      #:identity-url string?
+      void?)
   (define action-url
     (make-application-url "dashboard"))
 
-  ; FIXME: I have to pass in 'identity_url to this, taken from the DB.
   (mail-adapter-send-email-with-template
    (mailer-adapter m)
    #:to recpt
@@ -22,4 +26,5 @@
                       'action_url action-url
                       'name recpt
                       'study_name study-name
-                      'username recpt)))
+                      'username recpt
+                      'identity_url identity-url)))

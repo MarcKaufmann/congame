@@ -6,7 +6,6 @@
          congame/components/study
          congame/components/transition-graph
          congame/components/formular
-         (prefix-in config: (only-in congame-web/config identity-url))
          (submod congame/components/formular tools)
          (submod congame/components/study accessors)
          "templates.rkt"
@@ -172,8 +171,6 @@
          submit-button)))})))
 
 (define (signup)
-  (define signup-url
-    (string-append "https://" config:identity-url "/signup"))
   (page
    (haml
     (.container
@@ -182,7 +179,7 @@
      (:p "Since part of the study is today and some in the future, you will need to sign up with your Prolific email, so that you can resume the study at any time without losing your progress. To do so, please follow the following steps:")
 
      (:ul
-      (:li "Go to the " (:a ([:href signup-url]) "Signup Page"))
+      (:li "Go to the " (:a ([:href "https://identity.totalinsightmanagement.com"]) "Signup Page"))
       (:li "Sign up for an account with your prolific email Type in your prolific email (it is your Prolific ID followed by ...)")
       (:li "Type in a password")
       (:li "You will receive a validation email on Prolific. Click on or copy-paste the validation link therein to validate your account")

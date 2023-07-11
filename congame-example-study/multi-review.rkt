@@ -15,11 +15,9 @@
          racket/format
          racket/list
          racket/match
-         racket/port
          racket/random
          sentry
          threading
-         web-server/http
          "mail.rkt"
          "tools.rkt")
 
@@ -166,26 +164,39 @@
     (define updated-reviews (append reviews participant-reviews))
     (put/instance 'reviews updated-reviews)))
 
-(define-job (send-review-phase-started-email participant-email study-name)
+(define-job (send-review-phase-started-email pid study-name)
   (with-handlers ([exn:fail?
                    (lambda (e)
                      (sentry-capture-exception! e)
                      (raise e))])
+    (define db (system-ref 'db))
     (define mailer (system-ref 'mailer))
-    (mailer-send-next-phase-started-email mailer participant-email study-name)))
+    (define manager
+      (make-study-manager
+       #:database db
+       #:participant (lookup-study-participant/by-id db pid)))
+    (define-values (email identity-url)
+      (call-with-study-manager
+       manager
+       (lambda ()
+         (values
+          (lookup-participant-email pid)
+          (lookup-participant-identity-url pid)))))
+    (mailer-send-next-phase-started-email
+     mailer email
+     #:study-name study-name
+     #:identity-url identity-url)))
 
-(define (send-review-phase-email participant-email study-name)
+(define (send-review-phase-email pid study-name)
   (unless (current-user-bot?)
-    (schedule-at
-     (now/moment)
-     (send-review-phase-started-email participant-email study-name))))
+    (send-review-phase-started-email pid study-name)))
 
-(define (send-review-phase-notifications instance-id)
+(define (send-review-phase-notifications)
   (define participant-ids
     (parameterize ([current-study-stack '(*root*)])
       (hash-keys (get/instance 'assignments (hash)))))
-  (for ([p participant-ids])
-    (send-review-phase-email (participant-email p) (current-study-instance-name))))
+  (for ([pid (in-list participant-ids)])
+    (send-review-phase-email pid (current-study-instance-name))))
 
 (define (default-submissions-interface)
   (haml

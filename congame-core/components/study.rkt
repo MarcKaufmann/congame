@@ -315,7 +315,7 @@ QUERY
                      (define user
                        (make-sentry-user
                         #:id (~a pid)
-                        #:email (participant-email pid)))
+                        #:email (lookup-participant-email pid)))
                      (sentry-capture-exception! e #:user user)
                      (log-study-error "put payment failed~n  exn: ~a" (exn-message e)))])
     (void
@@ -1013,7 +1013,8 @@ QUERY
  list-study-instance-vars
  clear-study-instance-vars!
  current-participant-id
- participant-email
+ lookup-participant-email
+ lookup-participant-identity-url
  current-participant-owner?
  current-study-instance-id
  current-study-instance-name
@@ -1380,17 +1381,30 @@ QUERY
     (lookup conn (~> (from study-participant #:as p)
                      (where (= p.id ,participant-id))))))
 
-(define/contract (participant-email pid)
+(define/contract (lookup-participant-email pid)
   (-> id/c string?)
-  (define the-participant
-    (lookup-study-participant/admin
+  (define email
+    (query-value
      (study-manager-db (current-study-manager))
-     pid))
-  (unless (eqv? (study-participant/admin-instance-id the-participant)
-                (current-study-instance-id))
-    (error 'participant-email "pid ~a is not a member of study instance ~a" pid (current-study-instance-id)))
+     (~> (from "study_participants" #:as p)
+         (join "users" #:as u #:on (= u.id p.user-id))
+         (where (and (= p.id ,pid)
+                     (= p.instance-id ,(current-study-instance-id))))
+         (select u.username))))
+  (unless email
+    (error 'lookup-participant-email
+           "pid ~a is not a member of study instance ~a"
+           pid (current-study-instance-id)))
+  email)
 
-  (study-participant/admin-email the-participant))
+(define/contract (lookup-participant-identity-url pid)
+  (-> id/c (or/c #f string?))
+  (query-value
+   (study-manager-db (current-study-manager))
+   (~> (from "users" #:as u)
+       (join "study_participants" #:as p #:on (= u.id p.user-id))
+       (where (= p.id ,pid))
+       (select u.identity-service-url))))
 
 (define/contract (lookup-study-vars db participant-id)
   (-> database? id/c (listof study-var?))

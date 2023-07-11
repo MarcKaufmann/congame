@@ -519,7 +519,9 @@
                  'not-willing)))
 
 (define (check-prolific-user)
-  (cond [(or (current-user-bot?) (string-contains? (participant-email (current-participant-id)) "email.prolific.co")) (skip)]
+  (define email
+    (lookup-participant-email (current-participant-id)))
+  (cond [(or (current-user-bot?) (string-contains? email "email.prolific.co")) (skip)]
         [else
          (page
           (haml
@@ -576,7 +578,7 @@
     (schedule-at
      (now/moment)
      (send-study-completion-email
-      (participant-email pid)
+      (lookup-participant-email pid)
       (get-total-payment)))))
 
 (define (determine-extra-tasks)
