@@ -1384,13 +1384,14 @@ QUERY
 (define/contract (lookup-participant-email pid)
   (-> id/c string?)
   (define email
-    (query-value
-     (study-manager-db (current-study-manager))
-     (~> (from "study_participants" #:as p)
-         (join "users" #:as u #:on (= u.id p.user-id))
-         (where (and (= p.id ,pid)
-                     (= p.instance-id ,(current-study-instance-id))))
-         (select u.username))))
+    (with-database-connection [conn (study-manager-db (current-study-manager))]
+      (query-value
+       conn
+       (~> (from "study_participants" #:as p)
+           (join "users" #:as u #:on (= u.id p.user-id))
+           (where (and (= p.id ,pid)
+                       (= p.instance-id ,(current-study-instance-id))))
+           (select u.username)))))
   (unless email
     (error 'lookup-participant-email
            "pid ~a is not a member of study instance ~a"
@@ -1399,12 +1400,13 @@ QUERY
 
 (define/contract (lookup-participant-identity-url pid)
   (-> id/c (or/c #f string?))
-  (query-value
-   (study-manager-db (current-study-manager))
-   (~> (from "users" #:as u)
-       (join "study_participants" #:as p #:on (= u.id p.user-id))
-       (where (= p.id ,pid))
-       (select u.identity-service-url))))
+  (with-database-connection [conn (study-manager-db (current-study-manager))]
+    (query-value
+     conn
+     (~> (from "users" #:as u)
+         (join "study_participants" #:as p #:on (= u.id p.user-id))
+         (where (= p.id ,pid))
+         (select u.identity-service-url)))))
 
 (define/contract (lookup-study-vars db participant-id)
   (-> database? id/c (listof study-var?))
