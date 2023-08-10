@@ -1,6 +1,8 @@
 #lang at-exp racket/base
 
-(require racket/format
+(require csv-reading
+         koyo/haml
+         racket/format
          racket/generic
          racket/match
          racket/port
@@ -8,9 +10,8 @@
          racket/random
          racket/serialize
          racket/string
+         threading
          web-server/http
-         csv-reading
-         koyo/haml
          congame/components/export
          congame/components/formular
          congame/components/study
@@ -76,10 +77,10 @@
       (abstract (car r) (cadr r) (caddr r))))
 
 (define (yn-radios label)
-  (map-to-type
-   (lambda (s) (string=? s "yes"))
+  (cast-result
    (radios label '(("yes" . "Yes")
-                   ("no"  . "No")))))
+                   ("no"  . "No")))
+   (lambda (s) (string=? s "yes"))))
 
 (define (abstract-example example)
   (match-define (abstract text cat non-cat) example)
@@ -112,18 +113,15 @@
 
 ; TODO: This call is ugly, change interface to string these together more conveniently. Pass in association list of lambdas and exceptions?
 (define (input-abstracts label)
-  (map-to-type/handler
-   (lambda (rows)
-     (map ->abstract rows))
-   (map-to-type/handler
-    (lambda (csv-file)
-      (csv->list
-       (binding:file/port-in csv-file)))
-    (input-file label)
-    #:the-exn? exn:fail:csv-reader?
-    #:err-message (lambda (_e)
-                    (format "error reading csv: we expect comma (,) not semicolon (;) as separator, and exactly 3 columns with text.~n You may also want to check for the BOM.)")))
-   #:the-exn? exn:fail:->abstract?))
+  (~> (input-file label)
+      (cast-result*
+       (compose1 csv->list binding:file/port-in)
+       #:exn-predicate exn:fail:csv-reader?
+       #:exn-handler (λ (_e) "error reading csv: we expect comma (,) not semicolon (;) as separator, and exactly 3 columns with text.~n You may also want to check for the BOM.)"))
+      (cast-result*
+       #:exn-predicate exn:fail:->abstract?
+       (λ (rows)
+         (map ->abstract rows)))))
 
 (define (upload-abstracts/page)
   (page

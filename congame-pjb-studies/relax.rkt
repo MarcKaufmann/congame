@@ -121,10 +121,10 @@
                                          (string-append "snip-" track-path))])))))
 
 (define (yn-radios label)
-  (map-to-type
-   (λ (s) (string=? s "yes"))
+  (cast-result
    (radios label '(("yes" . "Yes")
-                   ("no"  . "No")))))
+                   ("no"  . "No")))
+   (λ (s) (string=? s "yes"))))
 
 (define (survey-of-tracks)
   (page

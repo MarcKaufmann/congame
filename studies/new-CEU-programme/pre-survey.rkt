@@ -33,11 +33,10 @@
       f))))
 
 (define (yn-radios label)
-  (map-to-type
-   string->symbol
-   (radios label
-           '(("yes" . "Yes")
-             ("no"  . "No")))))
+  (cast-result
+   (radios label '(("yes" . "Yes")
+                   ("no"  . "No")))
+   string->symbol))
 
 (define submit-button
   (haml (:button.button.next-button ([:type "submit"]) "Submit")))

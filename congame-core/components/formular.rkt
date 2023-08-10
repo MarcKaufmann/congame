@@ -22,8 +22,9 @@
  make-put-form/hash
  formular
  formular-autofill
- map-to-type
- map-to-type/handler
+ add-validator
+ cast-result
+ cast-result*
  checkbox
  radios
  select
@@ -296,31 +297,22 @@
   (bot:type-all elts-to-type)
   (m:element-click! (bot:find "button[type=submit]")))
 
-(define ((map-to-type proc input) meth)
+(define ((add-validator input proc) meth)
   (match meth
-    ['validator
-     (ensure
-      (input 'validator)
-      (lambda (v)
-        `(ok . ,(proc v))))]
+    ['validator (ensure (input 'validator) proc)]
     [_ (input meth)]))
 
-; FIXME: put contract on this
-(define ((map-to-type/handler proc input
-                              #:the-exn? the-exn?
-                              #:err-message [message (lambda (e)
-                                                       (exn-message e))])
-         meth)
-  (match meth
-    ['validator
-     (ensure
-      (input 'validator)
-      (lambda (v)
-        (with-handlers ([the-exn?
-                         (lambda (e)
-                           `(err . ,(message e)))])
-          `(ok . ,(proc v)))))]
-    [_ (input meth)]))
+(define (cast-result input proc)
+  (add-validator input (λ (v) `(ok . ,(proc v)))))
+
+(define (cast-result* input proc
+                      #:exn-predicate [exn-predicate exn:fail?]
+                      #:exn-handler [exn-handler (λ (e) `(err . ,(exn-message e)))])
+  (add-validator
+   input
+   (lambda (v)
+     (with-handlers ([exn-predicate exn-handler])
+       `(ok . ,(proc v))))))
 
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -563,11 +555,11 @@
   (require rackunit
            web-server/http)
   (check-equal?
-   (((map-to-type string->symbol (input-text "example")) 'validator)
+   (((cast-result (input-text "example") string->symbol) 'validator)
     (binding:form #"input" #"hello"))
    '(ok . hello))
   (check-equal?
-   (((map-to-type (λ (n) (* n n)) (input-number "example")) 'validator)
+   (((cast-result (input-number "example") (λ (n) (* n n))) 'validator)
     (binding:form #"input" #"42"))
    '(ok . 1764)))
 
