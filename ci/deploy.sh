@@ -64,20 +64,20 @@ log "Adding GIT SHA and VERSION to identity environment file..."
 echo "VERSION=$GITHUB_SHA" >> "$IDENTITY_ENVIRONMENT_PATH"
 
 log "Adding GIT SHA and VERSION to environment file..."
-echo "CONGAME_GIT_SHA=$GITHUB_SHA" >> "$WEB_ENVIRONMENT_PATH"
+echo "CONGAME_WEB_GIT_SHA=$GITHUB_SHA" >> "$WEB_ENVIRONMENT_PATH"
 echo "VERSION=$GITHUB_SHA" >> "$WEB_ENVIRONMENT_PATH"
 
 log "Adding POSTMARK_TOKEN to identity environment file..."
 echo "CONGAME_IDENTITY_POSTMARK_TOKEN=$POSTMARK_TOKEN" >> "$IDENTITY_ENVIRONMENT_PATH"
 
 log "Adding POSTMARK_TOKEN to web environment file..."
-echo "CONGAME_POSTMARK_TOKEN=$POSTMARK_TOKEN" >> "$WEB_ENVIRONMENT_PATH"
+echo "CONGAME_WEB_POSTMARK_TOKEN=$POSTMARK_TOKEN" >> "$WEB_ENVIRONMENT_PATH"
 
 log "Adding SENTRY_DSN to identity environment file..."
 echo "CONGAME_IDENTITY_SENTRY_DSN=$SENTRY_DSN" >> "$IDENTITY_ENVIRONMENT_PATH"
 
 log "Adding SENTRY_DSN to web environment file..."
-echo "CONGAME_SENTRY_DSN=$SENTRY_DSN" >> "$WEB_ENVIRONMENT_PATH"
+echo "CONGAME_WEB_SENTRY_DSN=$SENTRY_DSN" >> "$WEB_ENVIRONMENT_PATH"
 
 log "Pulling image from GHCR..."
 ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
