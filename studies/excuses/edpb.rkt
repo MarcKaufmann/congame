@@ -163,7 +163,7 @@
 
       @:p{If you have any questions or concerns regarding this study, please contact us at @"admin@totalinsightmanagement.com" or @"lucafloradrucker.research@gmail.com".}
 
-      (formular
+      @(formular
        (haml
         (:div
          (#:prolific-ID (input-text "What is your Prolific ID?"))
