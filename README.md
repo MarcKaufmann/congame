@@ -38,7 +38,7 @@ The features that will get implemented will however be determined by the priorit
 * You need access to a couple local [Postgres] databases.  One named
   `congame` and the other `congame_tests`.  The latter is
   exercised by unit tests.
-
+  
 ### First-time Setup
 
     $ nvm use && npm install && npm run build
@@ -112,6 +112,10 @@ Run `./bin/bust-study-caches.sh` after adding studies or bots to
 [chief]: https://github.com/Bogdanp/racket-chief
 [node]: https://nodejs.org/en/
 [nvm]: https://github.com/nvm-sh/nvm
+
+## Deployment Recommendation
+
+See `ci/README.md`.
 
 ## Acknowledgement
 
