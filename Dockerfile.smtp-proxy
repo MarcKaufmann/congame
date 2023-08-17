@@ -1,4 +1,4 @@
 FROM ghcr.io/marckaufmann/congame-deploy:latest
 
 COPY build/smtp-proxy /opt/congame
-ENTRYPOINT ["dumb-init", "/opt/congame/bin/smtp-proxy"]
+ENTRYPOINT ["dumb-init", "/opt/congame/bin/congame-smtp-proxy"]
