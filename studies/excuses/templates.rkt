@@ -62,7 +62,7 @@
       @:ul{
         @:li{First session: a completion bonus of @conf['session1-bonus] USD for completing the first session}
         @:li{Second session: a completion bonus of @conf['session2-bonus] USD for completing the second session}
-        @:li{Additional income: @conf['piece-rate-per-abstract] USD for each [ correctly categorized abstract ] - this includes the @conf['baseline-abstracts] baseline abstracts each session and the extra abstracts that correspond to the randomly chosen decision.}}
+        @:li{Additional income: @conf['piece-rate-per-abstract] USD for each correctly categorized abstract - this includes the @conf['baseline-abstracts] baseline abstracts each session and the extra abstracts that correspond to the randomly chosen decision.}}
 
       @:p{You will receive all payments (completion bonuses plus additional income) via the Prolific payment system within three days after completing the second session. If you only complete the first session, you will only receive the completion bonus for the first session within three days after the corresponding second session.}
 
