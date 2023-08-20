@@ -22,16 +22,11 @@
     @.container{
       @:h1{Instructions}
 
-      @:p{This study consists of two sessions. If you decide to take part, the first session will start immediately after you give consent to participate. You can complete the second session anytime @conf['day2-date] between 6 AM and midnight (Pacific Time). You will receive a completion bonus of @conf['session1-bonus] USD for completing the first session, plus @conf['session2-bonus] USD if you complete the second session as well. You can earn additional income that will depend on your decisions in the first session and your performance in the task that we describe below. The average additional income will be around @conf['estimated-performance-bonus] USD. The two sessions will take around @conf['estimated-time] minutes to complete each.}
+      @:p{This study consists of two sessions. If you decide to participate, the first session will start immediately after you consent to participate. You can complete the second session anytime @conf['day2-date] between 6 AM and midnight (Pacific Time). You will receive a completion bonus of @conf['session1-bonus] USD for completing the first session, plus @conf['session2-bonus] USD if you also complete the second session. You can earn additional income depending on your decisions in the first session and your performance in the task described below. The average additional income will be around @conf['estimated-performance-bonus] USD. The two sessions will take around @conf['estimated-time] minutes to complete each.}
 
-      @:p{In both sessions, you will have to do a series of simple tasks. The task consists of
-    [[[
-    categorizing articles based on their abstracts (a roughly 100-word summary of the article) . You will be given certain topics and you will have to choose the articles that are concerned with that particular topic. Here you can try the task:
+      @:p{In both sessions, you will have to do a series of simple tasks. The task consists of categorizing research articles into topics based on their abstracts (a roughly 100-word summary of the article). You will be given specific topics, and you will have to choose the articles concerned with that topic. Here you can try the task:
 
-    Page with 3 abstracts and having to choose the ones that are on [ climate change ] comes here.
-
-    In both sessions you will have to categorize [ 15 ] abstracts each as a baseline. In one of the two sessions, you will also have to do some extra work, involving the categorization of around [ 30-40 ] extra abstracts.
-    ]]]}
+      In both sessions you will have to categorize [ 15 ] abstracts each as a baseline. In one of the two sessions, you will also have to do some extra work, involving the categorization of around [ 30-40 ] extra abstracts.}
 
 
       @:h2{First session - TODAY}
