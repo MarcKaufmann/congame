@@ -101,7 +101,7 @@
     (.container
      @:h1{Task Description}
 
-     @:p{In this study, you will have to do a series of simple tasks. This task consists of categorizing abstracts (short summaries of research papers) by topics. Specifically, we will give topics, and you should choose which topic this abstract belongs to.}
+     @:p{As mentioned before, the task you have to do in this study consists of categorizing abstracts (short summaries of research papers) by topics.}
 
      @(abstract-example example)
 
