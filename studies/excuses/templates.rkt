@@ -27,9 +27,11 @@
 
       @:p{This study consists of two sessions. If you decide to participate, the first session will start immediately after you consent to participate. You can complete the second session anytime @conf['day2-date] between 6 AM and midnight (Pacific Time). You will receive a completion bonus of @conf['session1-bonus] USD for completing the first session, plus @conf['session2-bonus] USD if you also complete the second session. You can earn additional income depending on your decisions in the first session and your performance in the task described below. The average additional income will be around @conf['estimated-performance-bonus] USD. The two sessions will take around @conf['estimated-time] minutes to complete each.}
 
-      @:p{In both sessions, you will have to do a series of simple tasks.This task consists of categorizing abstracts (short summaries of research papers) by topics. Specifically, we will give topics, and you should choose which topic this abstract belongs to.
+      @:p{In both sessions, you will have to do a series of simple tasks. This task consists of categorizing abstracts (short summaries of research papers) by topics. Specifically, we will give topics, and you should choose which topic this abstract belongs to.
 
       In both sessions you will have to categorize @conf['baseline-abstracts] abstracts each as a baseline. In one of the two sessions, you will also have to do some extra work, involving the categorization of around @conf['estimated-extra-abstracts] extra abstracts.}
+
+      @:p{On the next page, you will see an example abstract and its categorization. On the subsequent pages, you can try the categorization task yourself.}
 
 
       @:h2{First session - TODAY}
