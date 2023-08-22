@@ -136,6 +136,12 @@ ssh -o "StrictHostKeyChecking off" -i /tmp/deploy-key "$TARGET_HOST" <<EOF
       --domain "@identity.totalinsightmanagement.com" congame-identity 8675 \
       --domain "@identity-staging.totalinsightmanagement.com" congame-identity-staging 8675
 
+  echo "Running SMTP server health check..."
+  if ! (echo -e 'EHLO\r\nQUIT\r\n' | nc 127.0.0.1 25); then
+    echo "SMTP server health check failed."
+    exit 1
+  fi
+
   docker stop "$WEB_CONTAINER_NAME" || true
   docker rm "$WEB_CONTAINER_NAME" || true
   docker run \
