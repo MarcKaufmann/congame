@@ -41,6 +41,7 @@
  create-study-instance-page
  edit-study-instance-page
  view-study-instance-page
+ create-study-instance-link-page
  view-study-participant-page
  create-study-instance-bot-sets-page
  view-study-instance-bot-set-page
@@ -609,6 +610,27 @@
                    (~a (bot-set-id bs))))
                  (:td
                   (~a (bot-set-bot-count bs))))))))
+         (:h2 "Instance Links")
+         (:table.table
+          (:thead
+           (:tr
+            (:th "Instance")
+            (:th "Pseudonym")
+            (:th "Relationship")))
+          (:tbody
+           ;; FIXME: extract this to a function
+           ,@(with-database-connection [conn db]
+               (for/list ([l (in-entities conn (~> (from study-instance-link #:as l)
+                                                   (where (= l.study-instance-id-a ,study-instance-id))))])
+                 (haml
+                  (:tr
+                   (:td (~a (study-instance-link-study-instance-id-b l))) ;; FIXME: show the name and link to it
+                   (:td (~a (study-instance-link-pseudonym-b l)))
+                   (:td (string-titlecase (~a (study-instance-link-relationship l))))))))))
+         (:h3
+          (:a
+           ([:href (reverse-uri 'admin:create-study-instance-link-page study-id study-instance-id)])
+           "Create Link"))
          (:h2 "Instance Data")
          (:h3
           (:a
@@ -665,6 +687,74 @@
            (:td (study-participant/admin-email p))
            (:td (~t (study-participant/admin-enrolled-at p) datetime-format))
            (:td (~a (study-participant/admin-progress p))))))))))
+
+(define/contract ((create-study-instance-link-page db) req study-id instance-id)
+  (-> database? (-> request? id/c id/c response?))
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (define all-studies-by-id
+       (for/hasheqv ([s (in-list (list-studies db))])
+         (values (study-meta-id s) s)))
+     (define all-study-instances
+       (list-all-study-instances db))
+     (define option-groups
+       (for/fold ([instances (hasheqv)]
+                  #:result (sort
+                            (for/list ([(id is) (in-hash instances)])
+                              (define s (hash-ref all-studies-by-id id))
+                              (define options
+                                (for/list ([i (in-list (sort is #:key study-instance-name string<?))])
+                                  (cons (number->string (study-instance-id i))
+                                        (study-instance-name i))))
+                              (list (study-meta-name s) options))
+                            #:key car
+                            string<?))
+                 ([i (in-list all-study-instances)])
+         (define id (study-instance-study-id i))
+         (hash-update instances id (λ (is) (cons i is)) null)))
+     (define the-form
+       (form* ([instance-id (ensure binding/number
+                                    (required)
+                                    (one-of
+                                     (for/list ([i (in-list all-study-instances)])
+                                       (cons (study-instance-id i)
+                                             (study-instance-id i)))))]
+               [pseudonym (ensure binding/symbol (required))]
+               [relationship (ensure binding/text
+                                     (required)
+                                     (one-of `(("source" . source)
+                                               ("reporter" . reporter))))])
+         (list instance-id pseudonym relationship)))
+     (let loop ([req req])
+       (match (form-run the-form req)
+         [`(passed ,(list instance-id-b pseudonym relationship) ,_)
+          (redirect/get/forget/protect)
+          (with-database-connection [conn db]
+            (insert-one!
+             conn
+             (make-study-instance-link
+              #:study-instance-id-a instance-id
+              #:study-instance-id-b instance-id-b
+              #:pseudonym-b pseudonym
+              #:relationship relationship)))
+          (redirect-to (reverse-uri 'admin:view-study-instance-page study-id instance-id))]
+         [`(,_ ,_ ,rw)
+          (tpl:page
+           (tpl:container
+            (haml
+             (:div
+              (:h1 "Create Study Instance Link")
+              (:form
+               ([:action (embed/url loop)]
+                [:method "POST"])
+               (rw "instance-id" (field-group "Instance ID:" (widget-select option-groups)))
+               (rw "pseudonym" (field-group "Pseudonym:" (widget-text)))
+               (rw "relationship" (field-group "Relationship:" (widget-select
+                                                                `(("source" . "Source")
+                                                                  ("reporter" . "Reporter")))))
+               (:button.button
+                ([:type "submit"])
+                "Create Link"))))))])))))
 
 ;; TODO: Stop showing e-mail and show participant ID instead.
 (define/contract ((view-study-participant-page auth db) _req study-id study-instance-id participant-id)
@@ -829,8 +919,8 @@
                 "Bot "
                 (rw "bot" (widget-select
                            (for/list ([(id _) (in-hash (get-bot-infos-for-study study-racket-id))])
-                                  (define id* (symbol->string id))
-                                  (cons id* id*)))))
+                             (define id* (symbol->string id))
+                             (cons id* id*)))))
                (:br)
                (:label
                 "Count "

@@ -1001,6 +1001,7 @@ QUERY
  (schema-out study-participant/admin)
  (schema-out study-var)
  (schema-out study-payment)
+ (schema-out study-instance-link)
  study-instance-var-value/deserialized
  study-var-value/deserialized
  make-study-manager
@@ -1121,6 +1122,13 @@ QUERY
            'value (->jsexpr/super (study-var-value/deserialized v))
            'first-put-at (moment->iso8601 first-put-at)
            'last-put-at (moment->iso8601 last-put-at)))])
+
+(define-schema study-instance-link
+  #:table "study_instance_links"
+  ([study-instance-id-a id/f]
+   [study-instance-id-b id/f]
+   [pseudonym-b symbol/f]
+   [relationship symbol/f #:contract (or/c 'source 'reporter)]))
 
 (define study-instance-var-value/deserialized
   (compose1 deserialize* study-instance-var-value))

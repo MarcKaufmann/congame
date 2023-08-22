@@ -119,6 +119,10 @@
       #:roles (admin)
       (admin:view-study-instance-page db)]
 
+     [("admin" "studies" (integer-arg) "instances" (integer-arg) "links" "new")
+      #:roles (admin)
+      (admin:create-study-instance-link-page db)]
+
      [("admin" "studies" (integer-arg) "instances" (integer-arg) "participants" (integer-arg))
       #:roles (admin)
       (admin:view-study-participant-page auth db)]
