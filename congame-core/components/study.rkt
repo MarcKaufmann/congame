@@ -73,7 +73,8 @@
  put/instance-file
  get
  get/instance
- get/instance-file)
+ get/instance-file
+ get/linked/instance)
 
 (define/contract current-git-sha
   (parameter/c (or/c #f string?))
@@ -253,19 +254,51 @@ QUERY
   (log-study-debug
    "get/instance~n  stack: ~s~n  key: ~s~n  root: ~s~n  participant-id: ~s"
    (current-study-ids) k root-id (current-participant-id))
+  (do-get/instance
+   (current-study-instance-id)
+   (current-study-array root-id)
+   (symbol->string k)
+   default))
+
+(define (do-get/instance instance-id stack key default)
   (with-database-transaction [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_instance_data" #:as d)
                                   (select d.value)
                                   (where (and
-                                          (= d.instance-id ,(current-study-instance-id))
-                                          (= d.study-stack ,(current-study-array root-id))
-                                          (= d.key ,(symbol->string k)))))))
+                                          (= d.instance-id ,instance-id)
+                                          (= d.study-stack ,stack)
+                                          (= d.key ,key))))))
 
     (cond
       [maybe-value => deserialize*]
       [(procedure? default) (default)]
       [else default])))
+
+(define (get/linked/instance pseudonym k
+                             [default (λ () (error 'get/instance/linked "value not found for ~s" k))]
+                             #:root [root-id '*root*])
+  (with-database-transaction [conn (current-database)]
+    (define instance-id
+      (query-maybe-value
+       conn
+       (~> (from study-instance-link #:as this-link)
+           (join study-instance-link
+                 #:as other-link
+                 #:on (and (= other-link.study-instance-id-b this-link.study-instance-id-a)
+                           (= other-link.study-instance-id-a this-link.study-instance-id-b)))
+           (where (and (= this-link.study-instance-id-a ,(current-study-instance-id))
+                       (= this-link.pseudonym-b ,pseudonym)
+                       (= this-link.relationship "reporter")
+                       (= other-link.relationship "source")))
+           (select this-link.study-instance-id-b))))
+    (unless instance-id
+      (error 'get/linked/instance "no link for pseudonym ~a" pseudonym))
+    (do-get/instance
+     instance-id
+     (current-study-array root-id)
+     (symbol->string k)
+     default)))
 
 (define (current-study-ids)
   (reverse (current-study-stack)))
