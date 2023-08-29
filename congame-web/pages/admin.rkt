@@ -27,6 +27,7 @@
          racket/match
          racket/port
          racket/pretty
+         racket/sequence
          racket/string
          racket/vector
          threading
@@ -507,6 +508,42 @@
     [(researcher) (lookup-study-instance-for-researcher db instance-id (user-id (current-user)))]
     [else (lookup-study-instance db instance-id)]))
 
+;; TODO: Extract to another module.
+(define-schema instance-link/admin
+  #:virtual
+  ([other-id id/f]
+   [other-study-id id/f]
+   [other-name string/f]
+   [pseudonym string/f]
+   [relationship symbol/f]
+   [linked? boolean/f]))
+
+(define (list-instance-links/admin db instance-id)
+  (define query
+    (~> (from study-instance-link #:as this-link)
+        (join study-instance #:as other #:on (= other.id this-link.study-instance-id-b))
+        (where (= this-link.study-instance-id-a ,instance-id))
+        (select
+         other.id
+         other.study-id
+         other.name
+         this-link.pseudonym-b
+         this-link.relationship
+         (subquery
+          (~> (from study-instance-link #:as other-link)
+              (where (and (= other-link.study-instance-id-b this-link.study-instance-id-a)
+                          (cond
+                            [(= this-link.relationship "source")
+                             (= other-link.relationship "reporter")]
+                            [(= this-link.relationship "reporter")
+                             (= other-link.relationship "source")]
+                            [else #f])))
+              (select (> (count *) 0)))))
+        (project-onto instance-link/admin-schema)))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn query))))
+
 (define/contract ((view-study-instance-page db) _req study-id study-instance-id)
   (-> database? (-> request? id/c id/c response?))
   (define the-instance (lookup-study-instance/checked db study-instance-id))
@@ -518,6 +555,8 @@
     (list-study-instance-vars db study-instance-id))
   (define bot-sets
     (list-bot-sets db study-instance-id))
+  (define links
+    (list-instance-links/admin db study-instance-id))
   (send/suspend/dispatch/protect
    (lambda (embed/url)
      (tpl:page
@@ -611,26 +650,11 @@
                  (:td
                   (~a (bot-set-bot-count bs))))))))
          (:h2 "Instance Links")
-         (:table.table
-          (:thead
-           (:tr
-            (:th "Instance")
-            (:th "Pseudonym")
-            (:th "Relationship")))
-          (:tbody
-           ;; FIXME: extract this to a function
-           ,@(with-database-connection [conn db]
-               (for/list ([l (in-entities conn (~> (from study-instance-link #:as l)
-                                                   (where (= l.study-instance-id-a ,study-instance-id))))])
-                 (haml
-                  (:tr
-                   (:td (~a (study-instance-link-study-instance-id-b l))) ;; FIXME: show the name and link to it
-                   (:td (~a (study-instance-link-pseudonym-b l)))
-                   (:td (string-titlecase (~a (study-instance-link-relationship l))))))))))
          (:h3
           (:a
            ([:href (reverse-uri 'admin:create-study-instance-link-page study-id study-instance-id)])
            "Create Link"))
+         (render-study-instance-links links)
          (:h2 "Instance Data")
          (:h3
           (:a
@@ -645,6 +669,30 @@
          (render-study-instance-vars vars)
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))
+
+(define (render-study-instance-links links)
+  (haml
+   (:table.table
+    (:thead
+     (:tr
+      (:th "Other Instance")
+      (:th "Pseudonym")
+      (:th "Relationship (to other)")
+      (:th "Status")))
+    (:tbody
+     ,@(for/list ([l (in-list links)])
+         (haml
+          (:tr
+           (:td
+            (:a
+             ([:href (reverse-uri
+                      'admin:view-study-instance-page
+                      (instance-link/admin-other-study-id l)
+                      (instance-link/admin-other-id l))])
+             (instance-link/admin-other-name l)))
+           (:td (instance-link/admin-pseudonym l))
+           (:td (string-titlecase (~a (instance-link/admin-relationship l))))
+           (:td (if (instance-link/admin-linked? l) "Linked" "Not Linked")))))))))
 
 (define (render-study-instance-vars vars)
   (haml
