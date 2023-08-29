@@ -15,6 +15,7 @@
          congame/components/registry
          congame/components/study
          congame/components/transition-graph
+         db
          deta
          file/zip
          gregor
@@ -511,7 +512,8 @@
 ;; TODO: Extract to another module.
 (define-schema instance-link/admin
   #:virtual
-  ([other-id id/f]
+  ([this-id id/f]
+   [other-id id/f]
    [other-study-id id/f]
    [other-name string/f]
    [pseudonym string/f]
@@ -524,6 +526,7 @@
         (join study-instance #:as other #:on (= other.id this-link.study-instance-id-b))
         (where (= this-link.study-instance-id-a ,instance-id))
         (select
+         this-link.study-instance-id-a
          other.id
          other.study-id
          other.name
@@ -543,6 +546,14 @@
   (with-database-connection [conn db]
     (sequence->list
      (in-entities conn query))))
+
+(define (delete-instance-link/admin db l)
+  (with-database-connection [conn db]
+    (query-exec conn (~> (from study-instance-link #:as l)
+                         (where (and (= l.study-instance-id-a ,(instance-link/admin-this-id l))
+                                     (= l.study-instance-id-b ,(instance-link/admin-other-id l))
+                                     (= l.pseudonym-b ,(instance-link/admin-pseudonym l))))
+                         (delete)))))
 
 (define/contract ((view-study-instance-page db) _req study-id study-instance-id)
   (-> database? (-> request? id/c id/c response?))
@@ -654,7 +665,40 @@
           (:a
            ([:href (reverse-uri 'admin:create-study-instance-link-page study-id study-instance-id)])
            "Create Link"))
-         (render-study-instance-links links)
+         (haml
+          (:table.table
+           (:thead
+            (:tr
+             (:th "Other Instance")
+             (:th "Pseudonym")
+             (:th "Relationship (to other)")
+             (:th "Status")
+             (:th "")))
+           (:tbody
+            ,@(for/list ([l (in-list links)])
+                (haml
+                 (:tr
+                  (:td
+                   (:a
+                    ([:href (reverse-uri
+                             'admin:view-study-instance-page
+                             (instance-link/admin-other-study-id l)
+                             (instance-link/admin-other-id l))])
+                    (instance-link/admin-other-name l)))
+                  (:td (instance-link/admin-pseudonym l))
+                  (:td (string-titlecase (~a (instance-link/admin-relationship l))))
+                  (:td (if (instance-link/admin-linked? l) "Linked" "Not Linked"))
+                  (:td (:a
+                        ([:href (embed/url
+                                 (lambda (_req)
+                                   (delete-instance-link/admin db l)
+                                   (redirect-to
+                                    (reverse-uri
+                                     'admin:view-study-instance-page
+                                     study-id
+                                     study-instance-id))))]
+                         [:onclick "return confirm('Are you sure?')"])
+                        "Delete"))))))))
          (:h2 "Instance Data")
          (:h3
           (:a
@@ -669,30 +713,6 @@
          (render-study-instance-vars vars)
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))
-
-(define (render-study-instance-links links)
-  (haml
-   (:table.table
-    (:thead
-     (:tr
-      (:th "Other Instance")
-      (:th "Pseudonym")
-      (:th "Relationship (to other)")
-      (:th "Status")))
-    (:tbody
-     ,@(for/list ([l (in-list links)])
-         (haml
-          (:tr
-           (:td
-            (:a
-             ([:href (reverse-uri
-                      'admin:view-study-instance-page
-                      (instance-link/admin-other-study-id l)
-                      (instance-link/admin-other-id l))])
-             (instance-link/admin-other-name l)))
-           (:td (instance-link/admin-pseudonym l))
-           (:td (string-titlecase (~a (instance-link/admin-relationship l))))
-           (:td (if (instance-link/admin-linked? l) "Linked" "Not Linked")))))))))
 
 (define (render-study-instance-vars vars)
   (haml
