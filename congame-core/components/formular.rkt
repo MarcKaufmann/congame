@@ -20,6 +20,7 @@
  make-put-form/cons-hash
  make-put-form/cons/instance
  make-put-form/hash
+ put-form/with
  formular
  formular-autofill
  add-validator
@@ -46,6 +47,14 @@
      (for ([kwd (in-list kws)]
            [arg (in-list kw-args)])
        (study:put (kwd->symbol kwd) arg)))))
+
+(define (put-form/with p)
+  (make-keyword-procedure
+   (lambda (kws kw-args)
+     (for ([kwd (in-list kws)]
+           [arg (in-list kw-args)])
+       (p (kwd->symbol kwd) arg)))))
+
 
 (define (make-put-form/cons-hash key)
   (make-keyword-procedure

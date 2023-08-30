@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require racket/random
+         racket/list
          congame/components/formular
          congame/components/study
          congame/components/transition-graph
@@ -12,6 +13,7 @@
 
 (define payment 1.5)
 (define completion-code "ABCDEFG")
+(define n-topics 3)
 
 (define (welcome-and-consent)
   (page
@@ -44,11 +46,14 @@
 (define (input-likert label)
   (input-number label #:min 1 #:max 7))
 
-(define ((topic-survey topic))
+(define (input-likert/how adjective)
+  (input-likert (format "How ~a do you find the topic? (1: not at all. 7: extremely.)" adjective)))
+
+(define ((topic-survey topic p))
   (page
    (haml
     (.container
-     (:h3 "Topic: ~a" topic)
+     (:h3 "Topic: " topic)
 
      (:p (format "The next topic is ~a. Please answer the following questions for this topic." topic))
 
@@ -56,12 +61,31 @@
       (haml
        (:div
         (:div
-         (#:familiar-A
-          (input-likert "How familiar are you with the topic on a scale from 1 (never heard about it) to 7 (I am an expert)?")))
+         (#:interesting (input-likert/how "interesting")))
         (:div
-         (#:how-often-talk-A
-          (input-likert (format "How often do you talk about the topic with your family or colleagues on a scale from 1 (never) to 7 (all the time)?"))))
-        submit-button)))))))
+         (#:important (input-likert/how "important")))
+        (:div
+         (#:controversial (input-likert/how "controversial")))
+        (:div
+         (#:understandable (input-likert/how "easy to understand")))
+        (:div (#:familiar
+          (input-likert "How familiar are you with the topic? (1: never heard about it. 7: you are an expert.)")))
+        (:div
+         (#:how-often-talk-family
+          (input-likert (format "How often do you talk about the topic with your family? (1: never. 7: all the time.)"))))
+        (:div
+         (#:how-often-talk-colleagues
+          (input-likert (format "How often do you talk about the topic with colleagues? (1: never. 7: all the time.)"))))
+        (:div
+         (#:learn-more
+          (input-likert (format "How interested would you be in learning more about the topic? (1: not at all. 7: extremely, you would enroll in a course on the topic if you had time.)"))))
+        (:div
+         (#:heard-of-last-week
+          (radios "Have you heard about the topic in the last week (the last 7 days)?"
+                  '(("yes" . "Yes")
+                    ("no"  . "No")))))
+        submit-button))
+      (put-form/with p))))))
 
 (define (thank-you)
   (page
@@ -83,8 +107,53 @@
    "Climate Change"))
 
 (define (randomization)
-  (define ts (random-sample topics 2))
+  (put 'topics (random-sample topics n-topics #:replacement? #f))
   (skip))
+
+(define (topic-surveys)
+  (define (get/loop k)
+    (get #:root '*loop*
+         #:round (get-current-round-stack)
+         #:group (get-current-group-stack)
+         k))
+  (define (put/loop k v)
+    (put #:root '*loop*
+         #:round (get-current-round-stack)
+         #:group (get-current-group-stack)
+         k v))
+
+  (define (set-state! topics)
+    (define topic (car topics))
+    (put-current-round-name topic)
+    (put/loop 'topic topic)
+    (put/loop 'remaining-topics (cdr topics)))
+
+  (define (setup)
+    (set-state! (get 'topics))
+    (skip))
+
+  (define (loop)
+    (define remaining-topics (get/loop 'remaining-topics))
+    (cond [(empty? remaining-topics)
+           (skip)]
+          [else
+           (set-state! remaining-topics)
+           (skip 'one-topic-survey)]))
+
+  (make-study
+   "sequence of topic surveys"
+   #:requires '(topics)
+   #:transitions
+   (transition-graph
+    [setup-loop --> one-topic-survey
+                --> loop
+                --> ,(lambda () done)])
+   (list
+    (make-step 'setup-loop setup)
+    (make-step 'loop loop)
+    (make-step 'one-topic-survey
+               (lambda ()
+                 ((topic-survey (get/loop 'topic) put/loop)))))))
 
 (define edpb-reasons-pilot
   (make-study
@@ -93,21 +162,19 @@
    (transition-graph
     [welcome-and-consent --> ,(lambda ()
                                 (if (string=? (get 'consent?) "yes")
-                                    (goto topic-survey-A)
+                                    (goto randomization)
                                     (goto no-consent)))]
 
-    [topic-survey-A --> topic-survey-B --> thank-you --> thank-you]
+    [randomization --> topic-surveys --> thank-you --> thank-you]
 
     [no-consent --> no-consent])
 
    (list
     (make-step 'welcome-and-consent welcome-and-consent)
     (make-step 'randomization randomization)
-    (make-step 'topic-survey-A
-               (lambda ()
-                 (topic-survey (get 'A))))
-    (make-step 'topic-survey-B
-               (lambda ()
-                 (topic-survey (get 'B))))
+    (make-step/study
+     'topic-surveys
+     (topic-surveys)
+     #:require-bindings `([topics ,(lambda () (get 'topics))]))
     (make-step 'no-consent no-consent)
     (make-step 'thank-you thank-you))))

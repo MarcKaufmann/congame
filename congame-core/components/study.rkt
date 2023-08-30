@@ -585,7 +585,7 @@ QUERY
 (define handler/c (-> step-page?))
 (define transition-result/c (or/c done? next? step-id/c))
 (define transition/c (-> transition-result/c))
-(define binding/c (list/c symbol? (or/c symbol? (list/c 'const any/c))))
+(define binding/c (list/c symbol? (or/c symbol? (list/c 'const any/c) procedure?)))
 
 (define (default-transition)
   next)
