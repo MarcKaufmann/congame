@@ -11,9 +11,10 @@
 (provide
  edpb-reasons-pilot)
 
-(define payment 1.5)
-(define completion-code "ABCDEFG")
+(define payment 2.00)
+(define completion-code "CET2506Q")
 (define n-topics 3)
+(define survey-duration 10)
 
 (define (welcome-and-consent)
   (page
@@ -21,7 +22,9 @@
     (.container
      (:h1 "Welcome")
 
-     (:p (format "The following short survey asks your opinion about, and familiarity with, specific topics. It takes around ten minutes to complete, and you will receive ~a GBP as a completion bonus. Please answer the questions truthfully, as they provide valuable information to us for another study. We will not reveal your individual answers to the participants of the subsequent study. Instead, we will show them statistics based on the responses of all participants in this survey. We will not be able to link your answers and your identity beyond the Prolific ID."
+     (:p (format "The following short survey asks your opinion about, and familiarity with, ~a specific topics. It takes around ~a minutes to complete, and you will receive ~a GBP as a completion bonus. Please answer the questions truthfully, as they provide valuable information to us for another study. We will not reveal your individual answers to the participants of the subsequent study. Instead, we will show them statistics based on the responses of all participants in this survey. We will not be able to link your answers and your identity beyond the Prolific ID."
+                 n-topics
+                 survey-duration
                  payment))
 
      (:p "If you agree to participate in the survey, you can still opt out anytime. However, you only receive the completion bonus if you complete the whole survey.")
@@ -29,11 +32,16 @@
      (formular
       (haml
        (:div
-        (#:consent?
-         (radios "Do you agree to participate in the survey?"
-                 '(("yes" . "Yes")
-                   ("no"  . "No"))))
-        submit-button)))))))
+        (:div
+         (#:prolific-id
+          (input-text "Please provide your Prolific ID.")))
+
+        (:div
+         (#:consent?
+          (radios "Do you agree to participate in the survey?"
+                  '(("yes" . "Yes")
+                    ("no"  . "No"))))
+         submit-button))))))))
 
 (define (no-consent)
   (page
