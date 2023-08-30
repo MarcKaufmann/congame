@@ -52,7 +52,15 @@
      (:p "You did not agree to participate in the survey. Thank you for taking the time to consider it.")))))
 
 (define (input-likert label)
-  (input-number label #:min 1 #:max 7))
+  #;(input-number label #:min 1 #:max 7)
+  (select label
+          `(("1" . " 1 ")
+            ("2" . " 2 ")
+            ("3" . " 3 ")
+            ("4" . " 4 ")
+            ("5" . " 5 ")
+            ("6" . " 6 ")
+            ("7" . " 7 "))))
 
 (define (input-likert/how adjective)
   (input-likert (format "How ~a do you find the topic? (1: not at all. 7: extremely.)" adjective)))
