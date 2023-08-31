@@ -16,6 +16,7 @@
 (provide
  current-api-url
  get-instance-participant-data
+ get-participants-data/list
  get-all-instances-data
  get-and-write-data
  write-data)
@@ -53,6 +54,14 @@
   (get api-url
        #:auth (lambda (url headers params)
                 (values (hash-set headers 'authorization key) params))))
+
+(define (get-participants-data/list study-id instance-id)
+  (define instance-data
+    (let ([res (get-instance-participant-data study-id instance-id)])
+      (if (equal? #"HTTP/1.1 200 OK" (response-status-line res))
+          (response-json res)
+          (error "Couldn't get data" (response-status-line res)))))
+  (hash-ref instance-data 'participants))
 
 (define (get-participants-data study-id instance-id)
   (define instance-data
