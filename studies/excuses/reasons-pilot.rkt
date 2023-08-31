@@ -11,10 +11,10 @@
 (provide
  edpb-reasons-pilot)
 
-(define payment 2.00)
+(define payment 3.00)
 (define completion-code "CET2506Q")
-(define n-topics 3)
-(define survey-duration 10)
+(define n-topics 5)
+(define survey-duration 15)
 
 (define (welcome-and-consent)
   (page
