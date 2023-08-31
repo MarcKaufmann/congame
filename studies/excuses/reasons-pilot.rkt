@@ -184,7 +184,7 @@
 
   (define (maybe-attention-check)
     (define i (get/loop 'index))
-    (cond [(zero? (modulo (sub1 i) 5))
+    (cond [(and (> i 1) (zero? (modulo (sub1 i) 5)))
            (page
             (haml
              (.container
