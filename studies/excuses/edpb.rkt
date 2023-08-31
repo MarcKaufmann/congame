@@ -75,27 +75,46 @@
     (.container
      (:h1 (format "Comprehension Test (~a attempt)" attempt))
 
-     ;; FIXME: add actual comprehension questions
      ;; FIXME: provide information (instructions etc) to answer the questions at the bottom of the comprehension form.
      (formular
       (haml
        (:div
-        (#:comprehension1
-         (radios
-          "What is 1 + 1? FIXME"
-          '(("0" . "0")
-            ("1" . "1")
-            ("2" . "2")
-            ("?" . "I don't know"))))
+        (:div
+         (#:when-paid
+          (radios
+           "When will you receive the payments?"
+           '(("1" . "Immediately after the first session.")
+             ("2" . "Immediately after the second session.")
+             ("3" . "Within three days after the second session.")))))
+        (:div
+         (#:session1-payment
+          (radios
+           "Will you receive any payment if you only complete the first session?"
+           '(("1" . "No, only if I complete both sessions.")
+             ("2" . "Yes, I receive a completion bonus for the first session within three days after the corresponding second session.")
+             ("3" . "Yes, I receive a completion bonus for the first session immediately after the first session.")
+             ("4" . "Yes, I receive a completion bonus for the first session and extra payment if I choose to work in the first session within three days after the corresponding second session.")))))
+        (:div
+         (#:how-many-abstracts
+          (radios
+           "If the decision to implement is '25 abstracts as animal rights vs. other in the second session', how many abstracts do you have to do in each session including the baseline abstracts?"
+           '(("1" . "0 today and 25 in the second session.")
+             ("2" . "15 today and 25 in the second session.")
+             ("3" . "15 today and 40 in the second session.")
+             ("4" . "25 today and 25 in the second session.")))))
         submit-button))
-        (lambda (#:comprehension1 comprehension1)
+        (lambda (#:when-paid when-paid
+                 #:session1-payment session1-payment
+                 #:how-many-abstracts how-many-abstracts)
           (define score
             (apply
              +
              (map
               (λ (b) (if b 1 0))
               (list
-               (string=? comprehension1 "2")))))
+               (string=? when-paid "3")
+               (string=? session1-payment "2")
+               (string=? how-many-abstracts "3")))))
           (put 'attempt (add1 (get 'attempt)))
           (put 'comprehension-test-score score)))))))
 
@@ -207,7 +226,7 @@
 ;;; MAIN STUDY
 
 (define (comprehension-test-success?)
-  (> (get 'comprehension-test-score) 0))
+  (> (get 'comprehension-test-score) 2))
 
 (define (tutorial)
   (define (initialize)
