@@ -11,10 +11,25 @@
 (provide
  edpb-reasons-pilot)
 
-(define payment 2.00)
+(define topics
+  (list
+   "Gender Inequality"
+   "Socioeconomic Inequality"
+   "Neuroscience"
+   "Sports"
+   "AI"
+   "Covid"
+   "Environment"
+   "Addiction"
+   "Health"
+   "Cognitive Skills"
+   "Self-control"
+   "Politics"))
+
+(define payment 3.00)
 (define completion-code "CET2506Q")
-(define n-topics 6)
-(define survey-duration 10)
+(define n-topics (length topics))
+(define survey-duration 15)
 
 (define (welcome-and-consent)
   (page
@@ -66,11 +81,11 @@
 (define (input-likert/how adjective)
   (input-likert (format "How ~a do you find the topic? (1: not at all. 7: extremely.)" adjective)))
 
-(define ((topic-survey topic p))
+(define ((topic-survey topic index p))
   (page
    (haml
     (.container
-     (:h3 topic)
+     (:h3 (format "Topic number ~a: ~a" index topic))
 
      (:p (hash-ref topic-descriptions topic) " Please answer the following questions for this topic.")
 
@@ -114,20 +129,6 @@
 
      (:h4 completion-code)))))
 
-(define topics
-  (list
-   "Gender Inequality"
-   "Socioeconomic Inequality"
-   "Neuroscience"
-   "Sports"
-   "AI"
-   "Covid"
-   "Environment"
-   "Addiction"
-   "Health"
-   "Cognitive Skills"
-   "Self-control"
-   "Politics"))
 
 (define topic-descriptions
   (hash
@@ -146,7 +147,7 @@
    "Politics" "The topic is 'Politics', involving activities and policies related to governance, power, and decision-making within a society."))
 
 (define (randomization)
-  (put 'topics (random-sample topics n-topics #:replacement? #f))
+  (put 'topics (shuffle topics))
   (skip))
 
 (define (topic-surveys)
@@ -163,9 +164,11 @@
 
   (define (set-state! topics)
     (define topic (car topics))
+    (define remaining-topics (cdr topics))
     (put-current-round-name topic)
     (put/loop 'topic topic)
-    (put/loop 'remaining-topics (cdr topics)))
+    (put/loop 'index (- n-topics (length remaining-topics)))
+    (put/loop 'remaining-topics remaining-topics))
 
   (define (setup)
     (set-state! (get 'topics))
@@ -177,22 +180,38 @@
            (skip)]
           [else
            (set-state! remaining-topics)
-           (skip 'one-topic-survey)]))
+           (skip 'maybe-attention-check)]))
+
+  (define (maybe-attention-check)
+    (define i (get/loop 'index))
+    (cond [(zero? (modulo (sub1 i) 5))
+           (page
+            (haml
+             (.container
+              (:h1 (format "You have completed ~a topics" (sub1 i)))
+
+              (:p "If the questions are becoming monotonous - since we ask the same questions about all topics - take a few breaths to refocus before continuing.")
+
+              (button void "Continue when ready"))))]
+          [else
+           (skip)]))
 
   (make-study
    "sequence of topic surveys"
    #:requires '(topics)
    #:transitions
    (transition-graph
-    [setup-loop --> one-topic-survey
+    [setup-loop --> maybe-attention-check
+                --> one-topic-survey
                 --> loop
                 --> ,(lambda () done)])
    (list
     (make-step 'setup-loop setup)
+    (make-step 'maybe-attention-check maybe-attention-check)
     (make-step 'loop loop)
     (make-step 'one-topic-survey
                (lambda ()
-                 ((topic-survey (get/loop 'topic) put/loop)))))))
+                 ((topic-survey (get/loop 'topic) (get/loop 'index) put/loop)))))))
 
 (define edpb-reasons-pilot
   (make-study
