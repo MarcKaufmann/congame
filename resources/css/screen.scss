@@ -287,6 +287,10 @@ input {
 .group {
   border-top: 1px solid black;
   padding: 1rem 0rem;
+
+  select {
+    margin: 0 8px 0 0;
+  }
 }
 
 /* Information boxes */

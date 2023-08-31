@@ -54,7 +54,8 @@
 (define (input-likert label)
   #;(input-number label #:min 1 #:max 7)
   (select label
-          `(("1" . " 1 ")
+          `((""  . "--Please choose an option--")
+            ("1" . " 1 ")
             ("2" . " 2 ")
             ("3" . " 3 ")
             ("4" . " 4 ")
@@ -69,9 +70,9 @@
   (page
    (haml
     (.container
-     (:h3 "Topic: " topic)
+     (:h3 topic)
 
-     (:p (format "The next topic is ~a. Please answer the following questions for this topic." topic))
+     (:p (hash-ref topic-descriptions topic) " Please answer the following questions for this topic.")
 
      (formular
       (haml
@@ -115,12 +116,34 @@
 
 (define topics
   (list
-   "Gender"
-   "Inequality"
-   "Covid"
-   "Artificial Intelligence (AI)"
+   "Gender Inequality"
+   "Socioeconomic Inequality"
+   "Neuroscience"
    "Sports"
-   "Climate Change"))
+   "AI"
+   "Covid"
+   "Environment"
+   "Addiction"
+   "Health"
+   "Cognitive Skills"
+   "Self-control"
+   "Politics"))
+
+(define topic-descriptions
+  (hash
+   "Gender Inequality" "The topic is 'Gender Inequality', which refers to the unfair differences in opportunities, resources, and treatment based on someone's gender, often leading to disadvantages for certain genders."
+   "Socioeconomic Inequality" "The topic is 'Socioeconomic Inequality', which means differences in opportunities, money, and resources among people in a society due to factors like income, education, and social background."
+   "Neuroscience" "The topic is 'Neuroscience', which is the scientific study of the nervous system, exploring how the brain and body interact to influence behavior and cognition."
+   "Sports" "The topic is 'Sports', encompassing physical activities and games involving skill, competition, and athleticism, often for entertainment and fitness."
+   "AI" "The topic is 'AI' or Artificial Intelligence, involving the development of computer systems capable of performing tasks that typically require human intelligence."
+   "Banking" "The topic is 'Banking', involving financial institutions and processes that manage money, offering services like saving, borrowing, and investing."
+   "Covid" "The topic is 'Covid', referring to the highly contagious respiratory illness caused by the novel coronavirus SARS-CoV-2."
+   "Environment" "The topic is 'Environment', encompassing the natural world and surroundings in which organisms live, including ecosystems and ecological health."
+   "Addiction" "The topic is 'Addiction', involving physiological and psychological dependence on substances or behaviors, often leading to negative consequences."
+   "Health" "The topic is 'Health', encompassing the overall physical, mental, and social well-being of an individual, including disease prevention and treatment."
+   "Cognitive Skills" "The topic is 'Cognitive Skills', referring to mental abilities such as thinking, learning, memory, problem-solving, and decision-making."
+   "Self-control" "The topic is 'Self-control', involving the ability to regulate one's own emotions, behaviors, and impulses in order to achieve long-term goals"
+   "Politics" "The topic is 'Politics', involving activities and policies related to governance, power, and decision-making within a society."))
 
 (define (randomization)
   (put 'topics (random-sample topics n-topics #:replacement? #f))
