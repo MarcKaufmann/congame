@@ -17,7 +17,8 @@
 
 (provide
  edpb-intro
- edpb-main)
+ edpb-main
+ edpb-pilot)
 
 ;; TODO
 ;; - Add intro-completion-code to the instance level of edpb-intro and edpb-main (where people receive it if they continue with the study)
@@ -441,7 +442,7 @@
             (:p "The study is not yet open for participants. Please come back later.")
             (:p "If you believe this is in error, please send an email to the study admin."))))]))
 
-(define (admin)
+(define (admin-page)
   (page
    (haml
     (.container
@@ -507,7 +508,48 @@
         (#:completion-code-entered (checkbox "I have entered my completion code on Prolific (required to continue)"))
         submit-button)))))))
 
+(define admin-study
+  (make-study
+   "abstracts-admin"
+   #:transitions
+   (transition-graph
+    [admin --> admin]
+    [abstracts-admin --> ,(lambda ()
+                            (put/instance* 'abstracts-set? #t)
+                            (open-study-if-ready)
+                            (goto admin))]
+    [completion-code-admin --> ,(lambda ()
+                                  (open-study-if-ready)
+                                  (goto admin))])
 
+   (list
+    (make-step 'admin admin-page)
+    (make-step 'completion-code-admin completion-code/admin)
+    (make-step/study 'abstracts-admin abstracts-admin))))
+
+(define edpb-pilot
+  (make-study
+   "edpb pilot"
+   #:transitions
+   (transition-graph
+    [assigning-roles --> ,(lambda ()
+                            (let ([role (get 'role)])
+                              (case role
+                                [(admin) (goto admin)]
+                                [(participant) (goto waiting-page)]
+                                [else (goto error-page)])))]
+    [error-page --> error-page]
+    ;; Admin
+    [admin --> admin]
+
+    ;; Participant
+    [waiting-page --> waiting-page])
+
+   (list
+    (make-step 'assigning-roles assigning-roles)
+    (make-step 'error-page (stub "Error Page"))
+    (make-step/study 'admin admin-study)
+    (make-step 'waiting-page waiting-page))))
 
 (define edpb-main
   (make-study
@@ -524,13 +566,6 @@
 
     ; ADMIN
     [admin --> admin]
-    [abstracts-admin --> ,(lambda ()
-                            (put/instance 'abstracts-set? #t)
-                            (open-study-if-ready)
-                            (goto admin))]
-    [completion-code-admin --> ,(lambda ()
-                                  (open-study-if-ready)
-                                  (goto admin))]
 
     ; PARTICIPANT
     [waiting-page --> tutorial
@@ -550,16 +585,12 @@
    (list
     (make-step 'assigning-roles assigning-roles)
     (make-step/study 'tutorial (tutorial))
-    (make-step 'admin admin)
-    (make-step 'completion-code-admin completion-code/admin)
-    (make-step/study 'abstracts-admin abstracts-admin)
     (make-step 'waiting-page waiting-page)
     (make-step 'error-page (stub "Error page"))
     (make-step 'consent consent)
     (make-step 'no-consent-ending no-consent-ending)
     (make-step 'consent-end-introduction consent-end-introduction)
-    (make-step 'admin admin)
-    (make-step/study 'abstracts-admin abstracts-admin)
+    (make-step/study 'admin admin-study)
     (make-step/study 'day1 day1)
     (make-step/study 'day2 day2)
     (make-step 'send-completion-email (stub "Send Completion Email"))

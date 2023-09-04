@@ -16,6 +16,7 @@
   '((studies/EMBA/src src-survey)
     (studies/excuses/edpb edpb-intro)
     (studies/excuses/edpb edpb-main)
+    (studies/excuses/edpb edpb-pilot)
     (studies/excuses/reasons-pilot edpb-reasons-pilot)
     (studies/new-CEU-programme/pre-survey pre-survey)
     (studies/real-effort/tasks task-study)))
