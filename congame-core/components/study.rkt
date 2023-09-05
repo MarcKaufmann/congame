@@ -554,7 +554,7 @@ QUERY
                    #:view-handler (or/c #f (-> request? response?))
                    #:for-bot procedure?)
                   step?)]
-  [make-step/study (->* (step-id/c study?)
+  [make-step/study (->* (step-id/c (or/c study? (-> study?)))
                         (transition/c
                          #:require-bindings (listof binding/c)
                          #:provide-bindings (listof binding/c))
@@ -601,11 +601,15 @@ QUERY
                                     (raise-user-error "no bot transition for step" id)))])
   (step id handler handler/bot view-hdl transition))
 
-(define (make-step/study id s
+(define (make-step/study id study-or-proc
                          [transition (lambda () next)]
                          #:require-bindings [require-bindings null]
                          #:provide-bindings [provide-bindings null])
   (define (handler)
+    (define s
+      (if (procedure? study-or-proc)
+          (study-or-proc)
+          study-or-proc))
     (define all-required-bindings
       (for/fold ([seen (for/hasheq ([binding (in-list require-bindings)])
                          (values (car binding) #t))]
@@ -639,14 +643,17 @@ QUERY
       ;; two sub-studies (#24).
       (current-resume-stack null)
       (continue)))
-  (step/study id handler void #f transition s))
+  (step/study id handler void #f transition study-or-proc))
 
 (define/contract (map-step s proc)
   (-> step? (-> handler/c handler/c) step?)
   (if (step/study? s)
       (make-step/study
        (step-id s)
-       (map-study (step/study-study s) proc)
+       (let ([study-or-proc (step/study-study s)])
+         (if (procedure? study-or-proc)
+             (λ () (map-study (study-or-proc) proc))
+             (map-study study-or-proc proc)))
        (step-transition s))
       (make-step
        (step-id s)

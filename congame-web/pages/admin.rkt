@@ -337,7 +337,8 @@
                         (cons (study-meta-name meta)
                               (comptime-transitions->pdf (study-transitions the-study)))
                         (for/list ([sub (in-list (study-steps the-study))]
-                                   #:when (step/study? sub))
+                                   #:when (step/study? sub)
+                                   #:unless (procedure? (step/study-study sub)))
                           (cons (step-id sub)
                                 (comptime-transitions->pdf (study-transitions (step/study-study sub)))))))
                      (define filenames
