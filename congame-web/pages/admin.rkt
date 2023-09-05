@@ -12,6 +12,7 @@
          congame-web/studies/all ;; required for its effects
          (prefix-in dsl: congame/components/dsl)
          congame/components/export
+         congame/components/instance-link
          congame/components/registry
          congame/components/study
          congame/components/transition-graph
@@ -508,52 +509,6 @@
   (user-roles-case (current-user)
     [(researcher) (lookup-study-instance-for-researcher db instance-id (user-id (current-user)))]
     [else (lookup-study-instance db instance-id)]))
-
-;; TODO: Extract to another module.
-(define-schema instance-link/admin
-  #:virtual
-  ([this-id id/f]
-   [other-id id/f]
-   [other-study-id id/f]
-   [other-name string/f]
-   [pseudonym string/f]
-   [relationship symbol/f]
-   [linked? boolean/f]))
-
-(define (list-instance-links/admin db instance-id)
-  (define query
-    (~> (from study-instance-link #:as this-link)
-        (join study-instance #:as other #:on (= other.id this-link.study-instance-id-b))
-        (where (= this-link.study-instance-id-a ,instance-id))
-        (select
-         this-link.study-instance-id-a
-         other.id
-         other.study-id
-         other.name
-         this-link.pseudonym-b
-         this-link.relationship
-         (subquery
-          (~> (from study-instance-link #:as other-link)
-              (where (and (= other-link.study-instance-id-b this-link.study-instance-id-a)
-                          (cond
-                            [(= this-link.relationship "source")
-                             (= other-link.relationship "reporter")]
-                            [(= this-link.relationship "reporter")
-                             (= other-link.relationship "source")]
-                            [else #f])))
-              (select (> (count *) 0)))))
-        (project-onto instance-link/admin-schema)))
-  (with-database-connection [conn db]
-    (sequence->list
-     (in-entities conn query))))
-
-(define (delete-instance-link/admin db l)
-  (with-database-connection [conn db]
-    (query-exec conn (~> (from study-instance-link #:as l)
-                         (where (and (= l.study-instance-id-a ,(instance-link/admin-this-id l))
-                                     (= l.study-instance-id-b ,(instance-link/admin-other-id l))
-                                     (= l.pseudonym-b ,(instance-link/admin-pseudonym l))))
-                         (delete)))))
 
 (define/contract ((view-study-instance-page db) _req study-id study-instance-id)
   (-> database? (-> request? id/c id/c response?))
