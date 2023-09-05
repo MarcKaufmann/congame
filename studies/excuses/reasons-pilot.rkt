@@ -161,6 +161,10 @@
          #:round (get-current-round-stack)
          #:group (get-current-group-stack)
          k v))
+  (define (put/round k v)
+    (put #:round (get-current-round-stack)
+         #:group (get-current-group-stack)
+         k v))
 
   (define (set-state! topics)
     (define topic (car topics))
@@ -211,7 +215,7 @@
     (make-step 'loop loop)
     (make-step 'one-topic-survey
                (lambda ()
-                 ((topic-survey (get/loop 'topic) (get/loop 'index) put/loop)))))))
+                 ((topic-survey (get/loop 'topic) (get/loop 'index) put/round)))))))
 
 (define edpb-reasons-pilot
   (make-study
