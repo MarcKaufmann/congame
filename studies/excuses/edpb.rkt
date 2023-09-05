@@ -3,6 +3,7 @@
 (require racket/contract
          racket/format
          racket/match
+         racket/random
          racket/serialize
          (only-in xml xexpr/c)
          koyo/haml
@@ -14,6 +15,10 @@
          (submod congame/components/study accessors)
          "templates.rkt"
          "abstract-categorization.rkt")
+
+; FIXME: Do not provide the accurate completion code for the pilot when people do not consent. No need to pay then.
+; FIXME: define ->jsexpr for choice-envs, options, reasons, etc
+; FIXME: create file with more abstracts so that I can have 20 or more
 
 (provide
  edpb-intro
@@ -147,13 +152,13 @@
 
 
 
-(define (no-consent-ending)
+(define (no-consent)
   (page
    (haml
     (.container
      (:h1 "Your Completion Code")
 
-     (:p (format "To complete the introduction, go now to prolific and enter the following completion code: ~a" (get/instance 'completion-code)))
+     (:p (format "To complete the introduction, go now to prolific and enter the following completion code: ~a" (get/instance* 'completion-code)))
 
      (:p "Since you did not agree to participate in the remainder of the study, you are now done.")))))
 
@@ -275,7 +280,7 @@
     (make-step/study
      'tutorial-tasks
      (abstract-tasks)
-     #:require-bindings '([n             n]
+     #:require-bindings `([n             n]
                           [category      (const "Gender")]
                           [non-category  (const "Other")]))
     (make-step 'repeat-comprehension-test repeat-comprehension-test)
@@ -327,14 +332,13 @@
      ; FIXME: update to have the type.
      (format "~a tasks ~a" amount (if (equal? session 'session1) "today" "next session"))]))
 
-(define/contract (abstract-choice ce)
+(define/contract (abstract-choice ce k)
   ; FIXME: does page return an xexpr?
-  (-> choice-env? any/c)
+  (-> choice-env? symbol? any/c)
   (define (put/choice o)
     (define choices
-      (get 'work-choices '()))
-    (put 'work-choices
-         (cons (cons o ce) choices)))
+      (get k '()))
+    (put k (cons (cons (string->symbol o) ce) choices)))
   (page
    (haml
     (.container
@@ -367,11 +371,12 @@
                               [else
                                (goto choice-page)]))])
    #:requires '(remaining-choices)
+   #:provides '(work-choices)
    (list
     (make-step 'choice-page (lambda ()
                               (define next-ce
                                 (car (get 'remaining-choices)))
-                              (abstract-choice next-ce))))))
+                              (abstract-choice next-ce 'work-choices))))))
 
 (define (set-treatments)
   ; FIXME: Needs to be determined once work choices etc display properly
@@ -402,7 +407,8 @@
     (make-step/study
      'work-choices
      work-choices
-     #:require-bindings '([remaining-choices choices-to-make]))
+     #:require-bindings '([remaining-choices choices-to-make])
+     #:provide-bindings '([choices-made work-choices]))
     (make-step 'determine-choice-that-counts  (stub "Determine choice that counts"))
     (make-step 'work-day1  (stub "Work Day 1"))
     (make-step 'schedule-reminder-email  (stub "Schedule reminder email")))))
@@ -456,7 +462,7 @@
 
      (:h3 "Completion Code")
 
-     (cond [(get/instance 'completion-code #f)
+     (cond [(get/instance* 'completion-code #f)
             => (lambda (c)
                  (haml (:p "The current completion code is " c)))]
            [else
@@ -474,7 +480,7 @@
         (#:completion-code (input-text "What is the new completion code?"))
         submit-button))
       (lambda (#:completion-code completion-code)
-        (put/instance 'completion-code completion-code)))
+        (put/instance* 'completion-code completion-code)))
 
      (button void "Cancel")))))
 
@@ -487,8 +493,8 @@
          (error 'switch-phase-to "failed because the current phase is ~a, but needs to be ~a to switch phase" old-phase cp)]))
 
 (define (open-study-if-ready)
-  (when (and (get/instance 'completion-code #f)
-             (get/instance 'abstracts-set? #f))
+  (when (and (get/instance* 'completion-code #f)
+             (get/instance* 'abstracts-set? #f))
     (switch-phase-to 'open #:check-current-phase #f)))
 
 (define (consent-end-introduction)
@@ -498,7 +504,7 @@
      (:h1 "Completion Code for Introduction")
 
      (:p "You have completed the introduction. Please enter the following completion code on Prolific now before continuing:"
-         (get/instance 'completion-code))
+         (get/instance* 'completion-code))
 
      (:p "Once you have done so, start the main study as soon as possible, if you wait too long, you may not be able to participate.")
 
@@ -527,29 +533,162 @@
     (make-step 'completion-code-admin completion-code/admin)
     (make-step/study 'abstracts-admin abstracts-admin))))
 
+(define (route-participants)
+  (let ([role (get 'role)])
+    (case role
+      [(admin) 'admin]
+      [(participant) 'waiting-page]
+      [else 'error-page])))
+
+(define (error-page)
+  (page
+   (haml
+    (.container
+     (:h1 "An error occurred")
+
+     (:p "We are sorry, but an error occurred. You can contact us to report the error.")))))
+
+(define (set-pilot-choices)
+  ; FIXME: add all the choices that I want to be made
+  ; FIXME: put all the randomization of orders etc here
+  (put 'choices-to-make
+       (list
+
+        (choice-env
+         (o+r (option 'session1 '("Equality" "Other") 25) (reason 'for "'tis good"))
+         (o+r (option 'session1 '("Gender" "Other") 25) (reason 'against "dis BAD!")))
+
+        (choice-env
+         (o+r (option 'session2 '("Sport" "Other") 15) (reason 'for "Y not!"))
+         (o+r (option 'session1 '("Sport" "Other") 20) #f))))
+  (skip))
+
+(define (determine-pilot-choices)
+  ; FIXME: This is some ugly and tedious code.
+  (define cs (get 'choices-made))
+  (define c (random-ref cs))
+  (define A-or-B (car c))
+  (define ce (cdr c))
+  ;(eprintf "Choice environment that counts: ~a" ce)
+  (match-define (choice-env (o+r A RA)
+                            (o+r B RB))
+    ce)
+  (define-values (o r)
+    (if (equal? A-or-B 'A)
+        (values A RA)
+        (values B RB)))
+  (eprintf "Option that counts: ~a" o)
+  (put 'additional-option o)
+  (put 'additional-reason r)
+  (match-define (option session (list category non-category) n)
+    o)
+  (put 'additional-n n)
+  (put 'additional-category category)
+  (put 'additional-non-category non-category)
+  (page
+   (haml
+    (.container
+     (:h1 "Determined choice that counts")
+
+     (button void "Continue")))))
+
+(define (initialize-pilot)
+  (put 'baseline-n 2)
+  (put 'baseline-category "Gender")
+  (put 'baseline-non-category "Other")
+  (skip))
+
+(define pilot-main
+  (make-study
+   "main part of pilot"
+   #:transitions
+   (transition-graph
+    [initialize --> set-choices
+                --> choices
+                --> determine-choice-that-counts
+                --> do-baseline-work
+                --> do-additional-work
+                --> ,(lambda () next)])
+   (list
+    (make-step 'initialize initialize-pilot)
+    (make-step 'set-choices set-pilot-choices)
+    (make-step/study
+     'choices
+     work-choices
+     #:require-bindings '([remaining-choices choices-to-make])
+     #:provide-bindings '([choices-made work-choices]))
+    (make-step 'determine-choice-that-counts determine-pilot-choices)
+    ; FIXME: change require bindings to be an option, not three separate values.
+    (make-step/study
+     'do-baseline-work
+     (abstract-tasks)
+     #:require-bindings `([n            ,(lambda () (get 'baseline-n))]
+                          [category     ,(lambda () (get 'baseline-category))]
+                          [non-category ,(lambda () (get 'baseline-non-category))]))
+    (make-step/study
+     'do-additional-work
+     (abstract-tasks)
+     #:require-bindings `([n            ,(lambda () (get 'additional-n))]
+                          [category      ,(lambda () (get 'additional-category))]
+                          [non-category  ,(lambda () (get 'additional-non-category))])))))
+
+(define (pilot-tutorial)
+  (define (pilot-instructions)
+    (page
+     (haml
+      (.container
+       (:h1 "Instructions")
+
+       (button void "Next")))))
+
+  (define (pilot-comprehension-test)
+    (page
+     (haml
+      (.container
+       (:h1 "Comprehension Test")
+
+       (button void "Next")))))
+
+  (make-study
+   "pilot tutorial"
+   #:transitions
+   (transition-graph
+    [instructions --> comprehension-test
+                  --> ,(lambda () next)])
+   (list
+    (make-step 'instructions pilot-instructions)
+    (make-step 'comprehension-test pilot-comprehension-test))))
+
 (define edpb-pilot
   (make-study
    "edpb pilot"
    #:transitions
    (transition-graph
-    [assigning-roles --> ,(lambda ()
-                            (let ([role (get 'role)])
-                              (case role
-                                [(admin) (goto admin)]
-                                [(participant) (goto waiting-page)]
-                                [else (goto error-page)])))]
+    [assigning-roles --> ,route-participants]
     [error-page --> error-page]
     ;; Admin
     [admin --> admin]
 
     ;; Participant
-    [waiting-page --> waiting-page])
+    [waiting-page --> tutorial
+                  --> consent
+                  --> ,(lambda ()
+                         (if (get 'consent-given?) 'main 'no-consent))]
+
+    [no-consent --> no-consent]
+    [main --> debriefing]
+    [debriefing --> debriefing])
 
    (list
     (make-step 'assigning-roles assigning-roles)
-    (make-step 'error-page (stub "Error Page"))
+    (make-step 'error-page error-page)
+    (make-step 'consent consent)
+    (make-step/study 'tutorial (pilot-tutorial))
     (make-step/study 'admin admin-study)
-    (make-step 'waiting-page waiting-page))))
+    (make-step 'waiting-page waiting-page)
+    (make-step/study 'main pilot-main)
+    (make-step 'debriefing (stub "Debriefing"))
+    (make-step 'no-consent no-consent))))
 
 (define edpb-main
   (make-study
@@ -557,11 +696,7 @@
    #:transitions
    (transition-graph
     ; ROLE ASSIGNMENT
-    [assigning-roles --> ,(lambda ()
-                            (let ([role (get 'role)])
-                              (cond [(equal? role 'admin)       (goto admin)]
-                                    [(equal? role 'participant) (goto waiting-page)]
-                                    [else                       (goto error-page)])))]
+    [assigning-roles --> ,route-participants]
     [error-page --> error-page]
 
     ; ADMIN
@@ -574,7 +709,7 @@
                          (cond [(get 'consent-given?) (goto consent-end-introduction)]
                                [else (goto no-consent-ending)]))]
 
-    [no-consent-ending --> no-consent-ending]
+    [no-consent --> no-consent]
 
     [consent-end-introduction --> day1
                               --> day2
@@ -588,7 +723,7 @@
     (make-step 'waiting-page waiting-page)
     (make-step 'error-page (stub "Error page"))
     (make-step 'consent consent)
-    (make-step 'no-consent-ending no-consent-ending)
+    (make-step 'no-consent no-consent)
     (make-step 'consent-end-introduction consent-end-introduction)
     (make-step/study 'admin admin-study)
     (make-step/study 'day1 day1)
