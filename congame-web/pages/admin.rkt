@@ -16,7 +16,6 @@
          congame/components/registry
          congame/components/study
          congame/components/transition-graph
-         db
          deta
          file/zip
          gregor
@@ -29,7 +28,6 @@
          racket/match
          racket/port
          racket/pretty
-         racket/sequence
          racket/string
          racket/vector
          threading
