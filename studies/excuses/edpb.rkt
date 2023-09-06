@@ -2,12 +2,15 @@
 
 (require racket/contract
          racket/format
+         racket/generic
          racket/match
+         racket/pretty
          racket/random
          racket/serialize
          (only-in xml xexpr/c)
          koyo/haml
          koyo/url
+         congame/components/export
          congame/components/study
          congame/components/transition-graph
          congame/components/formular
@@ -16,8 +19,6 @@
          "templates.rkt"
          "abstract-categorization.rkt")
 
-; FIXME: Do not provide the accurate completion code for the pilot when people do not consent. No need to pay then.
-; FIXME: define ->jsexpr for choice-envs, options, reasons, etc
 ; FIXME: create file with more abstracts so that I can have 20 or more
 
 (provide
@@ -156,11 +157,9 @@
   (page
    (haml
     (.container
-     (:h1 "Your Completion Code")
+     (:h1 "Thanks for considering the study")
 
-     (:p (format "To complete the introduction, go now to prolific and enter the following completion code: ~a" (get/instance* 'completion-code)))
-
-     (:p "Since you did not agree to participate in the remainder of the study, you are now done.")))))
+     (:p "Since you did not agree to participate in the study, you are done.")))))
 
 (define (thank-you)
   (page
@@ -298,25 +297,58 @@
 ;;; For each option, we need to be able to generate the option description
 
 ;;; For now, create options and choices for abstract categorization only. Generalize later.
-(serializable-struct option [session type amount]
-  #:transparent)
+(serializable-struct option [session topics amount]
+  #:transparent
+  #:methods gen:jsexprable
+  [(define/generic ->jsexpr/super ->jsexpr)
+   (define (->jsexpr o)
+     (match-define (option session topics amount) o)
+     (hasheq 'type      "option"
+             'session   (->jsexpr/super session)
+             'topics    (->jsexpr/super topics)
+             'amount    (->jsexpr/super amount)))])
 
 ; o+r is an option + optional reason
 (serializable-struct o+r [option reason]
-  #:transparent)
+  #:transparent
+  #:methods gen:jsexprable
+  [(define/generic ->jsexpr/super ->jsexpr)
+   (define (->jsexpr o)
+     (match-define (o+r opt r) o)
+     (hasheq 'type      "option + reason"
+             'option    (->jsexpr/super opt)
+             'reason    (->jsexpr/super r)))])
 
 ; choice-set consists in an option A and an option B -- without reasons!
 (serializable-struct choice-set [A B]
-  #:transparent)
+  #:transparent
+  #:methods gen:jsexprable
+  [(define/generic ->jsexpr/super ->jsexpr)
+   (define (->jsexpr cs)
+     (hasheq 'type "choice set"
+             'option-A (->jsexpr/super (choice-set-A cs))
+             'option-B (->jsexpr/super (choice-set-B cs))))])
 
 ; choice-env determines whether there are reasons for each option.
 ; So A and B are an option + [Maybe reason]
 (serializable-struct choice-env [A B]
-  #:transparent)
+  #:transparent
+  #:methods gen:jsexprable
+  [(define/generic ->jsexpr/super ->jsexpr)
+   (define (->jsexpr ce)
+     (hasheq 'type "choice environment"
+             'option+reason-A (->jsexpr/super (choice-env-A ce))
+             'option+reason-B (->jsexpr/super (choice-env-B ce))))])
 
 ; reasons have a direction ('for or 'against) and some text.
 (serializable-struct reason [dir text]
-  #:transparent)
+  #:transparent
+  #:methods gen:jsexprable
+  [(define/generic ->jsexpr/super ->jsexpr)
+   (define (->jsexpr r)
+     (hasheq 'type "reason"
+             'direction (->jsexpr/super (reason-dir r))
+             'text      (reason-text r)))])
 
 (define/contract (describe opt ce)
   (-> (or/c 'A 'B) choice-env? string?)
