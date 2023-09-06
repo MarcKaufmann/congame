@@ -19,6 +19,8 @@
          (submod congame/components/study accessors)
          (submod congame/components/formular tools))
 
+; FIXME: test uploading new abstracts, but need clean abstracts for that first
+; FIXME: Getting abstracts is broken since I changed the way they are uploaded.
 ;; How to the whole task work
 ;; - provide the abstracts in some form and, ideally, store in the DB
 ;; - access them easily
@@ -62,8 +64,6 @@
      (hash 'abstract text
            'categories categories
            'non-categories non-categories))])
-
-(define *ABSTRACTS* #f)
 
 (struct exn:fail:->abstract exn:fail ())
 
@@ -157,6 +157,33 @@
                    (pretty-write (->jsexpr a)))))))))))
 
 
+(define (store-abstracts as)
+  ; Create three 'tables' (hashes):
+  ; 1. One mapping an ID to the text of an abstract
+  ; 2. One mapping each topic to the list of abstract IDs that match this topic
+  ; 3. One mapping each topic to the list of abstract IDs that do NOT match this topic
+  ; The third one is necessary, since the fact that we did not categorize an abstract as being about some topic, say "Sports", is not a guarantee that it is really not about "Sports", but simply that it is first and foremost about something else.
+  ; To do this efficiently, use an exogenous list of topics, iterate over the abstracts and update the hashes for each abstract, creating the ID on the fly.
+  (define-values (abstracts topics non-topics)
+    (for/fold ([abstracts (hash)]
+             [topics (hash)]
+             [non-topics (hash)])
+            ([a as]
+             [i (in-naturals)])
+    (match-define (abstract text categories non-categories) a)
+    (define cs (map string-trim (string-split categories ";")))
+    (define non-cs (map string-trim (string-split non-categories ";")))
+    (values (hash-set abstracts i text)
+            (for/fold ([ts topics])
+                      ([c cs])
+              (hash-update ts c (lambda (v) (cons i v))))
+            (for/fold ([non-ts non-topics])
+                      ([non-c non-cs])
+              (hash-update non-ts non-c (lambda (v) (cons i v)))))))
+  (put/instance/abstracts* 'abstracts abstracts)
+  (put/instance/abstracts* 'topics topics)
+  (put/instance/abstracts* 'non-topics non-topics))
+
 (define (check-abstracts)
   (define abstracts (get/instance/abstracts* 'abstracts))
   (page
@@ -168,8 +195,7 @@
 
      (button
       (lambda ()
-        (set! *ABSTRACTS* abstracts)
-        (put/instance/abstracts* 'abstracts abstracts))
+        (store-abstracts abstracts))
       "Keep Abstracts")
 
      (button void "Upload other abstracts" #:to-step-id 'upload-abstracts)
