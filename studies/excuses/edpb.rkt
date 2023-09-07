@@ -237,8 +237,9 @@
   (define (initialize)
     (put/instance 'n 2)
     (put 'n 2)
+    ; FIXME: random-abstract-matching only gets a single abstract task, which seems stupid to have a function for.
     (put/instance 'tutorial-example
-                  (random-abstract-matching "Equality" "Other"))
+                  (random-abstract-matching "sports" "other"))
     (skip))
 
   (make-study
@@ -280,8 +281,8 @@
      'tutorial-tasks
      (abstract-tasks)
      #:require-bindings `([n             n]
-                          [category      (const "Gender")]
-                          [non-category  (const "Other")]))
+                          [category      (const "gender inequality")]
+                          [non-category  (const "other")]))
     (make-step 'repeat-comprehension-test repeat-comprehension-test)
     (make-step 'fail-comprehension-test fail-comprehension-test))))
 
@@ -416,12 +417,12 @@
        (list
 
         (choice-env
-         (o+r (option 'session1 '("Equality" "Other") 25) (reason 'for "'tis good"))
-         (o+r (option 'session1 '("Gender" "Other") 25) (reason 'against "dis BAD!")))
+         (o+r (option 'session1 '("socioeconomic inequality" "other") 5) (reason 'for "'tis good"))
+         (o+r (option 'session1 '("sport" "other") 5) (reason 'against "dis BAD!")))
 
         (choice-env
-         (o+r (option 'session2 '("Sport" "Other") 15) (reason 'for "Y not!"))
-         (o+r (option 'session1 '("Sport" "Other") 20) #f))))
+         (o+r (option 'session2 '("sport" "other") 10) (reason 'for "Y not!"))
+         (o+r (option 'session1 '("sport" "other") 15) #f))))
   (skip))
 
 (define day1
@@ -587,12 +588,12 @@
        (list
 
         (choice-env
-         (o+r (option 'session1 '("Equality" "Other") 25) (reason 'for "'tis good"))
-         (o+r (option 'session1 '("Gender" "Other") 25) (reason 'against "dis BAD!")))
+         (o+r (option 'session1 '("socioeconomic inequality" "other") 5) (reason 'for "'tis good"))
+         (o+r (option 'session1 '("gender inequality" "other") 5) (reason 'against "dis BAD!")))
 
         (choice-env
-         (o+r (option 'session2 '("Sport" "Other") 15) (reason 'for "Y not!"))
-         (o+r (option 'session1 '("Sport" "Other") 20) #f))))
+         (o+r (option 'session2 '("sport" "other") 15) (reason 'for "Y not!"))
+         (o+r (option 'session1 '("sport" "other") 10) #f))))
   (skip))
 
 (define (determine-pilot-choices)
@@ -615,8 +616,8 @@
   (match-define (option session (list category non-category) n)
     o)
   (put 'additional-n n)
-  (put 'additional-category category)
-  (put 'additional-non-category non-category)
+  (put 'additional-category (string-downcase category))
+  (put 'additional-non-category (string-downcase non-category))
   (page
    (haml
     (.container
@@ -626,8 +627,8 @@
 
 (define (initialize-pilot)
   (put 'baseline-n 2)
-  (put 'baseline-category "Gender")
-  (put 'baseline-non-category "Other")
+  (put 'baseline-category "gender inequality")
+  (put 'baseline-non-category "other")
   (skip))
 
 (define pilot-main

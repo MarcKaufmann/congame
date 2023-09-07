@@ -4,7 +4,9 @@
          koyo/haml
          racket/format
          racket/generic
+         racket/list
          racket/match
+         racket/math
          racket/port
          racket/pretty
          racket/random
@@ -19,7 +21,8 @@
          (submod congame/components/study accessors)
          (submod congame/components/formular tools))
 
-; FIXME: test uploading new abstracts, but need clean abstracts for that first
+; FIXME: turn the categories into symbols, not strings, and have them lowercase.
+; Then I get automatic error message if I try to write the symbol to the page, and can use (->jsexpr cat) or some such to display.
 ; FIXME: Getting abstracts is broken since I changed the way they are uploaded.
 ;; How to the whole task work
 ;; - provide the abstracts in some form and, ideally, store in the DB
@@ -83,7 +86,7 @@
    (lambda (s) (string=? s "yes"))))
 
 (define (abstract-example example)
-  (match-define (abstract text cat non-cat) example)
+  (match-define (list id text cat) example)
   (haml
    (:div
     (:h3 "Example")
@@ -92,8 +95,7 @@
 
     (:p text)
 
-    (:p (format "It belongs to the category ~a, but does not belong to the category ~a."
-                cat non-cat)))))
+    (:p (format "It belongs in '~a'." cat)))))
 
 (define (task-description n-tasks example)
   (page
@@ -115,7 +117,7 @@
 (define (input-abstracts label)
   (~> (input-file label)
       (cast-result*
-       (compose1 csv->list binding:file/port-in)
+       (compose1 (lambda (f) (csv->list (make-csv-reader f '((separator-chars #\;))))) binding:file/port-in)
        #:exn-predicate exn:fail:csv-reader?
        #:exn-handler (λ (_e) "error reading csv: we expect comma (,) not semicolon (;) as separator, and exactly 3 columns with text.~n You may also want to check for the BOM.)"))
       (cast-result*
@@ -143,19 +145,36 @@
       (lambda (#:abstracts abstracts
                #:header? header?)
         (put/abstracts* 'header? header?)
-        (put/instance/abstracts* 'abstracts (if header? (cdr abstracts) abstracts))))))))
+        (put/instance/abstracts* 'raw-abstracts (if header? (cdr abstracts) abstracts))))))))
 
 (define (display-abstracts)
   (haml
    (:div
     (:h3 "Abstracts")
-    (:ul
-     ,@(for/list ([a (get/instance/abstracts* 'abstracts)])
+    (:table
+     (:thead
+      (:tr
+       (:th "ID") (:th "Abstract")))
+     (:tbody
+     ,@(for/list ([(i a) (get/instance/abstracts* 'abstracts)])
          (haml
-          (:li (with-output-to-string
-                 (lambda ()
-                   (pretty-write (->jsexpr a)))))))))))
+          (:tr
+           (:td (number->string i))
+           (:td (call-with-output-string
+                 (lambda (p)
+                   (fprintf p "~.s" a))))))))))))
 
+(define (display-raw-abstracts)
+  (haml
+   (:div
+    (:h3 "Abstracts")
+    (:ul
+     ,@(for/list ([a (get/instance/abstracts* 'raw-abstracts)])
+         (haml
+          (:li
+           (call-with-output-string
+            (lambda (p)
+              (fprintf p "~.s" (->jsexpr a)))))))))))
 
 (define (store-abstracts as)
   ; Create three 'tables' (hashes):
@@ -166,26 +185,32 @@
   ; To do this efficiently, use an exogenous list of topics, iterate over the abstracts and update the hashes for each abstract, creating the ID on the fly.
   (define-values (abstracts topics non-topics)
     (for/fold ([abstracts (hash)]
-             [topics (hash)]
-             [non-topics (hash)])
-            ([a as]
-             [i (in-naturals)])
-    (match-define (abstract text categories non-categories) a)
-    (define cs (map string-trim (string-split categories ";")))
-    (define non-cs (map string-trim (string-split non-categories ";")))
-    (values (hash-set abstracts i text)
-            (for/fold ([ts topics])
-                      ([c cs])
-              (hash-update ts c (lambda (v) (cons i v))))
-            (for/fold ([non-ts non-topics])
-                      ([non-c non-cs])
-              (hash-update non-ts non-c (lambda (v) (cons i v)))))))
+               [topics (hash)]
+               [non-topics (hash)])
+              ([a as]
+               [i (in-naturals)])
+      (match-define (abstract text categories non-categories) a)
+      (define cs
+        (map
+         (compose1 string-downcase string-trim)
+         (string-split categories ";")))
+      (define non-cs
+        (map
+         (compose1 string-downcase string-trim)
+         (string-split non-categories ";")))
+      (values (hash-set abstracts i (string-trim text))
+              (for/fold ([ts topics])
+                        ([c cs])
+                (hash-update ts c (lambda (v) (cons i v)) '()))
+              (for/fold ([non-ts non-topics])
+                        ([non-c non-cs])
+                (hash-update non-ts non-c (lambda (v) (cons i v)) '())))))
   (put/instance/abstracts* 'abstracts abstracts)
   (put/instance/abstracts* 'topics topics)
   (put/instance/abstracts* 'non-topics non-topics))
 
 (define (check-abstracts)
-  (define abstracts (get/instance/abstracts* 'abstracts))
+  (define abstracts (get/instance/abstracts* 'raw-abstracts))
   (page
    (haml
     (.container
@@ -200,7 +225,7 @@
 
      (button void "Upload other abstracts" #:to-step-id 'upload-abstracts)
 
-     (display-abstracts)))))
+     (display-raw-abstracts)))))
 
 (define (show-abstracts)
   (page
@@ -225,11 +250,12 @@
     (make-step 'check-abstracts check-abstracts)
     (make-step 'show-abstracts show-abstracts))))
 
-(define (abstract-task/page abs-task i total cat non-cat)
-  (match-define (abstract a categories _non-category) abs-task)
+; FIXME: Relies on being exactly in this category
+(define (abstract-task/page abs-task i total cat)
+  (match-define (list _id a category) abs-task)
   (define (categorize in/out)
     (define correct-answer
-      (if (string-contains? categories cat)
+      (if (string=? category cat)
           'in
           'out))
     (define correct-answer?
@@ -245,13 +271,13 @@
    (haml
     (.container
      (:h2 (format "Categorize Abstract ~a out of ~a" i total))
-     (:p (format "Decide whether this abstract is about ~a or not." cat))
+     (:p (format "Decide whether this abstract is about ~a or not." (string-titlecase cat)))
 
      ; FIXME: use cat an non-cat to check if the answer is right.
      (:h4 "The Abstract")
      (:p a)
-     (button (lambda () (categorize 'in)) cat)
-     (button (lambda () (categorize 'out)) non-cat)))))
+     (button (lambda () (categorize 'in)) (string-titlecase cat))
+     (button (lambda () (categorize 'out)) "Other")))))
 
 ;; A sequence of abstract categorization tasks is defined by:
 ;; - a common category (a single category such as "Gender")
@@ -307,7 +333,7 @@
     (define total (get 'total))
     (define category (get 'category))
     (define non-category (get 'non-category))
-    (abstract-task/page abs-task i total category non-category))
+    (abstract-task/page abs-task i total category))
 
   (define (loop)
     (define abstracts
@@ -334,30 +360,28 @@
     (make-step 'loop loop)
     (make-step 'one-task abstract-task))))
 
-; FIXME: This assumes that cat and non-cat are a single category.
-; We'll have to see if that holds.
-(define (get-matching-abstracts loa n cat non-cat)
-  (define (abstract-matches-cat a)
-    (string-contains? (abstract-categories a) cat))
-  (define (abstract-matches-non-cat a)
-    (if (string=? "Other" non-cat)
-        (string-contains? (abstract-non-categories a) cat)
-        (string-contains? (abstract-categories a) non-cat)))
+; FIXME: This assumes that all choices are of the form "Category" vs "Other" (i.e. "Not Category")
+; Generalize if we ever need it.
+(define (sample-work-abstracts cat n)
+  (define cat-proportion 0.3) ; proportion of abstracts that should be in the category
+  (define n-cat (exact-round (* n cat-proportion)))
+  (define abstract-texts
+    (get/instance/abstracts* 'abstracts))
+  (define all-cat-ids
+    (hash-ref (get/instance/abstracts* 'topics) cat))
+  (define all-other-ids
+    (hash-ref (get/instance/abstracts* 'non-topics) cat))
+  (shuffle
+   (append
+    (map (lambda (id)
+           (list id (hash-ref abstract-texts id) cat))
+         (take all-cat-ids n-cat))
+    (map (lambda (id)
+           (list id (hash-ref abstract-texts id) "Other"))
+         (take all-other-ids (- n n-cat))))))
 
-  (define all-matching-abstracts
-    (filter
-     (lambda (a)
-       (let ([mc (abstract-matches-cat a)]
-             [mnc (abstract-matches-non-cat a)])
-         (and (or mc mnc)
-              (not (and mc mnc)))))
-     loa))
-
-  (random-sample all-matching-abstracts n #:replacement? #f))
-
-(define (random-abstract-matching cat non-cat)
-  (define loa (get/instance/abstracts* 'abstracts))
-  (car (get-matching-abstracts loa 1 cat non-cat)))
+(define (random-abstract-matching cat)
+  (car (sample-work-abstracts cat 1)))
 
 ; TODO: Next this gets saved and the abstract tasks run. Check which of `category` and `non-category` still need to be passed in.
 ; Then create the tutorial tasks.
@@ -367,8 +391,7 @@
   (define (initialize)
     (define n (get 'n))
     (define category (get 'category))
-    (define non-category (get 'non-category))
-    (put 'abstracts-to-do (get-matching-abstracts (get/instance/abstracts* 'abstracts) n category non-category))
+    (put 'abstracts-to-do (sample-work-abstracts category n))
     (skip))
 
   (make-study
