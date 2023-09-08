@@ -19,24 +19,20 @@
          "templates.rkt"
          "abstract-categorization.rkt")
 
-; FIXME: create file with more abstracts so that I can have 20 or more
+; TODO:
+; - choice screens:
+;   - display reasons
+;   - create all the choices with all the reasons that we have in mind right now
+; - compute total payment
 
 (provide
  edpb-intro
  edpb-main
  edpb-pilot)
 
-;; TODO
-;; - Add intro-completion-code to the instance level of edpb-intro and edpb-main (where people receive it if they continue with the study)
-;; - Add information to the study and to the consent form that they need to signup with their prolific email to do the main study.
-;; - Change the study so that people have to sign up right away, after providing just their prolific ID and their answer to the patience question (to see selection). That way, we don't need to merge any of the data across studies and I do not have to wait for Bogdan to implement anything. We should still implement talking between instances.
-;; - create a prolific only signup page, i.e. people have to type in a prolific email or ID. This avoids them signing up with personal emails.
-
-
 ;;;;;;;;;;;;;;;; TEMPLATES ;;;;;;;;;;;;;
 ;;;    Steps that are HTML only      ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (define ((stub title))
   (page
@@ -351,19 +347,24 @@
              'direction (->jsexpr/super (reason-dir r))
              'text      (reason-text r)))])
 
-(define/contract (describe opt ce)
-  (-> (or/c 'A 'B) choice-env? string?)
+(define/contract (describe-abstracts ce k)
+  (-> choice-env? (or/c 'A 'B) string?)
   (match-define (choice-env (o+r A RA)
                             (o+r B RB))
     ce)
   (define-values (o r)
-    (case opt
+    (case k
       [(A) (values A RA)]
       [(B) (values B RB)]))
   (match o
     [(option session type amount)
      ; FIXME: update to have the type.
-     (format "~a tasks ~a" amount (if (equal? session 'session1) "today" "next session"))]))
+     (format "Categorize ~a abstracts ~a into '~a' or 'Other'."
+             amount
+             (if (equal? session 'session1) "today" "next session")
+             (cond [(string=? (car type) "ai") "AI"]
+                   [else
+                    (string-titlecase (car type))]))]))
 
 (define/contract (abstract-choice ce k)
   ; FIXME: does page return an xexpr?
@@ -372,6 +373,13 @@
     (define choices
       (get k '()))
     (put k (cons (cons (string->symbol o) ce) choices)))
+  (define (ce-reason ce k)
+    (case k
+      [(A) (o+r-reason (choice-env-A ce))]
+      [(B) (o+r-reason (choice-env-B ce))]))
+  (define reasons?
+    (or (ce-reason ce 'A)
+        (ce-reason ce 'B)))
   (page
    (haml
     (.container
@@ -379,13 +387,64 @@
       (haml
        (:div
         (:div
-         (#:choice (radios
-                    "Choose between the following two options:"
-                    `(("A" . ,(describe 'A ce))
-                      ("B" . ,(describe 'B ce)))))
-         submit-button)
-        ; FIXME: replace this by a flexible radio table with buttons for reasons
-        ))
+         (#:choice
+            (make-radios
+             `((A . (,(describe-abstracts ce 'A) ,(ce-reason ce 'A)))
+               (B . (,(describe-abstracts ce 'B) ,(ce-reason ce 'B))))
+             (lambda (options make-radio)
+               (haml
+                (:div
+                 (:h3 "Description of Options")
+                  ,@(for/list ([pair (in-list options)])
+                      (define l (car pair))
+                      (define label (cadr pair))
+                      (define r (caddr pair))
+                      (haml
+                       (:div
+                        (:h4 (format "Option ~a" l))
+                        (:p label)
+
+                        (:table
+                         (:tbody
+                          (:tr
+                           (:td
+                            (:a.button.button--reason
+                         ([:onclick (format "revealReason('~a');" l)]) "Reveal reason " (:strong (~a (reason-dir r))) " Option " (symbol->string l)))
+                           (:td
+                            (case l
+                          [(A) (haml
+                                (.reason#A ([:style "display: none;"]) (reason-text r)))]
+                          [(B) (haml
+                                (.reason#B ([:style "display: none;"]) (reason-text r)))]))))))))
+
+                  (:h3 "Choose an Option")
+                   (:table
+                    (:tbody
+                     ,@(for/list ([l (list 'A 'B)])
+                         (haml
+                           (:tr
+                            (:td (make-radio l))
+                            (:td (format "Option ~a" l))))))))))))
+
+         (if reasons?
+             (haml
+              (:button.button.next-button#submit ([:type "submit"] [:disabled "true"]) "Submit (disabled until you reveal a reason)"))
+             (haml
+              (:button.button.next-button#submit ([:type "submit"]) "Submit"))))
+        (:script
+         #<<SCRIPT
+var reveals = 0;
+function revealReason(label) {
+    if (reveals == 0) {
+        reveals = 1;
+        document.getElementById(label).style.display = 'block';
+        submit = document.getElementById('submit');
+        submit.disabled = false;
+        submit.textContent = 'Submit';
+    }
+}
+SCRIPT
+         )))
       (lambda (#:choice choice)
         (put/choice choice)))))))
 
@@ -419,6 +478,10 @@
         (choice-env
          (o+r (option 'session1 '("socioeconomic inequality" "other") 5) (reason 'for "'tis good"))
          (o+r (option 'session1 '("sport" "other") 5) (reason 'against "dis BAD!")))
+
+        (choice-env
+         (o+r (option 'session1 '("socioeconomic inequality" "other") 5) #f)
+         (o+r (option 'session1 '("sport" "other") 5) #f))
 
         (choice-env
          (o+r (option 'session2 '("sport" "other") 10) (reason 'for "Y not!"))
@@ -482,16 +545,40 @@
             (:p "If you believe this is in error, please send an email to the study admin."))))]))
 
 (define (admin-page)
+  (eprintf "~a" (get-topics-stats))
   (page
    (haml
     (.container
      (:h1 "Admin")
 
-     (unless (study-open?)
-       (haml
-        (:div
-         (:h3 "Abstracts")
-         (button void "Setup study" #:to-step-id 'abstracts-admin))))
+     (cond [(study-open?)
+            (haml
+             (:div
+              (:h3 "Status")
+
+              (:p "The study is open.")
+
+              (:h3 "Abstracts")
+
+              (:table
+               (:thead
+                (:tr
+                 (:th "Category")
+                 (:th "Abstracts in this category")
+                 (:th "Abstracts not in this category")))
+               (:tbody
+                ,@(for/list ([t (get-topics-stats)])
+                    (haml
+                     (:tr
+                      (:td (string-titlecase (car t)))
+                      (:td (number->string (cadr t)))
+                      (:td (number->string (caddr t))))))))))]
+
+           [else
+            (haml
+             (:div
+              (:h3 "Abstracts")
+              (button void "Setup study" #:to-step-id 'abstracts-admin)))])
 
      (:h3 "Completion Code")
 
@@ -499,9 +586,11 @@
             => (lambda (c)
                  (haml (:p "The current completion code is " c)))]
            [else
-            (haml (:p "No completion code is set."))])
+            (haml
+             (:p "No completion code is set.")
+             (button void "Change Completion Code" #:to-step-id 'completion-code-admin))])
 
-     (button void "Change Completion Code" #:to-step-id 'completion-code-admin)))))
+     ))))
 
 (define (completion-code/admin)
   (page

@@ -21,28 +21,10 @@
          (submod congame/components/study accessors)
          (submod congame/components/formular tools))
 
-; FIXME: turn the categories into symbols, not strings, and have them lowercase.
-; Then I get automatic error message if I try to write the symbol to the page, and can use (->jsexpr cat) or some such to display.
-; FIXME: Getting abstracts is broken since I changed the way they are uploaded.
-;; How to the whole task work
-;; - provide the abstracts in some form and, ideally, store in the DB
-;; - access them easily
-;; - display a single page when given the abstract and the topics
-;; - find way of repeating a task
-;;      - this should be generic: whether it is a task or some other step
-
-;; They way to load the tasks is to create an admin page for the owner of the study to upload abstracts in a specific csv format
-;; I need to figure out what types of
-;; Shit, it's not enough to say what topic a given abstract falls into. We also need to highlight which topic they do *not* fit.
-;; Is there a reason why we might want to categorize an article into one of several categories, instead of just A or not-A?
-
-;; upload to DB on admin page of the study
-;; - how to store in the DB? Serialize and deserialize as structs or hashes? Or json? It can't be in json, or rather, even if it is, it will be serialized anyway. That's what all put and get's do. If json is more efficient (yet fluid) than serializing, then we have to implement that kind of thing separately.
-;; - So I can store it either as a hash, or as a serializable struct.
-
 (provide
  abstracts-admin
  abstract-tasks
+ get-topics-stats
  random-abstract-matching
  task-description)
 
@@ -58,6 +40,15 @@
 
 (define put/instance/abstracts*
   (make-put/root put/instance* '*abstracts*))
+
+(define (get-topics-stats)
+  (define (n-topics h t)
+    (length (hash-ref h t '())))
+  (define topics (get/instance/abstracts* 'topics))
+  (define non-topics (get/instance/abstracts* 'non-topics))
+  (define all-topic-labels (remove-duplicates (sort (append (hash-keys topics) (hash-keys non-topics)) string<?)))
+  (for/list ([t all-topic-labels])
+    (list t (n-topics topics t) (n-topics non-topics t))))
 
 (serializable-struct abstract [text categories non-categories]
   #:transparent
