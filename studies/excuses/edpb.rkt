@@ -588,8 +588,9 @@ SCRIPT
                  (haml (:p "The current completion code is " c)))]
            [else
             (haml
-             (:p "No completion code is set.")
-             (button void "Change Completion Code" #:to-step-id 'completion-code-admin))])))))
+             (:div
+              (:p "No completion code is set.")
+              (button void "Change Completion Code" #:to-step-id 'completion-code-admin)))])))))
 
 (define (completion-code/admin)
   (page
