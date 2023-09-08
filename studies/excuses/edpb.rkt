@@ -344,8 +344,8 @@
   [(define/generic ->jsexpr/super ->jsexpr)
    (define (->jsexpr r)
      (hasheq 'type "reason"
-             'direction (->jsexpr/super (reason-dir r))
-             'text      (reason-text r)))])
+             'direction (->jsexpr/super (and r (reason-dir r)))
+             'text      (->jsexpr/super (and r (reason-text r)))))])
 
 (define/contract (describe-abstracts ce k)
   (-> choice-env? (or/c 'A 'B) string?)
@@ -395,27 +395,29 @@
                (haml
                 (:div
                  (:h3 "Description of Options")
-                  ,@(for/list ([pair (in-list options)])
-                      (define l (car pair))
-                      (define label (cadr pair))
-                      (define r (caddr pair))
-                      (haml
-                       (:div
-                        (:h4 (format "Option ~a" l))
-                        (:p label)
+                 ,@(for/list ([pair (in-list options)])
+                     (define l (car pair))
+                     (define label (cadr pair))
+                     (define r (caddr pair))
+                     (haml
+                      (:div
+                       (:h4 (format "Option ~a" l))
+                       (:p label)
 
-                        (:table
-                         (:tbody
-                          (:tr
-                           (:td
-                            (:a.button.button--reason
-                         ([:onclick (format "revealReason('~a');" l)]) "Reveal reason " (:strong (~a (reason-dir r))) " Option " (symbol->string l)))
-                           (:td
-                            (case l
-                          [(A) (haml
-                                (.reason#A ([:style "display: none;"]) (reason-text r)))]
-                          [(B) (haml
-                                (.reason#B ([:style "display: none;"]) (reason-text r)))]))))))))
+                       (when (ce-reason ce l)
+                         (haml
+                          (:table
+                           (:tbody
+                            (:tr
+                             (:td
+                              (:a.button.button--reason
+                               ([:onclick (format "revealReason('~a');" l)]) "Reveal reason " (:strong (~a (reason-dir r))) " Option " (symbol->string l)))
+                             (:td
+                              (case l
+                                [(A) (haml
+                                      (.reason#A ([:style "display: none;"]) (reason-text r)))]
+                                [(B) (haml
+                                      (.reason#B ([:style "display: none;"]) (reason-text r)))]))))))))))
 
                   (:h3 "Choose an Option")
                    (:table
@@ -477,15 +479,15 @@ SCRIPT
 
         (choice-env
          (o+r (option 'session1 '("socioeconomic inequality" "other") 5) (reason 'for "'tis good"))
-         (o+r (option 'session1 '("sport" "other") 5) (reason 'against "dis BAD!")))
+         (o+r (option 'session1 '("sports" "other") 5) (reason 'against "dis BAD!")))
 
         (choice-env
          (o+r (option 'session1 '("socioeconomic inequality" "other") 5) #f)
-         (o+r (option 'session1 '("sport" "other") 5) #f))
+         (o+r (option 'session1 '("sports" "other") 5) #f))
 
         (choice-env
-         (o+r (option 'session2 '("sport" "other") 10) (reason 'for "Y not!"))
-         (o+r (option 'session1 '("sport" "other") 15) #f))))
+         (o+r (option 'session2 '("sports" "other") 10) (reason 'for "Y not!"))
+         (o+r (option 'session1 '("sports" "other") 15) #f))))
   (skip))
 
 (define day1
@@ -681,8 +683,12 @@ SCRIPT
          (o+r (option 'session1 '("gender inequality" "other") 5) (reason 'against "dis BAD!")))
 
         (choice-env
-         (o+r (option 'session2 '("sport" "other") 15) (reason 'for "Y not!"))
-         (o+r (option 'session1 '("sport" "other") 10) #f))))
+         (o+r (option 'session1 '("socioeconomic inequality" "other") 5) #f)
+         (o+r (option 'session1 '("gender inequality" "other") 5) #f))
+
+        (choice-env
+         (o+r (option 'session2 '("sports" "other") 15) (reason 'for "Y not!"))
+         (o+r (option 'session1 '("sports" "other") 10) #f))))
   (skip))
 
 (define (determine-pilot-choices)
