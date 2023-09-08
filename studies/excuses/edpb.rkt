@@ -547,7 +547,6 @@ SCRIPT
             (:p "If you believe this is in error, please send an email to the study admin."))))]))
 
 (define (admin-page)
-  (eprintf "~a" (get-topics-stats))
   (page
    (haml
     (.container
@@ -590,9 +589,7 @@ SCRIPT
            [else
             (haml
              (:p "No completion code is set.")
-             (button void "Change Completion Code" #:to-step-id 'completion-code-admin))])
-
-     ))))
+             (button void "Change Completion Code" #:to-step-id 'completion-code-admin))])))))
 
 (define (completion-code/admin)
   (page
