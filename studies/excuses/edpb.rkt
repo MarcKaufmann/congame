@@ -776,10 +776,13 @@ SCRIPT
    "pilot tutorial"
    #:transitions
    (transition-graph
-    [instructions --> comprehension-test
+    [instructions --> task-description
+                  --> tutorial-tasks
+                  --> comprehension-test
                   --> ,(lambda () next)])
    (list
     (make-step 'instructions pilot-instructions)
+    ; FIXME: Add task-description
     (make-step 'comprehension-test pilot-comprehension-test))))
 
 (define edpb-pilot
