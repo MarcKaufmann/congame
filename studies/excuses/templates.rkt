@@ -4,7 +4,12 @@
          koyo/haml
          "abstract-categorization.rkt")
 
-(provide instructions)
+(provide
+ instructions
+ pilot-instructions)
+
+(define (~$ a)
+  (format "$~a" (~r a #:precision 2)))
 
 (define config
   (hash 'day2-date "TOMORROW"
@@ -14,10 +19,53 @@
         'estimated-time 20
         'piece-rate-per-abstract 0.2
         'baseline-abstracts 15
-        'estimated-extra-abstracts 35))
+        'estimated-extra-abstracts 35
+        'pilot-tutorial-duration-estimate "5-10"
+        'pilot-study-duration-estimate 20
+        'pilot-tutorial-fee 2
+        'pilot-completion-fee 5
+        'pilot-correct-abstract-bonus 0.05))
 
 (define (conf x)
   (~a (hash-ref config x)))
+
+(define ($conf x)
+  (~$ (hash-ref config x)))
+
+(define (pilot-instructions)
+  (page
+   (haml
+    @.container{
+      @:h1{Instructions}
+
+      @:p{This study consists of a brief (~@conf['pilot-tutorial-duration-estimate] mins) tutorial session followed by the main session. After the tutorial, you will receive the completion code and you will be asked whether you want to participate in the main study, which starts right after the tutorial. If you agree to participate, you receive additional payments as bonus payments if you complete the main session.}
+
+      @:h2{Main Study}
+
+      @:p{The main study is structured as follows:}
+
+      @:ol{
+        @:li{@:strong{Decision Stage:} You make a series of decisions about how many and what type of extra abstracts to categorize.
+          @:ul{
+            @:li{@:strong{Reveal Reasons:} For some decisions, both options have a button that can reveal a reason for or against that option, and you must reveal exactly one of the reasons before choosing an option.}}}
+        @:li{@:strong{Determining the Decision that Counts:} After you have made all the decisions, one decision will be randomly chosen, and we will inform you about that choice.}
+        @:li{@:strong{Categorize Abstracts:} You then categorize the extra abstracts from that decision that counts.}
+        @:li{@:strong{Final survey:} You complete a final survey about the study, including any comments you may have.}}
+
+      @:p{The rest of the tutorial walks you through each of these steps briefly, providing you with example choice, a few abstracts to categorize, and a comprehension test to check that you understood the instructions. After that, you can decide whether to participate in the main study.}
+
+      @:h2{Payments}
+
+      @:p{There are three types of payment:}
+
+      @:ul{
+        @:li{@:strong{Complete Tutorial (~@conf['pilot-tutorial-duration-estimate] mins):} If you complete the tutorial, you receive @$conf['pilot-tutorial-fee] in the form of the baseline payment.}
+        @:li{@:strong{Complete Main Session (~@conf['pilot-study-duration-estimate] mins):} If you also complete the main session within the permitted time after the tutorial, you receive an additional @$conf['pilot-completion-fee] in the form of bonus payments.}
+        @:li{@:strong{Correct Abstract Categorization:} In addition, you receive a bonus of @$conf['pilot-correct-abstract-bonus] for every abstract that you categorize correctly.}}
+
+      @:p{All payments will be made within 3 days of you completing the tutorial.}
+
+      @(button void "Start Tutorial")})))
 
 (define (instructions)
   (page

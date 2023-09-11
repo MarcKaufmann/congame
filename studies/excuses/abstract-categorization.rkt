@@ -374,10 +374,6 @@
 (define (random-abstract-matching cat)
   (car (sample-work-abstracts cat 1)))
 
-; TODO: Next this gets saved and the abstract tasks run. Check which of `category` and `non-category` still need to be passed in.
-; Then create the tutorial tasks.
-; Then create a single question where the person chooses, and use that as the input for the abstract tasks.
-; Then create three questions where the person chooses, implement choice-that-matters, and use that to determine work.
 (define (abstract-tasks)
   (define (initialize)
     (define n (get 'n))

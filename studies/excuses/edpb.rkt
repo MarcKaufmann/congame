@@ -20,10 +20,14 @@
          "abstract-categorization.rkt")
 
 ; TODO:
+; - instruction screen
+; - add example choice to tutorial, including choice that counts, and display a choice with a reason, but without allowing to reveal a reason (IF we decide to already explain it in the tutorial).
 ; - choice screens:
 ;   - display reasons
 ;   - create all the choices with all the reasons that we have in mind right now
+; - display the choice that counts
 ; - compute total payment
+; - Add comprehension question about the reasons
 
 (provide
  edpb-intro
@@ -759,13 +763,6 @@ SCRIPT
                           [non-category  ,(lambda () (get 'additional-non-category))])))))
 
 (define (pilot-tutorial)
-  (define (pilot-instructions)
-    (page
-     (haml
-      (.container
-       (:h1 "Instructions")
-
-       (button void "Next")))))
 
   (define (pilot-comprehension-test)
     (page
@@ -808,8 +805,8 @@ SCRIPT
    (list
     (make-step 'assigning-roles assigning-roles)
     (make-step 'error-page error-page)
-    (make-step 'consent consent)
     (make-step/study 'tutorial (pilot-tutorial))
+    (make-step 'consent consent)
     (make-step/study 'admin admin-study)
     (make-step 'waiting-page waiting-page)
     (make-step/study 'main pilot-main)
