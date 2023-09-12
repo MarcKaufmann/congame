@@ -987,9 +987,18 @@ QUERY
          (define st (study-find-step target id))
          (unless st
            (next-dispatcher))
-         (if (step/study? st)
-             (loop (step/study-study st) (cons id stack) (cdr route))
-             (values st stack))])))
+         (cond
+           [(step/study? st)
+            (define next-stack (cons id stack))
+            (define next-route (cdr route))
+            (define the-substudy
+              (if (procedure? (step/study-study st))
+                  (parameterize ([current-study-stack stack])
+                    ((step/study-study st)))
+                  (step/study-study st)))
+            (loop the-substudy next-stack next-route)]
+           [else
+            (values st stack)])])))
   (define hdl
     (cond
       [(study? target)
