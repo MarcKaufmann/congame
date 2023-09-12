@@ -11,6 +11,7 @@
          koyo/haml
          koyo/url
          congame/components/export
+         congame/components/for-study
          congame/components/study
          congame/components/transition-graph
          congame/components/formular
@@ -37,13 +38,6 @@
 ;;;;;;;;;;;;;;;; TEMPLATES ;;;;;;;;;;;;;
 ;;;    Steps that are HTML only      ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(define ((stub title))
-  (page
-   (haml
-    (.container
-     (:h1 title)
-     (button void "Next")))))
 
 (define (final)
   (page
@@ -272,16 +266,13 @@
     (make-step
      'task-description
      (lambda ()
-       (task-description
-        (get/instance 'n)
+       (abstract-example
         (get/instance 'tutorial-example))))
     (make-step 'comprehension-test comprehension-test)
     (make-step/study
      'tutorial-tasks
-     (abstract-tasks)
-     #:require-bindings `([n             n]
-                          [category      (const "gender inequality")]
-                          [non-category  (const "other")]))
+     (lambda ()
+       ((do-abstracts (get 'n) "gender inequality" tutorial))))
     (make-step 'repeat-comprehension-test repeat-comprehension-test)
     (make-step 'fail-comprehension-test fail-comprehension-test))))
 
@@ -510,9 +501,9 @@ SCRIPT
      work-choices
      #:require-bindings '([remaining-choices choices-to-make])
      #:provide-bindings '([choices-made work-choices]))
-    (make-step 'determine-choice-that-counts  (stub "Determine choice that counts"))
-    (make-step 'work-day1  (stub "Work Day 1"))
-    (make-step 'schedule-reminder-email  (stub "Schedule reminder email")))))
+    (make-step 'determine-choice-that-counts  (make-stub "Determine choice that counts"))
+    (make-step 'work-day1  (make-stub "Work Day 1"))
+    (make-step 'schedule-reminder-email  (make-stub "Schedule reminder email")))))
 
 
 (define day2
@@ -522,8 +513,8 @@ SCRIPT
    (transition-graph
     [work-day2 --> exit-survey --> ,(lambda () done)])
    (list
-    (make-step 'work-day2 (stub "Work day 2"))
-    (make-step 'exit-survey (stub "Exit survey")))))
+    (make-step 'work-day2 (make-stub "Work day 2"))
+    (make-step 'exit-survey (make-stub "Exit survey")))))
 
 (define (assigning-roles)
   (cond [(current-participant-owner?)
@@ -721,25 +712,30 @@ SCRIPT
 
      (button void "Continue")))))
 
-(define (initialize-pilot)
-  (put 'baseline-n 2)
-  (put 'baseline-category "gender inequality")
-  (put 'baseline-non-category "other")
-  (skip))
+(define ((do-abstracts n category prefix))
+  (define (~prefix s)
+    (string->symbol (string-append prefix "-" s)))
+  (define abstracts
+    (sample-work-abstracts category n))
+  (put (~prefix "n") n)
+  (put (~prefix "category") category)
+  (put (~prefix "category") abstracts)
+  (define total (length abstracts))
+  (for/study ([(abs-task i) (in-indexed (in-list abstracts))])
+    (put-current-round-name (format "abstract ~s" i))
+    (abstract-task/page abs-task i total category)))
 
 (define pilot-main
   (make-study
    "main part of pilot"
    #:transitions
    (transition-graph
-    [initialize --> set-choices
-                --> choices
-                --> determine-choice-that-counts
-                --> do-baseline-work
-                --> do-additional-work
-                --> ,(lambda () next)])
+    [set-choices --> choices
+                 --> determine-choice-that-counts
+                 --> do-baseline-work
+                 --> do-additional-work
+                 --> ,(lambda () next)])
    (list
-    (make-step 'initialize initialize-pilot)
     (make-step 'set-choices set-pilot-choices)
     (make-step/study
      'choices
@@ -750,18 +746,21 @@ SCRIPT
     ; FIXME: change require bindings to be an option, not three separate values.
     (make-step/study
      'do-baseline-work
-     (abstract-tasks)
-     #:require-bindings `([n            ,(lambda () (get 'baseline-n))]
-                          [category     ,(lambda () (get 'baseline-category))]
-                          [non-category ,(lambda () (get 'baseline-non-category))]))
+     (do-abstracts 2 "gender inequality" "baseline"))
+
     (make-step/study
      'do-additional-work
-     (abstract-tasks)
-     #:require-bindings `([n            ,(lambda () (get 'additional-n))]
-                          [category      ,(lambda () (get 'additional-category))]
-                          [non-category  ,(lambda () (get 'additional-non-category))])))))
+     (lambda ()
+       ((do-abstracts
+        (get 'additional-n)
+        (get 'additional-category)
+        "additional-work")))))))
 
 (define (pilot-tutorial)
+
+  (define (initialize)
+    (put 'tutorial-example (random-abstract-matching "sports"))
+    (skip))
 
   (define (pilot-comprehension-test)
     (page
@@ -775,15 +774,18 @@ SCRIPT
    "pilot tutorial"
    #:transitions
    (transition-graph
-    [instructions --> task-description
-                  --> tutorial-tasks
-                  --> comprehension-test
-                  --> ,(lambda () next)])
+    [initialize --> instructions
+                --> task-description
+                --> tutorial-tasks
+                --> comprehension-test
+                --> ,(lambda () next)])
    (list
+    (make-step 'initialize initialize)
     (make-step 'instructions pilot-instructions)
-    ; FIXME: Add task-description
-    (make-step 'task-description (stub "Task Description"))
-    (make-step 'tutorial-tasks (stub "Tutorial Tasks"))
+    (make-step
+     'task-description
+     (lambda () (abstract-example (get 'tutorial-example))))
+    (make-step 'tutorial-tasks (make-stub "Tutorial Tasks"))
     (make-step 'comprehension-test pilot-comprehension-test))))
 
 (define edpb-pilot
@@ -814,7 +816,7 @@ SCRIPT
     (make-step/study 'admin admin-study)
     (make-step 'waiting-page waiting-page)
     (make-step/study 'main pilot-main)
-    (make-step 'debriefing (stub "Debriefing"))
+    (make-step 'debriefing (make-stub "Debriefing"))
     (make-step 'no-consent no-consent))))
 
 (define edpb-main
@@ -848,12 +850,12 @@ SCRIPT
     (make-step 'assigning-roles assigning-roles)
     (make-step/study 'tutorial (tutorial))
     (make-step 'waiting-page waiting-page)
-    (make-step 'error-page (stub "Error page"))
+    (make-step 'error-page (make-stub "Error page"))
     (make-step 'consent consent)
     (make-step 'no-consent no-consent)
     (make-step 'consent-end-introduction consent-end-introduction)
     (make-step/study 'admin admin-study)
     (make-step/study 'day1 day1)
     (make-step/study 'day2 day2)
-    (make-step 'send-completion-email (stub "Send Completion Email"))
+    (make-step 'send-completion-email (make-stub "Send Completion Email"))
     (make-step 'final final))))

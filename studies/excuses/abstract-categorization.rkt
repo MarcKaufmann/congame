@@ -24,10 +24,11 @@
 
 (provide
  abstracts-admin
- abstract-tasks
+ abstract-example
+ abstract-task/page
  get-topics-stats
  random-abstract-matching
- task-description)
+ sample-work-abstracts)
 
 ; TODO: If we use this pattern a lot, we can define a macro to define-accessors
 (define get/abstracts*
@@ -77,19 +78,8 @@
                    ("no"  . "No")))
    (lambda (s) (string=? s "yes"))))
 
-(define (abstract-example example)
+(define (abstract-example  example)
   (match-define (list id text cat) example)
-  (haml
-   (:div
-    (:h3 "Example")
-
-    (:p "Consider the following abstract:")
-
-    (:p text)
-
-    (:p (format "It belongs in '~a'." cat)))))
-
-(define (task-description n-tasks example)
   (page
    (haml
     (.container
@@ -97,13 +87,15 @@
 
      @:p{As mentioned before, the task you have to do in this study consists of categorizing abstracts (short summaries of research papers) by topics.}
 
-     @(abstract-example example)
+    @:h3{Example}
 
-     @:h3{Your Turn}
+    @:p{Consider the following abstract:}
 
-     @:p{Now it is your turn to do @(~a n-tasks) tasks: continue to the next page to categorize @(~a n-tasks) abstracts.}
+    @:p[text]
 
-     @button[void]{Continue}))))
+    @:p[(format "It belongs in '~a'." cat)]
+
+    @button[void]{Continue}))))
 
 ; TODO: This call is ugly, change interface to string these together more conveniently. Pass in association list of lambdas and exceptions?
 (define (input-abstracts label)
@@ -262,7 +254,7 @@
   (page
    (haml
     (.container
-     (:h2 (format "Categorize Abstract ~a out of ~a" i total))
+     (:h2 (format "Categorize Abstract ~a out of ~a" (add1 i) total))
      (:p (format "Decide whether this abstract is about ~a or not." (string-titlecase cat)))
 
      ; FIXME: use cat an non-cat to check if the answer is right.
@@ -275,7 +267,7 @@
   (define abstracts (get 'abstracts-to-do))
   (define total (length abstracts))
   (define category (get 'category))
-  (for/study #:substudies ([(abs-task i) (in-indexed (in-list abstracts))])
+  (for/study ([(abs-task i) (in-indexed (in-list abstracts))])
     (put-current-round-name (format "abstract ~s" i))
     (abstract-task/page abs-task i total category)))
 
@@ -302,7 +294,7 @@
 (define (random-abstract-matching cat)
   (car (sample-work-abstracts cat 1)))
 
-(define (abstract-tasks)
+#;(define (abstract-tasks)
   (define (initialize)
     (define n (get 'n))
     (define category (get 'category))
