@@ -238,8 +238,7 @@
     (put/instance 'n 2)
     (put 'n 2)
     ; FIXME: random-abstract-matching only gets a single abstract task, which seems stupid to have a function for.
-    (put/instance 'tutorial-example
-                  (random-abstract-matching "sports" "other"))
+    (put/instance 'tutorial-example (random-abstract-matching "sports"))
     (skip))
 
   (make-study

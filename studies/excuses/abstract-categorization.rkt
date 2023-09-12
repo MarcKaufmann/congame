@@ -15,6 +15,7 @@
          threading
          web-server/http
          congame/components/export
+         congame/components/for-study
          congame/components/formular
          congame/components/study
          congame/components/transition-graph
@@ -270,89 +271,16 @@
      (button (lambda () (categorize 'in)) (string-titlecase cat))
      (button (lambda () (categorize 'out)) "Other")))))
 
-;; A sequence of abstract categorization tasks is defined by:
-;; - a common category (a single category such as "Gender")
-;; - a common non-category ("Other" by default)
-;; - the list of abstracts to do
-;; TODO: If we decide that failed abstracts need to be replaced, then we need to pass in the number of tasks to do as well as a list of abstracts sufficiently long to go through. For now, have a fixed number to categorize.
+(define (make-abstract-tasks)
+  (define abstracts (get 'abstracts-to-do))
+  (define total (length abstracts))
+  (define category (get 'category))
+  (for/study #:substudies ([(abs-task i) (in-indexed (in-list abstracts))])
+    (put-current-round-name (format "abstract ~s" i))
+    (abstract-task/page abs-task i total category)))
 
-(define ((stub title [final? #f]))
-  (page
-   (haml
-    (.container
-     (:h1 title)
-     (unless final?
-       (haml
-        (button void "Next")))))))
-
-; It would be nice to be able to use syntactic sugar of the form
-; (define-study (abstract-tasks* category non-category loa) ... instead of requires
-(define (abstract-tasks*)
-  (define (get/loop k)
-    (get #:root '*loop*
-         #:round (get-current-round-stack)
-         #:group (get-current-group-stack)
-         k))
-  (define (put/loop k v)
-    (put #:root '*loop*
-         #:round (get-current-round-stack)
-         #:group (get-current-group-stack)
-         k v))
-
-  (define (round-name i)
-    (~a "abstract " i))
-
-  (define (set-state! index abstracts)
-    ; Assumes that `abstracts` is a non-empty list of abstracts
-    ; FIXME: Add contract for this property.
-    (put-current-round-name (round-name index))
-    (put/loop 'index index)
-    (put/loop 'next-abstract (car abstracts))
-    (put/loop 'remaining-abstracts (cdr abstracts)))
-
-  (define (setup)
-    (define loa (get 'abstracts))
-    ; FIXME: assumes loa is non-empty list of abstracts. Ensure and/or check this somewhere.
-    (put 'total (length loa))
-    (set-state! 1 loa)
-    (skip))
-
-  ; FIXME: syntactic sugar: (define (abstract-task @abstract @n @total) ...)
-  (define (abstract-task)
-    (define abs-task (get/loop 'next-abstract))
-    (define i (get/loop 'index))
-    (define total (get 'total))
-    (define category (get 'category))
-    (define non-category (get 'non-category))
-    (abstract-task/page abs-task i total category))
-
-  (define (loop)
-    (define abstracts
-      (get/loop 'remaining-abstracts))
-
-    (cond [(null? abstracts)
-           (skip)]
-
-          [else
-           (define new-index (add1 (get/loop 'index)))
-           (set-state! new-index abstracts)
-           (skip 'one-task)]))
-
-  (make-study
-   "sequence of n abstracts"
-   #:requires '(abstracts category non-category)
-   #:transitions
-   (transition-graph
-    [setup-loop --> one-task
-                --> loop
-                --> ,(lambda () done)])
-   (list
-    (make-step 'setup-loop setup)
-    (make-step 'loop loop)
-    (make-step 'one-task abstract-task))))
-
-; FIXME: This assumes that all choices are of the form "Category" vs "Other" (i.e. "Not Category")
-; Generalize if we ever need it.
+; NOTE: This assumes that all choices are of the form "Category" vs
+; "Other" (i.e. "Not Category") Generalize if we ever need it.
 (define (sample-work-abstracts cat n)
   (define cat-proportion 0.3) ; proportion of abstracts that should be in the category
   (define n-cat (exact-round (* n cat-proportion)))
@@ -389,19 +317,4 @@
     [initialize --> tasks --> ,(lambda () done)])
    (list
     (make-step 'initialize initialize)
-    (make-step/study
-     'tasks
-     ; TODO: syntactic sugar where we can write
-     ; (abstract-tasks* easy-abstracts "Gender" "Other") instead of
-     ; passing #:require-bindings, with some notation to differentiate in-memory values from DB values.
-     (abstract-tasks*)
-     #:require-bindings `([abstracts    abstracts-to-do]
-                          [category     category]
-                          [non-category non-category])))))
-
-(define easy-abstracts
-  (list
-   (abstract "First" "Gender" "Equality")
-   (abstract "Second" "Gender" "Sport")
-   (abstract "Third" "Sport" "Gender")
-   (abstract "Fourth" "Sport" "Equality")))
+    (make-step/study 'tasks make-abstract-tasks))))
