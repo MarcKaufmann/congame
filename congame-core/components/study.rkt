@@ -384,6 +384,7 @@ QUERY
  current-embed/url
  when-bot
  page
+ make-stub
  button
  button/confirm
  form
@@ -411,6 +412,14 @@ QUERY
                  (parameterize ([current-renderer render])
                    e))])
        (step-page render {~? validator-expr validate-xexpr}))])
+
+(define ((make-stub title [final? #f]))
+  (page
+   (haml
+    (.container
+     (:h1 title)
+     (unless final?
+       (button void "Next"))))))
 
 (define-syntax-rule (define-widget-stxparams id ...)
   (begin
