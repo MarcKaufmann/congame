@@ -1,11 +1,8 @@
 #lang racket/base
 
 (require racket/contract
-         racket/lazy-require
-         racket/list)
-
-(lazy-require
- ["study.rkt" (study?)])
+         racket/list
+         "struct.rkt")
 
 (provide
  study-registry-allow-conflicts?

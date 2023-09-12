@@ -33,6 +33,7 @@
          (prefix-in bot: (submod "bot.rkt" actions))
          "export.rkt"
          "registry.rkt"
+         "struct.rkt"
          "xexpr.rkt")
 
 (lazy-require
@@ -41,17 +42,15 @@
 
 ;; canaries ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(provide
- next
- done)
-
 (define-syntax-parser define-canary
   [(_ id:id)
    #:with id? (format-id #'id "~a?" #'id)
-   #'(define-values (id id?)
-       (let ()
-         (struct id () #:transparent)
-         (values (id) id?)))])
+   #'(begin
+       (provide id id?)
+       (define-values (id id?)
+         (let ()
+           (struct id () #:transparent)
+           (values (id) id?))))])
 
 (define-canary next)
 (define-canary done)
@@ -565,21 +564,6 @@ QUERY
    (struct-out step)
    (struct-out step/study)
    (struct-out study)))
-
-(struct step (id handler handler/bot view-handler transition)
-  #:transparent)
-
-(struct step/study step (study)
-  #:transparent)
-
-(struct step-page (renderer xexpr-validator)
-  #:transparent
-  #:property prop:procedure
-  (λ (p)
-    ((step-page-renderer p))))
-
-(struct study (name requires provides transitions steps view-handler failure-handler)
-  #:transparent)
 
 (define step-id/c symbol?)
 (define handler/c (-> step-page?))
