@@ -783,6 +783,8 @@ SCRIPT
    (list
     (make-step 'instructions pilot-instructions)
     ; FIXME: Add task-description
+    (make-step 'task-description (stub "Task Description"))
+    (make-step 'tutorial-tasks (stub "Tutorial Tasks"))
     (make-step 'comprehension-test pilot-comprehension-test))))
 
 (define edpb-pilot
