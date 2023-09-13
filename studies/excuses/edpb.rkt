@@ -791,8 +791,8 @@ SCRIPT
     (make-step 'instructions pilot-instructions)
     (make-step 'initialize
                (lambda ()
-                 (put 'tutorial-example/in (cdr (car (random-abstracts/topic 1 "sports"))))
-                 (put 'tutorial-example/out (cdr (car (random-abstracts/non-topic 1 "sports"))))
+                 (put 'tutorial-example/in (car (random-abstracts/topic 1 "sports")))
+                 (put 'tutorial-example/out (car (random-abstracts/non-topic 1 "sports")))
                  (skip)))
     (make-step
      'task-description

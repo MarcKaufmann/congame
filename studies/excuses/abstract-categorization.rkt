@@ -52,12 +52,13 @@
   (for/list ([t all-topic-labels])
     (list t (n-topics topics t) (n-topics non-topics t))))
 
-(serializable-struct abstract [text categories non-categories]
+(serializable-struct abstract [id text categories non-categories]
   #:transparent
   #:methods gen:jsexprable
   [(define (->jsexpr s)
-     (match-define (abstract text categories non-categories) s)
-     (hash 'abstract text
+     (match-define (abstract id text categories non-categories) s)
+     (hash 'id (if id (number->string id) "NA")
+           'abstract text
            'categories categories
            'non-categories non-categories))])
 
@@ -70,7 +71,7 @@
 (define (->abstract r)
   (if (not (= 3 (length r)))
       (raise (exn:fail:->abstract (format "row does not contain exactly three items: ~a" r) (current-continuation-marks)))
-      (abstract (car r) (cadr r) (caddr r))))
+      (abstract #f (car r) (cadr r) (caddr r))))
 
 (define (yn-radios label)
   (cast-result
@@ -180,7 +181,7 @@
                [non-topics (hash)])
               ([a as]
                [i (in-naturals)])
-      (match-define (abstract text categories non-categories) a)
+      (match-define (abstract id text categories non-categories) a)
       (define cs
         (map
          (compose1 string-downcase string-trim)
@@ -243,7 +244,7 @@
 
 ; FIXME: Relies on being exactly in this category
 (define (abstract-task/page abs-task i total cat)
-  (match-define (cons _id (abstract text category non-category)) abs-task)
+  (match-define (abstract _id text category non-category) abs-task)
   (define (categorize in/out)
     (define correct-answer
       (cond [(string=? category cat) 'in]
@@ -279,11 +280,11 @@
      (get/instance/abstracts* (if on-topic? 'topics 'non-topics))
      category))
   (map (lambda (id)
-         (cons id
-               (abstract
-                (hash-ref abstract-texts id)
-                (if on-topic? category "")
-                (if on-topic? "" category))))
+         (abstract
+          id
+          (hash-ref abstract-texts id)
+          (if on-topic? category "")
+          (if on-topic? "" category)))
        (random-sample abs-ids n #:replacement? #f)))
 
 (define (random-abstracts/topic n category)
