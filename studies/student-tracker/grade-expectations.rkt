@@ -12,16 +12,36 @@
 
 (define survey-duration 3) ; How long the surveys remain open.
 
+(define (sd day survey? report? report-type)
+  (hash 'day day
+        'survey? survey?
+        'report? report?
+        'report-type report-type))
+
+(define ((sd-ref k) s)
+  (hash-ref s k))
+
+(define sd-day (sd-ref 'day))
+(define sd-survey? (sd-ref 'survey?))
+(define sd-report? (sd-ref 'report?))
+(define sd-report-type (sd-ref 'report-type))
+
+(define (sd->iso8601 s)
+  (hash-update s 'day (lambda (v) (date->iso8601 v))))
+
+(define (iso8601->sd s)
+  (hash-update s 'day (lambda (v) (iso8601->date v))))
+
 ; NOTE: We'll leave the surveys open for one week
 (define survey-dates
   (list
    ; FIXME: Add actual dates
-   (today) ; #t #f "Problem Set/Midterm/Final"
-   (+days (today) 1)))
+   (sd (today) #t #f "")
+   (sd (today) #t #t "Problem Set")
+   (sd (+days (today) 1) #t #t "Midterm")))
 
 (define (schedule-reminder-email d)
   void)
-
 
 (define (survey-is-open? d)
   (define t (today))
@@ -40,7 +60,7 @@
 (define (waiting-page)
   (define t (today))
   (define next-survey-date
-    (get/date 'next-survey-date))
+    (sd-day (iso8601->sd (get 'next-survey-date))))
   (cond [(survey-is-open? next-survey-date)
          (skip)]
 
@@ -58,6 +78,7 @@
 (define (input-percent/grade g)
   (input-number (format "What is the percent chance that you will get a final grade of ~a or more in this course? (0-100)" g)
                 #:min 0 #:max 100))
+
 (define (date-key)
   (string->symbol (string-append "date-" (get 'next-survey-date))))
 
@@ -99,6 +120,9 @@
       (make-put-form/hash (date-key)))))))
 
 (define (report-grade)
+  (define next-sd (get 'next-survey-date))
+  (unless (sd-report? next-sd)
+    (skip))
   (page
    (haml
     (.container
@@ -108,7 +132,7 @@
       (haml
        (:div
        (#:problem-set-grade
-        (input-number "What grade did you get on the most recent problem set?" #:min 0 #:max 100)))
+        (input-number (format "What grade did you get on ~a? " (sd-report-type next-sd)) #:min 0 #:max 100)))
        submit-button)
       (make-put-form/hash (date-key)))))))
 
@@ -121,11 +145,11 @@
          ; NOTE: We cannot put a `skip` inside a transaction. Ask Bogdan why.
          (with-study-transaction
            (define next-survey-date
-             (iso8601->date (car survey-dates)))
-           (schedule-reminder-email next-survey-date)
-           (put/date 'next-survey-date next-survey-date)
+             (iso8601->sd (car survey-dates)))
+           (schedule-reminder-email (sd-day next-survey-date))
+           (put 'next-survey-date (sd->iso8601 next-survey-date))
            (put 'remaining-survey-dates
-                (map date->iso8601 (cdr survey-dates))))
+                (map sd->iso8601 (cdr survey-dates))))
          (skip 'waiting-page)]))
 
 (define (thank-you)
@@ -145,8 +169,8 @@
                                           (case role
                                             [(admin) (goto admin)]
                                             [(participant)
-                                             (put/date 'next-survey-date (car survey-dates))
-                                             (put 'remaining-survey-dates (map date->iso8601 (cdr survey-dates)))
+                                             (put 'next-survey-date (sd->iso8601 (car survey-dates)))
+                                             (put 'remaining-survey-dates (map sd->iso8601 (cdr survey-dates)))
                                              (goto waiting-page)]
                                             [else 'error-page])))]
     [admin --> admin]
