@@ -2,11 +2,11 @@
 
 (require csv-reading
          koyo/haml
+         racket/contract
          racket/format
          racket/generic
          racket/list
          racket/match
-         racket/math
          racket/port
          racket/pretty
          racket/random
@@ -24,11 +24,11 @@
 
 (provide
  abstracts-admin
- abstract-example
+ abstract-examples
  abstract-task/page
  get-topics-stats
- random-abstract-matching
- sample-work-abstracts)
+ random-abstracts/topic
+ random-abstracts/non-topic)
 
 ; TODO: If we use this pattern a lot, we can define a macro to define-accessors
 (define get/abstracts*
@@ -78,8 +78,11 @@
                    ("no"  . "No")))
    (lambda (s) (string=? s "yes"))))
 
-(define (abstract-example  example)
-  (match-define (list id text cat) example)
+(define/contract (abstract-examples a/in a/out)
+  (-> abstract? abstract? any/c)
+  (define-values (text/in cat/in text/out cat/out)
+    (values (abstract-text a/in) (abstract-categories a/in)
+            (abstract-text a/out) (abstract-non-categories a/out)))
   (page
    (haml
     (.container
@@ -87,13 +90,17 @@
 
      @:p{As mentioned before, the task you have to do in this study consists of categorizing abstracts (short summaries of research papers) by topics.}
 
-    @:h3{Example}
+    @:h3{Example Abstract for '@string-titlecase[cat/in]'}
 
-    @:p{Consider the following abstract:}
+    @:p{The following is an abstract that does belong to the category '@string-titlecase[cat/in]':}
 
-    @:p[text]
+    @:p.abstract{"@text/in"}
 
-    @:p[(format "It belongs in '~a'." cat)]
+    @:h3{Example Abstract not in '@string-titlecase[cat/out]'}
+
+    @:p{The following is an abstract that does @:strong{not} belong in the category '@string-titlecase[cat/out]':}
+
+    @:p.abstract{"@text/out"}
 
     @button[void]{Continue}))))
 
@@ -236,12 +243,13 @@
 
 ; FIXME: Relies on being exactly in this category
 (define (abstract-task/page abs-task i total cat)
-  (match-define (list _id a category) abs-task)
+  (match-define (cons _id (abstract text category non-category)) abs-task)
   (define (categorize in/out)
     (define correct-answer
-      (if (string=? category cat)
-          'in
-          'out))
+      (cond [(string=? category cat) 'in]
+            [(string=? non-category cat) 'out]
+            [else
+             (error "abstract ~a should either be in or not be in the category ~a, but neither applies")]))
     (define correct-answer?
       (equal? in/out correct-answer))
     (if correct-answer?
@@ -259,54 +267,27 @@
 
      ; FIXME: use cat an non-cat to check if the answer is right.
      (:h4 "The Abstract")
-     (:p a)
+     (:p text)
      (button (lambda () (categorize 'in)) (string-titlecase cat))
      (button (lambda () (categorize 'out)) "Other")))))
 
-(define (make-abstract-tasks)
-  (define abstracts (get 'abstracts-to-do))
-  (define total (length abstracts))
-  (define category (get 'category))
-  (for/study ([(abs-task i) (in-indexed (in-list abstracts))])
-    (put-current-round-name (format "abstract ~s" i))
-    (abstract-task/page abs-task i total category)))
-
-; NOTE: This assumes that all choices are of the form "Category" vs
-; "Other" (i.e. "Not Category") Generalize if we ever need it.
-(define (sample-work-abstracts cat n)
-  (define cat-proportion 0.3) ; proportion of abstracts that should be in the category
-  (define n-cat (exact-round (* n cat-proportion)))
+(define (random-abstracts n category #:on-topic? [on-topic? #t])
   (define abstract-texts
     (get/instance/abstracts* 'abstracts))
-  (define all-cat-ids
-    (hash-ref (get/instance/abstracts* 'topics) cat))
-  (define all-other-ids
-    (hash-ref (get/instance/abstracts* 'non-topics) cat))
-  (shuffle
-   (append
-    (map (lambda (id)
-           (list id (hash-ref abstract-texts id) cat))
-         (take all-cat-ids n-cat))
-    (map (lambda (id)
-           (list id (hash-ref abstract-texts id) "Other"))
-         (take all-other-ids (- n n-cat))))))
+  (define abs-ids
+    (hash-ref
+     (get/instance/abstracts* (if on-topic? 'topics 'non-topics))
+     category))
+  (map (lambda (id)
+         (cons id
+               (abstract
+                (hash-ref abstract-texts id)
+                (if on-topic? category "")
+                (if on-topic? "" category))))
+       (random-sample abs-ids n #:replacement? #f)))
 
-(define (random-abstract-matching cat)
-  (car (sample-work-abstracts cat 1)))
+(define (random-abstracts/topic n category)
+  (random-abstracts n category #:on-topic? #t))
 
-#;(define (abstract-tasks)
-  (define (initialize)
-    (define n (get 'n))
-    (define category (get 'category))
-    (put 'abstracts-to-do (sample-work-abstracts category n))
-    (skip))
-
-  (make-study
-   "abstract-tasks"
-   #:requires '(n category non-category)
-   #:transitions
-   (transition-graph
-    [initialize --> tasks --> ,(lambda () done)])
-   (list
-    (make-step 'initialize initialize)
-    (make-step/study 'tasks make-abstract-tasks))))
+(define (random-abstracts/non-topic n category)
+  (random-abstracts n category #:on-topic? #f))

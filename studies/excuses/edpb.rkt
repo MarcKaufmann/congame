@@ -3,7 +3,9 @@
 (require racket/contract
          racket/format
          racket/generic
+         racket/list
          racket/match
+         racket/math
          racket/pretty
          racket/random
          racket/serialize
@@ -211,6 +213,7 @@
 
      ))))
 
+; NOTE: This is for a version where we explain how to sign up which I might resuscitate later.
 (define edpb-intro
   (make-study
    "edpb pilot"
@@ -228,26 +231,19 @@
   (> (get 'comprehension-test-score) 2))
 
 (define (tutorial)
-  (define (initialize)
-    (put/instance 'n 2)
-    (put 'n 2)
-    ; FIXME: random-abstract-matching only gets a single abstract task, which seems stupid to have a function for.
-    (put/instance 'tutorial-example (random-abstract-matching "sports"))
-    (skip))
-
   (make-study
    "edpb-tutorial"
    #:transitions
    (transition-graph
-    [initialize --> instructions
-                --> task-description
-                ; TODO: Do we really want tutorial tasks? The more uncertainty, the better maybe.
-                --> tutorial-tasks
-                --> comprehension-test
-                --> ,(lambda ()
-                       (cond [(comprehension-test-success?)
-                              (put-current-round-name "")
-                              done]
+    [instructions --> initialize
+                  --> task-description
+                  ; TODO: Do we really want tutorial tasks? The more uncertainty, the better maybe.
+                  --> tutorial-tasks
+                  --> comprehension-test
+                  --> ,(lambda ()
+                         (cond [(comprehension-test-success?)
+                                (put-current-round-name "")
+                                done]
 
                              [(<= (get 'attempt) max-attempts)
                               (goto repeat-comprehension-test)]
@@ -260,19 +256,23 @@
     [fail-comprehension-test --> fail-comprehension-test])
 
    (list
-    (make-step 'initialize initialize)
     (make-step 'instructions instructions)
-    ; TODO: Is this type of thunk a good way to hook up functional pages with data? If so, provide syntactic sugar for it.
+    (make-step 'initialize
+               (lambda ()
+                 (put 'tutorial-example/in (car (random-abstracts/topic 1 "sports")))
+                 (put 'tutorial-example/out (car (random-abstracts/non-topic 1 "sports")))
+                 (skip)))
     (make-step
      'task-description
      (lambda ()
-       (abstract-example
-        (get/instance 'tutorial-example))))
+       (abstract-examples
+        (get 'tutorial-example/in)
+        (get 'tutorial-example/out))))
     (make-step 'comprehension-test comprehension-test)
     (make-step/study
      'tutorial-tasks
      (lambda ()
-       ((do-abstracts (get 'n) "gender inequality" tutorial))))
+       ((do-abstracts 2 "gender inequality" tutorial))))
     (make-step 'repeat-comprehension-test repeat-comprehension-test)
     (make-step 'fail-comprehension-test fail-comprehension-test))))
 
@@ -664,6 +664,8 @@ SCRIPT
 
      (:p "We are sorry, but an error occurred. You can contact us to report the error.")))))
 
+;;;;;;;;;; EDPB Pilot to calibrate choices, test reasons, etc
+
 (define (set-pilot-choices)
   ; FIXME: add all the choices that I want to be made
   ; FIXME: put all the randomization of orders etc here
@@ -712,6 +714,16 @@ SCRIPT
 
      (button void "Continue")))))
 
+; NOTE: This assumes that all choices are of the form "Category" vs
+; "Other" (i.e. "Not Category") Generalize if we ever need it.
+(define (sample-work-abstracts cat n)
+  (define cat-proportion 0.3) ; proportion of abstracts in the category
+  (define n-cat (exact-round (* n cat-proportion)))
+  (shuffle
+   (append
+    (random-abstracts/topic n-cat cat)
+    (random-abstracts/non-topic (- n n-cat) cat))))
+
 (define ((do-abstracts n category prefix))
   (define (~prefix s)
     (string->symbol (string-append prefix "-" s)))
@@ -758,10 +770,6 @@ SCRIPT
 
 (define (pilot-tutorial)
 
-  (define (initialize)
-    (put 'tutorial-example (random-abstract-matching "sports"))
-    (skip))
-
   (define (pilot-comprehension-test)
     (page
      (haml
@@ -774,17 +782,24 @@ SCRIPT
    "pilot tutorial"
    #:transitions
    (transition-graph
-    [initialize --> instructions
-                --> task-description
-                --> tutorial-tasks
-                --> comprehension-test
-                --> ,(lambda () next)])
+    [instructions --> initialize
+                  --> task-description
+                  --> tutorial-tasks
+                  --> comprehension-test
+                  --> ,(lambda () next)])
    (list
-    (make-step 'initialize initialize)
     (make-step 'instructions pilot-instructions)
+    (make-step 'initialize
+               (lambda ()
+                 (put 'tutorial-example/in (cdr (car (random-abstracts/topic 1 "sports"))))
+                 (put 'tutorial-example/out (cdr (car (random-abstracts/non-topic 1 "sports"))))
+                 (skip)))
     (make-step
      'task-description
-     (lambda () (abstract-example (get 'tutorial-example))))
+     (lambda ()
+       (abstract-examples
+        (get 'tutorial-example/in)
+        (get 'tutorial-example/out))))
     (make-step 'tutorial-tasks (make-stub "Tutorial Tasks"))
     (make-step 'comprehension-test pilot-comprehension-test))))
 
