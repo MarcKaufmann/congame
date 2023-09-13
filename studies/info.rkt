@@ -19,4 +19,5 @@
     (studies/excuses/edpb edpb-pilot)
     (studies/excuses/reasons-pilot edpb-reasons-pilot)
     (studies/new-CEU-programme/pre-survey pre-survey)
-    (studies/real-effort/tasks task-study)))
+    (studies/real-effort/tasks task-study)
+    (studies/student-tracker/grade-expectations grade-expectations)))
