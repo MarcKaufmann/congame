@@ -5,13 +5,14 @@
          "abstract-categorization.rkt")
 
 (provide
+ edpb-config
  instructions
  pilot-instructions)
 
 (define (~$ a)
-  (format "$~a" (~r a #:precision 2)))
+  (format "£~a" (~r a #:precision 2)))
 
-(define config
+(define edpb-config
   (hash 'day2-date "TOMORROW"
         'session1-bonus 3
         'session2-bonus 6
@@ -27,15 +28,14 @@
         'pilot-correct-abstract-bonus 0.05))
 
 (define (conf x)
-  (~a (hash-ref config x)))
+  (~a (hash-ref edpb-config x)))
 
 (define ($conf x)
-  (~$ (hash-ref config x)))
+  (~$ (hash-ref edpb-config x)))
 
-(define (pilot-instructions)
-  (page
+(define pilot-instructions
    (haml
-    @.container{
+    @:div{
       @:h1{Instructions}
 
       @:p{This study consists of a brief (~@conf['pilot-tutorial-duration-estimate] mins) tutorial session followed by the main session. After the tutorial, you will receive the completion code and you will be asked whether you want to participate in the main study, which starts right after the tutorial. If you agree to participate, you receive additional payments as bonus payments if you complete the main session.}
@@ -63,9 +63,7 @@
         @:li{@:strong{Complete Main Session (~@conf['pilot-study-duration-estimate] mins):} If you also complete the main session within the permitted time after the tutorial, you receive an additional @$conf['pilot-completion-fee] in the form of bonus payments.}
         @:li{@:strong{Correct Abstract Categorization:} In addition, you receive a bonus of @$conf['pilot-correct-abstract-bonus] for every abstract that you categorize correctly.}}
 
-      @:p{All payments will be made within 3 days of you completing the tutorial.}
-
-      @(button void "Start Tutorial")})))
+      @:p{All payments will be made within 3 days of you completing the tutorial.}}))
 
 (define (instructions)
   (page

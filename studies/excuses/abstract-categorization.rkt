@@ -261,10 +261,10 @@
     (if correct-answer?
         (put/abstracts*
          correct-answers-key
-         (add1 (get correct-answers-key 0)))
+         (add1 (get/abstracts* correct-answers-key 0)))
         (put/abstracts*
          incorrect-answers-key
-         (add1 (get incorrect-answers-key  0))))
+         (add1 (get/abstracts* incorrect-answers-key  0))))
     (put 'completed-answers
          (cons (list in/out correct-answer? abs-task)
                (get 'completed-answers '()))))

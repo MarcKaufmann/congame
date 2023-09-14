@@ -23,14 +23,13 @@
          "abstract-categorization.rkt")
 
 ; TODO:
-; - instruction screen
-; - add example choice to tutorial, including choice that counts, and display a choice with a reason, but without allowing to reveal a reason (IF we decide to already explain it in the tutorial).
-; - choice screens:
-;   - display reasons
-;   - create all the choices with all the reasons that we have in mind right now
-; - display the choice that counts
-; - compute total payment
+; - Finalize choices and randomizations
 ; - Add comprehension question about the reasons
+; - Check that instructions answer comprehension questions
+;
+; Optional:
+; - Rate reasonableness of reasons
+; - Add debriefing questions on justifying choices
 
 (provide
  edpb-intro
@@ -77,7 +76,6 @@
     (.container
      (:h1 (format "Comprehension Test (~a attempt)" attempt))
 
-     ;; FIXME: provide information (instructions etc) to answer the questions at the bottom of the comprehension form.
      (formular
       (haml
        (:div
@@ -277,8 +275,8 @@
     (make-step 'instructions instructions)
     (make-step 'initialize
                (lambda ()
-                 (put 'tutorial-example/in (car (random-abstracts/topic 1 "sports")))
-                 (put 'tutorial-example/out (car (random-abstracts/non-topic 1 "sports")))
+                 (put 'tutorial-example/in (car (random-abstracts/topic 1 "self-control")))
+                 (put 'tutorial-example/out (car (random-abstracts/non-topic 1 "self-control")))
                  (skip)))
     (make-step
      'task-description
@@ -372,7 +370,6 @@
       [(B) (values B RB)]))
   (match o
     [(option session type amount)
-     ; FIXME: update to have the type.
      (format "Categorize ~a abstracts ~a into '~a' or 'Other'."
              amount
              (if (equal? session 'session1) "today" "next session")
@@ -381,7 +378,6 @@
                     (string-titlecase (car type))]))]))
 
 (define/contract (abstract-choice ce k)
-  ; FIXME: does page return an xexpr?
   (-> choice-env? symbol? any/c)
   (define (put/choice o)
     (define choices
@@ -464,7 +460,6 @@ SCRIPT
       (lambda (#:choice choice)
         (put/choice choice)))))))
 
-; TODO: Is this better or using rounds to store choice pages? Recursion or for loop?
 (define work-choices
   (make-study
    "work choices"
@@ -487,21 +482,20 @@ SCRIPT
                               (abstract-choice next-ce 'work-choices))))))
 
 (define (set-treatments)
-  ; FIXME: Needs to be determined once work choices etc display properly
   (put 'choices-to-make
        (list
 
         (choice-env
          (o+r (option 'session1 '("socioeconomic inequality" "other") 5) (reason 'for "'tis good"))
-         (o+r (option 'session1 '("sports" "other") 5) (reason 'against "dis BAD!")))
+         (o+r (option 'session1 '("self-control" "other") 5) (reason 'against "dis BAD!")))
 
         (choice-env
          (o+r (option 'session1 '("socioeconomic inequality" "other") 5) #f)
-         (o+r (option 'session1 '("sports" "other") 5) #f))
+         (o+r (option 'session1 '("self-control" "other") 5) #f))
 
         (choice-env
-         (o+r (option 'session2 '("sports" "other") 10) (reason 'for "Y not!"))
-         (o+r (option 'session1 '("sports" "other") 15) #f))))
+         (o+r (option 'session2 '("self-control" "other") 10) (reason 'for "Y not!"))
+         (o+r (option 'session1 '("self-control" "other") 15) #f))))
   (skip))
 
 (define day1
@@ -687,8 +681,6 @@ SCRIPT
 ;;;;;;;;;; EDPB Pilot to calibrate choices, test reasons, etc
 
 (define (set-pilot-choices)
-  ; FIXME: add all the choices that I want to be made
-  ; FIXME: put all the randomization of orders etc here
   (put 'choices-to-make
        (list
 
@@ -701,8 +693,8 @@ SCRIPT
          (o+r (option 'session1 '("gender inequality" "other") 5) #f))
 
         (choice-env
-         (o+r (option 'session2 '("sports" "other") 15) (reason 'for "Y not!"))
-         (o+r (option 'session1 '("sports" "other") 10) #f))))
+         (o+r (option 'session2 '("self-control" "other") 15) (reason 'for "Y not!"))
+         (o+r (option 'session1 '("self-control" "other") 10) #f))))
   (skip))
 
 (define (determine-pilot-choices)
@@ -774,7 +766,8 @@ SCRIPT
 (define ((display-correct-answers lop n-total))
   (define score
     (for/sum ([p (in-list lop)])
-      (get/abstracts* (string->symbol (format "~a-correct-answers" p)))))
+      (get/abstracts* (string->symbol (format "~a-correct-answers" p)) 0)))
+  (put* 'abstract-task-score score)
   (page
    (haml
     (.container
@@ -848,7 +841,8 @@ SCRIPT
       (.container
        (:h1 (format "Comprehension Test (~a attempt)" attempt))
 
-       ;; FIXME: provide information (instructions etc) to answer the questions at the bottom of the comprehension form.
+       (:p "If you need help to answer the questions, reread the study instructions below the test.")
+
        (formular
         (haml
          (:div
@@ -879,7 +873,12 @@ SCRIPT
                (string=? when-paid "3")
                (string=? how-many-abstracts "4")))))
           (put 'attempt (add1 (get 'attempt)))
-          (put 'comprehension-test-score score)))))))
+          (put 'comprehension-test-score score)))
+
+
+       pilot-instructions
+
+       ))))
 
   (make-study
    "pilot tutorial"
@@ -898,11 +897,18 @@ SCRIPT
     [fail-comprehension-test --> fail-comprehension-test])
 
    (list
-    (make-step 'instructions pilot-instructions)
+    (make-step 'instructions
+               (lambda ()
+                 (page
+                  (haml
+                   (.container
+                    pilot-instructions
+
+                    (button void "Continue"))))))
     (make-step 'initialize
                (lambda ()
-                 (put 'tutorial-example/in (car (random-abstracts/topic 1 "sports")))
-                 (put 'tutorial-example/out (car (random-abstracts/non-topic 1 "sports")))
+                 (put 'tutorial-example/in (car (random-abstracts/topic 1 "self-control")))
+                 (put 'tutorial-example/out (car (random-abstracts/non-topic 1 "self-control")))
                  (skip)))
     (make-step
      'task-description
@@ -921,6 +927,33 @@ SCRIPT
      (comprehension-test-study pilot-comprehension-test 2)
      #:provide-bindings '([pass-comprehension-test? pass-test?]))
     (make-step 'fail-comprehension-test fail-comprehension-test))))
+
+(define (debriefing)
+  (define score
+    (get* 'abstract-task-score))
+  (define abstract-bonus
+    (* score (hash-ref edpb-config 'pilot-correct-abstract-bonus)))
+  (define completion-bonus
+    (hash-ref edpb-config 'pilot-completion-fee))
+  (define baseline-fee
+    (hash-ref edpb-config 'pilot-tutorial-fee))
+  (page
+   (haml
+    (.container
+     (:h1 "Thank you for participating")
+
+     (:p "You have completed the study.")
+
+     (:h3 "Your Payment")
+
+     (:ul
+      (:li (format "Baseline payment (for tutorial): £~a" (~r baseline-fee #:precision 2)))
+      (:li (format "Bonus payment (for main session): £~a" (~r (+ completion-bonus abstract-bonus)))))
+
+     (:p (format "The bonus payment consists of a completion bonus of ~a and of a bonus for categorizing ~a abstracts correctly of ~a."
+                 completion-bonus
+                 score
+                 abstract-bonus))))))
 
 (define edpb-pilot
   (make-study
@@ -950,9 +983,7 @@ SCRIPT
     (make-step/study 'admin admin-study)
     (make-step 'waiting-page waiting-page)
     (make-step/study 'main pilot-main)
-    ; TODO: Add note on how many abstracts they got right for each `do-abstracts`
-    ; TODO: Add debriefing questions on justifying choices?
-    (make-step 'debriefing (make-stub "Debriefing"))
+    (make-step 'debriefing debriefing)
     (make-step 'no-consent no-consent))))
 
 (define edpb-main
