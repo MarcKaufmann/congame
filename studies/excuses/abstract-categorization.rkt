@@ -28,7 +28,8 @@
  abstract-task/page
  get-topics-stats
  random-abstracts/topic
- random-abstracts/non-topic)
+ random-abstracts/non-topic
+ get/abstracts*)
 
 ; TODO: If we use this pattern a lot, we can define a macro to define-accessors
 (define get/abstracts*
@@ -243,7 +244,7 @@
     (make-step 'show-abstracts show-abstracts))))
 
 ; FIXME: Relies on being exactly in this category
-(define (abstract-task/page abs-task i total cat)
+(define (abstract-task/page abs-task i total cat prefix batch-name)
   (match-define (abstract _id text category non-category) abs-task)
   (define (categorize in/out)
     (define correct-answer
@@ -253,9 +254,17 @@
              (error "abstract ~a should either be in or not be in the category ~a, but neither applies")]))
     (define correct-answer?
       (equal? in/out correct-answer))
+    (define correct-answers-key
+      (string->symbol (format "~a-correct-answers" prefix)))
+    (define incorrect-answers-key
+      (string->symbol (format "~a-incorrect-answers" prefix)))
     (if correct-answer?
-        (put 'correct-answers (add1 (get 'correct-answers 0)))
-        (put 'incorrect-answers (add1 (get 'incorrect-answers 0))))
+        (put/abstracts*
+         correct-answers-key
+         (add1 (get correct-answers-key 0)))
+        (put/abstracts*
+         incorrect-answers-key
+         (add1 (get incorrect-answers-key  0))))
     (put 'completed-answers
          (cons (list in/out correct-answer? abs-task)
                (get 'completed-answers '()))))
@@ -263,12 +272,12 @@
   (page
    (haml
     (.container
-     (:h2 (format "Categorize Abstract ~a out of ~a" (add1 i) total))
+     (:h2 (format "~a: Categorize Abstract ~a out of ~a" batch-name (add1 i) total))
      (:p (format "Decide whether this abstract is about ~a or not." (string-titlecase cat)))
 
      ; FIXME: use cat an non-cat to check if the answer is right.
      (:h4 "The Abstract")
-     (:p text)
+     (:p.abstract text)
      (button (lambda () (categorize 'in)) (string-titlecase cat))
      (button (lambda () (categorize 'out)) "Other")))))
 

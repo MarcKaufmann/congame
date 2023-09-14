@@ -66,7 +66,6 @@
       (lambda (#:consent-given? consent?)
         (put 'consent-given? (string=? consent? "agree"))))))))
 
-;; TODO: participants can take the comprehension test 3 times (fail twice), then they are out.
 (define (comprehension-test)
   (define attempt
     (cond [(get 'attempt #f) => values]
@@ -123,21 +122,6 @@
 
 (define max-attempts 3)
 
-(define (repeat-comprehension-test)
-  (define next-attempt
-    (get 'attempt))
-  (page
-   (haml
-    (.container
-     (:h1 (format
-           "You failed the comprehension times for the ~a time"
-           (case (sub1 next-attempt)
-             [(1) "first"]
-             [(2) "second"])))
-
-     @:p{Remember: You can fail the test at most @(~a max-attempts) times, otherwise you drop out of the study without payments. Try again.}
-
-     (button void "Go to comprehension test")))))
 
 (define (fail-comprehension-test)
   (page
@@ -227,8 +211,51 @@
 
 ;;; MAIN STUDY
 
-(define (comprehension-test-success?)
-  (> (get 'comprehension-test-score) 2))
+(define (comprehension-test-success? n)
+  (>= (get 'comprehension-test-score) n))
+
+
+(define (comprehension-test-study comprehension-test n-for-passing)
+
+  (define (repeat-comprehension-test)
+    (define next-attempt
+      (get 'attempt))
+    (page
+     (haml
+      (.container
+       (:h1 (format
+             "You failed the comprehension times for the ~a time"
+             (case (sub1 next-attempt)
+               [(1) "first"]
+               [(2) "second"])))
+
+       @:p{Remember: You can fail the test at most @(~a max-attempts) times, otherwise you drop out of the study without payments. Try again.}
+
+       (button void "Go to comprehension test")))))
+
+  (make-study
+   "comprehension test"
+   #:transitions
+   (transition-graph
+    [comprehension-test --> ,(lambda ()
+                               (cond [(comprehension-test-success? n-for-passing)
+                                      (put-current-round-name "")
+                                      (put 'pass-test? #t)
+                                      done]
+
+                                     [(<= (get 'attempt) max-attempts)
+                                      (goto repeat-comprehension-test)]
+
+                                     [else
+                                      (put-current-round-name "")
+                                      (put 'pass-test? #f)
+                                      done]))]
+    [repeat-comprehension-test --> comprehension-test])
+
+   #:provides '(pass-test?)
+   (list
+    (make-step 'comprehension-test comprehension-test)
+    (make-step 'repeat-comprehension-test repeat-comprehension-test))))
 
 (define (tutorial)
   (make-study
@@ -237,22 +264,13 @@
    (transition-graph
     [instructions --> initialize
                   --> task-description
-                  ; TODO: Do we really want tutorial tasks? The more uncertainty, the better maybe.
                   --> tutorial-tasks
                   --> comprehension-test
                   --> ,(lambda ()
-                         (cond [(comprehension-test-success?)
-                                (put-current-round-name "")
-                                done]
+                         (if (get 'pass-comprehension-test?)
+                             done
+                             (goto fail-comprehension-test)))]
 
-                             [(<= (get 'attempt) max-attempts)
-                              (goto repeat-comprehension-test)]
-
-                             [else
-                              (put-current-round-name "")
-                              (goto fail-comprehension-test)]))]
-
-    [repeat-comprehension-test --> comprehension-test]
     [fail-comprehension-test --> fail-comprehension-test])
 
    (list
@@ -268,12 +286,14 @@
        (abstract-examples
         (get 'tutorial-example/in)
         (get 'tutorial-example/out))))
-    (make-step 'comprehension-test comprehension-test)
     (make-step/study
      'tutorial-tasks
-     (lambda ()
-       ((do-abstracts 2 "gender inequality" tutorial))))
-    (make-step 'repeat-comprehension-test repeat-comprehension-test)
+     (do-abstracts 2 "gender inequality" "tutorial" "Tutorial Tasks")
+     #:provide-bindings '([correct-tutorial-tasks correct-answers]))
+    (make-step/study
+     'comprehension-test
+     (comprehension-test-study comprehension-test 3)
+     #:provide-bindings '([pass-comprehension-test? pass-test?]))
     (make-step 'fail-comprehension-test fail-comprehension-test))))
 
 ;;;;; DAY 1
@@ -689,28 +709,37 @@ SCRIPT
   ; FIXME: This is some ugly and tedious code.
   (define cs (get 'choices-made))
   (define c (random-ref cs))
-  (define A-or-B (car c))
+  (define option-chosen (car c))
   (define ce (cdr c))
-  ;(eprintf "Choice environment that counts: ~a" ce)
   (match-define (choice-env (o+r A RA)
                             (o+r B RB))
     ce)
   (define-values (o r)
-    (if (equal? A-or-B 'A)
+    (if (equal? option-chosen 'A)
         (values A RA)
         (values B RB)))
-  (eprintf "Option that counts: ~a" o)
   (put 'additional-option o)
   (put 'additional-reason r)
-  (match-define (option session (list category non-category) n)
+  (match-define (option _session (list category non-category) n)
     o)
   (put 'additional-n n)
-  (put 'additional-category (string-downcase category))
-  (put 'additional-non-category (string-downcase non-category))
+  (put 'additional-category category)
+  (put 'additional-non-category non-category)
   (page
    (haml
     (.container
-     (:h1 "Determined choice that counts")
+     (:h1 "The choice that counts")
+
+     (:p "The choice that matters was between these two options:")
+
+     (:ul
+      (:li (format "Option A: ~a" (describe-abstracts ce 'A)))
+      (:li (format "Option B: ~a" (describe-abstracts ce 'B))))
+
+     (:p (format "You chose Option ~a, so after doing the baseline tasks, you will categorize ~a additional abstracts based on whether they fit into '~a' or 'Other'."
+                 option-chosen
+                 n
+                 (string-titlecase category)))
 
      (button void "Continue")))))
 
@@ -724,18 +753,38 @@ SCRIPT
     (random-abstracts/topic n-cat cat)
     (random-abstracts/non-topic (- n n-cat) cat))))
 
-(define ((do-abstracts n category prefix))
+(define ((do-abstracts n category prefix batch-name))
   (define (~prefix s)
     (string->symbol (string-append prefix "-" s)))
   (define abstracts
-    (sample-work-abstracts category n))
+    (cond [(get (~prefix "abstracts") #f)
+           => values]
+          [else
+           (define new-abstracts
+             (sample-work-abstracts category n))
+           (put (~prefix "abstracts") new-abstracts)
+           new-abstracts]))
   (put (~prefix "n") n)
   (put (~prefix "category") category)
-  (put (~prefix "category") abstracts)
   (define total (length abstracts))
   (for/study ([(abs-task i) (in-indexed (in-list abstracts))])
     (put-current-round-name (format "abstract ~s" i))
-    (abstract-task/page abs-task i total category)))
+    (abstract-task/page abs-task i total category prefix batch-name)))
+
+(define ((display-correct-answers lop n-total))
+  (define score
+    (for/sum ([p (in-list lop)])
+      (get/abstracts* (string->symbol (format "~a-correct-answers" p)))))
+  (page
+   (haml
+    (.container
+     (:h1 (format "Your categorized ~a out of ~a abstracts correctly" score n-total))
+     (button void "Continue")))))
+
+;;;;;;;; PILOT
+
+(define n-pilot-tutorial 2)
+(define n-pilot-baseline 2)
 
 (define pilot-main
   (make-study
@@ -746,6 +795,7 @@ SCRIPT
                  --> determine-choice-that-counts
                  --> do-baseline-work
                  --> do-additional-work
+                 --> display-total-correct-answers
                  --> ,(lambda () next)])
    (list
     (make-step 'set-choices set-pilot-choices)
@@ -758,7 +808,7 @@ SCRIPT
     ; FIXME: change require bindings to be an option, not three separate values.
     (make-step/study
      'do-baseline-work
-     (do-abstracts 2 "gender inequality" "baseline"))
+     (do-abstracts n-pilot-baseline "gender inequality" "baseline" "Baseline Work"))
 
     (make-step/study
      'do-additional-work
@@ -766,17 +816,70 @@ SCRIPT
        ((do-abstracts
         (get 'additional-n)
         (get 'additional-category)
-        "additional-work")))))))
+        "additional-work"
+        "Additional Work"))))
+
+    (make-step
+     'display-total-correct-answers
+     (lambda ()
+       (define n
+         (+ n-pilot-baseline (get 'additional-n)))
+       ((display-correct-answers '("baseline" "additional-work") n)))))))
+
+(define (announce-tutorial-tasks)
+  (page
+   (haml
+    (.container
+     (:h1 "Do Two Practice Tasks")
+
+     (:p "You will now be asked to categorize two abstracts.")
+
+     (button void "Start Practice Tasks")))))
 
 (define (pilot-tutorial)
 
   (define (pilot-comprehension-test)
+    (define attempt
+      (cond [(get 'attempt #f) => values]
+            [else (begin0 1
+                    (put 'attempt 1))]))
     (page
      (haml
       (.container
-       (:h1 "Comprehension Test")
+       (:h1 (format "Comprehension Test (~a attempt)" attempt))
 
-       (button void "Next")))))
+       ;; FIXME: provide information (instructions etc) to answer the questions at the bottom of the comprehension form.
+       (formular
+        (haml
+         (:div
+          (:div
+           (#:when-paid
+            (radios
+             "When will you receive the payments?"
+             '(("1" . "Immediately after the first session.")
+               ("2" . "Immediately after the second session.")
+               ("3" . "Within three days after the second session.")))))
+          (:div
+           (#:how-many-abstracts
+            (radios
+             "If the decision to implement is '25 abstracts as animal rights vs. other', how many abstracts do you have to do in total, including the baseline abstracts?"
+             '(("1" . " 0 in total")
+               ("2" . "15 in total")
+               ("3" . "25 in total")
+               ("4" . "40 in total")))))
+          submit-button))
+        (lambda (#:when-paid when-paid
+                 #:how-many-abstracts how-many-abstracts)
+          (define score
+            (apply
+             +
+             (map
+              (λ (b) (if b 1 0))
+              (list
+               (string=? when-paid "3")
+               (string=? how-many-abstracts "4")))))
+          (put 'attempt (add1 (get 'attempt)))
+          (put 'comprehension-test-score score)))))))
 
   (make-study
    "pilot tutorial"
@@ -784,9 +887,16 @@ SCRIPT
    (transition-graph
     [instructions --> initialize
                   --> task-description
+                  --> announce-tutorial-tasks
                   --> tutorial-tasks
+                  --> display-correct-tutorial-answers
                   --> comprehension-test
-                  --> ,(lambda () next)])
+                  --> ,(lambda ()
+                         (if (get 'pass-comprehension-test?)
+                             done
+                             (goto fail-comprehension-test)))]
+    [fail-comprehension-test --> fail-comprehension-test])
+
    (list
     (make-step 'instructions pilot-instructions)
     (make-step 'initialize
@@ -800,8 +910,17 @@ SCRIPT
        (abstract-examples
         (get 'tutorial-example/in)
         (get 'tutorial-example/out))))
-    (make-step 'tutorial-tasks (make-stub "Tutorial Tasks"))
-    (make-step 'comprehension-test pilot-comprehension-test))))
+    (make-step 'announce-tutorial-tasks announce-tutorial-tasks)
+    (make-step/study
+     'tutorial-tasks
+     (do-abstracts n-pilot-tutorial "gender inequality" "tutorial" "Tutorial Tasks"))
+    (make-step 'display-correct-tutorial-answers
+               (display-correct-answers '("tutorial") n-pilot-tutorial))
+    (make-step/study
+     'comprehension-test
+     (comprehension-test-study pilot-comprehension-test 2)
+     #:provide-bindings '([pass-comprehension-test? pass-test?]))
+    (make-step 'fail-comprehension-test fail-comprehension-test))))
 
 (define edpb-pilot
   (make-study
@@ -831,6 +950,8 @@ SCRIPT
     (make-step/study 'admin admin-study)
     (make-step 'waiting-page waiting-page)
     (make-step/study 'main pilot-main)
+    ; TODO: Add note on how many abstracts they got right for each `do-abstracts`
+    ; TODO: Add debriefing questions on justifying choices?
     (make-step 'debriefing (make-stub "Debriefing"))
     (make-step 'no-consent no-consent))))
 
