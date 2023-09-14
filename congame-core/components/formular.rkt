@@ -81,14 +81,14 @@
        (define key (kwd->symbol kwd))
        (study:put/instance key (cons arg (study:get/instance key null)))))))
 
-(define (make-put-form/hash key)
+(define (make-put-form/hash key #:putter [putter study:put])
   (make-keyword-procedure
    (lambda (kws kw-args)
      (define ht
        (for/hasheq ([kwd (in-list kws)]
                     [arg (in-list kw-args)])
          (values (string->symbol (keyword->string kwd)) arg)))
-     (study:put key ht))))
+     (putter key ht))))
 
 (define-syntax (~error stx)
   (raise-syntax-error stx "the ~error form may only be used inside (formular ...)"))
