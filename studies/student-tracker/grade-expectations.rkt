@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require koyo/haml
+(require racket/contract
+         koyo/haml
          gregor
          congame/components/formular
          (submod congame/components/formular tools)
@@ -8,12 +9,14 @@
          congame/components/transition-graph
          "../stdlib.rkt")
 
+; FIXME: Add date of survey to the title, just to make sure things are as expected
 (provide grade-expectations)
 
 (define survey-duration 3) ; How long the surveys remain open.
 
-(define (sd day survey? report? report-type)
-  (hash 'day day
+(define (sd id day survey? report? report-type)
+  (hash 'id id
+        'day day
         'survey? survey?
         'report? report?
         'report-type report-type))
@@ -21,6 +24,7 @@
 (define ((sd-ref k) s)
   (hash-ref s k))
 
+(define sd-id (sd-ref 'id))
 (define sd-day (sd-ref 'day))
 (define sd-survey? (sd-ref 'survey?))
 (define sd-report? (sd-ref 'report?))
@@ -32,13 +36,15 @@
 (define (iso8601->sd s)
   (hash-update s 'day (lambda (v) (iso8601->date v))))
 
-; NOTE: We'll leave the surveys open for one week
-(define survey-dates
-  (list
-   ; FIXME: Add actual dates
-   (sd (today) #t #f "")
-   (sd (today) #t #t "Problem Set")
-   (sd (+days (today) 1) #t #t "Midterm")))
+(define surveys
+  (let ([t (today)])
+    (list
+     ; FIXME: Add actual dates
+     (sd 1 t #t #f "")
+     (sd 2 t #t #t "Problem Set")
+     (sd 3 (-days t 7) #t #t "BAAAAAHHH")
+     (sd 4 t #t #t "Midterm")
+     (sd 5 (+days t 1) #t #t "Yohoooo"))))
 
 (define (schedule-reminder-email d)
   void)
@@ -51,7 +57,8 @@
 (define (survey-is-over? d)
   (date<=? (+days d survey-duration) (today)))
 
-(define (put/date k d)
+(define/contract (put/date k d)
+  (-> symbol? date? any/c)
   (put k (date->iso8601 d)))
 
 (define (get/date k)
@@ -59,12 +66,13 @@
 
 (define (waiting-page)
   (define t (today))
-  (define next-survey-date
-    (sd-day (iso8601->sd (get 'next-survey-date))))
-  (cond [(survey-is-open? next-survey-date)
+  (define next-survey
+    (sd-day (iso8601->sd (get 'next-survey))))
+  (cond [(survey-is-open? next-survey)
+         (put-current-round-name (date->iso8601 next-survey))
          (skip)]
 
-        [(survey-is-over? next-survey-date)
+        [(survey-is-over? next-survey)
          (skip 'schedule-next-survey-or-done)]
 
         [else
@@ -73,16 +81,26 @@
            (.container
             (:h1 "The next survey is not yet open")
 
-            (:p (format "The next survey only opens on ~a. Please come back then." (~t next-survey-date "EEEE, MMMM d"))))))]))
+            (:p (format "The next survey only opens on ~a. Please come back then." (~t next-survey "EEEE, MMMM d"))))))]))
 
 (define (input-percent/grade g)
   (input-number (format "What is the percent chance that you will get a final grade of ~a or more in this course? (0-100)" g)
                 #:min 0 #:max 100))
 
 (define (date-key)
-  (string->symbol (string-append "date-" (get 'next-survey-date))))
+  (string->symbol (string-append "date-" (sd-day (get 'next-survey)))))
+
+(define (put/round k v)
+  (put #:round (get-current-round-stack)
+       k v))
 
 (define (survey)
+  (define next-survey
+    (iso8601->sd (get 'next-survey)))
+
+  (unless (sd-survey? next-survey)
+    (skip))
+
   (page
    (haml
     (.container
@@ -117,39 +135,49 @@
           (input-number "How likely it is that your score on the final will be 10 or more points below the score you just reported?"
                         #:min 0 #:max 100)))
         submit-button))
-      (make-put-form/hash (date-key)))))))
+      (make-put-form/hash (string->symbol (format "survey-~a" (sd-id next-survey)))))))))
 
 (define (report-grade)
-  (define next-sd (get 'next-survey-date))
+  (define next-sd
+    (get 'next-survey))
   (unless (sd-report? next-sd)
     (skip))
+
+  (define report-type
+    (sd-report-type next-sd))
   (page
    (haml
     (.container
      ; FIXME: Make flexible heading to allow for midterm
-     (:h1 "Report your problem set grade")
+     (:h1 (format "Report your grade on ~a" report-type))
      (formular
       (haml
        (:div
-       (#:problem-set-grade
-        (input-number (format "What grade did you get on ~a? " (sd-report-type next-sd)) #:min 0 #:max 100)))
-       submit-button)
-      (make-put-form/hash (date-key)))))))
+        (#:problem-set-grade
+         (input-number (format "What grade did you get on ~a? (0-100)" report-type) #:min 0 #:max 100))
+        submit-button))
+      (make-put-form/hash (string->symbol (format "report-~a" (sd-id next-sd)))))))))
 
 (define (schedule-next-survey-or-done)
-  (define survey-dates (get 'remaining-survey-dates))
-  (cond [(null? survey-dates)
+  (define surveys
+    (map iso8601->sd (get 'remaining-surveys)))
+  (cond [(null? surveys)
          (skip 'thank-you)]
 
         [else
          ; NOTE: We cannot put a `skip` inside a transaction. Ask Bogdan why.
          (with-study-transaction
-           (define next-survey-date
-             (iso8601->sd (car survey-dates)))
-           (schedule-reminder-email (sd-day next-survey-date))
-           (put 'next-survey-date (sd->iso8601 next-survey-date))
-           (put 'remaining-survey-dates
-                (map sd->iso8601 (cdr survey-dates))))
+           (eprintf "getting next survey date~n")
+           (define next-survey
+             (car surveys))
+           (eprintf "schedule reminder email~n")
+           (schedule-reminder-email (sd-day next-survey))
+           (eprintf "putting next survey date~n")
+           (put 'next-survey (sd->iso8601 next-survey))
+           (eprintf "putting remaining survey dates~n")
+           (eprintf "remaining survey dates: ~a~n" (cdr surveys))
+           (put 'remaining-surveys
+                (map sd->iso8601 (cdr surveys))))
          (skip 'waiting-page)]))
 
 (define (thank-you)
@@ -169,8 +197,11 @@
                                           (case role
                                             [(admin) (goto admin)]
                                             [(participant)
-                                             (put 'next-survey-date (sd->iso8601 (car survey-dates)))
-                                             (put 'remaining-survey-dates (map sd->iso8601 (cdr survey-dates)))
+                                             (define all-surveys
+                                               (map sd->iso8601 surveys))
+                                             (put 'next-survey (car all-surveys))
+                                             (put 'surveys all-surveys)
+                                             (put 'remaining-surveys (cdr all-surveys))
                                              (goto waiting-page)]
                                             [else 'error-page])))]
     [admin --> admin]
