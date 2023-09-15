@@ -24,6 +24,7 @@
 
 ; TODO:
 ; - Add screenshot of decision choice with reasons, and explain
+; - Add definition of categories as written by chatgpt
 ; - When announcing tasks, state into which category, display somewhere
 ; - Add feedback section at end, before payment page
 ; - Rename debriefing to final page/payment page
@@ -866,13 +867,13 @@ SCRIPT
            (#:when-paid
             (radios
              "When will you receive the payments?"
-             '(("1" . "Immediately after the first session.")
-               ("2" . "Immediately after the second session.")
-               ("3" . "Within three days after the second session.")))))
+             '(("1" . "Immediately after the tutorial.")
+               ("2" . "Immediately after the main session.")
+               ("3" . "Within three days after the main session.")))))
           (:div
            (#:how-many-abstracts
             (radios
-             "If the decision to implement is '25 abstracts as animal rights vs. other', how many abstracts do you have to do in total, including the baseline abstracts?"
+             "Suppose that you chose 'Categorize 25 abstracts into Animal Rights or Other' in the decision that counts. Then how many abstracts do you have to do in total, including the baseline abstracts?"
              '(("1" . " 0 in total")
                ("2" . "15 in total")
                ("3" . "25 in total")
@@ -880,7 +881,7 @@ SCRIPT
           (:div
            (#:reasons-to-reveal
             (radios
-             "Suppose you face a decision with buttons to reveal reasons for each of the two options. Which of the following is true?"
+             "Suppose you face a decision with buttons to reveal reasons for each option. Then which of the following is true?"
              '(("1" . "You can choose an option and submit your choice without having revealed a reason.")
                ("2" . "You can choose an option and submit your choice only after revealing exactly one reason.")
                ("3" . "You can choose an option and submit your choice only after revealing both reasons.")
@@ -978,7 +979,48 @@ SCRIPT
      #:provide-bindings '([pass-comprehension-test? pass-test?]))
     (make-step 'fail-comprehension-test fail-comprehension-test))))
 
+
+(define (consent-show-code)
+  (page
+   (haml
+    (.container
+     (:h1 "Enter Completion Code on Prolific")
+
+     (:p "Since you agreed to participate in the main study, do not close this window.")
+
+     (:p "But before continuing, enter the completion code on prolific. This entitles you to the baseline fee, the payments for the main study will be paid out as bonuses later on.")
+
+     (:h4 "Completion Code: " (hash-ref edpb-config 'pilot-completion-code))
+
+     (formular
+      (haml
+       (:div
+        (#:entered-completion-code?
+         (checkbox "Did you enter the completion code on Prolific? You cannot proceed until you have done so."))
+        submit-button)))))))
+
 (define (debriefing)
+  (page
+   (haml
+    (.container
+     (:h1 "Final Survey")
+
+     (formular
+      (haml
+       (:div
+        (:div
+         (#:how-choose
+          (textarea "Please explain how you chose between the two options:")))
+        (:div
+         (#:how-choose-reason
+          (textarea "Please explain how you decided which reasons to reveal:")))
+        (:div
+         (#:feedback
+          (textarea "Please provide any feedback or comments you may have, in particular if there was something that become clear to you as you went through the study and that we should highlight earlier.")))
+
+        submit-button)))))))
+
+(define (payment-page)
   (define score
     (get* 'abstract-task-score))
   (define abstract-bonus
@@ -1005,24 +1047,6 @@ SCRIPT
                  score
                  abstract-bonus))))))
 
-(define (consent-show-code)
-  (page
-   (haml
-    (.container
-     (:h1 "Enter Completion Code on Prolific")
-
-     (:p "Since you agreed to participate in the main study, do not close this window.")
-
-     (:p "But before continuing, enter the completion code on prolific. This entitles you to the baseline fee, the payments for the main study will be paid out as bonuses later on.")
-
-     (:h4 "Completion Code: " (hash-ref edpb-config 'pilot-completion-code))
-
-     (formular
-      (haml
-       (:div
-        (#:entered-completion-code?
-         (checkbox "Did you enter the completion code on Prolific? You cannot proceed until you have done so."))
-        submit-button)))))))
 
 (define edpb-pilot
   (make-study
@@ -1042,8 +1066,9 @@ SCRIPT
 
     [no-consent --> no-consent]
     [consent-show-code --> main
-                       --> debriefing]
-    [debriefing --> debriefing])
+                       --> debriefing
+                       --> payment-page]
+    [payment-page --> payment-page])
 
    (list
     (make-step 'assigning-roles assigning-roles)
@@ -1055,6 +1080,7 @@ SCRIPT
     (make-step 'waiting-page waiting-page)
     (make-step/study 'main pilot-main)
     (make-step 'debriefing debriefing)
+    (make-step 'payment-page payment-page)
     (make-step 'no-consent no-consent))))
 
 (define edpb-main

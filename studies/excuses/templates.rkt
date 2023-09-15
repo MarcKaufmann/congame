@@ -47,30 +47,37 @@
     @:div{
       @:h1{Main Study Instructions}
 
-      @:p{The main study is structured as follows:}
-
-      @:ol{
-        @:li{@:strong{Decision Stage:} You make a series of decisions about how many and what type of extra abstracts to categorize.
-          @:ul{
-            @:li{@:strong{Reveal Reasons:} For some decisions, both options have a button that can reveal a reason for or against that option, and you must reveal exactly one of the reasons before choosing an option.}}}
-        @:li{@:strong{Determining the Decision that Counts:} After you have made all the decisions, one decision will be randomly chosen, and you will then have to do the work based on your choice in that decision.}
-        @:li{@:strong{Categorize Abstracts:} You then categorize the extra abstracts from that decision that counts.}
-        @:li{@:strong{Final survey:} You complete a final survey about the study, including any comments you may have.}}
+      @:p{If you decide to participate, the main session starts immediately after you consent to participate.}
 
       @:h2{Abstract Categorization Tasks}
 
-      @:p{You will be asked to categorize the following abstracts by whether they fit in a given category or not:}
+      @:p{In the main session, you will be asked to do a series of simple tasks. This task consists of categorizing abstracts (short summaries of research papers) by topics. Specifically, we will give topics, and you should choose whether this abstract belongs to a given topic or not.}
 
+      @:p{In the main study, you will be asked to categorize the following:}
       @:ul{
-        @:li{@:strong{Tutorial:} @conf['pilot-tutorial-abstracts] abstracts}
-        @:li{@:strong{Main Study:}
-          @:ul{
-            @:li{Categorize @conf['pilot-baseline-abstracts] baseline abstracts into 'Social Preferences' or 'Other'.}
-            @:li{Between @conf['pilot-additional-low] and @conf['pilot-additional-high] additional abstracts based on your choice in the decision that counts}}}}
+           @:li{Categorize @conf['pilot-baseline-abstracts] baseline abstracts into 'Social Preferences' or 'Other'.}
+           @:li{Between @conf['pilot-additional-low] and @conf['pilot-additional-high] additional abstracts based on your choice in the decision that counts}}
 
-      @:h2{Example of Additional Tasks}
+      @:p{On the next page, you will see an example abstract and its categorization. On the subsequent pages, you can try the categorization task yourself.}
 
-      @:p{Suppose you chose the option to "Categorize 20 abstracts today into 'Banking' or 'Other'", and that this decision is randomly picked as the decision that counts. Then you will have to first categorize 15 abstracts into 'Social Preferences' or 'Other' - the @:em{baseline work} - followed by categorizing 20 abstracts into 'Banking' or 'Other' - the @:em{additional work}.}
+      @:h2{Decisions about Additional Abstracts}
+
+      @:p{At the start of the main session, you have to make a series of decisions. Here you see a screenshot of a choice that you could observe:}
+
+      ; FIXME: Add img location
+      (:img ([:src ""]) "Screenshot")
+
+      @:p{Each decision is about categorizing by two different: in the above example, the choice is between either categorizing 25 abstracts into 'Social Preferences' or 'Other', or categorizing 20 abstracts into 'Banking' or 'Other'.}
+
+      @:p{@:strong{Reveal Reasons:} For some decisions as in the above example, one or both choice options have a button that reveals a reason @:strong{for} or @:strong{against} that option. Before submitting your choice, you must click and reveal exactly one of the reasons.}
+
+      @:p{These reasons will not provide additional information about how to do the tasks. Rather they will inform you about some aspects of the topics you can choose from, in particular what participants in a previous survey think about the different topics.}
+
+      @:p{Once you have made all the decisions, one of the decisions will randomly be picked as @:em{the decision that counts}: whatever you chose in that decision determines which and how many additional abstracts you will categorize later.}
+
+      @:p{For example, suppose that in the decision above you chose the option to "Categorize 20 abstracts today into 'Banking' or 'Other'", and that this decision is randomly picked as the decision that counts. Then you will have to first categorize 15 abstracts into 'Social Preferences' or 'Other' - the @:em{baseline work} - followed by categorizing 20 abstracts into 'Banking' or 'Other' - the @:em{additional work}.}
+
+      @:p{After you complete the baseline and additional work, we will ask you to complete a final survey.}
 
       @:h2{Payments}
 
@@ -81,7 +88,7 @@
         @:li{@:strong{Complete Main Session (~@conf['pilot-study-duration-estimate] mins):} If you also complete the main session within the permitted time after the tutorial, you receive an additional @$conf['pilot-completion-fee] in the form of bonus payments.}
         @:li{@:strong{Correct Abstract Categorization:} In addition, you receive a bonus of @$conf['pilot-correct-abstract-bonus] for every abstract of the main session (not the tutorial) that you categorize correctly.}}
 
-      @:p{All payments will be made within 3 days of you completing the tutorial.}
+      @:h4{All payments will be made within 3 days of you completing the tutorial.}
 
       }))
 
