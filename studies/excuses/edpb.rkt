@@ -23,13 +23,22 @@
          "abstract-categorization.rkt")
 
 ; TODO:
+; - Add screenshot of decision choice with reasons, and explain
+; - When announcing tasks, state into which category, display somewhere
+; - Add feedback section at end, before payment page
+; - Rename debriefing to final page/payment page
 ; - Finalize choices and randomizations
-; - Add comprehension question about the reasons
-; - Check that instructions answer comprehension questions
+; - Style the submit and reasons reveal buttons differently based on whether they are inactive, already revealed, or active
 ;
+; Check TODO:
+; - After consent page, display the code and tell them to immediately start the study
+; - Check that instructions answer comprehension questions
+; - Use "banking" in the tutorial; use "social preferences" as the baseline tasks to work on, since I didn't collect data on it in the pilot, so we can't have reasons for it.
 ; Optional:
 ; - Rate reasonableness of reasons
 ; - Add debriefing questions on justifying choices
+; - Implement a feature to track time used on individual steps and substudies.
+; - Implement feature to track progress through the study
 
 (provide
  edpb-intro
@@ -127,8 +136,9 @@
     (.container
      @:h1{You failed the comprehension test too many times}
 
-     @:p{Unfortunately, you failed the comprehension test too many times. Please return the study.}))))
+     @:p{Unfortunately, you failed the comprehension test too many times, so you cannot continue.}
 
+     @:p{Provide the following completion code to receive £@(hash-ref edpb-config 'pilot-fail-comprehension-fee): FAILCOMP.}))))
 
 
 (define (no-consent)
@@ -136,6 +146,10 @@
    (haml
     (.container
      (:h1 "Thanks for considering the study")
+
+     (:p "Please enter the following completion code on prolific:")
+
+     (:h4 (hash-ref edpb-config 'pilot-completion-code))
 
      (:p "Since you did not agree to participate in the study, you are done.")))))
 
@@ -275,8 +289,8 @@
     (make-step 'instructions instructions)
     (make-step 'initialize
                (lambda ()
-                 (put 'tutorial-example/in (car (random-abstracts/topic 1 "self-control")))
-                 (put 'tutorial-example/out (car (random-abstracts/non-topic 1 "self-control")))
+                 (put 'tutorial-example/in (car (random-abstracts/topic 1 "banking")))
+                 (put 'tutorial-example/out (car (random-abstracts/non-topic 1 "banking")))
                  (skip)))
     (make-step
      'task-description
@@ -286,7 +300,7 @@
         (get 'tutorial-example/out))))
     (make-step/study
      'tutorial-tasks
-     (do-abstracts 2 "gender inequality" "tutorial" "Tutorial Tasks")
+     (do-abstracts (hash-ref edpb-config 'tutorial-abstracts) "banking" "tutorial" "Tutorial Tasks")
      #:provide-bindings '([correct-tutorial-tasks correct-answers]))
     (make-step/study
      'comprehension-test
@@ -776,8 +790,10 @@ SCRIPT
 
 ;;;;;;;; PILOT
 
-(define n-pilot-tutorial 2)
-(define n-pilot-baseline 2)
+(define n-pilot-tutorial
+  (hash-ref edpb-config 'pilot-tutorial-abstracts))
+(define n-pilot-baseline
+  (hash-ref edpb-config 'pilot-baseline-abstracts))
 
 (define pilot-main
   (make-study
@@ -801,7 +817,7 @@ SCRIPT
     ; FIXME: change require bindings to be an option, not three separate values.
     (make-step/study
      'do-baseline-work
-     (do-abstracts n-pilot-baseline "gender inequality" "baseline" "Baseline Work"))
+     (do-abstracts n-pilot-baseline "social preferences" "baseline" "Baseline Work"))
 
     (make-step/study
      'do-additional-work
@@ -861,9 +877,18 @@ SCRIPT
                ("2" . "15 in total")
                ("3" . "25 in total")
                ("4" . "40 in total")))))
+          (:div
+           (#:reasons-to-reveal
+            (radios
+             "Suppose you face a decision with buttons to reveal reasons for each of the two options. Which of the following is true?"
+             '(("1" . "You can choose an option and submit your choice without having revealed a reason.")
+               ("2" . "You can choose an option and submit your choice only after revealing exactly one reason.")
+               ("3" . "You can choose an option and submit your choice only after revealing both reasons.")
+               ("4" . "You can choose an option and submit your choice after revealing any numbe of reasons.")))))
           submit-button))
         (lambda (#:when-paid when-paid
-                 #:how-many-abstracts how-many-abstracts)
+                 #:how-many-abstracts how-many-abstracts
+                 #:reasons-to-reveal reasons-to-reveal)
           (define score
             (apply
              +
@@ -871,7 +896,8 @@ SCRIPT
               (λ (b) (if b 1 0))
               (list
                (string=? when-paid "3")
-               (string=? how-many-abstracts "4")))))
+               (string=? how-many-abstracts "4")
+               (string=? reasons-to-reveal "2")))))
           (put 'attempt (add1 (get 'attempt)))
           (put 'comprehension-test-score score)))
 
@@ -880,11 +906,34 @@ SCRIPT
 
        ))))
 
+  (define (introduction)
+    (page
+     (haml
+      (.container
+
+       (:h2 "Tutorial")
+
+       (:p (format "This study consists of a brief (~a mins) tutorial session followed by the main session. The tutorial is meant to familiarize you with the main study, so you can decide whether you want to participate in it."
+                   (conf 'pilot-tutorial-duration-estimate)))
+
+       (:h3 "Comprehension Test")
+
+       (:p "After the tutorial, you will have several attempts at a comprehension test about the main study, where we repeat all the relevant information from the tutorial.")
+
+       (:p (format "If you fail the comprehension test, you receive a completion code with which you receive only ~a, and you cannot participate in the main study."
+                   ($conf 'pilot-fail-comprehension-fee)))
+
+       (:p (format "If you pass the comprehension test, you receive another completion code with which you receive the baseline fee of ~a. Moreover, you can then decide whether to participate in the main study for bonus payments described later."
+                   ($conf 'pilot-tutorial-fee)))
+
+       (button void "Start Tutorial")))))
+
   (make-study
    "pilot tutorial"
    #:transitions
    (transition-graph
-    [instructions --> initialize
+    [introduction --> instructions
+                  --> initialize
                   --> task-description
                   --> announce-tutorial-tasks
                   --> tutorial-tasks
@@ -897,18 +946,19 @@ SCRIPT
     [fail-comprehension-test --> fail-comprehension-test])
 
    (list
+    (make-step 'introduction introduction)
     (make-step 'instructions
                (lambda ()
                  (page
                   (haml
                    (.container
                     pilot-instructions
-
                     (button void "Continue"))))))
+
     (make-step 'initialize
                (lambda ()
-                 (put 'tutorial-example/in (car (random-abstracts/topic 1 "self-control")))
-                 (put 'tutorial-example/out (car (random-abstracts/non-topic 1 "self-control")))
+                 (put 'tutorial-example/in (car (random-abstracts/topic 1 "well-being")))
+                 (put 'tutorial-example/out (car (random-abstracts/non-topic 1 "banking")))
                  (skip)))
     (make-step
      'task-description
@@ -919,12 +969,12 @@ SCRIPT
     (make-step 'announce-tutorial-tasks announce-tutorial-tasks)
     (make-step/study
      'tutorial-tasks
-     (do-abstracts n-pilot-tutorial "gender inequality" "tutorial" "Tutorial Tasks"))
+     (do-abstracts n-pilot-tutorial "banking" "tutorial" "Tutorial Tasks"))
     (make-step 'display-correct-tutorial-answers
                (display-correct-answers '("tutorial") n-pilot-tutorial))
     (make-step/study
      'comprehension-test
-     (comprehension-test-study pilot-comprehension-test 2)
+     (comprehension-test-study pilot-comprehension-test 3)
      #:provide-bindings '([pass-comprehension-test? pass-test?]))
     (make-step 'fail-comprehension-test fail-comprehension-test))))
 
@@ -955,6 +1005,25 @@ SCRIPT
                  score
                  abstract-bonus))))))
 
+(define (consent-show-code)
+  (page
+   (haml
+    (.container
+     (:h1 "Enter Completion Code on Prolific")
+
+     (:p "Since you agreed to participate in the main study, do not close this window.")
+
+     (:p "But before continuing, enter the completion code on prolific. This entitles you to the baseline fee, the payments for the main study will be paid out as bonuses later on.")
+
+     (:h4 "Completion Code: " (hash-ref edpb-config 'pilot-completion-code))
+
+     (formular
+      (haml
+       (:div
+        (#:entered-completion-code?
+         (checkbox "Did you enter the completion code on Prolific? You cannot proceed until you have done so."))
+        submit-button)))))))
+
 (define edpb-pilot
   (make-study
    "edpb pilot"
@@ -969,10 +1038,11 @@ SCRIPT
     [waiting-page --> tutorial
                   --> consent
                   --> ,(lambda ()
-                         (if (get 'consent-given?) 'main 'no-consent))]
+                         (if (get 'consent-given?) 'consent-show-code 'no-consent))]
 
     [no-consent --> no-consent]
-    [main --> debriefing]
+    [consent-show-code --> main
+                       --> debriefing]
     [debriefing --> debriefing])
 
    (list
@@ -980,6 +1050,7 @@ SCRIPT
     (make-step 'error-page error-page)
     (make-step/study 'tutorial (pilot-tutorial))
     (make-step 'consent consent)
+    (make-step 'consent-show-code consent-show-code)
     (make-step/study 'admin admin-study)
     (make-step 'waiting-page waiting-page)
     (make-step/study 'main pilot-main)

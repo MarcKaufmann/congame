@@ -7,7 +7,9 @@
 (provide
  edpb-config
  instructions
- pilot-instructions)
+ pilot-instructions
+ conf
+ $conf)
 
 (define (~$ a)
   (format "£~a" (~r a #:precision 2)))
@@ -21,10 +23,17 @@
         'piece-rate-per-abstract 0.2
         'baseline-abstracts 15
         'estimated-extra-abstracts 35
+        'tutorial-abstracts 2
+        'pilot-completion-code "COMPCOMP"
+        'pilot-tutorial-abstracts 2
+        'pilot-baseline-abstracts 15
+        'pilot-additional-low 15
+        'pilot-additional-high 30
         'pilot-tutorial-duration-estimate "5-10"
         'pilot-study-duration-estimate 20
         'pilot-tutorial-fee 2
         'pilot-completion-fee 5
+        'pilot-fail-comprehension-fee 1
         'pilot-correct-abstract-bonus 0.05))
 
 (define (conf x)
@@ -36,11 +45,7 @@
 (define pilot-instructions
    (haml
     @:div{
-      @:h1{Instructions}
-
-      @:p{This study consists of a brief (~@conf['pilot-tutorial-duration-estimate] mins) tutorial session followed by the main session. After the tutorial, you will receive the completion code and you will be asked whether you want to participate in the main study, which starts right after the tutorial. If you agree to participate, you receive additional payments as bonus payments if you complete the main session.}
-
-      @:h2{Main Study}
+      @:h1{Main Study Instructions}
 
       @:p{The main study is structured as follows:}
 
@@ -48,11 +53,24 @@
         @:li{@:strong{Decision Stage:} You make a series of decisions about how many and what type of extra abstracts to categorize.
           @:ul{
             @:li{@:strong{Reveal Reasons:} For some decisions, both options have a button that can reveal a reason for or against that option, and you must reveal exactly one of the reasons before choosing an option.}}}
-        @:li{@:strong{Determining the Decision that Counts:} After you have made all the decisions, one decision will be randomly chosen, and we will inform you about that choice.}
+        @:li{@:strong{Determining the Decision that Counts:} After you have made all the decisions, one decision will be randomly chosen, and you will then have to do the work based on your choice in that decision.}
         @:li{@:strong{Categorize Abstracts:} You then categorize the extra abstracts from that decision that counts.}
         @:li{@:strong{Final survey:} You complete a final survey about the study, including any comments you may have.}}
 
-      @:p{The rest of the tutorial walks you through each of these steps briefly, providing you with example choice, a few abstracts to categorize, and a comprehension test to check that you understood the instructions. After that, you can decide whether to participate in the main study.}
+      @:h2{Abstract Categorization Tasks}
+
+      @:p{You will be asked to categorize the following abstracts by whether they fit in a given category or not:}
+
+      @:ul{
+        @:li{@:strong{Tutorial:} @conf['pilot-tutorial-abstracts] abstracts}
+        @:li{@:strong{Main Study:}
+          @:ul{
+            @:li{Categorize @conf['pilot-baseline-abstracts] baseline abstracts into 'Social Preferences' or 'Other'.}
+            @:li{Between @conf['pilot-additional-low] and @conf['pilot-additional-high] additional abstracts based on your choice in the decision that counts}}}}
+
+      @:h2{Example of Additional Tasks}
+
+      @:p{Suppose you chose the option to "Categorize 20 abstracts today into 'Banking' or 'Other'", and that this decision is randomly picked as the decision that counts. Then you will have to first categorize 15 abstracts into 'Social Preferences' or 'Other' - the @:em{baseline work} - followed by categorizing 20 abstracts into 'Banking' or 'Other' - the @:em{additional work}.}
 
       @:h2{Payments}
 
@@ -61,9 +79,11 @@
       @:ul{
         @:li{@:strong{Complete Tutorial (~@conf['pilot-tutorial-duration-estimate] mins):} If you complete the tutorial, you receive @$conf['pilot-tutorial-fee] in the form of the baseline payment.}
         @:li{@:strong{Complete Main Session (~@conf['pilot-study-duration-estimate] mins):} If you also complete the main session within the permitted time after the tutorial, you receive an additional @$conf['pilot-completion-fee] in the form of bonus payments.}
-        @:li{@:strong{Correct Abstract Categorization:} In addition, you receive a bonus of @$conf['pilot-correct-abstract-bonus] for every abstract that you categorize correctly.}}
+        @:li{@:strong{Correct Abstract Categorization:} In addition, you receive a bonus of @$conf['pilot-correct-abstract-bonus] for every abstract of the main session (not the tutorial) that you categorize correctly.}}
 
-      @:p{All payments will be made within 3 days of you completing the tutorial.}}))
+      @:p{All payments will be made within 3 days of you completing the tutorial.}
+
+      }))
 
 (define (instructions)
   (page
@@ -78,7 +98,6 @@
       In both sessions you will have to categorize @conf['baseline-abstracts] abstracts each as a baseline. In one of the two sessions, you will also have to do some extra work, involving the categorization of around @conf['estimated-extra-abstracts] extra abstracts.}
 
       @:p{On the next page, you will see an example abstract and its categorization. On the subsequent pages, you can try the categorization task yourself.}
-
 
       @:h2{First session - TODAY}
 
