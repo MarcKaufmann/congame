@@ -670,7 +670,7 @@
 
 (define (render-study-instance-vars vars)
   (haml
-   (:table.table
+   (:table.table.table--admin
     (:thead
      (:tr
       (:th "Stack")
@@ -691,7 +691,7 @@
 
 (define (render-participant-list study-id study-instance-id participants)
   (haml
-   (:table.table
+   (:table.table.table--admin
     (:thead
      (:tr
       (:th "Participant ID")
@@ -850,7 +850,7 @@
                 (:tr
                  (:td name)
                  (:td (~r #:precision '(= 2) amount)))))))
-         (:table.table
+         (:table.table.table--admin
           (:thead
            (:tr
             (:th "Stack")
