@@ -1,6 +1,8 @@
 #lang at-exp racket
 
-(require congame/components/study
+(require congame/components/resource
+         congame/components/study
+         racket/runtime-path
          koyo/haml
          "abstract-categorization.rkt")
 
@@ -10,6 +12,8 @@
  pilot-instructions
  conf
  $conf)
+
+(define-static-resource resources "resources")
 
 (define (~$ a)
   (format "£~a" (~r a #:precision 2)))
@@ -64,8 +68,7 @@
 
       @:p{At the start of the main session, you have to make a series of decisions. Here you see a screenshot of a choice that you could observe:}
 
-      ; FIXME: Add img location
-      (:img ([:src ""]) "Screenshot")
+      @(haml (:img ([:src (resource-uri resources "reason-screenshot.png")]) "Screenshot"))
 
       @:p{Each decision is about categorizing by two different: in the above example, the choice is between either categorizing 25 abstracts into 'Social Preferences' or 'Other', or categorizing 20 abstracts into 'Banking' or 'Other'.}
 

@@ -25,13 +25,13 @@
 ; TODO:
 ; - Add screenshot of decision choice with reasons, and explain
 ; - Add definition of categories as written by chatgpt
-; - When announcing tasks, state into which category, display somewhere
-; - Add feedback section at end, before payment page
-; - Rename debriefing to final page/payment page
 ; - Finalize choices and randomizations
-; - Style the submit and reasons reveal buttons differently based on whether they are inactive, already revealed, or active
 ;
 ; Check TODO:
+; - When announcing tasks, state into which category, display somewhere
+; - Rename debriefing to final page/payment page
+; - Add feedback section at end, before payment page
+; - Track the reasons being selected!!!!
 ; - After consent page, display the code and tell them to immediately start the study
 ; - Check that instructions answer comprehension questions
 ; - Use "banking" in the tutorial; use "social preferences" as the baseline tasks to work on, since I didn't collect data on it in the pilot, so we can't have reasons for it.
@@ -392,86 +392,95 @@
                    [else
                     (string-titlecase (car type))]))]))
 
-(define/contract (abstract-choice ce k)
-  (-> choice-env? symbol? any/c)
+(define (ce-reason ce label)
+  (case label
+    [(A) (o+r-reason (choice-env-A ce))]
+    [(B) (o+r-reason (choice-env-B ce))]))
+
+(define (abstract-choice/reason ce)
+  (define (put/reason label text)
+    (define reasons
+      (get 'reasons '()))
+    (put 'reasons (cons (list label text ce) reasons)))
+
+  (define reasons?
+    (or (ce-reason ce 'A)
+        (ce-reason ce 'B)))
+
+  (cond [reasons?
+         (page
+          (haml
+           (.container
+            (:h3 "Description of Options")
+
+            ,@(for/list ([label '(A B)])
+                (define r (ce-reason ce label))
+                (haml
+                 (:div
+                  (:h4 (format "Option ~a" label))
+
+                  (:p (describe-abstracts ce label))
+
+                  )))
+
+            (:h3 "Reveal a Reason")
+
+            ,@(for/list ([label '(A B)]
+                         #:when (ce-reason ce label))
+                (define r (ce-reason ce label))
+                (when (ce-reason ce label)
+                  (haml
+                   (.reveal-reasons
+                    (button
+                     (lambda ()
+                       (put/reason label (reason-text r))
+                       (skip))
+                     (format "Reveal a reason ~a Option ~a"
+                             (reason-dir r) label)))))))))]
+
+        [else
+         (put/reason #f "")
+         (skip)]))
+
+(define (abstract-choice ce k)
+  (define last-reason
+    (car (get 'reasons)))
   (define (put/choice o)
     (define choices
       (get k '()))
     (put k (cons (cons (string->symbol o) ce) choices)))
-  (define (ce-reason ce k)
-    (case k
-      [(A) (o+r-reason (choice-env-A ce))]
-      [(B) (o+r-reason (choice-env-B ce))]))
-  (define reasons?
-    (or (ce-reason ce 'A)
-        (ce-reason ce 'B)))
+  (define r-label
+    (car last-reason))
+  (define r-text
+    (cadr last-reason))
   (page
    (haml
     (.container
+
+     (:h3 "Description of Options")
+
+     ,@(for/list ([label '(A B)])
+         (define r (ce-reason ce label))
+         (haml
+          (:div
+           (:h4 (format "Option ~a" label))
+
+           (:p (describe-abstracts ce label)))))
+
+     (when r-label
+       (haml
+        (.revealed-reason
+         (:h3 (format "Reason for ~a: " r-label))
+         (:p r-text))))
+
      (formular
       (haml
        (:div
-        (:div
-         (#:choice
-            (make-radios
-             `((A . (,(describe-abstracts ce 'A) ,(ce-reason ce 'A)))
-               (B . (,(describe-abstracts ce 'B) ,(ce-reason ce 'B))))
-             (lambda (options make-radio)
-               (haml
-                (:div
-                 (:h3 "Description of Options")
-                 ,@(for/list ([pair (in-list options)])
-                     (define l (car pair))
-                     (define label (cadr pair))
-                     (define r (caddr pair))
-                     (haml
-                      (:div
-                       (:h4 (format "Option ~a" l))
-                       (:p label)
-
-                       (when (ce-reason ce l)
-                         (haml
-                          (:table
-                           (:tbody
-                            (:tr
-                             (:td
-                              (:a.button.button--reason
-                               ([:onclick (format "revealReason('~a');" l)]) "Reveal reason " (:strong (~a (reason-dir r))) " Option " (symbol->string l)))
-                             (:td
-                              (case l
-                                [(A) (haml
-                                      (.reason#A ([:style "display: none;"]) (reason-text r)))]
-                                [(B) (haml
-                                      (.reason#B ([:style "display: none;"]) (reason-text r)))]))))))))))
-
-                  (:h3 "Choose an Option")
-                   (:table
-                    (:tbody
-                     ,@(for/list ([l (list 'A 'B)])
-                         (haml
-                           (:tr
-                            (:td (make-radio l))
-                            (:td (format "Option ~a" l))))))))))))
-
-         (if reasons?
-             (haml
-              (:button.button.next-button#submit ([:type "submit"] [:disabled "true"]) "Submit (disabled until you reveal a reason)"))
-             (haml
-              (:button.button.next-button#submit ([:type "submit"]) "Submit"))))
-        (:script
-         #<<SCRIPT
-var reveals = 0;
-function revealReason(label) {
-    if (reveals == 0) {
-        reveals = 1;
-        document.getElementById(label).style.display = 'block';
-        submit = document.getElementById('submit');
-        submit.disabled = false;
-        submit.textContent = 'Submit';
-    }
-}
-SCRIPT
-         )))
+        (#:choice
+         (radios "Choose an option:"
+          `(("A" . "Option A")
+            ("B" . "Option B"))))
+        submit-button))
       (lambda (#:choice choice)
         (put/choice choice)))))))
 
@@ -480,17 +489,22 @@ SCRIPT
    "work choices"
    #:transitions
    (transition-graph
-    [choice-page --> ,(lambda ()
+    [reason-page --> choice-page
+                 --> ,(lambda ()
                         (define remaining-choices
                           (cdr (get 'remaining-choices)))
                         (put 'remaining-choices remaining-choices)
                         (cond [(null? remaining-choices)
                                next]
                               [else
-                               (goto choice-page)]))])
+                               (goto reason-page)]))])
    #:requires '(remaining-choices)
    #:provides '(work-choices)
    (list
+    (make-step 'reason-page (lambda ()
+                              (define next-ce
+                                (car (get 'remaining-choices)))
+                              (abstract-choice/reason next-ce)))
     (make-step 'choice-page (lambda ()
                               (define next-ce
                                 (car (get 'remaining-choices)))
@@ -695,21 +709,35 @@ SCRIPT
 
 ;;;;;;;;;; EDPB Pilot to calibrate choices, test reasons, etc
 
+(define (make-option category n [a-reason #f] [dir #f])
+  (o+r (option 'session1 `(,category "other") n)
+       (and a-reason (reason dir a-reason))))
+
+(define (make-option/for category n a-reason)
+  (make-option category n a-reason 'for))
+
+(define (make-option/against category n a-reason)
+  (make-option category n a-reason 'against))
+
 (define (set-pilot-choices)
   (put 'choices-to-make
        (list
 
         (choice-env
-         (o+r (option 'session1 '("socioeconomic inequality" "other") 5) (reason 'for "'tis good"))
-         (o+r (option 'session1 '("gender inequality" "other") 5) (reason 'against "dis BAD!")))
+         (make-option/for "social preferences" 25 "Reason for")
+         (make-option/for "banking" 20 "Reason for"))
 
         (choice-env
-         (o+r (option 'session1 '("socioeconomic inequality" "other") 5) #f)
-         (o+r (option 'session1 '("gender inequality" "other") 5) #f))
+         (make-option/for "socioeconomic inequality" 5 "'tis good")
+         (make-option/against "gender inequality" 5 "dis bAD!"))
 
         (choice-env
-         (o+r (option 'session2 '("self-control" "other") 15) (reason 'for "Y not!"))
-         (o+r (option 'session1 '("self-control" "other") 10) #f))))
+         (make-option "socioeconomic inequality" 5)
+         (make-option "gender inequality" 5))
+
+        (choice-env
+         (make-option/for "self-control" 15 "Y not!")
+         (make-option "self-control" 10))))
   (skip))
 
 (define (determine-pilot-choices)

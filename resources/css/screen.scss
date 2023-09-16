@@ -93,6 +93,10 @@ body {
       color: $vivid-purple-1;
     }
   }
+
+  &:disabled, &.disabled {
+    background-color: lightgray;
+  }
 }
 
 .flash {
@@ -379,4 +383,11 @@ ul.errors {
 .abstract {
   padding: 1rem;
   font-style: italic;
+}
+
+/* Reveal Reasons */
+
+.reveal-reasons {
+  width: 40%;
+  padding: 0.5rem;
 }
