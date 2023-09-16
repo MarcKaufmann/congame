@@ -23,14 +23,14 @@
          "abstract-categorization.rkt")
 
 ; TODO:
-; - Add screenshot of decision choice with reasons, and explain
 ; - Add definition of categories as written by chatgpt
 ; - Finalize choices and randomizations
 ;
 ; Check TODO:
+; - Add screenshot of decision choice with reasons, and explain
+; - Add feedback section at end, before payment page
 ; - When announcing tasks, state into which category, display somewhere
 ; - Rename debriefing to final page/payment page
-; - Add feedback section at end, before payment page
 ; - Track the reasons being selected!!!!
 ; - After consent page, display the code and tell them to immediately start the study
 ; - Check that instructions answer comprehension questions
@@ -814,7 +814,7 @@
   (page
    (haml
     (.container
-     (:h1 (format "Your categorized ~a out of ~a abstracts correctly" score n-total))
+     (:h1 (format "You categorized ~a out of ~a abstracts correctly" score n-total))
      (button void "Continue")))))
 
 ;;;;;;;; PILOT
@@ -824,6 +824,29 @@
 (define n-pilot-baseline
   (hash-ref edpb-config 'pilot-baseline-abstracts))
 
+(define (reasons-debrief)
+  (page
+   (haml
+    (.container
+     (:h1 "Feedback and Reasons")
+
+     (formular
+      (haml
+       (:div
+        (:div
+         (#:how-choose-reason
+          (textarea "Please explain how you decided which reasons to reveal.")))
+        (:div
+         (#:how-much-did-reasons-affect-choices
+          (input-likert "How much do you feel that the reasons affected your choices? (1: not at all, 4: somewhat, 7: extremely)")))
+        (:div
+         (#:how-meaningful-reasons
+          (input-likert "How meaningful did you find the reasons? (1: not at all, 4: somewhat, 7: extremely)")))
+        (:div
+         (#:feedback
+          (textarea "Please provide some feedback on what kinds of reasons might have swayed your choice in the kind of situation we gave you, or what type of similar choice (where you are asked to do work for someone else) could sway you. This can include reasons relying brought forward by other people such as colleagues, friends, or spouses.")))
+        submit-button)))))))
+
 (define pilot-main
   (make-study
    "main part of pilot"
@@ -831,6 +854,7 @@
    (transition-graph
     [set-choices --> choices
                  --> determine-choice-that-counts
+                 --> reasons-debrief
                  --> do-baseline-work
                  --> do-additional-work
                  --> display-total-correct-answers
@@ -844,6 +868,7 @@
      #:provide-bindings '([choices-made work-choices]))
     (make-step 'determine-choice-that-counts determine-pilot-choices)
     ; FIXME: change require bindings to be an option, not three separate values.
+    (make-step 'reasons-debrief reasons-debrief)
     (make-step/study
      'do-baseline-work
      (do-abstracts n-pilot-baseline "social preferences" "baseline" "Baseline Work"))
@@ -931,7 +956,7 @@
           (put 'comprehension-test-score score)))
 
 
-       pilot-instructions
+       (pilot-instructions)
 
        ))))
 
@@ -981,7 +1006,7 @@
                  (page
                   (haml
                    (.container
-                    pilot-instructions
+                    (pilot-instructions)
                     (button void "Continue"))))))
 
     (make-step 'initialize
@@ -1027,6 +1052,7 @@
          (checkbox "Did you enter the completion code on Prolific? You cannot proceed until you have done so."))
         submit-button)))))))
 
+
 (define (debriefing)
   (page
    (haml
@@ -1039,9 +1065,6 @@
         (:div
          (#:how-choose
           (textarea "Please explain how you chose between the two options:")))
-        (:div
-         (#:how-choose-reason
-          (textarea "Please explain how you decided which reasons to reveal:")))
         (:div
          (#:feedback
           (textarea "Please provide any feedback or comments you may have, in particular if there was something that become clear to you as you went through the study and that we should highlight earlier.")))

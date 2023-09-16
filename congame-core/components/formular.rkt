@@ -576,8 +576,21 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (module+ tools
-  (provide submit-button)
+  (provide
+   submit-button
+   input-likert)
 
   (define submit-button
     (haml
-     (:button.button.next-button ([:type "submit"]) "Submit"))))
+     (:button.button.next-button ([:type "submit"]) "Submit")))
+
+  (define (input-likert label)
+    (select label
+            `((""  . "--Please choose an option--")
+              ("1" . " 1 ")
+              ("2" . " 2 ")
+              ("3" . " 3 ")
+              ("4" . " 4 ")
+              ("5" . " 5 ")
+              ("6" . " 6 ")
+              ("7" . " 7 ")))))

@@ -13,7 +13,7 @@
  conf
  $conf)
 
-(define-static-resource resources "resources")
+(define-static-resource reason-screenshot "resources/reason-screenshot.png")
 
 (define (~$ a)
   (format "£~a" (~r a #:precision 2)))
@@ -46,7 +46,7 @@
 (define ($conf x)
   (~$ (hash-ref edpb-config x)))
 
-(define pilot-instructions
+(define (pilot-instructions)
    (haml
     @:div{
       @:h1{Main Study Instructions}
@@ -68,19 +68,23 @@
 
       @:p{At the start of the main session, you have to make a series of decisions. Here you see a screenshot of a choice that you could observe:}
 
-      @(haml (:img ([:src (resource-uri resources "reason-screenshot.png")]) "Screenshot"))
+      @(haml (.screenshot (:img ([:src (resource-uri reason-screenshot)]))))
 
       @:p{Each decision is about categorizing by two different: in the above example, the choice is between either categorizing 25 abstracts into 'Social Preferences' or 'Other', or categorizing 20 abstracts into 'Banking' or 'Other'.}
 
-      @:p{@:strong{Reveal Reasons:} For some decisions as in the above example, one or both choice options have a button that reveals a reason @:strong{for} or @:strong{against} that option. Before submitting your choice, you must click and reveal exactly one of the reasons.}
+      @:h4{Revealing Reasons}
 
-      @:p{These reasons will not provide additional information about how to do the tasks. Rather they will inform you about some aspects of the topics you can choose from, in particular what participants in a previous survey think about the different topics.}
+      @:p{For some decisions (as in the example above example), you first have to reveal a reason @:strong{for} or @:strong{against} one of the options. Only then can you submit your choice. These reasons will not provide additional information about how to do the tasks. Rather they will inform you about some aspects of the topics you can choose from, in particular what participants in a previous survey think about the different topics.}
+
+      @:h4{Determining Decision that Counts}
 
       @:p{Once you have made all the decisions, one of the decisions will randomly be picked as @:em{the decision that counts}: whatever you chose in that decision determines which and how many additional abstracts you will categorize later.}
 
       @:p{For example, suppose that in the decision above you chose the option to "Categorize 20 abstracts today into 'Banking' or 'Other'", and that this decision is randomly picked as the decision that counts. Then you will have to first categorize 15 abstracts into 'Social Preferences' or 'Other' - the @:em{baseline work} - followed by categorizing 20 abstracts into 'Banking' or 'Other' - the @:em{additional work}.}
 
-      @:p{After you complete the baseline and additional work, we will ask you to complete a final survey.}
+      @:h2{Short Surveys and Feedback}
+
+      @:p{After you complete all the choices, and again after you complete all the tasks, we will ask you to answer some questions and provide feedback.}
 
       @:h2{Payments}
 
