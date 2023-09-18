@@ -40,8 +40,6 @@
 (define surveys
   (let ([t (today)])
     (list
-     (sd 0 (today) #t #t "Bla")
-     (sd 20 (today) #t #f "")
      (sd 1 (date 2023 09 20) #t #f "")
      (sd 2 (date 2023 10  4) #t #f "")
      (sd 3 (date 2023 10 18) #t #t "Problem Set")
