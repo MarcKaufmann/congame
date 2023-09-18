@@ -7,6 +7,7 @@
          (submod congame/components/formular tools)
          congame/components/study
          congame/components/transition-graph
+         congame-web/components/identity
          "../stdlib.rkt")
 
 ; FIXME: Add date of survey to the title, just to make sure things are as expected
@@ -39,6 +40,8 @@
 (define surveys
   (let ([t (today)])
     (list
+     (sd 0 (today) #t #t "Bla")
+     (sd 20 (today) #t #f "")
      (sd 1 (date 2023 09 20) #t #f "")
      (sd 2 (date 2023 10  4) #t #f "")
      (sd 3 (date 2023 10 18) #t #t "Problem Set")
@@ -185,6 +188,15 @@
      (:h1 "Thank you")
      (:p "Thank you for participating in the study, you have completed it.")))))
 
+(define (keep-score)
+  (define score
+    (get 'score 0))
+  (define new-score
+    (add1 score))
+  (put 'score new-score)
+  (put/identity 'score new-score)
+  (skip))
+
 (define grade-expectations
   (make-study
    "panel study for grade expectations"
@@ -206,6 +218,7 @@
 
     [waiting-page --> report-grade
                   --> expectations-survey
+                  --> keep-score
                   ; this will skip to waiting-page, unless there are no more surveys
                   --> schedule-next-survey-or-done
                   --> thank-you]
@@ -220,6 +233,7 @@
     (make-step 'waiting-page waiting-page)
     (make-step 'report-grade report-grade)
     (make-step 'expectations-survey survey)
+    (make-step 'keep-score keep-score)
     (make-step 'schedule-next-survey-or-done schedule-next-survey-or-done)
     (make-step 'error-page (make-stub "Error Page"))
     (make-step 'thank-you thank-you))))
