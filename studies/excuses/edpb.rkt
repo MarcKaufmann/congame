@@ -25,6 +25,7 @@
 ; TODO:
 ; - create interface to elicit $ amount needed to equalize the two options, use + and - buttons to do so.
 ; - update explanations to explain the $ amount an +/-
+; - fix decision-that-counts: it seems broken and doesn't allow the new numerical choices with money
 ; - Finalize choices and randomizations
 ; - Create list of reasons that I can use and that can be linked to the appropriate choices
 ;
@@ -445,13 +446,13 @@
          (put/reason #f "")
          (skip)]))
 
-(define (abstract-choice ce k)
+(define (abstract-choice ce)
   (define last-reason
     (car (get 'reasons)))
   (define (put/choice o)
     (define choices
-      (get k '()))
-    (put k (cons (cons (string->symbol o) ce) choices)))
+      (get 'work-choices '()))
+    (put 'work-choices (cons (list (string->symbol o) ce) choices)))
   (define r-label
     (car last-reason))
   (define r-text
@@ -463,7 +464,6 @@
      (:h3 "Description of Options")
 
      ,@(for/list ([label '(A B)])
-         (define r (ce-reason ce label))
          (haml
           (:div
            (:h4 (format "Option ~a" label))
@@ -486,6 +486,67 @@
         submit-button))
       (lambda (#:choice choice)
         (put/choice choice)))))))
+
+(define (bonus-for-switching k)
+
+  (define last-choice
+    (car (get 'work-choices)))
+  (define chosen-option
+    (car last-choice))
+  (define unchosen-option
+    (if (string=? chosen-option "A") "B" "A"))
+  (define last-ce
+    (cdr last-choice))
+  (define last-reason
+    (car (get 'reasons)))
+  (define r-label
+    (car last-reason))
+  (define r-text
+    (cadr last-reason))
+
+  (page
+   (haml
+    (.container
+
+     (:h3 "Description of Options")
+
+     ,@(for/list ([label '(A B)])
+         (define r (ce-reason last-ce label))
+         (haml
+          (:div
+           (:h4 (format "Option ~a" label))
+
+           (:p (describe-abstracts last-ce label)))))
+
+     (when r-label
+       (haml
+        (.revealed-reason
+         (:h3 (format "Reason for ~a: " r-label))
+         (:p r-text))))
+
+     (:h3 "Bonus needed for switching")
+
+     (:p (format "Between the two above options, you picked Option ~a. Please use the '+' and '-' buttons below to pick the smallest amount of money such that you would choose the other alternative, Option ~a. That is, if we offer you the choice between Option ~a for no bonus payment vs Option ~a with that bonus payment, you'd prefer the latter."
+                 chosen-option
+                 unchosen-option
+                 chosen-option
+                 unchosen-option))
+
+     (formular
+      (haml
+       (:div
+        (#:bonus
+         (input-number "Switching Bonus" #:min 0.1 #:max 1.0 #:step 0.1))
+        submit-button))
+      (lambda (#:bonus bonus)
+        (with-study-transaction
+          (define choices
+            (get 'work-choices))
+          (define last-choice
+            (car choices))
+          (put 'work-choices
+               (cons (append last-choice bonus) (cdr choices))))))))))
+
 
 (define work-choices
   (make-study
@@ -511,7 +572,8 @@
     (make-step 'choice-page (lambda ()
                               (define next-ce
                                 (car (get 'remaining-choices)))
-                              (abstract-choice next-ce 'work-choices))))))
+                              (abstract-choice next-ce)))
+    (make-step 'bonus-for-switching bonus-for-switching))))
 
 (define (set-treatments)
   (put 'choices-to-make
@@ -744,11 +806,12 @@
   (skip))
 
 (define (determine-pilot-choices)
+  ; FIXME: Add option to choose the numerical choice with money
   ; FIXME: This is some ugly and tedious code.
   (define cs (get 'choices-made))
   (define c (random-ref cs))
   (define option-chosen (car c))
-  (define ce (cdr c))
+  (define ce (cadr c))
   (match-define (choice-env (o+r A RA)
                             (o+r B RB))
     ce)
