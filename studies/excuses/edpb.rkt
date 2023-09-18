@@ -23,10 +23,10 @@
          "abstract-categorization.rkt")
 
 ; TODO:
-; - Finalize choices and randomizations
-; - Create list of reasons that I can use and that can be linked to the appropriate choices
 ; - create interface to elicit $ amount needed to equalize the two options, use + and - buttons to do so.
 ; - update explanations to explain the $ amount an +/-
+; - Finalize choices and randomizations
+; - Create list of reasons that I can use and that can be linked to the appropriate choices
 ;
 ; Check TODO:
 ; - Add screenshot of decision choice with reasons, and explain
@@ -993,7 +993,7 @@
           (:div
            (#:impatience
             (input-impatience)))
-          (#:div
+          (:div
            (#:risk
             (input-risk)))
           submit-button)))))))
