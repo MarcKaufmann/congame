@@ -12,7 +12,7 @@
 ; FIXME: Add date of survey to the title, just to make sure things are as expected
 (provide grade-expectations)
 
-(define survey-duration 3) ; How long the surveys remain open.
+(define survey-duration 2) ; How long the surveys remain open.
 
 (define (sd id day survey? report? report-type)
   (hash 'id id
@@ -39,15 +39,15 @@
 (define surveys
   (let ([t (today)])
     (list
-     ; FIXME: Add actual dates
-     (sd 1 t #t #f "")
-     (sd 2 t #t #t "Problem Set")
-     (sd 3 (-days t 7) #t #t "BAAAAAHHH")
-     (sd 4 t #t #t "Midterm")
-     (sd 5 (+days t 1) #t #t "Yohoooo"))))
-
-(define (schedule-reminder-email d)
-  void)
+     (sd 1 (date 2023 09 20) #t #f "")
+     (sd 2 (date 2023 10  4) #t #f "")
+     (sd 3 (date 2023 10 18) #t #f "")
+     (sd 4 (date 2023 10 24) #t #t "Midterm")
+     (sd 5 (date 2023 11  1) #t #f "")
+     (sd 6 (date 2023 11 15) #t #f "")
+     (sd 7 (date 2023 11 29) #t #f "")
+     (sd 8 (date 2023 12  4) #t #f "")
+     (sd 9 (date 2023 12  7) #t #t "Final"))))
 
 (define (survey-is-open? d)
   (define t (today))
@@ -170,8 +170,6 @@
            (eprintf "getting next survey date~n")
            (define next-survey
              (car surveys))
-           (eprintf "schedule reminder email~n")
-           (schedule-reminder-email (sd-day next-survey))
            (eprintf "putting next survey date~n")
            (put 'next-survey (sd->iso8601 next-survey))
            (eprintf "putting remaining survey dates~n")
