@@ -23,8 +23,10 @@
          "abstract-categorization.rkt")
 
 ; TODO:
-; - Add definition of categories as written by chatgpt
 ; - Finalize choices and randomizations
+; - Create list of reasons that I can use and that can be linked to the appropriate choices
+; - create interface to elicit $ amount needed to equalize the two options, use + and - buttons to do so.
+; - update explanations to explain the $ amount an +/-
 ;
 ; Check TODO:
 ; - Add screenshot of decision choice with reasons, and explain
@@ -36,6 +38,7 @@
 ; - Check that instructions answer comprehension questions
 ; - Use "banking" in the tutorial; use "social preferences" as the baseline tasks to work on, since I didn't collect data on it in the pilot, so we can't have reasons for it.
 ; Optional:
+; - Add definition of categories as written by chatgpt
 ; - Rate reasonableness of reasons
 ; - Add debriefing questions on justifying choices
 ; - Implement a feature to track time used on individual steps and substudies.
@@ -980,7 +983,20 @@
        (:p (format "If you pass the comprehension test, you receive another completion code with which you receive the baseline fee of ~a. Moreover, you can then decide whether to participate in the main study for bonus payments described later."
                    ($conf 'pilot-tutorial-fee)))
 
-       (button void "Start Tutorial")))))
+       (formular
+        (haml
+         (:div
+          (:div
+           (#:prolific-id
+            (input-text "Please provide your Prolific ID.")))
+
+          (:div
+           (#:impatience
+            (input-impatience)))
+          (#:div
+           (#:risk
+            (input-risk)))
+          submit-button)))))))
 
   (make-study
    "pilot tutorial"
@@ -1091,7 +1107,7 @@
 
      (:ul
       (:li (format "Baseline payment (for tutorial): £~a" (~r baseline-fee #:precision 2)))
-      (:li (format "Bonus payment (for main session): £~a" (~r (+ completion-bonus abstract-bonus)))))
+      (:li (format "Bonus payment (for main session): £~a" (~r (+ completion-bonus abstract-bonus) #:precision 2))))
 
      (:p (format "The bonus payment consists of a completion bonus of ~a and of a bonus for categorizing ~a abstracts correctly of ~a."
                  completion-bonus

@@ -6,6 +6,7 @@
          forms
          koyo/haml
          (prefix-in m: marionette)
+         racket/list
          racket/match
          racket/port
          (prefix-in bot: (submod "bot.rkt" actions))
@@ -578,11 +579,28 @@
 (module+ tools
   (provide
    submit-button
-   input-likert)
+   input-likert
+   input-impatience
+   input-risk
+   select-scale)
 
   (define submit-button
     (haml
      (:button.button.next-button ([:type "submit"]) "Submit")))
+
+  (define (select-scale label from to)
+    (select label
+            (cons (cons "" "--Please choose an option--")
+                  (for/list ([n (in-list (range from (add1 to)))])
+                    (define n-string (number->string n))
+                    (cons n-string (format " ~a " n-string))))))
+
+  ;; The following are from Falk, Becker, Dohmen, Huffman, Sunde 2022, MS
+  (define (input-impatience)
+    (select-scale "In comparison with others, are you a person who is generally willing to give up something today in order to benefit from that in the future? (0: very impatient; 10: very patient.)" 0 10))
+
+  (define (input-risk)
+    (select-scale "Are you a person who is generally willing to take risks, or do you try to avoid taking risks? (0: avoid as much as possible; 10: very willing to take risks.)" 0 10))
 
   (define (input-likert label)
     (select label

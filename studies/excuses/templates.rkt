@@ -70,7 +70,7 @@
 
       @(haml (.screenshot (:img ([:src (resource-uri reason-screenshot)]))))
 
-      @:p{Each decision is about categorizing by two different: in the above example, the choice is between either categorizing 25 abstracts into 'Social Preferences' or 'Other', or categorizing 20 abstracts into 'Banking' or 'Other'.}
+      @:p{Each decision is about categorizing by two different groups: in the above example, the choice is between either categorizing 25 abstracts into 'Social Preferences' or 'Other', or categorizing 20 abstracts into 'Banking' or 'Other'.}
 
       @:h4{Revealing Reasons}
 
@@ -91,7 +91,7 @@
       @:p{There are three types of payment:}
 
       @:ul{
-        @:li{@:strong{Complete Tutorial (~@conf['pilot-tutorial-duration-estimate] mins):} If you complete the tutorial, you receive @$conf['pilot-tutorial-fee] in the form of the baseline payment.}
+        @:li{@:strong{Complete Tutorial (~@conf['pilot-tutorial-duration-estimate] mins):} If you complete the tutorial and pass the comprehension test, you receive @$conf['pilot-tutorial-fee] in the form of the baseline payment.}
         @:li{@:strong{Complete Main Session (~@conf['pilot-study-duration-estimate] mins):} If you also complete the main session within the permitted time after the tutorial, you receive an additional @$conf['pilot-completion-fee] in the form of bonus payments.}
         @:li{@:strong{Correct Abstract Categorization:} In addition, you receive a bonus of @$conf['pilot-correct-abstract-bonus] for every abstract of the main session (not the tutorial) that you categorize correctly.}}
 
