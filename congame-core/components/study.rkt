@@ -478,10 +478,16 @@ QUERY
        (with-widget-parameterization
          body ...))])
 
-(define/widget (button action label #:id [id ""] #:to-step-id [to-step-id #f])
+(define/widget (button action label
+                       #:id [id ""]
+                       #:to-step-id [to-step-id #f]
+                       #:up-target [up-target ".container"]
+                       #:up-transition [up-transition "none"])
   (haml
    (:a.button.next-button
-    ([:data-widget-id (when-bot id)]
+    ([:up-target up-target]
+     [:up-transition up-transition]
+     [:data-widget-id (when-bot id)]
      [:href
       (embed
        (lambda (_req)
