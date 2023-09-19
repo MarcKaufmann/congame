@@ -17,7 +17,7 @@
 (define-static-resource bonus-switching-screenshot "resources/bonus-for-switching-screenshot.png")
 
 (define (~$ a)
-  (format "£~a" (~r a #:precision 2)))
+  (format "$~a" (~r a #:precision 2)))
 
 (define edpb-config
   (hash 'day2-date "TOMORROW"

@@ -1270,8 +1270,8 @@
      (:h3 "Your Payment")
 
      (:ul
-      (:li (format "Baseline payment (for tutorial): £~a" (~r baseline-fee #:precision 2)))
-      (:li (format "Bonus payment (for main session): £~a" (~r (+ completion-bonus abstract-bonus) #:precision 2))))
+      (:li (format "Baseline payment (for tutorial): $~a" (~r baseline-fee #:precision 2)))
+      (:li (format "Bonus payment (for main session): $~a" (~r (+ completion-bonus abstract-bonus) #:precision 2))))
 
      (:p (format "The bonus payment consists of a completion bonus of ~a and of a bonus for categorizing ~a abstracts correctly of ~a."
                  completion-bonus
