@@ -10,9 +10,10 @@
 
 (define-syntax (for/study stx)
   (syntax-parse stx
-    [(_ {~optional {~and #:substudies use-substudies?}}
-        {~optional {~seq #:requires requires:expr}}
-        {~optional {~seq #:provides provides:expr}}
+    [(_ {~alt
+         {~optional {~and #:substudies use-substudies?}}
+         {~optional {~seq #:requires requires:expr}}
+         {~optional {~seq #:provides provides:expr}}} ...
         clauses body-e ... tail-e)
      #:with ((pre-body-e ...)
              (post-body-e ...))
