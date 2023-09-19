@@ -62,4 +62,58 @@
       });
     }
   });
+
+  up.compiler("[data-counter]", function(el) {
+    let prefix = el.dataset.counterPrefix || "";
+    let min = el.min && el.min * 100;
+    let max = el.max && el.max * 100;
+    let step = Number(el.step) * 100;
+    let value = min || 0;
+    let group = el.closest(".group");
+    let minusBtn = makeButton("-", () => {
+      value -= step;
+      if (min !== undefined && value < min) {
+        value = min;
+      }
+    });
+    let plusBtn = makeButton("+", () => {
+      value += step;
+      if (max !== undefined && value > max) {
+        value = max;
+      }
+    });
+    let container = document.createElement("div");
+    container.classList.add("counter");
+    let label = document.createElement("span");
+    el.closest("label").style.display = "none";
+    container.appendChild(minusBtn);
+    container.appendChild(label);
+    container.appendChild(plusBtn);
+    group.appendChild(container);
+    update();
+    return () => {
+      minusBtn.parent.removeChild(minusBtn);
+      plusBtn.parent.removeChild(plusBtn);
+    };
+
+    function update() {
+      let formatter = Intl.NumberFormat(undefined, {
+        minimumFractionDigits: 2
+      });
+      el.value = `${value / 100}`;
+      label.innerText = `${prefix}${formatter.format(el.value)}`;
+    }
+
+    function makeButton(label, cb) {
+      let elt = document.createElement("button");
+      elt.type = "button";
+      elt.innerText = label;
+      elt.addEventListener("click", e => {
+        cb(e);
+        update();
+        return false;
+      });
+      return elt;
+    }
+  });
 })();

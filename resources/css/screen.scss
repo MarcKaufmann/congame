@@ -396,3 +396,16 @@ ul.errors {
   width: 40%;
   padding: 0.5rem;
 }
+
+.counter {
+  button {
+    width: 3rem;
+  }
+
+  span {
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    width: 6rem;
+  }
+}

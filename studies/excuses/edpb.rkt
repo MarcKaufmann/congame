@@ -539,7 +539,13 @@
       (haml
        (:div
         (#:bonus
-         (input-number "Switching Bonus" #:min 0.1 #:max 1.0 #:step 0.1))
+         (input-number
+          "Switching Bonus"
+          #:min 0.1
+          #:max 1.0
+          #:step 0.1
+          #:attributes `([data-counter "counter"]
+                         [data-counter-prefix "$"])))
         submit-button))
       (lambda (#:bonus bonus)
         (with-study-transaction
