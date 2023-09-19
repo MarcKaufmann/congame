@@ -23,9 +23,10 @@
          "abstract-categorization.rkt")
 
 ; TODO:
-; - create interface to elicit $ amount needed to equalize the two options, use + and - buttons to do so.
+; - Put at top of choice the number and the remaining ones for progress
+; - turn interface for switching bonus into one where one has to use + and -
 ; - update explanations to explain the $ amount an +/-
-; - fix decision-that-counts: it seems broken and doesn't allow the new numerical choices with money
+; - fix decision-that-counts: it doesn't allow the new numerical choices with money
 ; - Finalize choices and randomizations
 ; - Create list of reasons that I can use and that can be linked to the appropriate choices
 ;
@@ -487,16 +488,18 @@
       (lambda (#:choice choice)
         (put/choice choice)))))))
 
-(define (bonus-for-switching k)
+(define (bonus-for-switching)
 
   (define last-choice
     (car (get 'work-choices)))
   (define chosen-option
     (car last-choice))
   (define unchosen-option
-    (if (string=? chosen-option "A") "B" "A"))
+    (case chosen-option
+      [(A) 'B]
+      [(B) 'A]))
   (define last-ce
-    (cdr last-choice))
+    (cadr last-choice))
   (define last-reason
     (car (get 'reasons)))
   (define r-label
@@ -554,6 +557,7 @@
    #:transitions
    (transition-graph
     [reason-page --> choice-page
+                 --> bonus-for-switching
                  --> ,(lambda ()
                         (define remaining-choices
                           (cdr (get 'remaining-choices)))
