@@ -25,9 +25,9 @@
 ; TODO:
 ; - Finalize choices and randomizations
 ; - Create list of reasons that I can use and that can be linked to the appropriate choices
-; - Fix payment currency
 ;
 ; Check TODO:
+; - Fix payment currency
 ; - update explanations to explain the $ amount an +/-
 ; - turn interface for switching bonus into one where one has to use + and -
 ; - Add screenshot of decision choice with reasons, and explain
