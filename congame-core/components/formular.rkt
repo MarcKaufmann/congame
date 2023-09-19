@@ -95,10 +95,10 @@
   (raise-syntax-error stx "the ~error form may only be used inside (formular ...)"))
 
 (define-syntax (~errors stx)
-  (raise-syntax-error stx "the ~errors form may only be used inside (formlar ...)"))
+  (raise-syntax-error stx "the ~errors form may only be used inside (formular ...)"))
 
 (define-syntax (~all-errors stx)
-  (raise-syntax-error stx "the ~all-errors form may only be used inside (formlar ...)"))
+  (raise-syntax-error stx "the ~all-errors form may only be used inside (formular ...)"))
 
 ;; Building up an intermediate representation of formualrs would allow
 ;; us to compose smaller formulars into larger ones.  We may want to
