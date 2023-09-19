@@ -23,14 +23,13 @@
          "abstract-categorization.rkt")
 
 ; TODO:
-; - Put at top of choice the number and the remaining ones for progress
-; - turn interface for switching bonus into one where one has to use + and -
-; - update explanations to explain the $ amount an +/-
-; - fix decision-that-counts: it doesn't allow the new numerical choices with money
 ; - Finalize choices and randomizations
 ; - Create list of reasons that I can use and that can be linked to the appropriate choices
+; - Fix payment currency
 ;
 ; Check TODO:
+; - update explanations to explain the $ amount an +/-
+; - turn interface for switching bonus into one where one has to use + and -
 ; - Add screenshot of decision choice with reasons, and explain
 ; - Add feedback section at end, before payment page
 ; - When announcing tasks, state into which category, display somewhere
@@ -39,7 +38,10 @@
 ; - After consent page, display the code and tell them to immediately start the study
 ; - Check that instructions answer comprehension questions
 ; - Use "banking" in the tutorial; use "social preferences" as the baseline tasks to work on, since I didn't collect data on it in the pilot, so we can't have reasons for it.
+
+
 ; Optional:
+; - Put category choice button at the same height always, based on normal length of abstracts
 ; - Add definition of categories as written by chatgpt
 ; - Rate reasonableness of reasons
 ; - Add debriefing questions on justifying choices
@@ -402,7 +404,7 @@
     [(A) (o+r-reason (choice-env-A ce))]
     [(B) (o+r-reason (choice-env-B ce))]))
 
-(define (abstract-choice/reason ce)
+(define (abstract-choice/reason ce total i)
   (define (put/reason label text)
     (define reasons
       (get 'reasons '()))
@@ -416,6 +418,8 @@
          (page
           (haml
            (.container
+
+            (:h2 (format "Choice ~a out of ~a" i total))
             (:h3 "Description of Options")
 
             ,@(for/list ([label '(A B)])
@@ -447,12 +451,12 @@
          (put/reason #f "")
          (skip)]))
 
-(define (abstract-choice ce)
+(define (abstract-choice ce total i)
   (define last-reason
     (car (get 'reasons)))
   (define (put/choice o)
     (define choices
-      (get 'work-choices '()))
+      (get 'work-choices null))
     (put 'work-choices (cons (list (string->symbol o) ce) choices)))
   (define r-label
     (car last-reason))
@@ -461,6 +465,8 @@
   (page
    (haml
     (.container
+
+     (:h2 (format "Choice ~a out of ~a" i total))
 
      (:h3 "Description of Options")
 
@@ -486,9 +492,10 @@
             ("B" . "Option B"))))
         submit-button))
       (lambda (#:choice choice)
+        (eprintf "Choice: ~a" choice)
         (put/choice choice)))))))
 
-(define (bonus-for-switching)
+(define (bonus-for-switching total i)
 
   (define last-choice
     (car (get 'work-choices)))
@@ -511,6 +518,7 @@
    (haml
     (.container
 
+     (:h2 (format "Choice ~a out of ~a" i total))
      (:h3 "Description of Options")
 
      ,@(for/list ([label '(A B)])
@@ -553,37 +561,52 @@
             (get 'work-choices))
           (define last-choice
             (car choices))
+          (eprintf "choices: ~a~n last-choice: ~a" choices last-choice)
           (put 'work-choices
-               (cons (append last-choice bonus) (cdr choices))))))))))
+               (cons (append last-choice (list bonus)) (cdr choices))))))))))
 
 
-(define work-choices
+(define (work-choices)
+
+  (define (initialize-work-choices)
+    (put 'total (length (get 'remaining-choices)))
+    (put 'choice-number 1)
+    (skip))
+
   (make-study
    "work choices"
    #:transitions
    (transition-graph
-    [reason-page --> choice-page
-                 --> bonus-for-switching
-                 --> ,(lambda ()
-                        (define remaining-choices
-                          (cdr (get 'remaining-choices)))
-                        (put 'remaining-choices remaining-choices)
-                        (cond [(null? remaining-choices)
-                               next]
-                              [else
-                               (goto reason-page)]))])
+    [initialize --> reason-page
+                --> choice-page
+                --> bonus-for-switching
+                --> ,(lambda ()
+                       (define remaining-choices
+                         (cdr (get 'remaining-choices)))
+                       (put 'remaining-choices remaining-choices)
+                       (put 'choice-number
+                            (add1 (get 'choice-number)))
+                       (cond [(null? remaining-choices)
+                              next]
+                             [else
+                              (goto reason-page)]))])
    #:requires '(remaining-choices)
    #:provides '(work-choices)
    (list
+    (make-step 'initialize initialize-work-choices)
     (make-step 'reason-page (lambda ()
+                              ; FIXME: I wonder if this 'functional' style is worth it? Why not get the values inside of abstract-choice/reason?
                               (define next-ce
                                 (car (get 'remaining-choices)))
-                              (abstract-choice/reason next-ce)))
+                              (abstract-choice/reason next-ce (get 'total) (get 'choice-number))))
     (make-step 'choice-page (lambda ()
                               (define next-ce
                                 (car (get 'remaining-choices)))
-                              (abstract-choice next-ce)))
-    (make-step 'bonus-for-switching bonus-for-switching))))
+                              (abstract-choice next-ce (get 'total) (get 'choice-number))))
+    (make-step
+     'bonus-for-switching
+     (lambda ()
+       (bonus-for-switching (get 'total) (get 'choice-number)))))))
 
 (define (set-treatments)
   (put 'choices-to-make
@@ -616,7 +639,7 @@
     (make-step 'set-treatments set-treatments)
     (make-step/study
      'work-choices
-     work-choices
+     (work-choices)
      #:require-bindings '([remaining-choices choices-to-make])
      #:provide-bindings '([choices-made work-choices]))
     (make-step 'determine-choice-that-counts  (make-stub "Determine choice that counts"))
@@ -799,8 +822,8 @@
        (list
 
         (choice-env
-         (make-option/for "social preferences" 25 "Reason for")
-         (make-option/for "banking" 20 "Reason for"))
+         (make-option/for "social preferences" 25 #f)
+         (make-option/for "banking" 20 #f))
 
         (choice-env
          (make-option/for "socioeconomic inequality" 5 "'tis good")
@@ -816,43 +839,105 @@
   (skip))
 
 (define (determine-pilot-choices)
-  ; FIXME: Add option to choose the numerical choice with money
-  ; FIXME: This is some ugly and tedious code.
+  ; FIXME: separate determinining the choice and displaying, or else F5 chooses a new option.
   (define cs (get 'choices-made))
   (define c (random-ref cs))
   (define option-chosen (car c))
   (define ce (cadr c))
+  (define switching-bonus (caddr c))
+  (define type-that-counts (random-ref '(binary numeric)))
+  (define bonus-that-counts
+    (random-ref (range 0.1 1.05 0.1)))
   (match-define (choice-env (o+r A RA)
                             (o+r B RB))
     ce)
-  (define-values (o r)
+  (define-values (chosen r-chosen unchosen r-unchosen)
     (if (equal? option-chosen 'A)
-        (values A RA)
-        (values B RB)))
-  (put 'additional-option o)
-  (put 'additional-reason r)
+        (values A RA B RB)
+        (values B RB A RA)))
+  (put 'choice-that-counts
+       (hash 'ce ce
+             'type type-that-counts
+             'switching-bonus switching-bonus
+             'bonus-that-counts bonus-that-counts
+             'chosen-label option-chosen
+             'chosen chosen
+             'unchosen unchosen
+             'chosen-reason r-chosen
+             'unchosen-reason r-unchosen))
+  (skip))
+
+(define (display-choice-that-counts)
+  (define choice-that-counts (get 'choice-that-counts))
+  (match-define (hash-table
+                 ('ce ce)
+                 ('type type-that-counts)
+                 ('switching-bonus switching-bonus)
+                 ('bonus-that-counts bonus-that-counts)
+                 ('chosen-label chosen-label)
+                 ('chosen chosen)
+                 ('unchosen unchosen)
+                 ('chosen-reason r-chosen)
+                 ('unchosen-reason r-unchosen))
+    choice-that-counts)
+  (define binary? (equal? type-that-counts 'binary))
+  (define-values (option-that-counts r)
+    (if (or binary? (< bonus-that-counts switching-bonus))
+        (values chosen r-chosen)
+        (values unchosen r-unchosen)))
   (match-define (option _session (list category non-category) n)
-    o)
+    option-that-counts)
+
+  (define unchosen-label
+    (case chosen-label
+      [(A) 'B]
+      [(B) 'A]))
+
   (put 'additional-n n)
   (put 'additional-category category)
   (put 'additional-non-category non-category)
+
   (page
    (haml
-    (.container
-     (:h1 "The choice that counts")
+    (.container (:h1 "The choice that counts")
 
-     (:p "The choice that matters was between these two options:")
+                (:p (format "The choice that matters was between these two options~a:"
+                            (if binary? "" " with a switching bonus")))
 
-     (:ul
-      (:li (format "Option A: ~a" (describe-abstracts ce 'A)))
-      (:li (format "Option B: ~a" (describe-abstracts ce 'B))))
+                (:ul
+                 (:li (format "Option A: ~a" (describe-abstracts ce 'A)))
+                 (:li (format "Option B: ~a" (describe-abstracts ce 'B))))
 
-     (:p (format "You chose Option ~a, so after doing the baseline tasks, you will categorize ~a additional abstracts based on whether they fit into '~a' or 'Other'."
-                 option-chosen
-                 n
-                 (string-titlecase category)))
 
-     (button void "Continue")))))
+                (cond [binary?
+
+                       (haml
+                        (:p (format "You chose Option ~a, so after doing the baseline tasks, you will do the work of Option ~a:" chosen-label chosen-label)))]
+
+                      [(< bonus-that-counts switching-bonus)
+
+                       (haml
+                        (:p (format "You chose Option ~a and stated a minimal switching bonus of $~a to switch. The random bonus that was picked is $~a, which is less than the minimal switching bonus. So you will do the work of Option ~a:"
+                                    chosen-label
+                                    (~r switching-bonus #:precision 2)
+                                    (~r bonus-that-counts #:precision 2)
+                                    chosen-label)))]
+
+                      [else
+                       (haml
+                        (:p (format "You chose Option ~a and stated a minimal switching bonus of $~a to switch. The random bonus that was picked is $~a, which is larger than or equal to the minimal switching bonus. So you will do the work of Option ~a and receive an extra bonus of $~a:"
+                                    chosen-label
+                                    (~r switching-bonus #:precision 2)
+                                    (~r bonus-that-counts #:precision 2)
+                                    unchosen-label
+                                    (~r bonus-that-counts #:precision 2))))])
+
+                (:p (format "Categorize ~a additional abstracts based on whether they fit into '~a' or 'Other'."
+                            n
+                            (string-titlecase category)))
+
+                #;(button #:to-step-id 'determine-choice-that-counts void "Determine NEW choice that counts (DEBUG)")
+                (button void "Continue")))))
 
 ; NOTE: This assumes that all choices are of the form "Category" vs
 ; "Other" (i.e. "Not Category") Generalize if we ever need it.
@@ -930,6 +1015,7 @@
    (transition-graph
     [set-choices --> choices
                  --> determine-choice-that-counts
+                 --> display-choice-that-counts
                  --> reasons-debrief
                  --> do-baseline-work
                  --> do-additional-work
@@ -939,10 +1025,11 @@
     (make-step 'set-choices set-pilot-choices)
     (make-step/study
      'choices
-     work-choices
+     (work-choices)
      #:require-bindings '([remaining-choices choices-to-make])
      #:provide-bindings '([choices-made work-choices]))
     (make-step 'determine-choice-that-counts determine-pilot-choices)
+    (make-step 'display-choice-that-counts display-choice-that-counts)
     ; FIXME: change require bindings to be an option, not three separate values.
     (make-step 'reasons-debrief reasons-debrief)
     (make-step/study
@@ -1055,6 +1142,10 @@
 
        (:p (format "If you pass the comprehension test, you receive another completion code with which you receive the baseline fee of ~a. Moreover, you can then decide whether to participate in the main study for bonus payments described later."
                    ($conf 'pilot-tutorial-fee)))
+
+       (:h3 "Intro Survey")
+
+       (:p "Before you start the tutorial, please proivde your Prolific ID and answer these questions:")
 
        (formular
         (haml

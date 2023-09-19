@@ -14,6 +14,7 @@
  $conf)
 
 (define-static-resource reason-screenshot "resources/reason-screenshot.png")
+(define-static-resource bonus-switching-screenshot "resources/bonus-for-switching-screenshot.png")
 
 (define (~$ a)
   (format "£~a" (~r a #:precision 2)))
@@ -72,6 +73,11 @@
 
       @:p{Each decision is about categorizing by two different groups: in the above example, the choice is between either categorizing 25 abstracts into 'Social Preferences' or 'Other', or categorizing 20 abstracts into 'Banking' or 'Other'.}
 
+      @:p{After each such choice, you will also be asked for the smallest bonus for which you would switch options: that is, how much extra money would make you choose the option you did not pick? Suppose that you had picked option B above. Then you would see the following screenshot:}
+      @(haml (.screenshot (:img ([:src (resource-uri bonus-switching-screenshot)]))))
+
+      @:p{Using the '+' and '-' button, you could increase the payment in increments of $0.10 until you reach an amount such that you would choose Option A with that bonus, rather than option B without a bonus.}
+
       @:h4{Revealing Reasons}
 
       @:p{For some decisions (as in the example above example), you first have to reveal a reason @:strong{for} or @:strong{against} one of the options. Only then can you submit your choice. These reasons will not provide additional information about how to do the tasks. Rather they will inform you about some aspects of the topics you can choose from, in particular what participants in a previous survey think about the different topics.}
@@ -81,6 +87,10 @@
       @:p{Once you have made all the decisions, one of the decisions will randomly be picked as @:em{the decision that counts}: whatever you chose in that decision determines which and how many additional abstracts you will categorize later.}
 
       @:p{For example, suppose that in the decision above you chose the option to "Categorize 20 abstracts today into 'Banking' or 'Other'", and that this decision is randomly picked as the decision that counts. Then you will have to first categorize 15 abstracts into 'Social Preferences' or 'Other' - the @:em{baseline work} - followed by categorizing 20 abstracts into 'Banking' or 'Other' - the @:em{additional work}.}
+
+      @:p{If the decision that counts is one of those with a bonus, then a random bonus between $0.00 and $1.00 is picked. If it is larger than the bonus you stated, you do the option with the bonus, otherwise the one without. That is, you do the option that you prefer, according to the bonus you stated.}
+
+      @:p{For example, suppose that you had stated a bonus of $0.50. Then if this choice is randomly picked as the decision that counts, then you will do the 20 abstracts for 'Banking' when the randomly determined bonus is $0.40 or less, while you will categorize 25 abstracts into 'Social Preferences' if that bonus is $0.50 or more.}
 
       @:h2{Short Surveys and Feedback}
 
