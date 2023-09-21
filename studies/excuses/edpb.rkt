@@ -23,7 +23,14 @@
          "abstract-categorization.rkt")
 
 ; TODO:
-; - Finalize choices and randomizations
+; - Allow only so many wrong abstract categorizations, otherwise it is game over. Do that after a first test run.
+; - explain that many reasons are based on perceptions of other Prolific participants how important those topics are.
+; - Then we can simplify language of reasons further. That way I can simplify the language further, and make it sound less stupid. E.g.: "This topic was among the top 25% most important/controversial/learn more about.
+; - We need some reasons that are better than what we have right now. Why not give them some bonus that they receive several days in the future for one bunch or the other? That definitely should work, and it is a reason that we can repeat, which maintains the value of the other pointless reasons.
+; - Over two days, there are several other reasons: total work, total additional, total across both days and so on.
+; - Finalize choices and randomizations.
+; - Generate additional reasons by running a pilot without reasons over two periods and asking participants why they choose one option over the other. Here just provide them with some information from the surveys, and let them pick what they want to justify it.
+; - We don't need tons of reasons, merely better ones, and we need to maybe reduce the number of reasons we ask, at least in the first part?
 ;
 ; REASONS:
 ;
@@ -62,6 +69,111 @@
  edpb-intro
  edpb-main
  edpb-pilot)
+
+;;;;;;;;;;;;;;;; CHOICES ;;;;;;;;;;;;;;;
+
+(define (set-pilot-choices)
+  (define choices-to-make
+       (list
+
+        ; 4 choices without reasons to calibrate preferences
+        (choice-env
+         (make-option "socioeconomic inequality" 25)
+         (make-option "covid" 20))
+
+        (choice-env
+         (make-option "self-control" 25)
+         (make-option "environment" 20))
+
+        (choice-env
+         (make-option "neuroscience" 20)
+         (make-option "politics" 10))
+
+        (choice-env
+         (make-option "cognitive skills" 25)
+         (make-option "addiction" 35))
+
+        ; 6 choices with choice of reasons
+        ; 3 with reasons for, 3 with reaons against
+        (choice-env
+         (make-option/for "socioeconomic inequality" 25)
+         (make-option/for "covid" 20))
+
+        (choice-env
+         (make-option/for "self-control" 20)
+         (make-option/for "environment" 15))
+
+        (choice-env
+         (make-option/for "cognitive skills" 25)
+         (make-option/for "addiction" 15))
+
+        (choice-env
+         (make-option/against "neuroscience" 20)
+         (make-option/against "politics" 10))
+
+        (choice-env
+         (make-option/against "socioeconomic inequality" 15)
+         (make-option/against "gender inequality" 25))
+
+        (choice-env
+         (make-option/against "neuroscience" 20)
+         (make-option/against "gender inequality" 30))
+
+        ; 12 choices with a single exogenous reason or no reason
+        ; 4 with reasons for
+        ; 4 with reasons against
+        ; 4 without reasons
+        (choice-env
+         (make-option/for "covid" 20)
+         (make-option "politics" 5))
+
+        (choice-env
+         (make-option "self-control" 5)
+         (make-option/for "addiction" 20))
+
+        (choice-env
+         (make-option/for "gender inequality" 30)
+         (make-option "neuroscience" 45))
+
+        (choice-env
+         (make-option "environment" 5)
+         (make-option/for "cognitive skills" 20))
+
+        (choice-env
+         (make-option/against "ai" 5)
+         (make-option "addiction" 15))
+
+        (choice-env
+         (make-option/against "politics" 15)
+         (make-option "self-control" 5))
+
+        (choice-env
+         (make-option "sports" 5)
+         (make-option/against "politics" 20))
+
+        (choice-env
+         (make-option "ai" 20)
+         (make-option/against "gender inequality" 30))
+
+        (choice-env
+         (make-option "environment" 35)
+         (make-option "neuroscience" 30))
+
+        (choice-env
+         (make-option "sports" 40)
+         (make-option "gender inequality" 25))
+
+        (choice-env
+         (make-option "socioeconomic inequality" 20)
+         (make-option "covid" 10))
+
+        (choice-env
+         (make-option "socioeconomic inequality" 35)
+         (make-option "gender inequality" 25))))
+
+  (put 'choices-to-make choices-to-make)
+
+  (skip))
 
 ;;;;;;;;;;;;;;;; TEMPLATES ;;;;;;;;;;;;;
 ;;;    Steps that are HTML only      ;;;
@@ -425,6 +537,7 @@
         (ce-reason ce 'B)))
 
   (cond [reasons?
+         (start-timer)
          (page
           (haml
            (.container
@@ -452,7 +565,12 @@
                    (.reveal-reasons
                     (button
                      (lambda ()
+                       (put* #:root '*timer*
+                             'reveal-reasons-durations
+                             (cons (end-timer)
+                                   (get* #:root '*timer* 'reveal-reasons-durations null)))
                        (put/reason label (reason-text r))
+                       ; FIXME: Isn't this `skip` redundant?
                        (skip))
                      (format "Reveal a reason ~a Option ~a"
                              (reason-dir r) label)))))))))]
@@ -472,6 +590,7 @@
     (car last-reason))
   (define r-text
     (cadr last-reason))
+  (start-timer)
   (page
    (haml
     (.container
@@ -502,7 +621,10 @@
             ("B" . "Option B"))))
         submit-button))
       (lambda (#:choice choice)
-        (eprintf "Choice: ~a" choice)
+        (put* #:root '*timer*
+              'choice-durations
+              (cons (end-timer)
+                    (get* #:root '*timer* 'choice-durations null)))
         (put/choice choice)))))))
 
 (define (bonus-for-switching total i)
@@ -524,6 +646,7 @@
   (define r-text
     (cadr last-reason))
 
+  (start-timer)
   (page
    (haml
     (.container
@@ -567,11 +690,14 @@
         submit-button))
       (lambda (#:bonus bonus)
         (with-study-transaction
+          (put* #:root '*timer*
+                'switch-choice-durations
+                (end-timer)
+                (get* #:root '*timer* 'switch-choice-durations null))
           (define choices
             (get 'work-choices))
           (define last-choice
             (car choices))
-          (eprintf "choices: ~a~n last-choice: ~a" choices last-choice)
           (put 'work-choices
                (cons (append last-choice (list bonus)) (cdr choices))))))))))
 
@@ -863,32 +989,24 @@
   (o+r (option 'session1 `(,category "other") n)
        (and a-reason (reason dir a-reason))))
 
-(define (make-option/for category n a-reason)
+(define (get-random-reason category dir)
+  (random-ref (hash-ref
+               (get/instance* (case dir
+                                [(for) 'reasons-for]
+                                [(against) 'reasons-against]))
+               (if (string? category)
+                   (string->symbol category)
+                   category))))
+
+(define (make-option/for category n)
+  (define a-reason
+    (get-random-reason category 'for))
   (make-option category n a-reason 'for))
 
-(define (make-option/against category n a-reason)
+(define (make-option/against category n)
+  (define a-reason
+    (get-random-reason category 'against))
   (make-option category n a-reason 'against))
-
-(define (set-pilot-choices)
-  (put 'choices-to-make
-       (list
-
-        (choice-env
-         (make-option/for "social preferences" 25 #f)
-         (make-option/for "banking" 20 #f))
-
-        (choice-env
-         (make-option/for "socioeconomic inequality" 5 "'tis good")
-         (make-option/against "gender inequality" 5 "dis bAD!"))
-
-        (choice-env
-         (make-option "socioeconomic inequality" 5)
-         (make-option "gender inequality" 5))
-
-        (choice-env
-         (make-option/for "self-control" 15 "Y not!")
-         (make-option "self-control" 10))))
-  (skip))
 
 (define (determine-pilot-choices)
   ; FIXME: separate determinining the choice and displaying, or else F5 chooses a new option.

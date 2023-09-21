@@ -31,7 +31,8 @@
  random-abstracts/topic
  random-abstracts/non-topic
  reasons-admin
- get/abstracts*)
+ get/abstracts*
+ end-timer start-timer)
 
 ; TODO: If we use this pattern a lot, we can define a macro to define-accessors
 (define get/abstracts*
