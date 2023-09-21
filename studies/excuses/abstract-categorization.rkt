@@ -243,9 +243,24 @@
     (make-step 'check-abstracts check-abstracts)
     (make-step 'show-abstracts show-abstracts))))
 
+(define (start-timer)
+  (put #:root '*timer* 'start-time (current-seconds)))
+
+(define (end-timer)
+  (define t (current-seconds))
+  (put #:root '*timer* 'end-time t)
+  (- t (get #:root '*timer* 'start-time)))
+
+(define (save-abstract-duration id cat correct? batch-name)
+  (put* #:root '*timer*
+        'abstracts-duration
+        (cons (list id cat correct? batch-name (end-timer))
+              (get* #:root '*timer* 'abstracts-duration null))))
+
 ; FIXME: Relies on being exactly in this category
 (define (abstract-task/page abs-task i total cat prefix batch-name)
-  (match-define (abstract _id text category non-category) abs-task)
+
+  (match-define (abstract id text category non-category) abs-task)
   (define (categorize in/out)
     (define correct-answer
       (cond [(string=? category cat) 'in]
@@ -254,6 +269,7 @@
              (error "abstract ~a should either be in or not be in the category ~a, but neither applies")]))
     (define correct-answer?
       (equal? in/out correct-answer))
+    (save-abstract-duration id cat correct-answer? batch-name)
     (define correct-answers-key
       (string->symbol (format "~a-correct-answers" prefix)))
     (define incorrect-answers-key
@@ -269,6 +285,7 @@
          (cons (list in/out correct-answer? abs-task)
                (get 'completed-answers '()))))
 
+  (start-timer)
   (page
    (haml
     (.container
