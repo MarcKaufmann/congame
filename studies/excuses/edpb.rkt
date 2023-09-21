@@ -24,7 +24,6 @@
 
 ; TODO:
 ; - Finalize choices and randomizations
-; - Create list of reasons that I can use and that can be linked to the appropriate choices
 ;
 ; REASONS:
 ;
@@ -37,6 +36,7 @@
 ;   - social relevance
 ;
 ; Check TODO:
+; - Create list of reasons that I can use and that can be linked to the appropriate choices
 ; - Fix payment currency
 ; - update explanations to explain the $ amount an +/-
 ; - turn interface for switching bonus into one where one has to use + and -
@@ -697,13 +697,9 @@
     (.container
      (:h1 "Admin")
 
-     (cond [(study-open?)
+     (cond [(get/instance* 'abstracts-set? #f)
             (haml
              (:div
-              (:h3 "Status")
-
-              (:p "The study is open.")
-
               (:h3 "Abstracts")
 
               (:table
@@ -718,19 +714,59 @@
                      (:tr
                       (:td (string-titlecase (car t)))
                       (:td (number->string (cadr t)))
-                      (:td (number->string (caddr t))))))))))]
+                      (:td (number->string (caddr t))))))))
+
+              (unless (study-open?)
+                (button void "Update Abstrats" #:to-step-id 'abstracts-admin))))]
 
            [else
             (haml
              (:div
               (:h3 "Abstracts")
-              (button void "Setup study" #:to-step-id 'abstracts-admin)))])
+              (button void "Setup abstracts" #:to-step-id 'abstracts-admin)))])
+
+     (cond [(get/instance* 'reasons-set? #f)
+
+            (haml
+             (:div
+              (:h3 "Reasons")
+
+              (:table
+               (:thead
+                (:tr
+                 (:th "Category")
+                 (:th "Reasons For")
+                 (:th "Reasons Against")))
+               (:tbody
+                ,@(for/list ([t (get-reasons-stats)])
+                    (haml
+                     (:tr
+                      (:td (string-titlecase (symbol->string (car t))))
+                      (:td (number->string (cadr t)))
+                      (:td (number->string (caddr t))))))))
+
+              (unless (study-open?)
+                (button void "Update Reasons" #:to-step-id 'reasons-admin))))]
+
+           [else
+            (haml
+             (:div
+              (:h3 "Reasons")
+
+              (button void "Setup Reasons" #:to-step-id 'reasons-admin)))])
+
 
      (:h3 "Completion Code")
 
      (cond [(get/instance* 'completion-code #f)
             => (lambda (c)
-                 (haml (:p "The current completion code is " c)))]
+                 (haml
+                  (:div
+                   (:p "The completion code is set to " c)
+
+                   (unless (study-open?)
+                     (button void "Update completion code" #:to-step-id 'completion-code-admin)))))]
+
            [else
             (haml
              (:div
@@ -761,7 +797,8 @@
 
 (define (open-study-if-ready)
   (when (and (get/instance* 'completion-code #f)
-             (get/instance* 'abstracts-set? #f))
+             (get/instance* 'abstracts-set? #f)
+             (get/instance* 'reasons-set? #f))
     (switch-phase-to 'open #:check-current-phase #f)))
 
 (define (consent-end-introduction)
@@ -793,12 +830,17 @@
                             (goto admin))]
     [completion-code-admin --> ,(lambda ()
                                   (open-study-if-ready)
-                                  (goto admin))])
+                                  (goto admin))]
+    [reasons-admin --> ,(lambda ()
+                          (put/instance* 'reasons-set? #t)
+                          (open-study-if-ready)
+                          (goto admin))])
 
    (list
     (make-step 'admin admin-page)
     (make-step 'completion-code-admin completion-code/admin)
-    (make-step/study 'abstracts-admin abstracts-admin))))
+    (make-step/study 'abstracts-admin abstracts-admin)
+    (make-step 'reasons-admin (reasons-admin #:step-on-cancel 'admin)))))
 
 (define (route-participants)
   (let ([role (get 'role)])

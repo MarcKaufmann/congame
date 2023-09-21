@@ -26,9 +26,11 @@
  abstracts-admin
  abstract-examples
  abstract-task/page
+ get-reasons-stats
  get-topics-stats
  random-abstracts/topic
  random-abstracts/non-topic
+ reasons-admin
  get/abstracts*)
 
 ; TODO: If we use this pattern a lot, we can define a macro to define-accessors
@@ -52,6 +54,19 @@
   (define all-topic-labels (remove-duplicates (sort (append (hash-keys topics) (hash-keys non-topics)) string<?)))
   (for/list ([t all-topic-labels])
     (list t (n-topics topics t) (n-topics non-topics t))))
+
+(define (get-reasons-stats)
+  (define reasons-for
+    (get/instance* 'reasons-for))
+  (define reasons-against
+    (get/instance* 'reasons-against))
+  (define all-topics
+    (remove-duplicates
+     (append (hash-keys reasons-for) (hash-keys reasons-against))))
+  (for/list ([t all-topics])
+    (list t
+          (length (hash-ref reasons-for t null))
+          (length (hash-ref reasons-against t null)))))
 
 (serializable-struct abstract [id text categories non-categories]
   #:transparent
@@ -106,13 +121,17 @@
 
     @button[void]{Continue}))))
 
+(define (binding:csv-file->list f)
+  (cast-result*
+   f
+   (compose1 (lambda (f) (csv->list (make-csv-reader f '((separator-chars #\;))))) binding:file/port-in)
+   #:exn-predicate exn:fail:csv-reader?
+   #:exn-handler (λ (_e) "error reading csv: we expect comma (,) not semicolon (;) as separator, and all columns with text.~n You may also want to check for the BOM.)")))
+
 ; TODO: This call is ugly, change interface to string these together more conveniently. Pass in association list of lambdas and exceptions?
 (define (input-abstracts label)
   (~> (input-file label)
-      (cast-result*
-       (compose1 (lambda (f) (csv->list (make-csv-reader f '((separator-chars #\;))))) binding:file/port-in)
-       #:exn-predicate exn:fail:csv-reader?
-       #:exn-handler (λ (_e) "error reading csv: we expect comma (,) not semicolon (;) as separator, and exactly 3 columns with text.~n You may also want to check for the BOM.)"))
+      binding:csv-file->list
       (cast-result*
        #:exn-predicate exn:fail:->abstract?
        (λ (rows)
@@ -138,7 +157,9 @@
       (lambda (#:abstracts abstracts
                #:header? header?)
         (put/abstracts* 'header? header?)
-        (put/instance/abstracts* 'raw-abstracts (if header? (cdr abstracts) abstracts))))))))
+        (put/instance/abstracts* 'raw-abstracts (if header? (cdr abstracts) abstracts))))
+
+     (button void "Cancel" #:to-step-id 'cancel)))))
 
 (define (display-abstracts)
   (haml
@@ -217,17 +238,13 @@
       "Keep Abstracts")
 
      (button void "Upload other abstracts" #:to-step-id 'upload-abstracts)
+     ; NOTE: The cancel doesn't undo the previous step where we stored stuff on 'raw-abstracts. That's probably fine.
+     (button void "Cancel" #:to-step-id 'cancel)
 
      (display-raw-abstracts)))))
 
-(define (show-abstracts)
-  (page
-   (haml
-    (.container
-
-     (button void "Finish Abstract Setup")
-
-     (display-abstracts)))))
+(define (cancel)
+  (skip))
 
 (define abstracts-admin
   (make-study
@@ -235,13 +252,60 @@
    #:transitions
    (transition-graph
     [upload-abstracts --> check-abstracts
-                      --> show-abstracts
-                      --> ,(lambda () done)])
+                      --> ,(lambda () done)]
+    [cancel --> ,(lambda () done)])
 
    (list
     (make-step 'upload-abstracts upload-abstracts/page)
     (make-step 'check-abstracts check-abstracts)
-    (make-step 'show-abstracts show-abstracts))))
+    (make-step 'cancel cancel))))
+
+
+(define ((reasons-admin #:step-on-cancel [cancel 'cancel]))
+
+  (define (input-reasons label)
+    (~> (input-file label)
+        binding:csv-file->list))
+
+  (page
+   (haml
+    (.container
+     (:h1 "Upload Reasons")
+
+     (formular
+      (haml
+       (:div
+        (:div (#:reasons (input-reasons "Upload a csv file with reasons")))
+        submit-button))
+
+      (lambda (#:reasons reasons)
+        (put/instance* 'raw-reasons reasons)
+        (define-values (reasons-for reasons-against)
+          (for/fold ([reasons-for (hash)]
+                     [reasons-against (hash)])
+                    ; Assumes that the csv file has a header
+                    ([r (cdr reasons)])
+            (match-define
+              (list _question topic _avg _ranking dir text)
+              r)
+            (if (string=? dir "for")
+                (values (hash-update
+                         reasons-for
+                         (string->symbol (string-downcase topic))
+                         (λ (v)
+                           (cons text v))
+                         null)
+                        reasons-against)
+                (values reasons-for
+                        (hash-update reasons-against
+                                     (string->symbol (string-downcase topic))
+                                     (λ (v)
+                                       (cons text v))
+                                     null)))))
+        (put/instance* 'reasons-for reasons-for)
+        (put/instance* 'reasons-against reasons-against)))
+
+     (button void "Cancel" #:to-step-id cancel)))))
 
 (define (start-timer)
   (put #:root '*timer* 'start-time (current-seconds)))
