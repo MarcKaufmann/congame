@@ -26,6 +26,16 @@
 ; - Finalize choices and randomizations
 ; - Create list of reasons that I can use and that can be linked to the appropriate choices
 ;
+; REASONS:
+;
+; - Reasons to survey participants on:
+;   - Entertaining
+;   - Enjoyable
+;   - Personally relevant
+;   - Ask for dull (even though it is the opposite of interesting in some sense)
+;   - overwhelming, uncomfortable
+;   - social relevance
+;
 ; Check TODO:
 ; - Fix payment currency
 ; - update explanations to explain the $ amount an +/-
@@ -989,7 +999,9 @@
   (page
    (haml
     (.container
-     (:h1 "Feedback and Reasons")
+     (:h1 "Feedback on Choices and Reasons")
+
+     (:p "Before you do the additional work, please answer the following questions on your decision-making process.")
 
      (formular
       (haml
@@ -1008,6 +1020,30 @@
           (textarea "Please provide some feedback on what kinds of reasons might have swayed your choice in the kind of situation we gave you, or what type of similar choice (where you are asked to do work for someone else) could sway you. This can include reasons relying brought forward by other people such as colleagues, friends, or spouses.")))
         submit-button)))))))
 
+(define (input-likert/how adjective)
+  (input-likert
+   (format "How ~a did you find the abstracts? (1: not at all. 7: extremely.)" adjective)))
+
+(define (category-survey)
+  (define category (get 'additional-category))
+  (page
+   (haml
+    (.container
+     (:h1 "Survey on Abstract Categorization")
+
+     (:p (format "Answer the following questions for the additional abstracts in ~a that you just categorized:" category))
+     (formular
+      (haml
+       (:div
+        (:div
+         (#:boring (input-likert/how "boring")))
+        (:div
+         (#:understandable (input-likert/how "understandable")))
+        (:div
+         (#:careful (input-likert "How carefully did you read the abstracts? (1: not at all. 7: extremely.)")))
+        submit-button)))))))
+
+
 (define pilot-main
   (make-study
    "main part of pilot"
@@ -1020,6 +1056,7 @@
                  --> do-baseline-work
                  --> do-additional-work
                  --> display-total-correct-answers
+                 --> category-survey
                  --> ,(lambda () next)])
    (list
     (make-step 'set-choices set-pilot-choices)
@@ -1050,7 +1087,8 @@
      (lambda ()
        (define n
          (+ n-pilot-baseline (get 'additional-n)))
-       ((display-correct-answers '("baseline" "additional-work") n)))))))
+       ((display-correct-answers '("baseline" "additional-work") n))))
+    (make-step 'category-survey category-survey))))
 
 (define (announce-tutorial-tasks)
   (page
@@ -1231,7 +1269,6 @@
         (#:entered-completion-code?
          (checkbox "Did you enter the completion code on Prolific? You cannot proceed until you have done so."))
         submit-button)))))))
-
 
 (define (debriefing)
   (page

@@ -94,7 +94,7 @@
 
       @:h2{Short Surveys and Feedback}
 
-      @:p{After you complete all the choices, and again after you complete all the tasks, we will ask you to answer some questions and provide feedback.}
+      @:p{After several steps there are short surveys, including a final survey where you can provide general feedback.}
 
       @:h2{Payments}
 
