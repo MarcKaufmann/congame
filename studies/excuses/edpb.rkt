@@ -24,8 +24,8 @@
 
 ; TODO:
 ; - Allow only so many wrong abstract categorizations, otherwise it is game over. Do that after a first test run.
-; - explain that many reasons are based on perceptions of other Prolific participants how important those topics are.
 ; - Then we can simplify language of reasons further. That way I can simplify the language further, and make it sound less stupid. E.g.: "This topic was among the top 25% most important/controversial/learn more about.
+; - Should we add a comprehension question on the reasons? Yes, if we add money as a reason.
 ; - We need some reasons that are better than what we have right now. Why not give them some bonus that they receive several days in the future for one bunch or the other? That definitely should work, and it is a reason that we can repeat, which maintains the value of the other pointless reasons.
 ; - Over two days, there are several other reasons: total work, total additional, total across both days and so on.
 ; - Finalize choices and randomizations.

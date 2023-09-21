@@ -80,7 +80,7 @@
 
       @:h4{Revealing Reasons}
 
-      @:p{For some decisions (as in the example above example), you first have to reveal a reason @:strong{for} or @:strong{against} one of the options. Only then can you submit your choice. These reasons will not provide additional information about how to do the tasks. Rather they will inform you about some aspects of the topics you can choose from, in particular what participants in a previous survey think about the different topics.}
+      @:p{For some decisions (as in the example above example), you first have to reveal a reason @:strong{for} or @:strong{against} one of the options. Only then can you submit your choice. These reasons will not provide additional information about how to do the tasks. Rather they will inform you how Prolific participants in a previous survey perceived the topics you are asked to categorize - such as how important, interesting, etc they perceived the topics.}
 
       @:h4{Determining Decision that Counts}
 
