@@ -37,9 +37,9 @@
         'pilot-additional-high 30
         'pilot-tutorial-duration-estimate "5-10"
         'pilot-study-duration-estimate 20
-        'pilot-tutorial-fee 2
+        'pilot-tutorial-fee 3
         'pilot-completion-fee 5
-        'pilot-fail-comprehension-fee 1
+        'pilot-fail-comprehension-fee 2
         'pilot-correct-abstract-bonus 0.05))
 
 (define (conf x)
