@@ -286,7 +286,7 @@
 
      @:p{Unfortunately, you failed the comprehension test too many times, so you cannot continue.}
 
-     @:p{Provide the following completion code to receive @($conf 'pilot-fail-comprehension-fee): FAILCOMP.}))))
+     @:p{Provide the following completion code to receive @($conf 'pilot-fail-comprehension-fee): @(conf 'pilot-code-for-failed-comprehension).}))))
 
 
 (define (no-consent)

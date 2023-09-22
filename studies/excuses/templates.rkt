@@ -29,7 +29,8 @@
         'baseline-abstracts 15
         'estimated-extra-abstracts 35
         'tutorial-abstracts 2
-        'pilot-completion-code "COMPCOMP"
+        'pilot-completion-code "C1JF3EZV"
+        'pilot-code-for-failed-comprehension "C1WQ1J4P"
         'pilot-tutorial-abstracts 2
         'pilot-baseline-abstracts 15
         'pilot-additional-low 15
