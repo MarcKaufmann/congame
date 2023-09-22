@@ -1382,8 +1382,7 @@
    "pilot tutorial"
    #:transitions
    (transition-graph
-    [landing-page --> introduction
-                  --> instructions
+    [introduction --> instructions
                   --> initialize
                   --> task-description
                   --> announce-tutorial-tasks
@@ -1397,7 +1396,6 @@
     [fail-comprehension-test --> fail-comprehension-test])
 
    (list
-    (make-step 'landing-page landing-page)
     (make-step 'introduction introduction)
     (make-step 'instructions
                (lambda ()
@@ -1504,7 +1502,7 @@
    "edpb pilot"
    #:transitions
    (transition-graph
-    [assigning-roles --> ,route-participants]
+    [landing-page --> assigning-roles --> ,route-participants]
     [error-page --> error-page]
     ;; Admin
     [admin --> admin]
@@ -1522,6 +1520,7 @@
     [payment-page --> payment-page])
 
    (list
+    (make-step 'landing-page landing-page)
     (make-step 'assigning-roles assigning-roles)
     (make-step 'error-page error-page)
     (make-step/study 'tutorial (pilot-tutorial))
