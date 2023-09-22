@@ -253,8 +253,13 @@
    #:transitions
    (transition-graph
     [upload-abstracts --> check-abstracts
-                      --> ,(lambda () done)]
-    [cancel --> ,(lambda () done)])
+                      --> ,(lambda ()
+                             (put 'cancel? #f)
+                             done)]
+    [cancel --> ,(lambda ()
+                   (put 'cancel? #t)
+                   done)])
+   #:provides '(cancel?)
 
    (list
     (make-step 'upload-abstracts upload-abstracts/page)
@@ -355,7 +360,7 @@
    (haml
     (.container
      (:h2 (format "~a: Categorize Abstract ~a out of ~a" batch-name (add1 i) total))
-     (:p (format "Decide whether this abstract is about ~a or not." (string-titlecase cat)))
+     (:p.info "Decide whether this abstract is about " (haml (:strong (string-titlecase cat))) " or not.")
 
      ; FIXME: use cat an non-cat to check if the answer is right.
      (:h4 "The Abstract")

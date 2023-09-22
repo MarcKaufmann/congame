@@ -580,7 +580,7 @@
   (provide
    submit-button
    input-likert
-   input-impatience
+   input-patience
    input-risk
    select-scale)
 
@@ -596,11 +596,11 @@
                     (cons n-string (format " ~a " n-string))))))
 
   ;; The following are from Falk, Becker, Dohmen, Huffman, Sunde 2022, MS
-  (define (input-impatience)
-    (select-scale "In comparison with others, are you a person who is generally willing to give up something today in order to benefit from that in the future? (0: very impatient; 10: very patient.)" 0 10))
+  (define (input-patience)
+    (select-scale "In comparison with others, are you a person who is generally willing to give up something today in order to benefit from that in the future? (0 means very unwilling, 10 means very willing.)" 0 10))
 
   (define (input-risk)
-    (select-scale "Are you a person who is generally willing to take risks, or do you try to avoid taking risks? (0: avoid as much as possible; 10: very willing to take risks.)" 0 10))
+    (select-scale "Are you a person who is generally willing to take risks, or do you try to avoid taking risks? (0 means you avoid risk as much as possible, 10 means you are very willing to take risks.)" 0 10))
 
   (define (input-likert label)
     (select label

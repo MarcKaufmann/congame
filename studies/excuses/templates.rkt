@@ -67,36 +67,54 @@
 
       @:h2{Decisions about Additional Abstracts}
 
-      @:p{At the start of the main session, you have to make a series of decisions. Here you see a screenshot of a choice that you could observe:}
+      @:p{At the start of the main session, you have to make a series of decision problems. Each decision problem is between two different categorizations (Option A and Option B) and consists of up to three steps:}
 
-      @(haml (.screenshot (:img ([:src (resource-uri reason-screenshot)]))))
+      @:ol{
+        @:li{Reveal a reason (sometimes)}
+        @:li{Choose one of the two options}
+        @:li{Pick a bonus such that you would switch to the other option}}
 
-      @:p{Each decision is about categorizing by two different groups: in the above example, the choice is between either categorizing 25 abstracts into 'Social Preferences' or 'Other', or categorizing 20 abstracts into 'Banking' or 'Other'.}
-
-      @:p{After each such choice, you will also be asked for the smallest bonus for which you would switch options: that is, how much extra money would make you choose the option you did not pick? Suppose that you had picked option B above. Then you would see the following screenshot:}
-      @(haml (.screenshot (:img ([:src (resource-uri bonus-switching-screenshot)]))))
-
-      @:p{Using the '+' and '-' button, you could increase the payment in increments of $0.10 until you reach an amount such that you would choose Option A with that bonus, rather than option B without a bonus.}
+      @:p{We now discuss each of these steps in more detail based on an example where Option A consists of categorizing 25 abstracts into 'Social Preferences' or 'Other', and Option B consists of categorizing 20 abstracts into 'Banking' or 'Other'.}
 
       @:h4{Revealing Reasons}
 
-      @:p{For some decisions (as in the example above example), you first have to reveal a reason @:strong{for} or @:strong{against} one of the options. Only then can you submit your choice. These reasons will not provide additional information about how to do the tasks. Rather they will inform you how Prolific participants in a previous survey perceived the topics you are asked to categorize - such as how important, interesting, etc they perceived the topics.}
+      @:p{For some but not all decisions, you first have to reveal a reason @:strong{for} or @:strong{against} one of the options. Only then can you submit your choice. The screenshot below shows what this looks like.}
 
-      @:h4{Determining Decision that Counts}
+      @:p{These reasons will not provide additional information about how to do the tasks. Instead they are based on a previous survey with Prolific participants who were asked along several dimensions what they think about the different categories - such as how important, interesting, etc they find the topics.}
+
+      @(haml (.screenshot (:img ([:src (resource-uri reason-screenshot)]))))
+
+      @:h4{Choosing one option}
+
+      @:p{After you potentially decided to reveal a reason, you will see a screen with the reason, followed by the choice between the two options.}
+
+      @:h4{Picking a switching bonus}
+
+      @:p{Next, you will be asked to pick the smallest bonus for which you would switch from the option that you chose to the other option. That is, how much extra money you would have to receive to agree to the other categorization task? Suppose that you had picked option B above. Then you would see the following screenshot:}
+
+      @(haml (.screenshot (:img ([:src (resource-uri bonus-switching-screenshot)]))))
+
+      @:p{Using the '+' and '-' button, you could increase the payment in increments of $0.10 until you reach an amount such that you would choose Option A with that bonus, rather than option B without a bonus. The maximum you can choose is $1.1.}
+
+      @:h2{Determining Decision that Counts}
+
+      @:p.info{We now describe how your choices affect the work and bonuses that you may receive. The main take-away is that you should report your true answers.}
 
       @:p{Once you have made all the decisions, one of the decisions will randomly be picked as @:em{the decision that counts}: whatever you chose in that decision determines which and how many additional abstracts you will categorize later.}
 
-      @:p{For example, suppose that in the decision above you chose the option to "Categorize 20 abstracts today into 'Banking' or 'Other'", and that this decision is randomly picked as the decision that counts. Then you will have to first categorize 15 abstracts into 'Social Preferences' or 'Other' - the @:em{baseline work} - followed by categorizing 20 abstracts into 'Banking' or 'Other' - the @:em{additional work}.}
+      @:p{For example, suppose that in the decision above you chose Option B: "Categorize 20 abstracts today into 'Banking' or 'Other'". If this decision is randomly picked as the decision that counts, then you will have to first categorize 15 abstracts into 'Social Preferences' or 'Other' - the @:em{baseline work}, independent of your choice - followed by categorizing 20 abstracts into 'Banking' or 'Other' - the @:em{additional work}.}
 
-      @:p{If the decision that counts is one of those with a bonus, then a random bonus between $0.00 and $1.00 is picked. If it is larger than the bonus you stated, you do the option with the bonus, otherwise the one without. That is, you do the option that you prefer, according to the bonus you stated.}
+      @:p{If the decision that counts is one about the switching bonus, then a random bonus between $0.00 and $1.00 is picked ($0.10, $0.20, ...). If this is larger than the bonus you stated, then you do switch the option and receive the bonus. If the random bonus is lower than the one you stated, then you stay with your choice. That is, you do the option that you prefer according to the bonus you stated. Note that this means that if you state a bonus of $1.1, then you will never be asked to switch, since the highest bonus we may offer is $1.0.}
 
-      @:p{For example, suppose that you had stated a bonus of $0.50. Then if this choice is randomly picked as the decision that counts, then you will do the 20 abstracts for 'Banking' when the randomly determined bonus is $0.40 or less, while you will categorize 25 abstracts into 'Social Preferences' if that bonus is $0.50 or more.}
+      @:p{Continuing on from our example, suppose that you had stated a bonus of $0.50 and that this choice is randomly picked as the decision that counts. Then if the random bonus offered is $0.40 or less, you will stick with Option B and do the additional work of categorizing 20 abstracts into 'Banking' or 'Other', while if the random bonus offered is $0.50 or more, you will do the additional work of categorizing 25 abstracts into 'Social Preferences' or 'Other'.}
 
       @:h2{Short Surveys and Feedback}
 
-      @:p{After several steps there are short surveys, including a final survey where you can provide general feedback.}
+      @:p{There are several short surveys, including a final survey where you can provide general feedback.}
 
       @:h2{Payments}
+
+      @:p.info{All payments will be made within 3 days of you completing the tutorial.}
 
       @:p{There are three types of payment:}
 
@@ -104,8 +122,6 @@
         @:li{@:strong{Complete Tutorial (~@conf['pilot-tutorial-duration-estimate] mins):} If you complete the tutorial and pass the comprehension test, you receive @$conf['pilot-tutorial-fee] in the form of the baseline payment.}
         @:li{@:strong{Complete Main Session (~@conf['pilot-study-duration-estimate] mins):} If you also complete the main session within the permitted time after the tutorial, you receive an additional @$conf['pilot-completion-fee] in the form of bonus payments.}
         @:li{@:strong{Correct Abstract Categorization:} In addition, you receive a bonus of @$conf['pilot-correct-abstract-bonus] for every abstract of the main session (not the tutorial) that you categorize correctly.}}
-
-      @:h4{All payments will be made within 3 days of you completing the tutorial.}
 
       }))
 
@@ -117,11 +133,11 @@
 
       @:p{This study consists of two sessions. If you decide to participate, the first session will start immediately after you consent to participate. You can complete the second session anytime @conf['day2-date] between 6 AM and midnight (Pacific Time). You will receive a completion bonus of @conf['session1-bonus] USD for completing the first session, plus @conf['session2-bonus] USD if you also complete the second session. You can earn additional income depending on your decisions in the first session and your performance in the task described below. The average additional income will be around @conf['estimated-performance-bonus] USD. The two sessions will take around @conf['estimated-time] minutes to complete each.}
 
-      @:p{In both sessions, you will have to do a series of simple tasks. This task consists of categorizing abstracts (short summaries of research papers) by topics. Specifically, we will give topics, and you should choose which topic this abstract belongs to.
+      @:p{In both sessions, you will have to do a series of simple tasks. This task consists of categorizing abstracts (short summaries of research papers) by topics. Specifically, we will give you topics, and you should choose which topic this abstract belongs to.
 
       In both sessions you will have to categorize @conf['baseline-abstracts] abstracts each as a baseline. In one of the two sessions, you will also have to do some extra work, involving the categorization of around @conf['estimated-extra-abstracts] extra abstracts.}
 
-      @:p{On the next page, you will see an example abstract and its categorization. On the subsequent pages, you can try the categorization task yourself.}
+      @:p{On the next page, you will see examples abstracts and their categorizations. On the subsequent pages, you can try the categorization task yourself.}
 
       @:h2{First session - TODAY}
 

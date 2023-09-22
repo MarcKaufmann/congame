@@ -1,7 +1,6 @@
 #lang at-exp racket/base
 
-(require racket/contract
-         racket/format
+(require racket/contract racket/format
          racket/generic
          racket/list
          racket/match
@@ -23,6 +22,9 @@
          "abstract-categorization.rkt")
 
 ; TODO:
+;
+; - Do I need a boilerplate first page for IRB purposes? Yes, probably.
+; - Use as task the task to fix the spaces between words -- and as a reason state they will actually do some work that we haven't already done, unlike the categorizations
 ; - Allow only so many wrong abstract categorizations, otherwise it is game over. Do that after a first test run.
 ; - Then we can simplify language of reasons further. That way I can simplify the language further, and make it sound less stupid. E.g.: "This topic was among the top 25% most important/controversial/learn more about.
 ; - Should we add a comprehension question on the reasons? Yes, if we add money as a reason.
@@ -31,6 +33,12 @@
 ; - Finalize choices and randomizations.
 ; - Generate additional reasons by running a pilot without reasons over two periods and asking participants why they choose one option over the other. Here just provide them with some information from the surveys, and let them pick what they want to justify it.
 ; - We don't need tons of reasons, merely better ones, and we need to maybe reduce the number of reasons we ask, at least in the first part?
+;
+; MINOR TODO:
+;
+; - Styling and text: highlight surveys by having more margin and padding on them
+; - Have a look at how Qualtrics styles things, implement some of that
+; - Improve the styling of standard inputs (requires shoelace or similar)
 ;
 ; REASONS:
 ;
@@ -75,6 +83,11 @@
 (define (set-pilot-choices)
   (define choices-to-make
        (list
+
+        ; The following was used for the screenshot
+        ;(choice-env
+        ;(make-option "social preferences" 25)
+        ;(make-option "banking" 20))
 
         ; 4 choices without reasons to calibrate preferences
         (choice-env
@@ -123,53 +136,54 @@
         ; 4 with reasons for
         ; 4 with reasons against
         ; 4 without reasons
-        (choice-env
-         (make-option/for "covid" 20)
-         (make-option "politics" 5))
+        ;(choice-env
+        ; (make-option/for "covid" 20)
+        ; (make-option "politics" 5))
 
-        (choice-env
-         (make-option "self-control" 5)
-         (make-option/for "addiction" 20))
+        ;(choice-env
+        ; (make-option "self-control" 5)
+        ; (make-option/for "addiction" 20))
 
-        (choice-env
-         (make-option/for "gender inequality" 30)
-         (make-option "neuroscience" 45))
+        ;(choice-env
+        ; (make-option/for "gender inequality" 30)
+        ; (make-option "neuroscience" 45))
 
-        (choice-env
-         (make-option "environment" 5)
-         (make-option/for "cognitive skills" 20))
+        ;(choice-env
+        ; (make-option "environment" 5)
+        ; (make-option/for "cognitive skills" 20))
 
-        (choice-env
-         (make-option/against "ai" 5)
-         (make-option "addiction" 15))
+        ;(choice-env
+        ; (make-option/against "ai" 5)
+        ; (make-option "addiction" 15))
 
-        (choice-env
-         (make-option/against "politics" 15)
-         (make-option "self-control" 5))
+        ;(choice-env
+        ; (make-option/against "politics" 15)
+        ; (make-option "self-control" 5))
 
-        (choice-env
-         (make-option "sports" 5)
-         (make-option/against "politics" 20))
+        ;(choice-env
+        ; (make-option "sports" 5)
+        ; (make-option/against "politics" 20))
 
-        (choice-env
-         (make-option "ai" 20)
-         (make-option/against "gender inequality" 30))
+        ;(choice-env
+        ; (make-option "ai" 20)
+        ; (make-option/against "gender inequality" 30))
 
-        (choice-env
-         (make-option "environment" 35)
-         (make-option "neuroscience" 30))
+        ;(choice-env
+        ; (make-option "environment" 35)
+        ; (make-option "neuroscience" 30))
 
-        (choice-env
-         (make-option "sports" 40)
-         (make-option "gender inequality" 25))
+        ;(choice-env
+        ; (make-option "sports" 40)
+        ; (make-option "gender inequality" 25))
 
-        (choice-env
-         (make-option "socioeconomic inequality" 20)
-         (make-option "covid" 10))
+        ;(choice-env
+        ; (make-option "socioeconomic inequality" 20)
+        ; (make-option "covid" 10))
 
-        (choice-env
-         (make-option "socioeconomic inequality" 35)
-         (make-option "gender inequality" 25))))
+        ;(choice-env
+        ; (make-option "socioeconomic inequality" 35)
+        ; (make-option "gender inequality" 25))
+        ))
 
   (put 'choices-to-make choices-to-make)
 
@@ -213,7 +227,11 @@
   (page
    (haml
     (.container
-     (:h1 (format "Comprehension Test (~a attempt)" attempt))
+     (:h1 (format "Comprehension Test (~a attempt)"
+                  (case attempt
+                    [(1) "first"]
+                    [(2) "second"]
+                    [(3) "third"])))
 
      (formular
       (haml
@@ -268,7 +286,7 @@
 
      @:p{Unfortunately, you failed the comprehension test too many times, so you cannot continue.}
 
-     @:p{Provide the following completion code to receive £@(hash-ref edpb-config 'pilot-fail-comprehension-fee): FAILCOMP.}))))
+     @:p{Provide the following completion code to receive @($conf 'pilot-fail-comprehension-fee): FAILCOMP.}))))
 
 
 (define (no-consent)
@@ -299,7 +317,7 @@
     @.container{
       @:h1{The Study}
 
-      @:p{Thank you for participating in this study examining how people make decisions for work over time.}
+      @:p{Thank you for participating in this study examining how people make decisions for work.}
 
       @:p{This study is conducted by Flora Drucker and Marc Kaufmann and financed by Central European University. Your participation is voluntary and if you accept to participate, you may withdraw at any time. However, please note that you will receive some bonuses if you complete specific parts of the study. This is described in more detail on the Instructions page.}
 
@@ -312,12 +330,14 @@
       @(formular
        (haml
         (:div
-         (#:prolific-ID (input-text "What is your Prolific ID?"))
-         (#:patience
-          (input-number
-           "How willing are you to give up something that is beneficial for you today in order to benefit more from that in the future? (0 means not willing at all, 10 means very willing)"
-           #:min 0 #:max 10))
-
+         (:div
+          (#:prolific-ID (input-text "What is your Prolific ID?")))
+         (:div
+          (#:patience
+           (input-patience)))
+         (:div
+          (#:risk
+           (input-risk)))
          submit-button)))})))
 
 (define (signup)
@@ -504,7 +524,7 @@
              'text      (->jsexpr/super (and r (reason-text r)))))])
 
 (define/contract (describe-abstracts ce k)
-  (-> choice-env? (or/c 'A 'B) string?)
+  (-> choice-env? (or/c 'A 'B) any/c)
   (match-define (choice-env (o+r A RA)
                             (o+r B RB))
     ce)
@@ -514,12 +534,17 @@
       [(B) (values B RB)]))
   (match o
     [(option session type amount)
-     (format "Categorize ~a abstracts ~a into '~a' or 'Other'."
-             amount
-             (if (equal? session 'session1) "today" "next session")
-             (cond [(string=? (car type) "ai") "AI"]
-                   [else
-                    (string-titlecase (car type))]))]))
+     (haml
+      (:div
+       (format "Categorize ~a abstracts ~a into "
+               amount
+               (if (equal? session 'session1) "today" "next session"))
+
+       (haml (:em
+              (cond [(string=? (car type) "ai") "AI"]
+                    [else
+                     (string-titlecase (car type))])))
+       " or " (haml (:em "Other")) "."))]))
 
 (define (ce-reason ce label)
   (case label
@@ -608,7 +633,7 @@
 
      (when r-label
        (haml
-        (.revealed-reason
+        (.revealed-reason.info
          (:h3 (format "Reason for ~a: " r-label))
          (:p r-text))))
 
@@ -670,9 +695,7 @@
 
      (:h3 "Bonus needed for switching")
 
-     (:p (format "Between the two above options, you picked Option ~a. Please use the '+' and '-' buttons below to pick the smallest amount of money such that you would choose the other alternative, Option ~a. That is, if we offer you the choice between Option ~a for no bonus payment vs Option ~a with that bonus payment, you'd prefer the latter."
-                 chosen-option
-                 unchosen-option
+     (:p (format "You just picked Option ~a in a direct choice between the above options. Now please pick the smallest amount of money you have to be paid to switch to Option ~a instead."
                  chosen-option
                  unchosen-option))
 
@@ -683,7 +706,7 @@
          (input-number
           "Switching Bonus"
           #:min 0.1
-          #:max 1.0
+          #:max 1.1
           #:step 0.1
           #:attributes `([data-counter "counter"]
                          [data-counter-prefix "$"])))
@@ -692,8 +715,8 @@
         (with-study-transaction
           (put* #:root '*timer*
                 'switch-choice-durations
-                (end-timer)
-                (get* #:root '*timer* 'switch-choice-durations null))
+                (cons (end-timer)
+                      (get* #:root '*timer* 'switch-choice-durations null)))
           (define choices
             (get 'work-choices))
           (define last-choice
@@ -951,7 +974,8 @@
    (transition-graph
     [admin --> admin]
     [abstracts-admin --> ,(lambda ()
-                            (put/instance* 'abstracts-set? #t)
+                            (unless (get 'cancel?)
+                              (put/instance* 'abstracts-set? #t))
                             (open-study-if-ready)
                             (goto admin))]
     [completion-code-admin --> ,(lambda ()
@@ -965,7 +989,10 @@
    (list
     (make-step 'admin admin-page)
     (make-step 'completion-code-admin completion-code/admin)
-    (make-step/study 'abstracts-admin abstracts-admin)
+    (make-step/study
+     'abstracts-admin
+     #:provide-bindings '([cancel? cancel?])
+     abstracts-admin)
     (make-step 'reasons-admin (reasons-admin #:step-on-cancel 'admin)))))
 
 (define (route-participants)
@@ -1075,8 +1102,8 @@
                             (if binary? "" " with a switching bonus")))
 
                 (:ul
-                 (:li (format "Option A: ~a" (describe-abstracts ce 'A)))
-                 (:li (format "Option B: ~a" (describe-abstracts ce 'B))))
+                 (:li "Option A: " (describe-abstracts ce 'A))
+                 (:li "Option B: " (describe-abstracts ce 'B)))
 
 
                 (cond [binary?
@@ -1160,7 +1187,6 @@
    (haml
     (.container
      (:h1 "Feedback on Choices and Reasons")
-
      (:p "Before you do the additional work, please answer the following questions on your decision-making process.")
 
      (formular
@@ -1175,6 +1201,11 @@
         (:div
          (#:how-meaningful-reasons
           (input-likert "How meaningful did you find the reasons? (1: not at all, 4: somewhat, 7: extremely)")))
+        (:div
+         (#:how-long-abstracts
+          (input-number "How many minutes do you guess it would take you to categorize 20 abstracts for a random topic?"
+                        #:min 0
+                        #:max 75)))
         (:div
          (#:feedback
           (textarea "Please provide some feedback on what kinds of reasons might have swayed your choice in the kind of situation we gave you, or what type of similar choice (where you are asked to do work for someone else) could sway you. This can include reasons relying brought forward by other people such as colleagues, friends, or spouses.")))
@@ -1270,9 +1301,13 @@
     (page
      (haml
       (.container
-       (:h1 (format "Comprehension Test (~a attempt)" attempt))
+       (:h1 (format "Comprehension Test (~a attempt)"
+                    (case attempt
+                      [(1) "first"]
+                      [(2) "second"]
+                      [(3) "third"])))
 
-       (:p "If you need help to answer the questions, reread the study instructions below the test.")
+       (:p "You can attempt the comprehension test 3 times. If you need help to answer the questions, reread the study instructions below the test.")
 
        (formular
         (haml
@@ -1328,7 +1363,7 @@
 
        (:h2 "Tutorial")
 
-       (:p (format "This study consists of a brief (~a mins) tutorial session followed by the main session. The tutorial is meant to familiarize you with the main study, so you can decide whether you want to participate in it."
+       (:p (format "This study consists of a brief (~a mins) tutorial session followed by the main session. The tutorial familiarizes you with the main study, so you can decide whether you want to participate."
                    (conf 'pilot-tutorial-duration-estimate)))
 
        (:h3 "Comprehension Test")
@@ -1341,30 +1376,14 @@
        (:p (format "If you pass the comprehension test, you receive another completion code with which you receive the baseline fee of ~a. Moreover, you can then decide whether to participate in the main study for bonus payments described later."
                    ($conf 'pilot-tutorial-fee)))
 
-       (:h3 "Intro Survey")
-
-       (:p "Before you start the tutorial, please proivde your Prolific ID and answer these questions:")
-
-       (formular
-        (haml
-         (:div
-          (:div
-           (#:prolific-id
-            (input-text "Please provide your Prolific ID.")))
-
-          (:div
-           (#:impatience
-            (input-impatience)))
-          (:div
-           (#:risk
-            (input-risk)))
-          submit-button)))))))
+       (button void "Continue")))))
 
   (make-study
    "pilot tutorial"
    #:transitions
    (transition-graph
-    [introduction --> instructions
+    [landing-page --> introduction
+                  --> instructions
                   --> initialize
                   --> task-description
                   --> announce-tutorial-tasks
@@ -1378,12 +1397,16 @@
     [fail-comprehension-test --> fail-comprehension-test])
 
    (list
+    (make-step 'landing-page landing-page)
     (make-step 'introduction introduction)
     (make-step 'instructions
                (lambda ()
                  (page
                   (haml
                    (.container
+
+                    (:p.info "Please take your time to read these instructions carefully.")
+
                     (pilot-instructions)
                     (button void "Continue"))))))
 
@@ -1417,9 +1440,9 @@
     (.container
      (:h1 "Enter Completion Code on Prolific")
 
-     (:p "Since you agreed to participate in the main study, do not close this window.")
+     (:p.info "Since you agreed to participate in the main study, do not close this window.")
 
-     (:p "But before continuing, enter the completion code on prolific. This entitles you to the baseline fee, the payments for the main study will be paid out as bonuses later on.")
+     (:p "Before continuing, enter the completion code on prolific. This entitles you to the baseline fee, the payments for the main study will be paid out as bonuses later on.")
 
      (:h4 "Completion Code: " (hash-ref edpb-config 'pilot-completion-code))
 
@@ -1468,12 +1491,12 @@
 
      (:ul
       (:li (format "Baseline payment (for tutorial): $~a" (~r baseline-fee #:precision 2)))
-      (:li (format "Bonus payment (for main session): $~a" (~r (+ completion-bonus abstract-bonus) #:precision 2))))
-
-     (:p (format "The bonus payment consists of a completion bonus of ~a and of a bonus for categorizing ~a abstracts correctly of ~a."
+      (:li (format "Bonus payment (for main session): $~a" (~r (+ completion-bonus abstract-bonus) #:precision 2))
+           (:ul
+            (:li (format "This consists of a $~a completion bonus and of a $~a bonus for correctly categorizing ~a abstracts."
                  completion-bonus
-                 score
-                 abstract-bonus))))))
+                 (~r #:precision 2 abstract-bonus)
+                 score)))))))))
 
 
 (define edpb-pilot
