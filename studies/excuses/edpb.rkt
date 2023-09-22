@@ -23,15 +23,16 @@
 
 ; TODO:
 ;
-; - Do I need a boilerplate first page for IRB purposes? Yes, probably.
+; - Do basic data analysis to check that we collect everything
+; - Finalize choices and randomizations.
+; - Money reason
+; - Generate additional reasons by running a pilot without reasons over two periods and asking participants why they choose one option over the other. Here just provide them with some information from the surveys, and let them pick what they want to justify it.
+;
 ; - Use as task the task to fix the spaces between words -- and as a reason state they will actually do some work that we haven't already done, unlike the categorizations
 ; - Allow only so many wrong abstract categorizations, otherwise it is game over. Do that after a first test run.
-; - Then we can simplify language of reasons further. That way I can simplify the language further, and make it sound less stupid. E.g.: "This topic was among the top 25% most important/controversial/learn more about.
-; - Should we add a comprehension question on the reasons? Yes, if we add money as a reason.
-; - We need some reasons that are better than what we have right now. Why not give them some bonus that they receive several days in the future for one bunch or the other? That definitely should work, and it is a reason that we can repeat, which maintains the value of the other pointless reasons.
+; - Simplify language of reasons further. That way I can simplify the language further, and make it sound less stupid. E.g.: "This topic was among the top 25% most important/controversial/learn more about.
+; - Should we add a comprehension question on what the reasons are? Yes, if we add money as a reason.
 ; - Over two days, there are several other reasons: total work, total additional, total across both days and so on.
-; - Finalize choices and randomizations.
-; - Generate additional reasons by running a pilot without reasons over two periods and asking participants why they choose one option over the other. Here just provide them with some information from the surveys, and let them pick what they want to justify it.
 ; - We don't need tons of reasons, merely better ones, and we need to maybe reduce the number of reasons we ask, at least in the first part?
 ;
 ; MINOR TODO:
@@ -40,37 +41,11 @@
 ; - Have a look at how Qualtrics styles things, implement some of that
 ; - Improve the styling of standard inputs (requires shoelace or similar)
 ;
-; REASONS:
-;
-; - Reasons to survey participants on:
-;   - Entertaining
-;   - Enjoyable
-;   - Personally relevant
-;   - Ask for dull (even though it is the opposite of interesting in some sense)
-;   - overwhelming, uncomfortable
-;   - social relevance
-;
-; Check TODO:
-; - Create list of reasons that I can use and that can be linked to the appropriate choices
-; - Fix payment currency
-; - update explanations to explain the $ amount an +/-
-; - turn interface for switching bonus into one where one has to use + and -
-; - Add screenshot of decision choice with reasons, and explain
-; - Add feedback section at end, before payment page
-; - When announcing tasks, state into which category, display somewhere
-; - Rename debriefing to final page/payment page
-; - Track the reasons being selected!!!!
-; - After consent page, display the code and tell them to immediately start the study
-; - Check that instructions answer comprehension questions
-; - Use "banking" in the tutorial; use "social preferences" as the baseline tasks to work on, since I didn't collect data on it in the pilot, so we can't have reasons for it.
-
-
 ; Optional:
 ; - Put category choice button at the same height always, based on normal length of abstracts
 ; - Add definition of categories as written by chatgpt
 ; - Rate reasonableness of reasons
 ; - Add debriefing questions on justifying choices
-; - Implement a feature to track time used on individual steps and substudies.
 ; - Implement feature to track progress through the study
 
 (provide
@@ -223,7 +198,16 @@
     (cond [(get 'attempt #f) => values]
           [else (begin0 1
                   (put 'attempt 1))]))
+  (define last-attempt
+    (get 'last-attempt #f))
   (put-current-round-name (~a "attempt " attempt))
+  (define (answer-feedback question option correct-answer?)
+    (haml
+     (:li "For the question '"
+          (:em question)
+          (format "' you picked option ~a, which is ~a."
+                  option
+                  (if correct-answer? "true." "false.")))))
   (page
    (haml
     (.container
@@ -232,6 +216,21 @@
                     [(1) "first"]
                     [(2) "second"]
                     [(3) "third"])))
+
+     (when last-attempt
+       (let ([when-paid (hash-ref last-attempt 'when-paid)]
+             [session1 (hash-ref last-attempt 'session1)]
+             [how-many-abstracts (hash-ref last-attempt 'how-many-abstracts)])
+       (haml
+        (:div
+         (:h4 "Your answers and Score from the previous attempt")
+
+         (:ol
+          (answer-feedback "When will you receive the payments" (car when-paid) (cdr when-paid))
+          (answer-feedback "Will you receive any payment if you only complete the first session"
+                           (car session1) (cdr session1))
+          (answer-feedback "how many abstracts do you have to do in each session including the baseline abstracts"
+                           (car how-many-abstracts) (cdr how-many-abstracts)))))))
 
      (formular
       (haml
@@ -273,6 +272,10 @@
                (string=? session1-payment "2")
                (string=? how-many-abstracts "3")))))
           (put 'attempt (add1 (get 'attempt)))
+          (put 'last-attempt
+               (hash 'when-paid (cons when-paid (string=? when-paid "3"))
+                     'session1-payment (cons session1-payment (string=? session1-payment "2"))
+                     'how-many-abstracts (cons how-many-abstracts (string=? how-many-abstracts "3"))))
           (put 'comprehension-test-score score)))))))
 
 (define max-attempts 3)
@@ -1298,6 +1301,17 @@
       (cond [(get 'attempt #f) => values]
             [else (begin0 1
                     (put 'attempt 1))]))
+
+    (define last-attempt
+      (get 'last-attempt #f))
+    (define (answer-feedback question option correct-answer?)
+      (haml
+       (:li "Question: "
+            (:em question)
+            (format " You picked option ~a, which is ~a."
+                    option
+                    (if correct-answer? "true" "false")))))
+
     (page
      (haml
       (.container
@@ -1308,6 +1322,30 @@
                       [(3) "third"])))
 
        (:p "You can attempt the comprehension test 3 times. If you need help to answer the questions, reread the study instructions below the test.")
+       (when last-attempt
+         (let ([when-paid (hash-ref last-attempt 'when-paid)]
+               [reasons (hash-ref last-attempt 'reasons-to-reveal)]
+               [how-many-abstracts (hash-ref last-attempt 'how-many-abstracts)])
+           (haml
+            (.info
+             (:h4 "Your answers and Score from the previous attempt")
+
+             (:ol
+              (answer-feedback "When will you receive the payments?" (car when-paid) (cdr when-paid))
+              (answer-feedback "Then how many abstracts do you have to do in total, including the baseline abstracts?"
+                               (car how-many-abstracts) (cdr how-many-abstracts))
+              (answer-feedback "Suppose you face a decision with buttons to reveal reasons for each option. Then which of the following is true?"
+                               (car reasons) (cdr reasons)))))))
+
+       (when (> attempt 2)
+         (haml
+          (.alert
+           (:h4 "Hints")
+
+           (:ul
+            (:li "Regarding when you receive the payments, see the start of the 'Payments' section at the bottom of the page.")
+            (:li "Regarding how many abstracts you have to do: note that you have to do a certain amount of baseline abstracts (see the section on 'Abstract Categorization Tasks'). Then you do the abstracts from the choice " (:strong "in addition") " to these baseline abstracts.")
+            (:li "Regarding the reasons, see the subsection on 'Revealing Reasons'. When there is a reason, how many do you have to reveal?")))))
 
        (formular
         (haml
@@ -1334,7 +1372,7 @@
              '(("1" . "You can choose an option and submit your choice without having revealed a reason.")
                ("2" . "You can choose an option and submit your choice only after revealing exactly one reason.")
                ("3" . "You can choose an option and submit your choice only after revealing both reasons.")
-               ("4" . "You can choose an option and submit your choice after revealing any numbe of reasons.")))))
+               ("4" . "You can choose an option and submit your choice after revealing any number of reasons.")))))
           submit-button))
         (lambda (#:when-paid when-paid
                  #:how-many-abstracts how-many-abstracts
@@ -1348,6 +1386,10 @@
                (string=? when-paid "3")
                (string=? how-many-abstracts "4")
                (string=? reasons-to-reveal "2")))))
+          (put 'last-attempt
+               (hash 'when-paid (cons when-paid (string=? when-paid "3"))
+                     'reasons-to-reveal (cons reasons-to-reveal (string=? reasons-to-reveal "2"))
+                     'how-many-abstracts (cons how-many-abstracts (string=? how-many-abstracts "4"))))
           (put 'attempt (add1 (get 'attempt)))
           (put 'comprehension-test-score score)))
 

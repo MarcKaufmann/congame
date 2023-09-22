@@ -71,7 +71,7 @@
       @:p{At the start of the main session, you have to make a series of decision problems. Each decision problem is between two different categorizations (Option A and Option B) and consists of up to three steps:}
 
       @:ol{
-        @:li{Reveal a reason (sometimes)}
+        @:li{Reveal exactly one reason (sometimes)}
         @:li{Choose one of the two options}
         @:li{Pick a bonus such that you would switch to the other option}}
 
@@ -79,7 +79,7 @@
 
       @:h4{Revealing Reasons}
 
-      @:p{For some but not all decisions, you first have to reveal a reason @:strong{for} or @:strong{against} one of the options. Only then can you submit your choice. The screenshot below shows what this looks like.}
+      @:p{For some but not all decisions, you first have to reveal @:em{exactly one} reason @:strong{for} or @:strong{against} one of the options. Only then can you submit your choice. The screenshot below shows what this looks like.}
 
       @:p{These reasons will not provide additional information about how to do the tasks. Instead they are based on a previous survey with Prolific participants who were asked along several dimensions what they think about the different categories - such as how important, interesting, etc they find the topics.}
 
