@@ -36,6 +36,8 @@
 ;     - Which reasons they picked based on choice characteristics
 ;     - Which option they picked
 ;     - Which switching bonuses they picked
+; - Use a different topic than Social preferences for baseline, and check that most categorizations don't require just finding that keyword. Probably most do, given how Rumen and Soheila searched. Ergh.
+; - We could have done the whole thing with another task and more meaningful reasons and less time.
 ; - Change abstract categorization task so it takes longer
 ; - Finalize choices and randomizations.
 ; - Money reason
@@ -971,7 +973,7 @@
                  (:td (~a (hash-ref p 'total-abstracts-done)))
                  (:td (~r (compute-total-bonus p) #:precision 2)))))))
 
-         (:h4 "Participants with Bonus in Format for Prolific")
+         (:h4 "Participants with Bonus in GBP in Format for Prolific")
 
          (:table
           (:thead
@@ -982,7 +984,7 @@
                (haml
                 (:tr
                  (:td
-                  (format "~a,~a" id (~r (compute-total-bonus p))))))))))))
+                  (format "~a,~a" id (~r #:precision 2 (* 0.83 (compute-total-bonus p)))))))))))))
 
 
      (cond [(get/instance* 'abstracts-set? #f)
