@@ -27,13 +27,22 @@
 ; TODO:
 ;
 ; - Measure how long participants take for the study, and do so in easier way in the future. This requires that `start-timer` can start and stop a named timer, rather than a single use
-; - update payments to reflect the time participants actually take.
-; - Do basic data analysis to check that we collect everything
+;     - Main session: ~15 minutes
+;     - Per abstract: TBD
+;     - Per choice: TBD
+;     - Per reveal: TBD
+; - All TBD: Do basic data analysis to check that we collect everything
+;     - All feedback questions (how much reasons matter etc, how choose)
+;     - Which reasons they picked based on choice characteristics
+;     - Which option they picked
+;     - Which switching bonuses they picked
+; - Change abstract categorization task so it takes longer
 ; - Finalize choices and randomizations.
 ; - Money reason
 ;
 ; Other
 ;
+; - Mats didn't like that people click on the reason when there is a single reason. I can probably quickly update to have them simply click "next" at the bottom instead, so I display the page, then they move to the choice page.
 ; - Use as task the task to fix the spaces between words -- and as a reason state they will actually do some work that we haven't already done, unlike the categorizations
 ; - Allow only so many wrong abstract categorizations, otherwise it is game over. Do that after a first test run when I see how many they get wrong.
 ; - Simplify language of reasons further. That way I can simplify the language further, and make it sound less stupid. E.g.: "This topic was among the top 25% most important/controversial/learn more about.

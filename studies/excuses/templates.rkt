@@ -38,7 +38,7 @@
         'pilot-tutorial-duration-estimate "5-10"
         'pilot-study-duration-estimate 20
         'pilot-tutorial-fee 2
-        'pilot-completion-fee 5
+        'pilot-completion-fee 3
         'pilot-fail-comprehension-fee 2
         'pilot-correct-abstract-bonus 0.05))
 
