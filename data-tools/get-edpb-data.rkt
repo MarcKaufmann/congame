@@ -3,6 +3,8 @@
 (require racket/format
          racket/list
          racket/string
+         gregor
+         gregor/period
          "get-data.rkt")
 
 (define reasons-study-id 17)
@@ -35,9 +37,6 @@
 ;    ; In reality, id + group + round uniquely identify.
 ;    ()
 ;    )
-
-(define p1 (car reasons-data))
-(define ps (take reasons-data 2))
 
 (define (->topics p)
   (define vars (hash-ref p 'vars))
@@ -125,6 +124,116 @@
       (for ([row tbl])
         (displayln (string-join (map frm row) ",") out)))))
 
-(write-data (meta-table reasons-data) (build-path reasons-path "participants.csv"))
-(write-data (topics-table reasons-data) (build-path reasons-path "topics.csv"))
-(write-data (opinions-table reasons-data) (build-path reasons-path "opinions.csv"))
+(define (get-and-write-reasons-pilot-data)
+  (write-data (meta-table reasons-data) (build-path reasons-path "participants.csv"))
+  (write-data (topics-table reasons-data) (build-path reasons-path "topics.csv"))
+  (write-data (opinions-table reasons-data) (build-path reasons-path "opinions.csv")))
+
+(define edpb-pilot-study-id 19)
+(define edpb-pilot-iid 46)
+(define edpb-pilot-path
+"/Users/kaufmannm/research/excuse-driven-present-bias/reasoned-excuses/data/edpb-pilot")
+
+(define edpb-pilot-data
+  (parameterize ([current-api-url api-url])
+                   (get-participants-data/list
+                    edpb-pilot-study-id
+                    edpb-pilot-iid)))
+
+(define p1 (car edpb-pilot-data))
+(define ps (take edpb-pilot-data 2))
+
+(define (get-root-ids p ids #:root [root "*root*"])
+  (define vars-to-get
+    (filter (lambda (v)
+              (define stack (hash-ref v 'stack))
+              (and (member (hash-ref v 'id) ids)
+                   (equal? (length stack) 1)
+                   (equal? (car stack) root)))
+            (hash-ref p 'vars)))
+  vars-to-get)
+
+;; Avg for the first 15 participants was around 15 minutes for the main study
+(define (main-session-time p)
+  (define pid
+    (hash-ref p 'participant-id))
+  (define vars
+    (get-root-ids p '("consent-given?" "feedback")))
+  (cond [(= (length vars) 2)
+         (define consent (car vars))
+         (define feedback (cadr vars))
+         (define consent-time
+           (iso8601->datetime (hash-ref consent 'first-put-at)))
+         (define feedback-time
+           (iso8601->datetime (hash-ref feedback 'first-put-at)))
+         (list pid (period-ref (period-between consent-time feedback-time) 'minutes))]
+
+        [else
+         #f]))
+
+;(define ids-to-get
+;  '(("*root*" "prolific-ID")
+;    ("*root*" "patience")
+;    ("*root*" "risk")
+;  ("*root*" "tutorial-abstracts")
+;  ("*root*" "tutorial-n")
+;  ("*root*" "tutorial-category")
+;  ("*round*" "round-stack")
+;  ("*timer*" "start-time")
+;  ("*timer*" "end-time")
+;  ("*timer*" "abstracts-duration")
+;  ("*abstracts*" "tutorial-correct-answers")
+;  ("*root*" "completed-answers")
+;  ("*root*" "abstract-task-score")
+;  ("*root*" "attempt")
+;  ("*root*" "last-attempt")
+;  ("*root*" "comprehension-test-score")
+;  ("*round*" "round-stack")
+;  ("*root*" "pass-test?")
+;  ("*root*" "pass-comprehension-test?")
+;  ("*root*" "consent-given?")
+;  ("*root*" "entered-completion-code?")
+;  ("*root*" "choices-to-make")
+;  ("*root*" "remaining-choices")
+;  ("*root*" "total")
+;  ("*root*" "choice-number")
+;  ("*root*" "reasons")
+;  ("*timer*" "start-time")
+;  ("*timer*" "end-time")
+;  ("*timer*" "choice-durations")
+;  ("*root*" "work-choices")
+;  ("*timer*" "switch-choice-durations")
+;  ("*timer*" "reveal-reasons-durations")
+;  ("*root*" "choices-made")
+;  ("*root*" "choice-that-counts")
+;  ("*root*" "additional-n")
+;  ("*root*" "additional-category")
+;  ("*root*" "additional-non-category")
+;  ("*root*" "feedback")
+;  ("*root*" "how-choose-reason")
+;  ("*root*" "how-long-abstracts")
+;  ("*root*" "how-meaningful-reasons")
+;  ("*root*" "how-much-did-reasons-affect-choices")
+;  ("*root*" "baseline-abstracts")
+;  ("*root*" "baseline-n")
+;  ("*root*" "baseline-category")
+;  ("*round*" "round-stack")
+;  ("*timer*" "start-time")
+;  ("*timer*" "end-time")
+;  ("*abstracts*" "baseline-incorrect-answers")
+;  ("*root*" "completed-answers")
+;  ("*abstracts*" "baseline-correct-answers")
+;  ("*root*" "additional-work-abstracts")
+;  ("*root*" "additional-work-n")
+;  ("*root*" "additional-work-category")
+;  ("*round*" "round-stack")
+;  ("*timer*" "start-time")
+;  ("*timer*" "end-time")
+;  ("*abstracts*" "additional-work-correct-answers")
+;  ("*root*" "completed-answers")
+;  ("*abstracts*" "additional-work-incorrect-answers")
+;  ("*root*" "boring")
+;  ("*root*" "careful")
+;  ("*root*" "understandable")
+;  ("*root*" "feedback")
+;  ("*root*" "how-choose"))
