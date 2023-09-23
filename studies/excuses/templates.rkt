@@ -37,7 +37,7 @@
         'pilot-additional-high 30
         'pilot-tutorial-duration-estimate "5-10"
         'pilot-study-duration-estimate 20
-        'pilot-tutorial-fee 3
+        'pilot-tutorial-fee 2
         'pilot-completion-fee 5
         'pilot-fail-comprehension-fee 2
         'pilot-correct-abstract-bonus 0.05))
@@ -122,7 +122,7 @@
       @:ul{
         @:li{@:strong{Complete Tutorial (~@conf['pilot-tutorial-duration-estimate] mins):} If you complete the tutorial and pass the comprehension test, you receive @$conf['pilot-tutorial-fee] in the form of the baseline payment.}
         @:li{@:strong{Complete Main Session (~@conf['pilot-study-duration-estimate] mins):} If you also complete the main session within the permitted time after the tutorial, you receive an additional @$conf['pilot-completion-fee] in the form of bonus payments.}
-        @:li{@:strong{Correct Abstract Categorization:} In addition, you receive a bonus of @$conf['pilot-correct-abstract-bonus] for every abstract of the main session (not the tutorial) that you categorize correctly.}}
+        @:li{@:strong{Correct Abstract Categorization:} In addition, if you complete the study, you receive a bonus of @$conf['pilot-correct-abstract-bonus] for every abstract of the main session (not the tutorial) that you categorize correctly.}}
 
       }))
 

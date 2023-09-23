@@ -8,9 +8,12 @@
          racket/pretty
          racket/random
          racket/serialize
+         web-server/http
          (only-in xml xexpr/c)
          koyo/haml
          koyo/url
+         koyo
+         (prefix-in tpl: congame-web/components/template)
          congame/components/export
          congame/components/for-study
          congame/components/study
@@ -23,13 +26,16 @@
 
 ; TODO:
 ;
+; - Measure how long participants take for the study, and do so in easier way in the future. This requires that `start-timer` can start and stop a named timer, rather than a single use
+; - update payments to reflect the time participants actually take.
 ; - Do basic data analysis to check that we collect everything
 ; - Finalize choices and randomizations.
 ; - Money reason
-; - Generate additional reasons by running a pilot without reasons over two periods and asking participants why they choose one option over the other. Here just provide them with some information from the surveys, and let them pick what they want to justify it.
+;
+; Other
 ;
 ; - Use as task the task to fix the spaces between words -- and as a reason state they will actually do some work that we haven't already done, unlike the categorizations
-; - Allow only so many wrong abstract categorizations, otherwise it is game over. Do that after a first test run.
+; - Allow only so many wrong abstract categorizations, otherwise it is game over. Do that after a first test run when I see how many they get wrong.
 ; - Simplify language of reasons further. That way I can simplify the language further, and make it sound less stupid. E.g.: "This topic was among the top 25% most important/controversial/learn more about.
 ; - Should we add a comprehension question on what the reasons are? Yes, if we add money as a reason.
 ; - Over two days, there are several other reasons: total work, total additional, total across both days and so on.
@@ -42,6 +48,7 @@
 ; - Improve the styling of standard inputs (requires shoelace or similar)
 ;
 ; Optional:
+; - Generate additional reasons by running a pilot without reasons over two periods and asking participants why they choose one option over the other. Here just provide them with some information from the surveys, and let them pick what they want to justify it.
 ; - Put category choice button at the same height always, based on normal length of abstracts
 ; - Add definition of categories as written by chatgpt
 ; - Rate reasonableness of reasons
@@ -287,9 +294,9 @@
     (.container
      @:h1{You failed the comprehension test too many times}
 
-     @:p{Unfortunately, you failed the comprehension test too many times, so you cannot continue.}
+     @:p{Unfortunately, you failed the comprehension test too many times, so you cannot continue with the main session.}
 
-     @:p{Provide the following completion code to receive @($conf 'pilot-fail-comprehension-fee): @(conf 'pilot-code-for-failed-comprehension).}))))
+     @:p{Provide the following completion code to receive @($conf 'pilot-tutorial-fee): @(conf 'pilot-code-for-failed-comprehension).}))))
 
 
 (define (no-consent)
@@ -394,9 +401,9 @@
                [(1) "first"]
                [(2) "second"])))
 
-       @:p{Remember: You can fail the test at most @(~a max-attempts) times, otherwise you drop out of the study without payments. Try again.}
+       @:p{Remember: You can fail the test at most @(~a max-attempts) times, otherwise you cannot participate in the main session. And you have to use all your attempts to receive the completion code. Try again.}
 
-       (button void "Go to comprehension test")))))
+       (button void "Try Again")))))
 
   (make-study
    "comprehension test"
@@ -843,11 +850,131 @@
             (:p "The study is not yet open for participants. Please come back later.")
             (:p "If you believe this is in error, please send an email to the study admin."))))]))
 
+(define (compute-total-bonus progress)
+  (match-define (hash-table ('completed-tutorial? tutorial?)
+                            ('pass-comprehension-test? comprehension?)
+                            ('completed-main-session? main?)
+                            ('correct-abstract-tasks correct-tasks))
+  progress)
+  (define completion-bonus
+    (hash-ref edpb-config 'pilot-completion-fee))
+  (define bonus-per-correct-abstract
+    (hash-ref edpb-config 'pilot-correct-abstract-bonus))
+  (define abstract-bonus
+    (* correct-tasks bonus-per-correct-abstract))
+  (define total-payment
+    (+ (if main? completion-bonus 0)
+       abstract-bonus))
+  total-payment)
+
+#;(define (admin-payments)
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (tpl:page
+      (tpl:container
+       (haml
+        (:div
+         (:h4
+          (:a
+           ([:href
+             (embed/url
+              (lambda (_req)
+                (define test '(a b c))
+                (response/output
+                 #:headers (list (make-header #"content-disposition" #"attachment; filename=\"prolific-payments-edpb-pilot.csv\""))
+                 (lambda (out)
+                   (for ([p (in-list test)])
+                     (fprintf out
+                              "~a,~a~n"
+                              (first p)
+                              (~r #:precision '(= 2)
+                                  (second p))))))))])
+           "Export Bonus Payments CSV"))
+
+         (button void "Admin" #:to-step-id 'admin)
+
+         (:table
+          (:thead
+           (:tr
+            (:td "Prolific ID")
+            (:td "Tutorial")
+            (:td "Comprehension Test")
+            (:td "Consented?")
+            (:td "Main Session")
+            (:td "Correct Abstracts")
+            (:td "Total Abstracts done")
+            (:td "Total Bonus")))
+
+          (:tbody
+           ,@(for/list ([(id p) (in-hash (get/instance* 'progress (hash)))])
+               (haml
+                (:tr
+                 (:td id)
+                 (:td (~a (hash-ref p 'completed-tutorial?)))
+                 (:td (~a (hash-ref p 'pass-comprehension-test?)))
+                 (:td (~a (hash-ref p 'consented?)))
+                 (:td (~a (hash-ref p 'completed-main-session?)))
+                 (:td (~a (hash-ref p 'correct-abstract-tasks)))
+                 (:td (~a (hash-ref p 'total-abstracts-done)))
+                 (:td (~r (compute-total-bonus p) #:precision 2))))))))))))))
+
 (define (admin-page)
+  (define progress
+    (get/instance* 'progress (hash)))
+
   (page
    (haml
     (.container
      (:h1 "Admin")
+
+     (when (study-open?)
+       (haml
+        (:div
+         (:h3 "Participant Payments")
+
+         #;(button (lambda ()
+                   (put/instance* 'progress (hash)))
+                 "Delete progress data"
+                 #:to-step-id 'admin)
+
+         (:table
+          (:thead
+           (:tr
+            (:td "Prolific ID")
+            (:td "Tutorial")
+            (:td "Comprehension Test")
+            (:td "Consented?")
+            (:td "Main Session")
+            (:td "Correct Abstracts")
+            (:td "Total Abstracts done")
+            (:td "Total Bonus")))
+
+          (:tbody
+           ,@(for/list ([(id p) (in-hash progress)])
+               (haml
+                (:tr
+                 (:td id)
+                 (:td (~a (hash-ref p 'completed-tutorial?)))
+                 (:td (~a (hash-ref p 'pass-comprehension-test?)))
+                 (:td (~a (hash-ref p 'consented?)))
+                 (:td (~a (hash-ref p 'completed-main-session?)))
+                 (:td (~a (hash-ref p 'correct-abstract-tasks)))
+                 (:td (~a (hash-ref p 'total-abstracts-done)))
+                 (:td (~r (compute-total-bonus p) #:precision 2)))))))
+
+         (:h4 "Participants with Bonus in Format for Prolific")
+
+         (:table
+          (:thead
+           (:tr
+            (:td "Id,bonus")))
+          (:tbody
+           ,@(for/list ([(id p) (in-hash progress)])
+               (haml
+                (:tr
+                 (:td
+                  (format "~a,~a" id (~r (compute-total-bonus p))))))))))))
+
 
      (cond [(get/instance* 'abstracts-set? #f)
             (haml
@@ -981,6 +1108,7 @@
                               (put/instance* 'abstracts-set? #t))
                             (open-study-if-ready)
                             (goto admin))]
+
     [completion-code-admin --> ,(lambda ()
                                   (open-study-if-ready)
                                   (goto admin))]
@@ -1014,6 +1142,43 @@
      (:p "We are sorry, but an error occurred. You can contact us to report the error.")))))
 
 ;;;;;;;;;; EDPB Pilot to calibrate choices, test reasons, etc
+
+
+(define (waiting-page-pilot)
+  (define id (get 'prolific-ID))
+  ; FIXME: This took me longer than it should have.
+  ; The problem is that I can't use skip in a transaction, and I need a transaction.
+  (define new-user
+    (with-study-transaction
+      (define progress
+        (get/instance* 'progress (hash)))
+      (cond [(hash-has-key? progress id)
+             #f]
+            [else
+             (put/instance*
+              'progress
+              (hash-set progress id
+                        (hash 'completed-tutorial? #f
+                              'consented? "not yet taken"
+                              'pass-comprehension-test? "not yet taken"
+                              'completed-main-session? #f
+                              'correct-abstract-tasks 0
+                              'total-abstracts-done 0)))
+             #t])))
+  (unless new-user
+    (skip 'participant-took-study-already))
+
+  (cond [(study-open?)
+         (skip)]
+
+        [else
+         (page
+          (haml
+           (.container
+            (:h1 "The study is not yet open")
+
+            (:p "The study is not yet open for participants. Please come back later.")
+            (:p "If you believe this is in error, please send an email to the study admin."))))]))
 
 (define (make-option category n [a-reason #f] [dir #f])
   (o+r (option 'session1 `(,category "other") n)
@@ -1172,6 +1337,7 @@
     (for/sum ([p (in-list lop)])
       (get/abstracts* (string->symbol (format "~a-correct-answers" p)) 0)))
   (put* 'abstract-task-score score)
+  (put* 'abstract-total-done n-total)
   (page
    (haml
     (.container
@@ -1184,6 +1350,14 @@
   (hash-ref edpb-config 'pilot-tutorial-abstracts))
 (define n-pilot-baseline
   (hash-ref edpb-config 'pilot-baseline-abstracts))
+
+(define (participant-took-study-already)
+  (page
+   (haml
+    (.container
+     (:h1 "You took the study already")
+
+     (:p "It appears that you already took our study (or you entered your prolific ID wrongly), and you cannot retake this study. Please contact us if you believe this is wrong.")))))
 
 (define (reasons-debrief)
   (page
@@ -1293,6 +1467,23 @@
      (:p "You will now be asked to categorize two abstracts.")
 
      (button void "Start Practice Tasks")))))
+
+(define (progress-update k v)
+  (eprintf "progress-update: running with key ~a and value ~v~n~n" k v)
+  (define id (get* 'prolific-ID))
+  (with-study-transaction
+    (define progress
+      (get/instance* 'progress))
+    (define participant-progress
+      (hash-ref progress id))
+    (put/instance*
+     'progress
+     (hash-set
+      progress
+      id
+      (hash-update
+       participant-progress
+       k (lambda (x) v))))))
 
 (define (pilot-tutorial)
 
@@ -1405,20 +1596,11 @@
 
        (:h2 "Tutorial")
 
-       (:p (format "This study consists of a brief (~a mins) tutorial session followed by the main session. The tutorial familiarizes you with the main study, so you can decide whether you want to participate."
+       (:p (format "This study consists of a brief (~a mins) tutorial session followed by a comprehension test. Then you can decide whether to continue in a follow-up study (the main session) or not. But to complete the Prolific study that you started, you do not have to participate in the main session, you only have to complete the tutorial and comprehension test, which serve to familiarize you with the main session, so you can decide whether you want to participate."
                    (conf 'pilot-tutorial-duration-estimate)))
 
-       (:h3 "Comprehension Test")
-
-       (:p "After the tutorial, you will have several attempts at a comprehension test about the main study, where we repeat all the relevant information from the tutorial.")
-
-       (:p (format "If you fail the comprehension test, you receive a completion code with which you receive only ~a, and you cannot participate in the main study."
-                   ($conf 'pilot-fail-comprehension-fee)))
-
-       (:p (format "If you pass the comprehension test, you receive another completion code with which you receive the baseline fee of ~a. Moreover, you can then decide whether to participate in the main study for bonus payments described later."
-                   ($conf 'pilot-tutorial-fee)))
-
        (button void "Continue")))))
+
 
   (make-study
    "pilot tutorial"
@@ -1432,9 +1614,16 @@
                   --> display-correct-tutorial-answers
                   --> comprehension-test
                   --> ,(lambda ()
-                         (if (get 'pass-comprehension-test?)
-                             done
-                             (goto fail-comprehension-test)))]
+                         (cond [(get 'pass-comprehension-test?)
+                                (progress-update 'pass-comprehension-test? #t)
+                                (progress-update 'completed-tutorial? #t)
+
+                                done]
+
+                               [else
+                                (progress-update 'completed-tutorial? #t)
+                                (progress-update 'pass-comprehension-test? #f)
+                                (goto fail-comprehension-test)]))]
     [fail-comprehension-test --> fail-comprehension-test])
 
    (list
@@ -1474,6 +1663,7 @@
     (make-step 'fail-comprehension-test fail-comprehension-test))))
 
 
+
 (define (consent-show-code)
   (page
    (haml
@@ -1511,6 +1701,7 @@
 
         submit-button)))))))
 
+
 (define (payment-page)
   (define score
     (get* 'abstract-task-score))
@@ -1539,6 +1730,7 @@
                  score)))))))))
 
 
+
 (define edpb-pilot
   (make-study
    "edpb pilot"
@@ -1553,11 +1745,19 @@
     [waiting-page --> tutorial
                   --> consent
                   --> ,(lambda ()
-                         (if (get 'consent-given?) 'consent-show-code 'no-consent))]
+                         (cond [(get 'consent-given?)
+                                (progress-update 'consented? #t)
+                                'consent-show-code ]
 
+                               [else
+                                (progress-update 'consented? #f)
+                                'no-consent]))]
+
+    [participant-took-study-already --> participant-took-study-already]
     [no-consent --> no-consent]
     [consent-show-code --> main
                        --> debriefing
+                       --> update-progress
                        --> payment-page]
     [payment-page --> payment-page])
 
@@ -1569,9 +1769,16 @@
     (make-step 'consent consent)
     (make-step 'consent-show-code consent-show-code)
     (make-step/study 'admin admin-study)
-    (make-step 'waiting-page waiting-page)
+    (make-step 'waiting-page waiting-page-pilot)
+    (make-step 'participant-took-study-already participant-took-study-already)
     (make-step/study 'main pilot-main)
     (make-step 'debriefing debriefing)
+    (make-step 'update-progress
+               (lambda ()
+                 (progress-update 'correct-abstract-tasks (get* 'abstract-task-score))
+                 (progress-update 'total-abstracts-done (get* 'abstract-total-done))
+                 (progress-update 'completed-main-session? #t)
+                 (skip)))
     (make-step 'payment-page payment-page)
     (make-step 'no-consent no-consent))))
 
@@ -1589,10 +1796,10 @@
 
     ; PARTICIPANT
     [waiting-page --> tutorial
-                  --> consent
-                  --> ,(lambda ()
-                         (cond [(get 'consent-given?) (goto consent-end-introduction)]
-                               [else (goto no-consent-ending)]))]
+                        --> consent
+                        --> ,(lambda ()
+                               (cond [(get 'consent-given?) (goto consent-end-introduction)]
+                                     [else (goto no-consent-ending)]))]
 
     [no-consent --> no-consent]
 
