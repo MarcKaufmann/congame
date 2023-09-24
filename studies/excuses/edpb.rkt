@@ -26,6 +26,7 @@
 
 ; TODO:
 ;
+; - Admin: add copyable list of participants who should be approved
 ; - Measure how long participants take for the study, and do so in easier way in the future. This requires that `start-timer` can start and stop a named timer, rather than a single use
 ;     - Main session: ~15 minutes
 ;     - Per abstract: TBD
@@ -932,6 +933,9 @@
 (define (admin-page)
   (define progress
     (get/instance* 'progress (hash)))
+  (define progress-with-bonus
+    (for/hash ([(id p) (in-hash progress)])
+      (values id (hash-set p 'bonus (compute-total-bonus p)))))
 
   (page
    (haml
@@ -961,7 +965,7 @@
             (:td "Total Bonus")))
 
           (:tbody
-           ,@(for/list ([(id p) (in-hash progress)])
+           ,@(for/list ([(id p) (in-hash progress-with-bonus)])
                (haml
                 (:tr
                  (:td id)
@@ -971,7 +975,20 @@
                  (:td (~a (hash-ref p 'completed-main-session?)))
                  (:td (~a (hash-ref p 'correct-abstract-tasks)))
                  (:td (~a (hash-ref p 'total-abstracts-done)))
-                 (:td (~r (compute-total-bonus p) #:precision 2)))))))
+                 (:td (~r (hash-ref p 'bonus) #:precision 2)))))))
+
+         (:h4 "Participants who should be approved")
+
+         (:table
+          (:thead
+           (:tr
+            (:td "Id")))
+          (:tbody
+           ,@(for/list ([(id p) (in-hash progress)]
+                        #:when (boolean? (hash-ref p 'pass-comprehension-test?)))
+               (haml
+                (:tr
+                 (:td id))))))
 
          (:h4 "Participants with Bonus in GBP in Format for Prolific")
 
@@ -980,11 +997,12 @@
            (:tr
             (:td "Id,bonus")))
           (:tbody
-           ,@(for/list ([(id p) (in-hash progress)])
+           ,@(for/list ([(id p) (in-hash progress-with-bonus)]
+                        #:when (> (hash-ref p 'bonus) 0))
                (haml
                 (:tr
                  (:td
-                  (format "~a,~a" id (~r #:precision 2 (* 0.83 (compute-total-bonus p)))))))))))))
+                  (format "~a,~a" id (~r #:precision 2 (* 0.83 (hash-ref p 'bonus)))))))))))))
 
 
      (cond [(get/instance* 'abstracts-set? #f)
