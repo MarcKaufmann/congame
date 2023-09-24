@@ -26,10 +26,10 @@
 
 ; TODO:
 ;
-; - Admin: add copyable list of participants who should be approved
 ; - Measure how long participants take for the study, and do so in easier way in the future. This requires that `start-timer` can start and stop a named timer, rather than a single use
 ;     - Main session: ~15 minutes
-;     - Per abstract: TBD
+;     - Per abstract, including when they get them right or wrong: TBD
+;           - Get quartiles next time, or quintiles
 ;     - Per choice: TBD
 ;     - Per reveal: TBD
 ; - All TBD: Do basic data analysis to check that we collect everything

@@ -171,6 +171,28 @@
         [else
          #f]))
 
+(define (->abstracts-time p)
+  (define pid
+    (hash-ref p 'participant-id))
+  (define as
+    (let ([abstracts-maybe (get-root-ids p #:root "*timer*" '("abstracts-duration"))])
+      (case (length abstracts-maybe)
+        [(0) null]
+        [(1) (hash-ref (car abstracts-maybe) 'value)])))
+  (define n (length as))
+  (for/list ([a (in-list as)]
+             [i (in-naturals)])
+    ; pid  |  time in seconds  | correctly categorized? |  rank (the how manyeth abstract this was that they did)
+    (list pid (last a) (third a) (- n i))))
+
+(define (all-abstract-times ps)
+  (cons
+   (list "pid" "time_in_seconds" "is_correct" "order")
+   (foldl append '() (map ->abstracts-time ps))))
+
+(define (write-edpb-pilot ps)
+  (write-data (all-abstract-times ps) (build-path edpb-pilot-path "abstract-times.csv")))
+
 ;(define ids-to-get
 ;  '(("*root*" "prolific-ID")
 ;    ("*root*" "patience")
