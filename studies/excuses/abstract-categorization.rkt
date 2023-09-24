@@ -328,7 +328,7 @@
               (get* #:root '*timer* 'abstracts-duration null))))
 
 ; FIXME: Relies on being exactly in this category
-(define (abstract-task/page abs-task i total cat prefix batch-name)
+(define (abstract-task/page abs-task i total cat prefix batch-name #:real-stakes? [real-stakes? #t])
 
   (match-define (abstract id text category non-category) abs-task)
   (define (categorize in/out)
@@ -344,29 +344,67 @@
       (string->symbol (format "~a-correct-answers" prefix)))
     (define incorrect-answers-key
       (string->symbol (format "~a-incorrect-answers" prefix)))
-    (if correct-answer?
-        (put/abstracts*
-         correct-answers-key
-         (add1 (get/abstracts* correct-answers-key 0)))
-        (put/abstracts*
-         incorrect-answers-key
-         (add1 (get/abstracts* incorrect-answers-key  0))))
+    (cond [correct-answer?
+           (put/abstracts*
+            correct-answers-key
+            (add1 (get/abstracts* correct-answers-key 0)))
+           (when real-stakes?
+             (put/abstracts*
+              'total-correct-answers
+              (add1 (get/abstracts* 'total-correct-answers 0))))]
+          [else
+           (put/abstracts*
+            incorrect-answers-key
+            (add1 (get/abstracts* incorrect-answers-key  0)))
+           (when real-stakes?
+             (put/abstracts*
+              'total-incorrect-answers
+              (add1 (get/abstracts* 'total-incorrect-answers 0))))])
     (put 'completed-answers
          (cons (list in/out correct-answer? abs-task)
                (get 'completed-answers '()))))
 
+  (define correct-n
+    (get/abstracts* 'total-correct-answers 0))
+  (define incorrect-n
+    (get/abstracts* 'total-incorrect-answers 0))
+  (define max-wrong
+    (get* 'max-wrong-abstracts 0))
+  (eprintf "max-wrong: ~a~n~n" max-wrong)
   (start-timer)
-  (page
-   (haml
-    (.container
-     (:h2 (format "~a: Categorize Abstract ~a out of ~a" batch-name (add1 i) total))
-     (:p.info "Decide whether this abstract is about " (haml (:strong (string-titlecase cat))) " or not.")
+  ; FIXME: I also should show the fail page once they have too many incorrect answers.
+  (cond [(and real-stakes? (>= incorrect-n max-wrong))
+         (page
+          (haml
+           (.container
+            (:h1 "You categorized too many abstracts wrongly")
 
-     ; FIXME: use cat an non-cat to check if the answer is right.
-     (:h4 "The Abstract")
-     (:p.abstract text)
-     (button (lambda () (categorize 'in)) (string-titlecase cat))
-     (button (lambda () (categorize 'out)) "Other")))))
+            (:p "We are sorry, but you categorized more more than ~a abstracts wrongly, and thus cannot complete the study."))))]
+
+        [else
+         (page
+          (haml
+           (.container
+            (:h2 (format "~a: Categorize Abstract ~a out of ~a" batch-name (add1 i) total))
+
+            (cond [(and real-stakes? (>= max-wrong incorrect-n (- max-wrong 5)))
+                   (haml
+                    (:p.alert (:strong "Watch out!") (format "You are within 5 wrong attempts of failing out of the study: you got ~a abstracts wrong and you can get at most ~a wrong!" incorrect-n max-wrong)))]
+
+                  [(and real-stakes? (zero? (modulo (+ correct-n incorrect-n) 8)))
+                   (haml
+                    (:p.info (format "You categorized ~a abstracts incorrectly so far. Remember that you can miscategorize at most ~a abstracts (66%), otherwise you cannot complete the study." incorrect-n max-wrong)))]
+
+                  [else
+                   (haml
+                    (:p ""))])
+
+            (:h4 "Decide whether this abstract is about " (haml (:strong (string-titlecase cat))) " or not.")
+
+            ; FIXME: use cat an non-cat to check if the answer is right.
+            (:p.abstract text)
+            (button (lambda () (categorize 'in)) (string-titlecase cat))
+            (button (lambda () (categorize 'out)) "Other"))))]))
 
 (define (random-abstracts n category #:on-topic? [on-topic? #t])
   (define abstract-texts
@@ -388,3 +426,12 @@
 
 (define (random-abstracts/non-topic n category)
   (random-abstracts n category #:on-topic? #f))
+
+;;;;; Implement the task for categorizing into A, or B, or both, or neither
+;;;;;
+;;;;; This requires at first drawing n appropriate abstracts and knowing exactly whether they are in that category or not.
+;;;;; Which I right now do not know, since I often don't know for sure that a given abstract is NOT in category B.
+;;;;;
+;;;;; Alternatively: give them a bunch of abstracts and let them categorize into 10 categories, i.e. choose ALL of the 2 categories that it fits into.
+;;;;; OK, this is the same as with A or B or both, but now I acknowledge that we don't know all the categories, and they get a + for every category that they get right that we had, as well as less of a plus for stating "Other", when that is compatible.
+;;;;; Forget for now, this will take some time to set up. Just do more tasks for now.

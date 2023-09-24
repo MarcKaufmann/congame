@@ -30,6 +30,7 @@
 ;     - Main session: ~15 minutes
 ;     - Per abstract, including when they get them right or wrong: TBD
 ;           - Get quartiles next time, or quintiles
+;           - I need to have more abstract tasks and make a single abstract task harder. Try "Decide whether this fits in category A or B or both or neither"
 ;     - Per choice: TBD
 ;     - Per reveal: TBD
 ; - All TBD: Do basic data analysis to check that we collect everything
@@ -80,51 +81,51 @@
 
         ; The following was used for the screenshot
         ;(choice-env
-        ;(make-option "social preferences" 25)
-        ;(make-option "banking" 20))
+        ;(make-option/for "social preferences" 50)
+        ;(make-option/for "banking" 40))
 
         ; 4 choices without reasons to calibrate preferences
         (choice-env
-         (make-option "socioeconomic inequality" 25)
-         (make-option "covid" 20))
+         (make-option "socioeconomic inequality" 50)
+         (make-option "covid" 40))
 
         (choice-env
-         (make-option "self-control" 25)
-         (make-option "environment" 20))
+         (make-option "self-control" 50)
+         (make-option "environment" 40))
 
         (choice-env
-         (make-option "neuroscience" 20)
-         (make-option "politics" 10))
+         (make-option "neuroscience" 40)
+         (make-option "politics" 20))
 
         (choice-env
-         (make-option "cognitive skills" 25)
-         (make-option "addiction" 35))
+         (make-option "cognitive skills" 50)
+         (make-option "addiction" 70))
 
         ; 6 choices with choice of reasons
         ; 3 with reasons for, 3 with reaons against
         (choice-env
-         (make-option/for "socioeconomic inequality" 25)
-         (make-option/for "covid" 20))
+         (make-option/for "socioeconomic inequality" 50)
+         (make-option/for "covid" 40))
 
         (choice-env
-         (make-option/for "self-control" 20)
-         (make-option/for "environment" 15))
+         (make-option/for "self-control" 40)
+         (make-option/for "environment" 30))
 
         (choice-env
-         (make-option/for "cognitive skills" 25)
-         (make-option/for "addiction" 15))
+         (make-option/for "cognitive skills" 50)
+         (make-option/for "addiction" 30))
 
         (choice-env
-         (make-option/against "neuroscience" 20)
-         (make-option/against "politics" 10))
+         (make-option/against "neuroscience" 40)
+         (make-option/against "politics" 30))
 
         (choice-env
-         (make-option/against "socioeconomic inequality" 15)
-         (make-option/against "gender inequality" 25))
+         (make-option/against "socioeconomic inequality" 30)
+         (make-option/against "gender inequality" 50))
 
         (choice-env
-         (make-option/against "neuroscience" 20)
-         (make-option/against "gender inequality" 30))
+         (make-option/against "neuroscience" 40)
+         (make-option/against "gender inequality" 60))
 
         ; 12 choices with a single exogenous reason or no reason
         ; 4 with reasons for
@@ -472,7 +473,7 @@
         (get 'tutorial-example/out))))
     (make-step/study
      'tutorial-tasks
-     (do-abstracts (hash-ref edpb-config 'tutorial-abstracts) "banking" "tutorial" "Tutorial Tasks")
+     (do-abstracts (hash-ref edpb-config 'tutorial-abstracts) "banking" "tutorial" "Tutorial Tasks" #:real-stakes? #f)
      #:provide-bindings '([correct-tutorial-tasks correct-answers]))
     (make-step/study
      'comprehension-test
@@ -1343,7 +1344,7 @@
     (random-abstracts/topic n-cat cat)
     (random-abstracts/non-topic (- n n-cat) cat))))
 
-(define ((do-abstracts n category prefix batch-name))
+(define ((do-abstracts n category prefix batch-name #:real-stakes? [real-stakes? #t]))
   (define (~prefix s)
     (string->symbol (string-append prefix "-" s)))
   (define abstracts
@@ -1359,7 +1360,7 @@
   (define total (length abstracts))
   (for/study ([(abs-task i) (in-indexed (in-list abstracts))])
     (put-current-round-name (format "abstract ~s" i))
-    (abstract-task/page abs-task i total category prefix batch-name)))
+    (abstract-task/page abs-task i total category prefix batch-name #:real-stakes? real-stakes?)))
 
 (define ((display-correct-answers lop n-total))
   (define score
@@ -1468,7 +1469,12 @@
     (make-step 'reasons-debrief reasons-debrief)
     (make-step/study
      'do-baseline-work
-     (do-abstracts n-pilot-baseline "social preferences" "baseline" "Baseline Work"))
+     (lambda ()
+       (define n (+ n-pilot-baseline (get 'additional-n)))
+       (put* 'total-tasks-to-do n)
+       (put* 'max-wrong-abstracts
+             (exact-floor (* 0.33 n)))
+       ((do-abstracts n-pilot-baseline "social preferences" "baseline" "Baseline Work"))))
 
     (make-step/study
      'do-additional-work
@@ -1580,11 +1586,11 @@
           (:div
            (#:how-many-abstracts
             (radios
-             "Suppose that you chose 'Categorize 25 abstracts into Animal Rights or Other' in the decision that counts. Then how many abstracts do you have to do in total, including the baseline abstracts?"
-             '(("1" . " 0 in total")
-               ("2" . "15 in total")
-               ("3" . "25 in total")
-               ("4" . "40 in total")))))
+             "Suppose that you chose 'Categorize 50 abstracts into Animal Rights or Other' in the decision that counts. Then how many abstracts do you have to do in total, including the baseline abstracts?"
+             '(("1" . " 50 in total")
+               ("2" . " 30 in total")
+               ("3" . "100 in total")
+               ("4" . " 80 in total")))))
           (:div
            (#:reasons-to-reveal
             (radios
@@ -1682,7 +1688,8 @@
     (make-step 'announce-tutorial-tasks announce-tutorial-tasks)
     (make-step/study
      'tutorial-tasks
-     (do-abstracts n-pilot-tutorial "banking" "tutorial" "Tutorial Tasks"))
+     (do-abstracts n-pilot-tutorial "banking" "tutorial" "Tutorial Tasks"
+                   #:real-stakes? #f))
     (make-step 'display-correct-tutorial-answers
                (display-correct-answers '("tutorial") n-pilot-tutorial))
     (make-step/study

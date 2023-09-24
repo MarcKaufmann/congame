@@ -25,20 +25,22 @@
         'session2-bonus 6
         'estimated-performance-bonus 6
         'estimated-time 20
-        'piece-rate-per-abstract 0.2
-        'baseline-abstracts 15
+        'piece-rate-per-abstract 0.05
+        'baseline-abstracts 30
         'estimated-extra-abstracts 35
         'tutorial-abstracts 2
+        'pilot-example-option-A-n 50
+        'pilot-example-option-B-n 40
         'pilot-completion-code "C1JF3EZV"
         'pilot-code-for-failed-comprehension "C1WQ1J4P"
         'pilot-tutorial-abstracts 2
-        'pilot-baseline-abstracts 15
-        'pilot-additional-low 15
-        'pilot-additional-high 30
-        'pilot-tutorial-duration-estimate "5-10"
-        'pilot-study-duration-estimate 20
+        'pilot-baseline-abstracts 30
+        'pilot-additional-low 30
+        'pilot-additional-high 70
+        'pilot-tutorial-duration-estimate "10"
+        'pilot-study-duration-estimate 30
         'pilot-tutorial-fee 2
-        'pilot-completion-fee 3
+        'pilot-completion-fee 4
         'pilot-fail-comprehension-fee 2
         'pilot-correct-abstract-bonus 0.05))
 
@@ -57,9 +59,9 @@
 
       @:h2{Abstract Categorization Tasks}
 
-      @:p{In the main session, you will be asked to do a series of simple tasks. This task consists of categorizing abstracts (short summaries of research papers) by topics. Specifically, we will give topics, and you should choose whether this abstract belongs to a given topic or not.}
+      @:p.info{In the main session, you will categorize abstracts (short summaries of research papers) by topics. In order to complete the study, you have to categorize 66% of the abstracts correctly, otherwise you fail out of the study.}
 
-      @:p{In the main study, you will be asked to categorize the following:}
+      @:p{Specifically, we will give topics, and you should choose whether this abstract belongs to a given topic or not. In the main study, you will be asked to categorize the following:}
       @:ul{
            @:li{Categorize @conf['pilot-baseline-abstracts] baseline abstracts into 'Social Preferences' or 'Other'.}
            @:li{Between @conf['pilot-additional-low] and @conf['pilot-additional-high] additional abstracts based on your choice in the decision that counts}}
@@ -75,11 +77,11 @@
         @:li{Choose one of the two options}
         @:li{Pick a bonus such that you would switch to the other option}}
 
-      @:p{We now discuss each of these steps in more detail based on an example where Option A consists of categorizing 25 abstracts into 'Social Preferences' or 'Other', and Option B consists of categorizing 20 abstracts into 'Banking' or 'Other'.}
+      @:p{We now discuss each of these steps in more detail based on an example where Option A consists of categorizing @conf['pilot-example-option-A-n] abstracts into 'Social Preferences' or 'Other', and Option B consists of categorizing @conf['pilot-example-option-B-n] abstracts into 'Banking' or 'Other'.}
 
       @:h4{Revealing Reasons}
 
-      @:p{For some but not all decisions, you first have to reveal @:em{exactly one} reason @:strong{for} or @:strong{against} one of the options. Only then can you submit your choice. The screenshot below shows what this looks like.}
+      @:p{For some but not all decisions, you first have to reveal @:em{exactly one} reason for or against one of the options. Only then can you submit your choice. The screenshot below shows what this looks like.}
 
       @:p{These reasons will not provide additional information about how to do the tasks. Instead they are based on a previous survey with Prolific participants who were asked along several dimensions what they think about the different categories - such as how important, interesting, etc they find the topics.}
 
@@ -103,11 +105,11 @@
 
       @:p{Once you have made all the decisions, one of the decisions will randomly be picked as @:em{the decision that counts}: whatever you chose in that decision determines which and how many additional abstracts you will categorize later.}
 
-      @:p{For example, suppose that in the decision above you chose Option B: "Categorize 20 abstracts today into 'Banking' or 'Other'". If this decision is randomly picked as the decision that counts, then you will have to first categorize 15 abstracts into 'Social Preferences' or 'Other' - the @:em{baseline work}, independent of your choice - followed by categorizing 20 abstracts into 'Banking' or 'Other' - the @:em{additional work}.}
+      @:p{For example, suppose that in the decision above you chose Option B: "Categorize @conf['pilot-example-option-B-n] abstracts today into 'Banking' or 'Other'". If this decision is randomly picked as the decision that counts, then you will have to first categorize @conf['pilot-baseline-abstracts] abstracts into 'Social Preferences' or 'Other' - the @:em{baseline work}, independent of your choice - followed by categorizing @conf['pilot-example-option-B-n] abstracts into 'Banking' or 'Other' - the @:em{additional work}.}
 
       @:p{If the decision that counts is one about the switching bonus, then a random bonus between $0.00 and $1.00 is picked ($0.10, $0.20, ...). If this is larger than the bonus you stated, then you do switch the option and receive the bonus. If the random bonus is lower than the one you stated, then you stay with your choice. That is, you do the option that you prefer according to the bonus you stated. Note that this means that if you state a bonus of $1.1, then you will never be asked to switch, since the highest bonus we may offer is $1.0.}
 
-      @:p{Continuing on from our example, suppose that you had stated a bonus of $0.50 and that this choice is randomly picked as the decision that counts. Then if the random bonus offered is $0.40 or less, you will stick with Option B and do the additional work of categorizing 20 abstracts into 'Banking' or 'Other', while if the random bonus offered is $0.50 or more, you will do the additional work of categorizing 25 abstracts into 'Social Preferences' or 'Other'.}
+      @:p{Continuing on from our example, suppose that you had stated a bonus of $0.50 and that this choice is randomly picked as the decision that counts. Then if the random bonus offered is $0.40 or less, you will stick with Option B and do the additional work of categorizing @conf['pilot-example-option-B-n] abstracts into 'Banking' or 'Other', while if the random bonus offered is $0.50 or more, you will do the additional work of categorizing @conf['pilot-example-option-A-n] abstracts into 'Social Preferences' or 'Other'.}
 
       @:h2{Short Surveys and Feedback}
 
@@ -121,8 +123,8 @@
 
       @:ul{
         @:li{@:strong{Complete Tutorial (~@conf['pilot-tutorial-duration-estimate] mins):} If you complete the tutorial and pass the comprehension test, you receive @$conf['pilot-tutorial-fee] in the form of the baseline payment.}
-        @:li{@:strong{Complete Main Session (~@conf['pilot-study-duration-estimate] mins):} If you also complete the main session within the permitted time after the tutorial, you receive an additional @$conf['pilot-completion-fee] in the form of bonus payments.}
-        @:li{@:strong{Correct Abstract Categorization:} In addition, if you complete the study, you receive a bonus of @$conf['pilot-correct-abstract-bonus] for every abstract of the main session (not the tutorial) that you categorize correctly.}}
+        @:li{@:strong{Complete Main Session (~@conf['pilot-study-duration-estimate] mins):} If you also complete the main session, which requires you to do all the surveys and categorize at least 66% of the abstracts correctly, you receive an additional @$conf['pilot-completion-fee] in the form of bonus payments.}
+        @:li{@:strong{Correct Abstract Categorization:} If you complete the study, you receive an additional @$conf['pilot-correct-abstract-bonus] for every abstract of the main session (not the tutorial) that you categorize correctly, to reward those who received more abstracts.}}
 
       }))
 
