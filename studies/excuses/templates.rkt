@@ -63,8 +63,8 @@
 
       @:p{Specifically, we will give topics, and you should choose whether this abstract belongs to a given topic or not. In the main study, you will be asked to categorize the following:}
       @:ul{
-           @:li{Categorize @conf['pilot-baseline-abstracts] baseline abstracts into 'Social Preferences' or 'Other'.}
-           @:li{Between @conf['pilot-additional-low] and @conf['pilot-additional-high] additional abstracts based on your choice in the decision that counts}}
+           @:li{@:strong{Baseline Tasks:} Categorize @conf['pilot-baseline-abstracts] baseline abstracts into 'Social Preferences' or 'Other'.}
+           @:li{@:strong{Additional Tasks:} Categorize an additional @conf['pilot-additional-low] to @conf['pilot-additional-high] abstracts based on your choice in the decision that counts}}
 
       @:p{On the next page, you will see an example abstract and its categorization. On the subsequent pages, you can try the categorization task yourself.}
 

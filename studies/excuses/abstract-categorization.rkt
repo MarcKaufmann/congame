@@ -313,13 +313,14 @@
 
      (button void "Cancel" #:to-step-id cancel)))))
 
-(define (start-timer)
-  (put #:root '*timer* 'start-time (current-seconds)))
+(define (start-timer #:start-name [name 'start-time])
+  (put #:root '*timer* name (current-seconds)))
 
-(define (end-timer)
+(define (end-timer #:start-name [start-name 'start-time]
+                   #:end-name [end-name 'end-time])
   (define t (current-seconds))
-  (put #:root '*timer* 'end-time t)
-  (- t (get #:root '*timer* 'start-time)))
+  (put #:root '*timer* end-name t)
+  (- t (get #:root '*timer* start-name)))
 
 (define (save-abstract-duration id cat correct? batch-name)
   (put* #:root '*timer*
@@ -393,7 +394,7 @@
 
                   [(and real-stakes? (zero? (modulo (+ correct-n incorrect-n) 8)))
                    (haml
-                    (:p.info (format "You categorized ~a abstracts incorrectly so far. Remember that you can miscategorize at most ~a abstracts (66%), otherwise you cannot complete the study." incorrect-n max-wrong)))]
+                    (:p.info (format "You miscategorized ~a abstracts so far. Remember that you can miscategorize at most ~a abstracts (66%), otherwise you cannot complete the study." incorrect-n max-wrong)))]
 
                   [else
                    (haml

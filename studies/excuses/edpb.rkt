@@ -27,25 +27,26 @@
 ; TODO:
 ;
 ; - Measure how long participants take for the study, and do so in easier way in the future. This requires that `start-timer` can start and stop a named timer, rather than a single use
-;     - Main session: ~15 minutes
-;     - Per abstract, including when they get them right or wrong: TBD
+;     - Main session: ~15 minutes (iid 46), ~23 minutes (iid 47)
+;     - Per abstract, including when they get them right or wrong:
+;           - 12 secs (iid 46), 15 secs (iid 47)
 ;           - Get quartiles next time, or quintiles
-;           - I need to have more abstract tasks and make a single abstract task harder. Try "Decide whether this fits in category A or B or both or neither"
 ;     - Per choice: TBD
 ;     - Per reveal: TBD
+;     - Selection by time and risk preferences of those that consent and finish the study vs those that started out and then dropped out.
 ; - All TBD: Do basic data analysis to check that we collect everything
 ;     - All feedback questions (how much reasons matter etc, how choose)
 ;     - Which reasons they picked based on choice characteristics
 ;     - Which option they picked
 ;     - Which switching bonuses they picked
-; - Use a different topic than Social preferences for baseline, and check that most categorizations don't require just finding that keyword. Probably most do, given how Rumen and Soheila searched. Ergh.
-; - We could have done the whole thing with another task and more meaningful reasons and less time.
 ; - Change abstract categorization task so it takes longer
 ; - Finalize choices and randomizations.
 ; - Money reason
 ;
 ; Other
 ;
+; - We could have done the whole thing with another task and more meaningful reasons and less time.
+; - Use a different topic than Social preferences for baseline, and check that most categorizations don't require just finding that keyword. Probably most do, given how Rumen and Soheila searched. Ergh.
 ; - Mats didn't like that people click on the reason when there is a single reason. I can probably quickly update to have them simply click "next" at the bottom instead, so I display the page, then they move to the choice page.
 ; - Use as task the task to fix the spaces between words -- and as a reason state they will actually do some work that we haven't already done, unlike the categorizations
 ; - Allow only so many wrong abstract categorizations, otherwise it is game over. Do that after a first test run when I see how many they get wrong.
@@ -76,6 +77,15 @@
 ;;;;;;;;;;;;;;;; CHOICES ;;;;;;;;;;;;;;;
 
 (define (set-pilot-choices)
+  (define debug-choices
+    (list
+        ;(choice-env
+        ;(make-option/for "social preferences" 50)
+        ;(make-option/for "banking" 40))
+        (choice-env
+         (make-option "social preferences" 2)
+         (make-option "banking" 3))))
+
   (define choices-to-make
        (list
 
@@ -235,7 +245,8 @@
                   (case attempt
                     [(1) "first"]
                     [(2) "second"]
-                    [(3) "third"])))
+                    [(3) "third"]
+                    [(4) "fourth"])))
 
      (when last-attempt
        (let ([when-paid (hash-ref last-attempt 'when-paid)]
@@ -298,7 +309,7 @@
                      'how-many-abstracts (cons how-many-abstracts (string=? how-many-abstracts "3"))))
           (put 'comprehension-test-score score)))))))
 
-(define max-attempts 3)
+(define max-attempts 4)
 
 
 (define (fail-comprehension-test)
@@ -413,6 +424,8 @@
              (case (sub1 next-attempt)
                [(1) "first"]
                [(2) "second"])))
+
+       @:p.info{On your next attempt, make sure to read the feedback at the top, which tells you which questions you got right.}
 
        @:p{Remember: You can fail the test at most @(~a max-attempts) times, otherwise you cannot participate in the main session. And you have to use all your attempts to receive the completion code. Try again.}
 
@@ -963,10 +976,14 @@
             (:td "Main Session")
             (:td "Correct Abstracts")
             (:td "Total Abstracts done")
-            (:td "Total Bonus")))
+            (:td "Total Bonus")
+            (:td "Time taken for main session")
+            (:td "Avg hourly bonus")))
 
           (:tbody
            ,@(for/list ([(id p) (in-hash progress-with-bonus)])
+               (define bonus (hash-ref p 'bonus))
+               (define time-taken (hash-ref p 'main-session-time #f))
                (haml
                 (:tr
                  (:td id)
@@ -976,7 +993,9 @@
                  (:td (~a (hash-ref p 'completed-main-session?)))
                  (:td (~a (hash-ref p 'correct-abstract-tasks)))
                  (:td (~a (hash-ref p 'total-abstracts-done)))
-                 (:td (~r (hash-ref p 'bonus) #:precision 2)))))))
+                 (:td (~r bonus #:precision 2))
+                 (:td (if time-taken (~r #:precision 1 (/ time-taken 60.0)) "#<NA>"))
+                 (:td (if time-taken (~r #:precision 2 (* 3600 (/ bonus time-taken))) "#<NA>")))))))
 
          (:h4 "Participants who should be approved")
 
@@ -1193,7 +1212,8 @@
                               'pass-comprehension-test? "not yet taken"
                               'completed-main-session? #f
                               'correct-abstract-tasks 0
-                              'total-abstracts-done 0)))
+                              'total-abstracts-done 0
+                              'main-session-time #f)))
              #t])))
   (unless new-user
     (skip 'participant-took-study-already))
@@ -1545,11 +1565,13 @@
                     (case attempt
                       [(1) "first"]
                       [(2) "second"]
-                      [(3) "third"])))
+                      [(3) "third"]
+                      [(4) "fourth"])))
 
-       (:p "You can attempt the comprehension test 3 times. If you need help to answer the questions, reread the study instructions below the test.")
+       (:p (format "You can attempt the comprehension test ~a times. If you need help to answer the questions, reread the study instructions below the test." max-attempts))
        (when last-attempt
          (let ([when-paid (hash-ref last-attempt 'when-paid)]
+               [baseline-n (hash-ref last-attempt 'how-many-baseline-abstracts)]
                [reasons (hash-ref last-attempt 'reasons-to-reveal)]
                [how-many-abstracts (hash-ref last-attempt 'how-many-abstracts)])
            (haml
@@ -1558,6 +1580,7 @@
 
              (:ol
               (answer-feedback "When will you receive the payments?" (car when-paid) (cdr when-paid))
+              (answer-feedback "How many abstracts do you have to do as baseline work?" (car baseline-n) (cdr baseline-n))
               (answer-feedback "Then how many abstracts do you have to do in total, including the baseline abstracts?"
                                (car how-many-abstracts) (cdr how-many-abstracts))
               (answer-feedback "Suppose you face a decision with buttons to reveal reasons for each option. Then which of the following is true?"
@@ -1570,6 +1593,7 @@
 
            (:ul
             (:li "Regarding when you receive the payments, see the start of the 'Payments' section at the bottom of the page.")
+            (:li "You definitely do have to do some baseline abstracts, see the section on 'Abstract Categorization Tasks'.")
             (:li "Regarding how many abstracts you have to do: note that you have to do a certain amount of baseline abstracts (see the section on 'Abstract Categorization Tasks'). Then you do the abstracts from the choice " (:strong "in addition") " to these baseline abstracts.")
             (:li "Regarding the reasons, see the subsection on 'Revealing Reasons'. When there is a reason, how many do you have to reveal?")))))
 
@@ -1584,6 +1608,14 @@
                ("2" . "Immediately after the main session.")
                ("3" . "Within three days after the main session.")))))
           (:div
+           (#:how-many-baseline-abstracts
+            (radios
+             "How many abstracts do you have to do as baseline work before you do the abstracts based on your choice?"
+             '(("1" . "10 abstracts")
+               ("2" . "30 abstracts")
+               ("3" . "50 abstracts")
+               ("4" . "None")))))
+          (:div
            (#:how-many-abstracts
             (radios
              "Suppose that you chose 'Categorize 50 abstracts into Animal Rights or Other' in the decision that counts. Then how many abstracts do you have to do in total, including the baseline abstracts?"
@@ -1595,13 +1627,13 @@
            (#:reasons-to-reveal
             (radios
              "Suppose you face a decision with buttons to reveal reasons for each option. Then which of the following is true?"
-             '(("1" . "You can choose an option and submit your choice without having revealed a reason.")
-               ("2" . "You can choose an option and submit your choice only after revealing exactly one reason.")
-               ("3" . "You can choose an option and submit your choice only after revealing both reasons.")
-               ("4" . "You can choose an option and submit your choice after revealing any number of reasons.")))))
+             '(("1" . "You can choose an option and submit your choice only after revealing exactly one reason.")
+               ("2" . "You can choose an option and submit your choice only after revealing both reasons.")
+               ("3" . "You can choose an option and submit your choice after revealing any number of reasons.")))))
           submit-button))
         (lambda (#:when-paid when-paid
                  #:how-many-abstracts how-many-abstracts
+                 #:how-many-baseline-abstracts n-baseline
                  #:reasons-to-reveal reasons-to-reveal)
           (define score
             (apply
@@ -1611,11 +1643,16 @@
               (list
                (string=? when-paid "3")
                (string=? how-many-abstracts "4")
-               (string=? reasons-to-reveal "2")))))
-          (put 'last-attempt
-               (hash 'when-paid (cons when-paid (string=? when-paid "3"))
-                     'reasons-to-reveal (cons reasons-to-reveal (string=? reasons-to-reveal "2"))
-                     'how-many-abstracts (cons how-many-abstracts (string=? how-many-abstracts "4"))))
+               (string=? n-baseline "2")
+               (string=? reasons-to-reveal "1")))))
+          (define last-attempt
+            (hash 'when-paid (cons when-paid (string=? when-paid "3"))
+                  'reasons-to-reveal (cons reasons-to-reveal (string=? reasons-to-reveal "1"))
+                  'how-many-abstracts (cons how-many-abstracts (string=? how-many-abstracts "4"))
+                  'how-many-baseline-abstracts (cons n-baseline (string=? n-baseline "2"))))
+          (put 'all-attempts
+               (cons last-attempt (get 'all-attempts null)))
+          (put 'last-attempt last-attempt)
           (put 'attempt (add1 (get 'attempt)))
           (put 'comprehension-test-score score)))
 
@@ -1631,7 +1668,7 @@
 
        (:h2 "Tutorial")
 
-       (:p (format "This study consists of a brief (~a mins) tutorial session followed by a comprehension test. Then you can decide whether to continue in a follow-up study (the main session) or not. But to complete the Prolific study that you started, you do not have to participate in the main session, you only have to complete the tutorial and comprehension test, which serve to familiarize you with the main session, so you can decide whether you want to participate."
+       (:p (format "This study consists of a brief (about ~a mins) tutorial session followed by a comprehension test. Then you can decide whether to continue in a follow-up study (the main session) or not. But to complete the Prolific study that you started, you do not have to participate in the main session, you only have to complete the tutorial and comprehension test, which serve to familiarize you with the main session, so you can decide whether you want to participate."
                    (conf 'pilot-tutorial-duration-estimate)))
 
        (button void "Continue")))))
@@ -1694,7 +1731,7 @@
                (display-correct-answers '("tutorial") n-pilot-tutorial))
     (make-step/study
      'comprehension-test
-     (comprehension-test-study pilot-comprehension-test 3)
+     (comprehension-test-study pilot-comprehension-test 4)
      #:provide-bindings '([pass-comprehension-test? pass-test?]))
     (make-step 'fail-comprehension-test fail-comprehension-test))))
 
@@ -1791,7 +1828,8 @@
 
     [participant-took-study-already --> participant-took-study-already]
     [no-consent --> no-consent]
-    [consent-show-code --> main
+    [consent-show-code --> start-main-session-timer
+                       --> main
                        --> debriefing
                        --> update-progress
                        --> payment-page]
@@ -1807,6 +1845,11 @@
     (make-step/study 'admin admin-study)
     (make-step 'waiting-page waiting-page-pilot)
     (make-step 'participant-took-study-already participant-took-study-already)
+    (make-step
+     'start-main-session-timer
+     (lambda ()
+       (start-timer #:start-name 'main-session)
+       (skip)))
     (make-step/study 'main pilot-main)
     (make-step 'debriefing debriefing)
     (make-step 'update-progress
@@ -1814,6 +1857,8 @@
                  (progress-update 'correct-abstract-tasks (get* 'abstract-task-score))
                  (progress-update 'total-abstracts-done (get* 'abstract-total-done))
                  (progress-update 'completed-main-session? #t)
+                 (progress-update 'main-session-time
+                                  (end-timer #:start-name 'main-session))
                  (skip)))
     (make-step 'payment-page payment-page)
     (make-step 'no-consent no-consent))))

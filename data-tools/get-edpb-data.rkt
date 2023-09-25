@@ -19,10 +19,14 @@
                        submission
                        ))
 
-(define reasons-data (parameterize ([current-api-url api-url])
-                   (get-participants-data/list
-                    reasons-study-id
-                    reasons-iid)))
+(define reasons-data #f)
+
+(define (get-reasons-data!) (parameterize ([current-api-url api-url])
+                             (set!
+                              reasons-data
+                              (get-participants-data/list
+                               reasons-study-id
+                               reasons-iid))))
 
 (define (filter-stack st lov)
   (filter (lambda (v)
@@ -125,23 +129,22 @@
         (displayln (string-join (map frm row) ",") out)))))
 
 (define (get-and-write-reasons-pilot-data)
-  (write-data (meta-table reasons-data) (build-path reasons-path "participants.csv"))
-  (write-data (topics-table reasons-data) (build-path reasons-path "topics.csv"))
-  (write-data (opinions-table reasons-data) (build-path reasons-path "opinions.csv")))
+  (when reasons-data
+    (write-data (meta-table reasons-data) (build-path reasons-path "participants.csv"))
+    (write-data (topics-table reasons-data) (build-path reasons-path "topics.csv"))
+    (write-data (opinions-table reasons-data) (build-path reasons-path "opinions.csv"))))
 
 (define edpb-pilot-study-id 19)
-(define edpb-pilot-iid 46)
+(define edpb-pilot1-iid 46)
+(define edpb-pilot2-iid 47)
 (define edpb-pilot-path
 "/Users/kaufmannm/research/excuse-driven-present-bias/reasoned-excuses/data/edpb-pilot")
 
-(define edpb-pilot-data
+(define (get-edpb-pilot-data edpb-pilot-iid)
   (parameterize ([current-api-url api-url])
-                   (get-participants-data/list
-                    edpb-pilot-study-id
-                    edpb-pilot-iid)))
-
-(define p1 (car edpb-pilot-data))
-(define ps (take edpb-pilot-data 2))
+    (get-participants-data/list
+     edpb-pilot-study-id
+     edpb-pilot-iid)))
 
 (define (get-root-ids p ids #:root [root "*root*"])
   (define vars-to-get
@@ -190,8 +193,8 @@
    (list "pid" "time_in_seconds" "is_correct" "order")
    (foldl append '() (map ->abstracts-time ps))))
 
-(define (write-edpb-pilot ps)
-  (write-data (all-abstract-times ps) (build-path edpb-pilot-path "abstract-times.csv")))
+(define (write-edpb-pilot ps iid)
+  (write-data (all-abstract-times ps) (build-path edpb-pilot-path (format "abstract-times-~a.csv" iid))))
 
 ;(define ids-to-get
 ;  '(("*root*" "prolific-ID")
