@@ -156,7 +156,7 @@
             (hash-ref p 'vars)))
   vars-to-get)
 
-;; Avg for the first 15 participants was around 15 minutes for the main study
+;;;; How long do participants take to complete the main session?
 (define (main-session-time p)
   (define pid
     (hash-ref p 'participant-id))
@@ -174,6 +174,7 @@
         [else
          #f]))
 
+;;;; How much time do participants spend on a single abstract?
 (define (->abstracts-time p)
   (define pid
     (hash-ref p 'participant-id))
@@ -196,6 +197,61 @@
 (define (write-edpb-pilot ps iid)
   (write-data (all-abstract-times ps) (build-path edpb-pilot-path (format "abstract-times-~a.csv" iid))))
 
+;;;;;; Get time participants take to make choices, reveal reasons, or choose switching bonus
+(define (->choice-times p)
+  (define pid
+    (hash-ref p 'participant-id))
+  (define ts
+    (let ([times-maybe (get-root-ids p #:root "*timer*" '("choice-durations" "switch-choice-durations" "reveal-reasons-durations"))])
+          (map (lambda (i)
+                 (list (hash-ref i 'id) (hash-ref i 'value))) times-maybe)))
+  (for*/list ([type (in-list ts)]
+              [t (in-list (cadr type))])
+    ; TODO: Maybe add the order of the choice, but not for now.
+    (list pid (car type) t)))
+
+(define (all-choice-times ps)
+  (cons
+   (list "pid" "choice_type" "time")
+   (foldl append '() (map ->choice-times ps))))
+
+;;;;; Measure selection by self-reported time and risk preferences:
+;;;;; how different are those that complete the landing page to those
+;;;;; who actually consent to do the study or those who complete it?
+
+(define (values-in-order p ids)
+  (define vs
+    (for/hash ([v (hash-ref p 'vars)]
+               #:when (member (hash-ref v 'id) ids))
+      (values (hash-ref v 'id) (hash-ref v 'value))))
+  (for/list ([id ids])
+    (hash-ref vs id "NA")))
+
+(define d
+  (call-with-input-file "data-iids-46-47"
+    (lambda (in)
+      (read in))))
+
+(define selection-data
+  (cons
+   (list "patience" "risk" "has_consented" "feedback")
+  (filter
+   (lambda (d)
+     (not (string=? (car d) "NA")))
+   (map (lambda (p) (values-in-order p '("patience" "risk" "consent-given?" "feedback"))) d))))
+
+(write-data selection-data (build-path edpb-pilot-path "selection.csv"))
+
+;(define (->risk-time-attrition p)
+;  (define pid
+;    (hash-ref p 'participant-id))
+;  (define vs
+;    (let ([prefs-maybe (get-root-ids p '("patience" "risk" "consent-given?" "feedback"))])
+;      )))
+
+
+
+; Get choice and reveal times now.
 ;(define ids-to-get
 ;  '(("*root*" "prolific-ID")
 ;    ("*root*" "patience")
