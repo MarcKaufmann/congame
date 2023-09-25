@@ -26,29 +26,22 @@
 
 ; TODO:
 ;
-; - Measure how long participants take for the study, and do so in easier way in the future. This requires that `start-timer` can start and stop a named timer, rather than a single use
-;     - Main session: ~15 minutes (iid 46), ~23 minutes (iid 47)
-;     - Per abstract, including when they get them right or wrong:
-;           - 12 secs (iid 46), 15 secs (iid 47)
-;           - Get quartiles next time, or quintiles
-;     - Choices:
-;        - Per choice: mean 9 secs, median 5 secs
-;        - Per reveal: mean 6.7 secs, median 5 secs
-;        - Per switch: mean 7.2 secs, median 5 secs
-;        - Not much variation in these either.
-;     - Selection by time and risk preferences of those that consent and finish the study vs those that started out and then dropped out.
-;        - No measurable selection by mean.
+; - Check they understand how payments work, run and build that study without the main session, just ask *if* they'd be interested.
+; - Write a study where participants have to categorize the abstracts directly, not just "Yes/No", so that I create the data that I need for the later one.
+; - Reread the free-form answers: they gave me some ideas of which other questions people might be interested in, and I should run a follow-up study on the reasons.
 ; - All TBD: Do basic data analysis to check that we collect everything
 ;     - All feedback questions (how much reasons matter etc, how choose)
 ;     - Which reasons they picked based on choice characteristics
 ;     - Which option they picked
 ;     - Which switching bonuses they picked
+; - Streamline tutorial by breaking into several pages
 ; - Change abstract categorization task so it takes longer
 ; - Finalize choices and randomizations.
 ; - Money reason
 ;
 ; Other
 ;
+; - Clean up the abstracts: find those with typos and fix them
 ; - We could have done the whole thing with another task and more meaningful reasons and less time.
 ; - Use a different topic than Social preferences for baseline, and check that most categorizations don't require just finding that keyword. Probably most do, given how Rumen and Soheila searched. Ergh.
 ; - Mats didn't like that people click on the reason when there is a single reason. I can probably quickly update to have them simply click "next" at the bottom instead, so I display the page, then they move to the choice page.
