@@ -31,9 +31,13 @@
 ;     - Per abstract, including when they get them right or wrong:
 ;           - 12 secs (iid 46), 15 secs (iid 47)
 ;           - Get quartiles next time, or quintiles
-;     - Per choice: TBD
-;     - Per reveal: TBD
+;     - Choices:
+;        - Per choice: mean 9 secs, median 5 secs
+;        - Per reveal: mean 6.7 secs, median 5 secs
+;        - Per switch: mean 7.2 secs, median 5 secs
+;        - Not much variation in these either.
 ;     - Selection by time and risk preferences of those that consent and finish the study vs those that started out and then dropped out.
+;        - No measurable selection by mean.
 ; - All TBD: Do basic data analysis to check that we collect everything
 ;     - All feedback questions (how much reasons matter etc, how choose)
 ;     - Which reasons they picked based on choice characteristics

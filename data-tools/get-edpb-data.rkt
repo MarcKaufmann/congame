@@ -219,7 +219,7 @@
 ;;;;; how different are those that complete the landing page to those
 ;;;;; who actually consent to do the study or those who complete it?
 
-(define (values-in-order p ids)
+(define ((values-in-order ids ) p)
   (define vs
     (for/hash ([v (hash-ref p 'vars)]
                #:when (member (hash-ref v 'id) ids))
@@ -232,89 +232,33 @@
     (lambda (in)
       (read in))))
 
-(define selection-data
-  (cons
-   (list "patience" "risk" "has_consented" "feedback")
-  (filter
-   (lambda (d)
-     (not (string=? (car d) "NA")))
-   (map (lambda (p) (values-in-order p '("patience" "risk" "consent-given?" "feedback"))) d))))
+(define (write-selection)
+  (define selection-data
+    (cons
+     (list "patience" "risk" "has_consented" "feedback")
+     (filter
+      (lambda (d)
+        (not (string=? (car d) "NA")))
+      (map (values-in-order '("patience" "risk" "consent-given?" "feedback")) d))))
+  (write-data selection-data (build-path edpb-pilot-path "selection.csv")))
 
-(write-data selection-data (build-path edpb-pilot-path "selection.csv"))
+;;; Get survey answers
 
-;(define (->risk-time-attrition p)
-;  (define pid
-;    (hash-ref p 'participant-id))
-;  (define vs
-;    (let ([prefs-maybe (get-root-ids p '("patience" "risk" "consent-given?" "feedback"))])
-;      )))
+(define feedback-questions
+  (list
+   "feedback"
+   "how-choose-reason"
+   "how-long-abstracts"
+   "how-meaningful-reasons"
+   "how-much-did-reasons-affect-choices"
+   "boring"
+   "careful"
+   "understandable"
+   "how-choose"))
 
-
-
-; Get choice and reveal times now.
-;(define ids-to-get
-;  '(("*root*" "prolific-ID")
-;    ("*root*" "patience")
-;    ("*root*" "risk")
-;  ("*root*" "tutorial-abstracts")
-;  ("*root*" "tutorial-n")
-;  ("*root*" "tutorial-category")
-;  ("*round*" "round-stack")
-;  ("*timer*" "start-time")
-;  ("*timer*" "end-time")
-;  ("*timer*" "abstracts-duration")
-;  ("*abstracts*" "tutorial-correct-answers")
-;  ("*root*" "completed-answers")
-;  ("*root*" "abstract-task-score")
-;  ("*root*" "attempt")
-;  ("*root*" "last-attempt")
-;  ("*root*" "comprehension-test-score")
-;  ("*round*" "round-stack")
-;  ("*root*" "pass-test?")
-;  ("*root*" "pass-comprehension-test?")
-;  ("*root*" "consent-given?")
-;  ("*root*" "entered-completion-code?")
-;  ("*root*" "choices-to-make")
-;  ("*root*" "remaining-choices")
-;  ("*root*" "total")
-;  ("*root*" "choice-number")
-;  ("*root*" "reasons")
-;  ("*timer*" "start-time")
-;  ("*timer*" "end-time")
-;  ("*timer*" "choice-durations")
-;  ("*root*" "work-choices")
-;  ("*timer*" "switch-choice-durations")
-;  ("*timer*" "reveal-reasons-durations")
-;  ("*root*" "choices-made")
-;  ("*root*" "choice-that-counts")
-;  ("*root*" "additional-n")
-;  ("*root*" "additional-category")
-;  ("*root*" "additional-non-category")
-;  ("*root*" "feedback")
-;  ("*root*" "how-choose-reason")
-;  ("*root*" "how-long-abstracts")
-;  ("*root*" "how-meaningful-reasons")
-;  ("*root*" "how-much-did-reasons-affect-choices")
-;  ("*root*" "baseline-abstracts")
-;  ("*root*" "baseline-n")
-;  ("*root*" "baseline-category")
-;  ("*round*" "round-stack")
-;  ("*timer*" "start-time")
-;  ("*timer*" "end-time")
-;  ("*abstracts*" "baseline-incorrect-answers")
-;  ("*root*" "completed-answers")
-;  ("*abstracts*" "baseline-correct-answers")
-;  ("*root*" "additional-work-abstracts")
-;  ("*root*" "additional-work-n")
-;  ("*root*" "additional-work-category")
-;  ("*round*" "round-stack")
-;  ("*timer*" "start-time")
-;  ("*timer*" "end-time")
-;  ("*abstracts*" "additional-work-correct-answers")
-;  ("*root*" "completed-answers")
-;  ("*abstracts*" "additional-work-incorrect-answers")
-;  ("*root*" "boring")
-;  ("*root*" "careful")
-;  ("*root*" "understandable")
-;  ("*root*" "feedback")
-;  ("*root*" "how-choose"))
+(define (write-feedback)
+  (define dta
+    (cons
+     feedback-questions
+     (map (values-in-order feedback-questions) d)))
+  (write-data dta (build-path edpb-pilot-path "feedback.csv")))
