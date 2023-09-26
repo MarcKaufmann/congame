@@ -101,7 +101,11 @@
 (define/contract (start)
   (-> (-> void?))
 
-  (define dbg:stop (dbg:serve))
+  (define dbg:stop
+    (dbg:serve
+     #:host (if (equal? config:environment "dev")
+                "127.0.0.1"
+                "0.0.0.0")))
   (define stop-logger
     (start-logger
      #:levels `((app                  . ,config:log-level)
