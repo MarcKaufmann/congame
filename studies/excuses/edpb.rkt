@@ -13,6 +13,7 @@
          koyo/haml
          koyo/url
          koyo
+         gregor
          (prefix-in tpl: congame-web/components/template)
          congame/components/export
          congame/components/for-study
@@ -25,7 +26,7 @@
          "abstract-categorization.rkt")
 
 ; TODO:
-;
+; - Then look at free-form data and update the reasons pilot and run again with more people.
 ; - Check they understand how payments work, run and build that study without the main session, just ask *if* they'd be interested.
 ; - Write a study where participants have to categorize the abstracts directly, not just "Yes/No", so that I create the data that I need for the later one.
 ; - Reread the free-form answers: they gave me some ideas of which other questions people might be interested in, and I should run a follow-up study on the reasons.
@@ -84,108 +85,120 @@
          (make-option "banking" 3))))
 
   (define choices-to-make
-       (list
+    (append
+     (list
 
-        ; The following was used for the screenshot
-        ;(choice-env
-        ;(make-option/for "social preferences" 50)
-        ;(make-option/for "banking" 40))
+      ; The following was used for the screenshot
+      ;(choice-env
+      ;(make-option/for "social preferences" 50)
+      ;(make-option/for "banking" 40))
 
-        ; 4 choices without reasons to calibrate preferences
-        (choice-env
-         (make-option "socioeconomic inequality" 50)
-         (make-option "covid" 40))
+      ; 4 choices without reasons to calibrate preferences
+      (choice-env
+       (make-option "cognitive skills" 50)
+       (make-option "addiction" 70))
 
-        (choice-env
-         (make-option "self-control" 50)
-         (make-option "environment" 40))
+      (choice-env
+       (make-option "socioeconomic inequality" 50)
+       (make-option "covid" 40))
 
-        (choice-env
-         (make-option "neuroscience" 40)
-         (make-option "politics" 20))
+      (choice-env
+       (make-option "neuroscience" 40)
+       (make-option "politics" 30))
 
-        (choice-env
-         (make-option "cognitive skills" 50)
-         (make-option "addiction" 70))
+      (choice-env
+       (make-option "self-control" 50)
+       (make-option "environment" 40))
 
-        ; 6 choices with choice of reasons
-        ; 3 with reasons for, 3 with reaons against
-        (choice-env
-         (make-option/for "socioeconomic inequality" 50)
-         (make-option/for "covid" 40))
 
-        (choice-env
-         (make-option/for "self-control" 40)
-         (make-option/for "environment" 30))
+      ; 6 choices with choice of reasons
+      ; 3 with reasons for, 3 with reaons against
+      ;(choice-env
+      ; (make-option/for "socioeconomic inequality" 50)
+      ; (make-option/for "covid" 40))
 
-        (choice-env
-         (make-option/for "cognitive skills" 50)
-         (make-option/for "addiction" 30))
+      ;(choice-env
+      ; (make-option/for "self-control" 40)
+      ; (make-option/for "environment" 30))
 
-        (choice-env
-         (make-option/against "neuroscience" 40)
-         (make-option/against "politics" 30))
+      (choice-env
+       (make-option/for "cognitive skills" 50)
+       (make-option/for "addiction" 70))
 
-        (choice-env
-         (make-option/against "socioeconomic inequality" 30)
-         (make-option/against "gender inequality" 50))
+      (choice-env
+       (make-option/against "neuroscience" 40)
+       (make-option/against "politics" 30))
 
-        (choice-env
-         (make-option/against "neuroscience" 40)
-         (make-option/against "gender inequality" 60))
+      ;(choice-env
+      ; (make-option/against "socioeconomic inequality" 30)
+      ; (make-option/against "gender inequality" 50))
 
-        ; 12 choices with a single exogenous reason or no reason
-        ; 4 with reasons for
-        ; 4 with reasons against
-        ; 4 without reasons
-        ;(choice-env
-        ; (make-option/for "covid" 20)
-        ; (make-option "politics" 5))
+      ;(choice-env
+      ; (make-option/against "neuroscience" 40)
+      ; (make-option/against "gender inequality" 60))
 
-        ;(choice-env
-        ; (make-option "self-control" 5)
-        ; (make-option/for "addiction" 20))
+      ; 12 choices with a single exogenous reason or no reason
+      ; 4 with reasons for
+      ; 4 with reasons against
+      ; 4 without reasons
 
-        ;(choice-env
-        ; (make-option/for "gender inequality" 30)
-        ; (make-option "neuroscience" 45))
+      )
 
-        ;(choice-env
-        ; (make-option "environment" 5)
-        ; (make-option/for "cognitive skills" 20))
+     (shuffle
+      (list
 
-        ;(choice-env
-        ; (make-option/against "ai" 5)
-        ; (make-option "addiction" 15))
+       (choice-env
+        (make-option/for "neuroscience" 40)
+        (make-option "politics" 20))
 
-        ;(choice-env
-        ; (make-option/against "politics" 15)
-        ; (make-option "self-control" 5))
+       (choice-env
+        (make-option "cognitive skills" 50)
+        (make-option/against "addiction" 70))
 
-        ;(choice-env
-        ; (make-option "sports" 5)
-        ; (make-option/against "politics" 20))
+       (choice-env
+        (make-option "self-control" 50)
+        (make-option/for "addiction" 40))
 
-        ;(choice-env
-        ; (make-option "ai" 20)
-        ; (make-option/against "gender inequality" 30))
+       (choice-env
+        (make-option/against "gender inequality" 30)
+        (make-option "neuroscience" 45))
 
-        ;(choice-env
-        ; (make-option "environment" 35)
-        ; (make-option "neuroscience" 30))
+       #;(choice-env
+          (make-option "environment" 20)
+          (make-option/for "cognitive skills" 40))
 
-        ;(choice-env
-        ; (make-option "sports" 40)
-        ; (make-option "gender inequality" 25))
+       #;(choice-env
+          (make-option/against "ai" 30)
+          (make-option "addiction" 45))
 
-        ;(choice-env
-        ; (make-option "socioeconomic inequality" 20)
-        ; (make-option "covid" 10))
+       ;(choice-env
+       ; (make-option/against "politics" 15)
+       ; (make-option "self-control" 5))
 
-        ;(choice-env
-        ; (make-option "socioeconomic inequality" 35)
-        ; (make-option "gender inequality" 25))
-        ))
+       ;(choice-env
+       ; (make-option "sports" 5)
+       ; (make-option/against "politics" 20))
+
+       ;(choice-env
+       ; (make-option "ai" 20)
+       ; (make-option/against "gender inequality" 30))
+
+       ;(choice-env
+       ; (make-option "environment" 35)
+       ; (make-option "neuroscience" 30))
+
+       ;(choice-env
+       ; (make-option "sports" 40)
+       ; (make-option "gender inequality" 25))
+
+       ;(choice-env
+       ; (make-option "socioeconomic inequality" 20)
+       ; (make-option "covid" 10))
+
+       ;(choice-env
+       ; (make-option "socioeconomic inequality" 35)
+       ; (make-option "gender inequality" 25))
+       ))))
 
   (put 'choices-to-make choices-to-make)
 
@@ -343,6 +356,7 @@
 ;;;;;;;;;;;;;;;; INTRO STUDY
 
 (define (landing-page)
+  (put 'time-enrolled (current-seconds))
   (page
    (haml
     @.container{
@@ -586,9 +600,13 @@
 
 (define (abstract-choice/reason ce total i)
   (define (put/reason label text)
+    (define choice-number (get 'choice-number))
+    (put 'last-reason (cons label text))
     (define reasons
-      (get 'reasons '()))
-    (put 'reasons (cons (list label text ce) reasons)))
+      (get 'chosen-reasons (hash)))
+    (put 'chosen-reasons
+         (hash-set reasons choice-number
+                   (cons label text))))
 
   (define reasons?
     (or (ce-reason ce 'A)
@@ -638,16 +656,19 @@
          (skip)]))
 
 (define (abstract-choice ce total i)
+  (define choice-number (get 'choice-number))
   (define last-reason
-    (car (get 'reasons)))
+    (hash-ref (get 'chosen-reasons) choice-number))
   (define (put/choice o)
+    (define choice-number (get 'choice-number))
     (define choices
-      (get 'work-choices null))
-    (put 'work-choices (cons (list (string->symbol o) ce) choices)))
+      (get 'chosen-options (hash)))
+    (put 'chosen-options
+         (hash-set choices choice-number (string->symbol o))))
   (define r-label
     (car last-reason))
   (define r-text
-    (cadr last-reason))
+    (cdr last-reason))
   (start-timer)
   (page
    (haml
@@ -686,23 +707,22 @@
         (put/choice choice)))))))
 
 (define (bonus-for-switching total i)
-
-  (define last-choice
-    (car (get 'work-choices)))
+  (define choice-number
+    (get 'choice-number))
   (define chosen-option
-    (car last-choice))
+    (hash-ref (get 'chosen-options) choice-number))
   (define unchosen-option
     (case chosen-option
       [(A) 'B]
       [(B) 'A]))
-  (define last-ce
-    (cadr last-choice))
-  (define last-reason
-    (car (get 'reasons)))
+  (define current-ce
+    (hash-ref (get 'all-choices) choice-number))
+  (define current-reason
+    (hash-ref (get 'chosen-reasons) choice-number))
   (define r-label
-    (car last-reason))
+    (car current-reason))
   (define r-text
-    (cadr last-reason))
+    (cdr current-reason))
 
   (start-timer)
   (page
@@ -713,12 +733,12 @@
      (:h3 "Description of Options")
 
      ,@(for/list ([label '(A B)])
-         (define r (ce-reason last-ce label))
+         (define r (ce-reason current-ce label))
          (haml
           (:div
            (:h4 (format "Option ~a" label))
 
-           (:p (describe-abstracts last-ce label)))))
+           (:p (describe-abstracts current-ce label)))))
 
      (when r-label
        (haml
@@ -750,19 +770,22 @@
                 'switch-choice-durations
                 (cons (end-timer)
                       (get* #:root '*timer* 'switch-choice-durations null)))
-          (define choices
-            (get 'work-choices))
-          (define last-choice
-            (car choices))
-          (put 'work-choices
-               (cons (append last-choice (list bonus)) (cdr choices))))))))))
-
+          (define choice-number (get 'choice-number))
+          (define switching-bonuses
+            (get 'switching-bonuses (hash)))
+          (put 'switching-bonuses
+               (hash-set switching-bonuses choice-number bonus)))))))))
 
 (define (work-choices)
-
   (define (initialize-work-choices)
-    (put 'total (length (get 'remaining-choices)))
+    (define choices (get 'remaining-choices))
+    (define n (length choices))
+    (put 'total n)
     (put 'choice-number 1)
+    (put 'all-choices
+         (for/hash ([c choices]
+                    [i (range 1 (add1 n))])
+           (values i c)))
     (skip))
 
   (make-study
@@ -779,9 +802,10 @@
                        (put 'choice-number
                             (add1 (get 'choice-number)))
                        (cond [(null? remaining-choices)
-                              next]
+                              (goto finalize)]
                              [else
-                              (goto reason-page)]))])
+                              (goto reason-page)]))]
+    [finalize --> ,(lambda () done)])
    #:requires '(remaining-choices)
    #:provides '(work-choices)
    (list
@@ -798,7 +822,24 @@
     (make-step
      'bonus-for-switching
      (lambda ()
-       (bonus-for-switching (get 'total) (get 'choice-number)))))))
+       (bonus-for-switching (get 'total) (get 'choice-number))))
+    (make-step
+     'finalize
+     (lambda ()
+       (define choices (get 'all-choices))
+       (define reasons (get 'chosen-reasons))
+       (define options (get 'chosen-options))
+       (define bonuses (get 'switching-bonuses))
+       (define work-choices
+         (for/hash ([i (range 1 (add1 (get 'total)))])
+           (values
+            i
+            (hash 'choice         (hash-ref choices i)
+                  'chosen-reason  (hash-ref reasons i)
+                  'chosen-option  (hash-ref options i)
+                  'chosen-bonus   (hash-ref bonuses i)))))
+       (put 'work-choices work-choices)
+       (skip))))))
 
 (define (set-treatments)
   (put 'choices-to-make
@@ -941,12 +982,22 @@
                  (:td (~a (hash-ref p 'total-abstracts-done)))
                  (:td (~r (compute-total-bonus p) #:precision 2))))))))))))))
 
+
 (define (admin-page)
   (define progress
     (get/instance* 'progress (hash)))
   (define progress-with-bonus
     (for/hash ([(id p) (in-hash progress)])
       (values id (hash-set p 'bonus (compute-total-bonus p)))))
+
+  (define (enroll> p1 p2)
+    (eprintf "p1: ~a, p2: ~a~n~n" p1 p2)
+    (define t1 (hash-ref (cdr p1) 'time-enrolled 0))
+    (define t2 (hash-ref (cdr p2) 'time-enrolled 0))
+    (moment>? (posix->moment t1) (posix->moment t2)))
+
+  (define (~time t)
+    (~t (posix->moment t) "yyyy-MM-dd"))
 
   (page
    (haml
@@ -975,12 +1026,16 @@
             (:td "Total Abstracts done")
             (:td "Total Bonus")
             (:td "Time taken for main session")
-            (:td "Avg hourly bonus")))
+            (:td "Avg hourly bonus")
+            (:td "Date enrolled")))
 
           (:tbody
-           ,@(for/list ([(id p) (in-hash progress-with-bonus)])
+           ,@(for/list ([id&p (in-list (sort (hash->list progress-with-bonus) enroll>))])
+               (define id (car id&p))
+               (define p (cdr id&p))
                (define bonus (hash-ref p 'bonus))
                (define time-taken (hash-ref p 'main-session-time #f))
+               (define time-enrolled (hash-ref p 'time-enrolled #f))
                (haml
                 (:tr
                  (:td id)
@@ -991,8 +1046,9 @@
                  (:td (~a (hash-ref p 'correct-abstract-tasks)))
                  (:td (~a (hash-ref p 'total-abstracts-done)))
                  (:td (~r bonus #:precision 2))
-                 (:td (if time-taken (~r #:precision 1 (/ time-taken 60.0)) "#<NA>"))
-                 (:td (if time-taken (~r #:precision 2 (* 3600 (/ bonus time-taken))) "#<NA>")))))))
+                 (:td (if time-taken (~r #:precision 1 (/ time-taken 60.0)) "NA"))
+                 (:td (if time-taken (~r #:precision 2 (* 3600 (/ bonus time-taken))) "NA"))
+                 (:td (if time-enrolled (~time time-enrolled) "NA")))))))
 
          (:h4 "Participants who should be approved")
 
@@ -1001,11 +1057,12 @@
            (:tr
             (:td "Id")))
           (:tbody
-           ,@(for/list ([(id p) (in-hash progress)]
-                        #:when (boolean? (hash-ref p 'pass-comprehension-test?)))
+           ,@(for/list ([id&p (in-list (sort (hash->list progress) enroll>))]
+                        #:when (boolean? (hash-ref (cdr id&p) 'pass-comprehension-test?)))
+               (define time-enrolled (hash-ref (cdr id&p) 'time-enrolled #f))
                (haml
                 (:tr
-                 (:td id))))))
+                 (:td (car id&p)))))))
 
          (:h4 "Participants with Bonus in GBP in Format for Prolific")
 
@@ -1014,12 +1071,12 @@
            (:tr
             (:td "Id,bonus")))
           (:tbody
-           ,@(for/list ([(id p) (in-hash progress-with-bonus)]
-                        #:when (> (hash-ref p 'bonus) 0))
+           ,@(for/list ([id&p (in-list (sort (hash->list progress-with-bonus) enroll>))]
+                        #:when (> (hash-ref (cdr id&p) 'bonus) 0))
                (haml
                 (:tr
                  (:td
-                  (format "~a,~a" id (~r #:precision 2 (* 0.83 (hash-ref p 'bonus)))))))))))))
+                  (format "~a,~a" (car id&p) (~r #:precision 2 (* 0.83 (hash-ref (cdr id&p) 'bonus)))))))))))))
 
 
      (cond [(get/instance* 'abstracts-set? #f)
@@ -1210,6 +1267,7 @@
                               'completed-main-session? #f
                               'correct-abstract-tasks 0
                               'total-abstracts-done 0
+                              'time-enrolled (get 'time-enrolled)
                               'main-session-time #f)))
              #t])))
   (unless new-user
@@ -1251,12 +1309,12 @@
   (make-option category n a-reason 'against))
 
 (define (determine-pilot-choices)
-  ; FIXME: separate determinining the choice and displaying, or else F5 chooses a new option.
+  ; FIXME: Update based on new data structure for 'choices-made
   (define cs (get 'choices-made))
-  (define c (random-ref cs))
-  (define option-chosen (car c))
-  (define ce (cadr c))
-  (define switching-bonus (caddr c))
+  (define c (cdr (random-ref (hash->list cs))))
+  (define option-chosen (hash-ref c 'chosen-option))
+  (define ce (hash-ref c 'choice))
+  (define switching-bonus (hash-ref c 'chosen-bonus))
   (define type-that-counts (random-ref '(binary numeric)))
   (define bonus-that-counts
     (random-ref (range 0.1 1.05 0.1)))
