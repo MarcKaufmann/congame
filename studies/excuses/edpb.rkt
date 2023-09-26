@@ -26,6 +26,8 @@
          "abstract-categorization.rkt")
 
 ; TODO:
+; - As a reason for, provide more information about the topic. As a reason against, what is the equivalent? Provide information that makes less appealing, e.g. "highly technical" etc. Or information about some other unrelated topic.
+;       - If we had time, we could get abstracts that are more interesting (rank the abstracts) and ones that are less so.
 ; - Then look at free-form data and update the reasons pilot and run again with more people.
 ; - Check they understand how payments work, run and build that study without the main session, just ask *if* they'd be interested.
 ; - Write a study where participants have to categorize the abstracts directly, not just "Yes/No", so that I create the data that I need for the later one.
