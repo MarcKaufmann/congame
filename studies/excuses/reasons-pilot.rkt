@@ -88,8 +88,8 @@
          (#:controversial (input-likert/how "controversial")))
         (:div
          (#:understandable (input-likert/how "easy to understand")))
-        (:div (#:familiar
-          (input-likert "How familiar are you with the topic? (1: never heard about it. 7: you are an expert.)")))
+        (:div (#:knowledge
+          (input-likert "How well do you know the topic? (1: never heard about it. 7: you are an expert.)")))
         (:div
          (#:how-often-talk-family
           (input-likert (format "How often do you talk about the topic with your family? (1: never. 7: all the time.)"))))
@@ -97,8 +97,8 @@
          (#:how-often-talk-colleagues
           (input-likert (format "How often do you talk about the topic with colleagues? (1: never. 7: all the time.)"))))
         (:div
-         (#:learn-more
-          (input-likert (format "How interested would you be in learning more about the topic? (1: not at all. 7: extremely, you would enroll in a course on the topic if you had time.)"))))
+         (#:curious
+          (input-likert (format "How curious are you about the topic? (1: not at all. 7: extremely, you would enroll in a course on the topic if you had time.)"))))
         (:div
          (#:heard-of-last-week
           (radios "Have you heard about the topic in the last week (the last 7 days)?"
