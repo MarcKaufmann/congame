@@ -14,6 +14,7 @@
 (define topics
   (list
    "Gender Inequality"
+   "Social Preferences"
    "Socioeconomic Inequality"
    "Neuroscience"
    "Sports"
@@ -26,10 +27,12 @@
    "Self-control"
    "Politics"))
 
-(define payment 3.00)
+(define payment 2.50)
+(define US/GBP 1.21)
+(define USD-payment (* payment US/GBP))
 (define completion-code "CET2506Q")
 (define n-topics (length topics))
-(define survey-duration 15)
+(define survey-duration 12)
 
 (define (welcome-and-consent)
   (page
@@ -37,10 +40,11 @@
     (.container
      (:h1 "Welcome")
 
-     (:p (format "The following short survey asks your opinion about, and familiarity with, ~a specific topics. It takes around ~a minutes to complete, and you will receive ~a GBP as a completion bonus. Please answer the questions truthfully, as they provide valuable information to us for another study. We will not reveal your individual answers to the participants of the subsequent study. Instead, we will show them statistics based on the responses of all participants in this survey. We will not be able to link your answers and your identity beyond the Prolific ID."
+     (:p (format "The following short survey asks your opinion about, and familiarity with, ~a specific topics. It takes around ~a minutes to complete, and you will receive ~a GBP (roughly ~a USD) as a completion bonus. Please answer the questions truthfully, as they provide valuable information to us for another study. We will not reveal your individual answers to the participants of the subsequent study. Instead, we will show them statistics based on the responses of all participants in this survey. We will not be able to link your answers and your identity beyond the Prolific ID."
                  n-topics
                  survey-duration
-                 payment))
+                 payment
+                 USD-payment))
 
      (:p "If you agree to participate in the survey, you can still opt out anytime. However, you only receive the completion bonus if you complete the whole survey.")
 
@@ -132,7 +136,8 @@
    "Health" "The topic is 'Health', encompassing the overall physical, mental, and social well-being of an individual, including disease prevention and treatment."
    "Cognitive Skills" "The topic is 'Cognitive Skills', referring to mental abilities such as thinking, learning, memory, problem-solving, and decision-making."
    "Self-control" "The topic is 'Self-control', involving the ability to regulate one's own emotions, behaviors, and impulses in order to achieve long-term goals"
-   "Politics" "The topic is 'Politics', involving activities and policies related to governance, power, and decision-making within a society."))
+   "Politics" "The topic is 'Politics', involving activities and policies related to governance, power, and decision-making within a society."
+   "Social Preferences" "The topic is Social preferences, referring to the individual inclinations, attitudes, and behaviors that influence how people interact and make decisions in social settings. They encompass aspects like cooperation, altruism, reciprocity, and fairness in interactions with others."))
 
 (define (randomization)
   (put 'topics (shuffle topics))
