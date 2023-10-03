@@ -12,7 +12,7 @@
                "koyo-lib"
                "koyo-north"
                "koyo-postmark"
-               "koyo-sentry"
+               ["koyo-sentry" #:version "0.1.1"]
                "libargon2"
                "net-lib"
                "sentry-lib"

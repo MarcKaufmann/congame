@@ -14,7 +14,7 @@
                "koyo-lib"
                "koyo-north"
                "koyo-postmark"
-               "koyo-sentry"
+               ["koyo-sentry" #:version "0.1.1"]
                ("libargon2-x86_64-linux" #:platform #rx"x86_64-linux")
                ("libargon2-x86_64-macosx" #:platform #rx"x86_64-macosx")
                "sentry-lib"
