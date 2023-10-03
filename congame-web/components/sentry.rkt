@@ -10,6 +10,9 @@
  with-sentry
  wrap-current-sentry-user)
 
+;; For use outside of any http request handlers when we need to capture
+;; exceptions (eg. study tasks). The body is _not_ in tail position with
+;; respect to the with-sentry form.
 (define-syntax-rule (with-sentry body0 body ...)
   (with-handlers ([exn:fail?
                    (lambda (e)
@@ -24,9 +27,10 @@
   (cond
     [(current-user)
      => (lambda (u)
-          (parameterize ([current-sentry-user (make-sentry-user
-                                               #:id (number->string (user-id u))
-                                               #:email (user-username u))])
+          (parameterize ([current-sentry-user
+                          (make-sentry-user
+                           #:id (number->string (user-id u))
+                           #:email (user-username u))])
             (hdl req)))]
 
     [else
