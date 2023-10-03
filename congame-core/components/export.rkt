@@ -33,7 +33,7 @@
       (cond
         [(symbol? k) k]
         [else
-         (log-jsexprable-warning "key ~s converted to JSON string!" k)
+         (log-jsexprable-warning "key ~.s converted to JSON string!" k)
          (string->symbol (~a k))]))
     (values k-sym (->jsexpr v))))
 
