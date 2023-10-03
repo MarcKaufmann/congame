@@ -145,7 +145,7 @@
   (define reversed-round-stack (reverse round-stack))
   (define reversed-group-stack (reverse group-stack))
   (log-study-debug
-   "put~n  stack: ~s~n  root: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  value: ~s~n  participant-id: ~s"
+   "put~n  stack: ~s~n  root: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  value: ~.s~n  participant-id: ~s"
    (current-study-ids) root-id reversed-round-stack reversed-group-stack k v participant-id)
   (with-database-connection [conn (current-database)]
     (query-exec conn #<<QUERY
