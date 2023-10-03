@@ -93,19 +93,19 @@
       (~> (make-user #:username username)
           (set-password um _ password)))
 
-    (with-handlers ([exn:fail:sql:constraint-violation?
-                     (lambda (e)
-                       (match (assq 'message (exn:fail:sql-info e))
-                         [`(message . ,(regexp "\"api_key\""))
-                          (unless (< attempts 5)
-                            (raise (exn:fail:user-manager
-                                    (format "failed to generate unique API key")
-                                    (current-continuation-marks))))
-                          (loop (add1 attempts))]
-                         [_
-                          (raise (exn:fail:user-manager:username-taken
-                                  (format "username '~a' is taken" username)
-                                  (current-continuation-marks)))]))])
+    (with-handlers* ([exn:fail:sql:constraint-violation?
+                      (lambda (e)
+                        (match (assq 'message (exn:fail:sql-info e))
+                          [`(message . ,(regexp "\"api_key\""))
+                           (unless (< attempts 5)
+                             (raise (exn:fail:user-manager
+                                     (format "failed to generate unique API key")
+                                     (current-continuation-marks))))
+                           (loop (add1 attempts))]
+                          [_
+                           (raise (exn:fail:user-manager:username-taken
+                                   (format "username '~a' is taken" username)
+                                   (current-continuation-marks)))]))])
       (with-database-transaction [conn (user-manager-db um)]
         (insert-one! conn user)))))
 

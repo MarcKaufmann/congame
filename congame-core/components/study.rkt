@@ -195,15 +195,15 @@ QUERY
 
 (define (call-with-study-transaction f)
   (let loop ()
-    (with-handlers ([exn:fail:sql?
-                     (lambda (e)
-                       (case (exn:fail:sql-sqlstate e)
-                         [("40001")
-                          (log-study-warning "failed to apply instance transaction, retrying...")
-                          (loop)]
+    (with-handlers* ([exn:fail:sql?
+                      (lambda (e)
+                        (case (exn:fail:sql-sqlstate e)
+                          [("40001")
+                           (log-study-warning "failed to apply instance transaction, retrying...")
+                           (loop)]
 
-                         [else
-                          (raise e)]))])
+                          [else
+                           (raise e)]))])
       (with-database-transaction [conn (current-database)]
         #:isolation 'serializable
         (f)))))
@@ -827,6 +827,10 @@ QUERY
        (error 'run-study "fail~n  step: ~e~n  reason: ~a" the-step the-reason)]
       [else
        (fail the-reason the-step)]))
+  ;; NOTE: All these handlers create intermediate frames. So, the more
+  ;; handlers there are, the bigger the memory use per user per study
+  ;; instance. Once a user stops hitting continuation links for 4 hours,
+  ;; these are released.
   (with-handlers ([exn:fail:study? failure-hdl])
     (parameterize ([current-study-stack new-study-stack])
       (cond

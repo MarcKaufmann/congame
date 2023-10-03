@@ -112,7 +112,7 @@
                           #:close-original? close?)))
      (handler mapping)))
 
-  (with-handlers ([exn:break? (λ (_)
-                                (stop)
-                                (stop-logger))])
-    (sync never-evt)))
+  (with-handlers ([exn:break? void])
+    (sync/enable-break never-evt))
+  (stop)
+  (stop-logger))

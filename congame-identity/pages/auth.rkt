@@ -32,9 +32,6 @@
   (define return-url
     (bindings-ref (request-bindings/raw req) 'return (reverse-uri 'dashboard-page)))
 
-  (define defaults
-    (hash "username" (get-prolific-email)))
-
   (let loop ([req req])
     (send/suspend/dispatch/protect
      (lambda (embed/url)
@@ -46,20 +43,21 @@
 
        (match (form-run login-form req)
          [(list 'passed (list username password) render-widget)
-          (with-handlers ([exn:fail:auth-manager:unverified?
-                           (lambda _
-                             (render render-widget (translate 'error-verify-email)))])
-            (cond
-              [(auth-manager-login! auth username password)
-               (redirect-to return-url)]
-
-              [else
-               (render render-widget (translate 'error-invalid-credentials))]))]
+          (define ok-or-error-message
+            (with-handlers ([exn:fail:auth-manager:unverified?
+                             (lambda (_e)
+                               (translate 'error-verify-email))])
+              (if (auth-manager-login! auth username password)
+                  'ok
+                  (translate 'error-invalid-credentials))))
+          (if (eq? ok-or-error-message 'ok)
+              (redirect-to return-url)
+              (render render-widget ok-or-error-message))]
 
          [(list _ _ render-widget)
           (render render-widget)])))))
 
-(define/contract ((logout-page auth) req)
+(define/contract ((logout-page auth) _req)
   (-> auth-manager? (-> request? response?))
   (auth-manager-logout! auth)
   (redirect-to (reverse-uri 'login-page)))
@@ -122,17 +120,22 @@
 
      (match (form-run signup-form req #:defaults defaults)
        [(list 'passed (list username password _usertype) render-widget)
-        (with-handlers ([exn:fail:user-manager:username-taken?
-                         (lambda _
-                           (render render-widget (translate 'error-username-taken)))])
-          (define user (user-manager-create! users username password))
-          (mailer-send-welcome-email mailer user)
-          (post-signup-page (redirect/get/forget) username))]
+        (define user-or-error-message
+          (with-handlers ([exn:fail:user-manager:username-taken?
+                           (lambda (_e)
+                             (translate 'error-username-taken))])
+            (user-manager-create! users username password)))
+        (cond
+          [(user? user-or-error-message)
+           (mailer-send-welcome-email mailer user-or-error-message)
+           (post-signup-page (redirect/get/forget) username)]
+          [else
+           (render render-widget user-or-error-message)])]
 
        [(list _ _ render-widget)
         (render render-widget)]))))
 
-(define (post-signup-page req username)
+(define (post-signup-page _req username)
   (page
    #:subtitle (translate 'subtitle-signed-up)
    (haml
