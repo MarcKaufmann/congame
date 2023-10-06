@@ -227,8 +227,13 @@
   (for/list ([id ids])
     (hash-ref vs id "NA")))
 
+(define (update-data-file d)
+  (call-with-output-file "latest-data" #:exists 'replace
+    (lambda (out)
+      (write d out))))
+
 (define d
-  (call-with-input-file "data-iids-46-47"
+  (call-with-input-file "latest-data"
     (lambda (in)
       (read in))))
 
@@ -256,7 +261,7 @@
    "understandable"
    "how-choose"))
 
-(define (write-feedback)
+(define (write-feedback d)
   (define dta
     (cons
      feedback-questions
