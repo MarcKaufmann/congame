@@ -26,12 +26,9 @@
          "abstract-categorization.rkt")
 
 ; TODO:
-; - As a reason for, provide more information about the topic. As a reason against, what is the equivalent? Provide information that makes less appealing, e.g. "highly technical" etc. Or information about some other unrelated topic.
-;       - If we had time, we could get abstracts that are more interesting (rank the abstracts) and ones that are less so.
-; - Then look at free-form data and update the reasons pilot and run again with more people.
+;
 ; - Check they understand how payments work, run and build that study without the main session, just ask *if* they'd be interested.
 ; - Write a study where participants have to categorize the abstracts directly, not just "Yes/No", so that I create the data that I need for the later one.
-; - Reread the free-form answers: they gave me some ideas of which other questions people might be interested in, and I should run a follow-up study on the reasons.
 ; - All TBD: Do basic data analysis to check that we collect everything
 ;     - All feedback questions (how much reasons matter etc, how choose)
 ;     - Which reasons they picked based on choice characteristics
@@ -44,6 +41,8 @@
 ;
 ; Other
 ;
+; - As a reason for, provide more information about the topic. As a reason against, what is the equivalent? Provide information that makes less appealing, e.g. "highly technical" etc. Or information about some other unrelated topic.
+;       - If we had time, we could get abstracts that are more interesting (rank the abstracts) and ones that are less so.
 ; - Clean up the abstracts: find those with typos and fix them
 ; - We could have done the whole thing with another task and more meaningful reasons and less time.
 ; - Use a different topic than Social preferences for baseline, and check that most categorizations don't require just finding that keyword. Probably most do, given how Rumen and Soheila searched. Ergh.
