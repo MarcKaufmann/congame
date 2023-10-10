@@ -54,9 +54,11 @@
      (:title (if subtitle (~a subtitle " - congame") "congame"))
      (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
      (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
-     (:script
-      ([:crossorigin "anonymous"]
-       [:src "https://js.sentry-cdn.com/fb877e2559424bf292eeb8331b8479b9.min.js"]))
+     (unless (getenv "CI")
+       (haml
+        (:script
+         ([:crossorigin "anonymous"]
+          [:src "https://js.sentry-cdn.com/fb877e2559424bf292eeb8331b8479b9.min.js"]))))
      (:script
       ([:src "https://polyfill.io/v3/polyfill.min.js?features=es6"]))
      (:script
