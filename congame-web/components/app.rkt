@@ -21,6 +21,7 @@
          racket/format
          racket/runtime-path
          racket/string
+         sentry
          threading
          (only-in xml current-unescaped-tags html-unescaped-tags)
          web-server/dispatch
@@ -214,6 +215,9 @@
       serve-resource-page]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
+  (define wrap-sentry
+    (make-sentry-wrapper #:client (current-sentry)))
+
   (define (stack handler)
     (~> handler
         (wrap-protect-continuations)
@@ -221,9 +225,7 @@
         (wrap-current-sentry-user)
         ((wrap-auth-required auth req-roles))
         ((wrap-browser-locale sessions))
-        ((make-sentry-wrapper config:sentry-dsn
-                              #:release config:version
-                              #:environment config:environment))
+        (wrap-sentry)
         (wrap-prolific)
         ((wrap-errors config:debug))
         ((wrap-flash flashes))

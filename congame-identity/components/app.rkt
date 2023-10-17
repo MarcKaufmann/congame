@@ -5,6 +5,7 @@
          koyo/sentry
          racket/contract
          racket/list
+         sentry
          threading
          web-server/dispatch
          (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
@@ -88,14 +89,15 @@
       (put-instance-page db)]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
+  (define wrap-sentry
+    (make-sentry-wrapper #:client (current-sentry)))
+
   (define (stack handler)
     (~> handler
         (wrap-current-sentry-user)
         ((wrap-auth-required auth req-roles))
         ((wrap-browser-locale sessions))
-        ((make-sentry-wrapper config:sentry-dsn
-                              #:release config:version
-                              #:environment config:environment))
+        (wrap-sentry)
         (wrap-prolific)
         ((wrap-flash flashes))
         ((wrap-session sessions))
