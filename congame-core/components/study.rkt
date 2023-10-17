@@ -27,6 +27,7 @@
          syntax/parse/define
          threading
          web-server/dispatchers/dispatch
+         web-server/http
          web-server/servlet
          (only-in xml xexpr?)
          "bot.rkt"
@@ -381,14 +382,14 @@ QUERY
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- current-embed/url
  when-bot
  page
  make-stub
  button
  button/confirm
  form
- skip)
+ skip
+ attachment)
 
 (define current-embed/url
   (make-parameter 'no-embed/url))
@@ -550,6 +551,22 @@ QUERY
   (if to-step-id
       (continue to-step-id)
       (continue)))
+
+(define/widget (attachment label proc
+                           #:filename [filename "data.txt"]
+                           #:content-type [content-type "text/plain"])
+  (haml
+   (:a.button.attachment-button
+    ([:href (embed
+             (lambda (_req)
+               (response/output
+                #:mime-type (string->bytes/utf-8 content-type)
+                #:headers (list
+                           (make-header
+                            #"content-disposition"
+                            (string->bytes/utf-8 (format "attachment; filename=\"~a\"" filename))))
+                proc)))])
+    label)))
 
 
 ;; step ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

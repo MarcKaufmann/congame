@@ -28,6 +28,13 @@
   (page
    `(div
      (h1 "Welcome to the study.")
+     ,(attachment
+       "Download CSV"
+       #:filename "example.csv"
+       #:content-type "application/csv"
+       (lambda (out)
+         (fprintf out "name,age~n")
+         (fprintf out "Bogdan,31~n")))
      ,(button/confirm
        "Continue with confirmation"
        (button/confirm

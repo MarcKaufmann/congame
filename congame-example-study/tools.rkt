@@ -61,18 +61,13 @@
   (match-define (uploaded-file key filename content-type) u)
   (define uploader
     (upload:current-uploader))
-  (haml
-   (:a
-    ([:href ((current-embed/url)
-             (lambda (_req)
-               (response/output
-                #:headers (list
-                           (make-header #"content-type" content-type)
-                           (make-header #"content-disposition" (string->bytes/utf-8 (format "attachment; filename=\"~a\"" filename))))
-                (lambda (out)
-                  (parameterize ([upload:current-uploader uploader])
-                    (upload:call-with-uploaded-file
-                     key
-                     (lambda (in)
-                       (copy-port in out))))))))])
-    text)))
+  (attachment
+   text
+   #:filename filename
+   #:content-type content-type
+   (lambda (out)
+     (parameterize ([upload:current-uploader uploader])
+       (upload:call-with-uploaded-file
+        key
+        (lambda (in)
+          (copy-port in out)))))))
