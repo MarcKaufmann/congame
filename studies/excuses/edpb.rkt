@@ -1606,13 +1606,78 @@
 
     (define last-attempt
       (get 'last-attempt #f))
-    (define (answer-feedback question option correct-answer?)
-      (haml
-       (:li "Question: "
-            (:em question)
-            (format " You picked option ~a, which is ~a."
-                    option
-                    (if correct-answer? "true" "false")))))
+
+    (struct radio-question
+      (key label hint answers correct-answer))
+    (define when-paid-question
+      (radio-question
+       'when-paid
+       "When will you receive the payments?"
+       (haml (:li "Regarding when you receive the payments, see the start of the 'Payments' section at the bottom of the page."))
+       '(("1" . "Immediately after the tutorial.")
+         ("2" . "Immediately after the main session.")
+         ("3" . "Within three days after the main session."))
+       "3"))
+    (define how-many-baseline-abstracts-question
+      (radio-question
+       'how-many-baseline-abstracts
+       "How many abstracts do you have to do as baseline work before you do the abstracts based on your choice?"
+       (haml (:li "You definitely do have to do some baseline abstracts, see the section on 'Abstract Categorization Tasks'."))
+       '(("1" . "10 abstracts")
+         ("2" . "30 abstracts")
+         ("3" . "50 abstracts")
+         ("4" . "None"))
+       "2"))
+    (define how-many-abstracts-question
+      (radio-question
+       'how-many-abstracts
+       "Suppose that you chose 'Categorize 50 abstracts into Animal Rights or Other' in the decision that counts. Then how many abstracts do you have to do in total, including the baseline abstracts?"
+       (haml (:li "Regarding how many abstracts you have to do: note that you have to do a certain amount of baseline abstracts (see the section on 'Abstract Categorization Tasks'). Then you do the abstracts from the choice " (:strong "in addition") " to these baseline abstracts."))
+       '(("1" . " 50 in total")
+         ("2" . " 30 in total")
+         ("3" . "100 in total")
+         ("4" . " 80 in total"))
+       "4"))
+    (define reasons-to-reveal-question
+      (radio-question
+       'reasons-to-reveal
+       "Suppose you face a decision with buttons to reveal reasons for each option. Then which of the following is true?"
+       (haml (:li "Regarding the reasons, see the subsection on 'Revealing Reasons'. When there is a reason, how many do you have to reveal?"))
+       '(("1" . "You can choose an option and submit your choice only after revealing exactly one reason.")
+         ("2" . "You can choose an option and submit your choice only after revealing both reasons.")
+         ("3" . "You can choose an option and submit your choice after revealing any number of reasons."))
+       "1"))
+    (define (radio-question-radios q)
+      (radios
+       (cond
+         [last-attempt
+          (define answer
+            (hash-ref last-attempt (radio-question-key q)))
+          (define correct?
+            (cdr answer))
+          (haml
+           (:div
+            (radio-question-label q)
+            (:br)
+            (:small
+             (:strong
+              "You previously answered " (car answer) " which was " (if correct? "true" "false") "."))))]
+         [else
+          (radio-question-label q)])
+       (radio-question-answers q)))
+    (define (radio-questions-score+feedback pairs)
+      (for/fold ([score 0]
+                 [feedback (hasheq)])
+                ([p (in-list pairs)])
+        (define q (car p))
+        (define r (cdr p))
+        (define correct?
+          (equal? (radio-question-correct-answer q) r))
+        (define next-score
+          (+ score (if correct? 1 0)))
+        (define next-feedback
+          (hash-set feedback (radio-question-key q) (cons r correct?)))
+        (values next-score next-feedback)))
 
     (page
      (haml
@@ -1625,97 +1690,50 @@
                       [(4) "fourth"])))
 
        (:p (format "You can attempt the comprehension test ~a times. If you need help to answer the questions, reread the study instructions below the test." max-attempts))
-       (when last-attempt
-         (let ([when-paid (hash-ref last-attempt 'when-paid)]
-               [baseline-n (hash-ref last-attempt 'how-many-baseline-abstracts)]
-               [reasons (hash-ref last-attempt 'reasons-to-reveal)]
-               [how-many-abstracts (hash-ref last-attempt 'how-many-abstracts)])
-           (haml
-            (.info
-             (:h4 "Your answers and Score from the previous attempt")
-
-             (:ol
-              (answer-feedback "When will you receive the payments?" (car when-paid) (cdr when-paid))
-              (answer-feedback "How many abstracts do you have to do as baseline work?" (car baseline-n) (cdr baseline-n))
-              (answer-feedback "Then how many abstracts do you have to do in total, including the baseline abstracts?"
-                               (car how-many-abstracts) (cdr how-many-abstracts))
-              (answer-feedback "Suppose you face a decision with buttons to reveal reasons for each option. Then which of the following is true?"
-                               (car reasons) (cdr reasons)))))))
 
        (when (> attempt 2)
          (haml
           (.alert
            (:h4 "Hints")
-
            (:ul
-            (:li "Regarding when you receive the payments, see the start of the 'Payments' section at the bottom of the page.")
-            (:li "You definitely do have to do some baseline abstracts, see the section on 'Abstract Categorization Tasks'.")
-            (:li "Regarding how many abstracts you have to do: note that you have to do a certain amount of baseline abstracts (see the section on 'Abstract Categorization Tasks'). Then you do the abstracts from the choice " (:strong "in addition") " to these baseline abstracts.")
-            (:li "Regarding the reasons, see the subsection on 'Revealing Reasons'. When there is a reason, how many do you have to reveal?")))))
+            ,@(map radio-question-hint
+                   (list
+                    when-paid-question
+                    how-many-baseline-abstracts-question
+                    how-many-abstracts-question
+                    reasons-to-reveal-question))))))
 
        (formular
         (haml
          (:div
           (:div
            (#:when-paid
-            (radios
-             "When will you receive the payments?"
-             '(("1" . "Immediately after the tutorial.")
-               ("2" . "Immediately after the main session.")
-               ("3" . "Within three days after the main session.")))))
+            (radio-question-radios when-paid-question)))
           (:div
            (#:how-many-baseline-abstracts
-            (radios
-             "How many abstracts do you have to do as baseline work before you do the abstracts based on your choice?"
-             '(("1" . "10 abstracts")
-               ("2" . "30 abstracts")
-               ("3" . "50 abstracts")
-               ("4" . "None")))))
+            (radio-question-radios how-many-baseline-abstracts-question)))
           (:div
            (#:how-many-abstracts
-            (radios
-             "Suppose that you chose 'Categorize 50 abstracts into Animal Rights or Other' in the decision that counts. Then how many abstracts do you have to do in total, including the baseline abstracts?"
-             '(("1" . " 50 in total")
-               ("2" . " 30 in total")
-               ("3" . "100 in total")
-               ("4" . " 80 in total")))))
+            (radio-question-radios how-many-abstracts-question)))
           (:div
            (#:reasons-to-reveal
-            (radios
-             "Suppose you face a decision with buttons to reveal reasons for each option. Then which of the following is true?"
-             '(("1" . "You can choose an option and submit your choice only after revealing exactly one reason.")
-               ("2" . "You can choose an option and submit your choice only after revealing both reasons.")
-               ("3" . "You can choose an option and submit your choice after revealing any number of reasons.")))))
+            (radio-question-radios reasons-to-reveal-question)))
           submit-button))
         (lambda (#:when-paid when-paid
                  #:how-many-abstracts how-many-abstracts
                  #:how-many-baseline-abstracts n-baseline
                  #:reasons-to-reveal reasons-to-reveal)
-          (define score
-            (apply
-             +
-             (map
-              (λ (b) (if b 1 0))
-              (list
-               (string=? when-paid "3")
-               (string=? how-many-abstracts "4")
-               (string=? n-baseline "2")
-               (string=? reasons-to-reveal "1")))))
-          (define last-attempt
-            (hash 'when-paid (cons when-paid (string=? when-paid "3"))
-                  'reasons-to-reveal (cons reasons-to-reveal (string=? reasons-to-reveal "1"))
-                  'how-many-abstracts (cons how-many-abstracts (string=? how-many-abstracts "4"))
-                  'how-many-baseline-abstracts (cons n-baseline (string=? n-baseline "2"))))
-          (put 'all-attempts
-               (cons last-attempt (get 'all-attempts null)))
+          (define-values (score last-attempt)
+            (radio-questions-score+feedback
+             `((,when-paid-question . ,when-paid)
+               (,how-many-baseline-abstracts-question . ,n-baseline)
+               (,how-many-abstracts-question . ,how-many-abstracts)
+               (,reasons-to-reveal-question . ,reasons-to-reveal))))
+          (put 'all-attempts (cons last-attempt (get 'all-attempts null)))
           (put 'last-attempt last-attempt)
           (put 'attempt (add1 (get 'attempt)))
           (put 'comprehension-test-score score)))
-
-
-       (pilot-instructions)
-
-       ))))
+       (pilot-instructions)))))
 
   (define (introduction)
     (page
@@ -1854,9 +1872,9 @@
       (:li (format "Bonus payment (for main session): $~a" (~r (+ completion-bonus abstract-bonus) #:precision 2))
            (:ul
             (:li (format "This consists of a $~a completion bonus and of a $~a bonus for correctly categorizing ~a abstracts."
-                 completion-bonus
-                 (~r #:precision 2 abstract-bonus)
-                 score)))))))))
+                         completion-bonus
+                         (~r #:precision 2 abstract-bonus)
+                         score)))))))))
 
 
 
@@ -1933,10 +1951,10 @@
 
     ; PARTICIPANT
     [waiting-page --> tutorial
-                        --> consent
-                        --> ,(lambda ()
-                               (cond [(get 'consent-given?) (goto consent-end-introduction)]
-                                     [else (goto no-consent-ending)]))]
+                  --> consent
+                  --> ,(lambda ()
+                         (cond [(get 'consent-given?) (goto consent-end-introduction)]
+                               [else (goto no-consent-ending)]))]
 
     [no-consent --> no-consent]
 
