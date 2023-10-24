@@ -686,8 +686,7 @@
            (:td (~a (study-instance-var-id v)))
            (:td (~t (study-instance-var-first-put-at v) datetime-format))
            (:td (~t (study-instance-var-last-put-at v) datetime-format))
-           (:td (:pre
-                 (~study-var (study-instance-var-value/deserialized v)))))))))))
+           (:td (study-var-details (study-instance-var-value/deserialized v))))))))))
 
 (define (render-participant-list study-id study-instance-id participants)
   (haml
@@ -870,8 +869,13 @@
                  (:td (~a (study-var-id v)))
                  (:td (~t (study-var-first-put-at v) datetime-format))
                  (:td (~t (study-var-last-put-at v) datetime-format))
-                 (:td (:pre
-                       (~study-var (study-var-value/deserialized v))))))))))))))))
+                 (:td (study-var-details (study-var-value/deserialized v)))))))))))))))
+
+(define (study-var-details var)
+  (haml
+   (:details
+    (:summary (:code (~study-var-summary var)))
+    (:pre (~study-var var)))))
 
 (define/contract ((create-study-instance-bot-sets-page db) req study-id study-instance-id)
   (-> database? (-> request? id/c id/c response?))
@@ -1092,11 +1096,23 @@
     (auth-manager-stop-impersonation! am))
   (redirect-to (reverse-uri 'study-instances-page)))
 
+(define (~study-var-summary deserialized-v)
+  (format "~.a" (print-study-var
+                 deserialized-v
+                 (lambda (v)
+                   (parameterize ([pretty-print-columns 40]
+                                  [pretty-print-depth 0])
+                     (pretty-write v))))))
+
 (define (~study-var deserialized-v)
+  (print-study-var deserialized-v))
+
+(define (print-study-var deserialized-v [do-print pretty-write])
   (with-handlers ([exn:fail? (λ (e) (format "<error: ~.a>" (exn-message e)))])
     (with-output-to-string
       (lambda ()
-        (pretty-write (->jsexpr deserialized-v))))))
+        (parameterize ([pretty-print-columns 40])
+          (do-print (->jsexpr deserialized-v)))))))
 
 
 ;; tags ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
