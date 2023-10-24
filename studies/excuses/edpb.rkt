@@ -1,6 +1,7 @@
 #lang at-exp racket/base
 
-(require racket/contract racket/format
+(require (prefix-in forms: forms)
+         racket/contract racket/format
          racket/generic
          racket/list
          racket/match
@@ -1596,30 +1597,112 @@
        participant-progress
        k (lambda (x) v))))))
 
+
+(struct ct-question
+  (key label hint answers correct-answer))
+
+(define (render-ct-question q rw [last-attempt #f])
+  (haml
+   (.group
+    (:label.radio-group
+     (cond
+       [last-attempt
+        (define answer
+          (hash-ref last-attempt (ct-question-key q)))
+        (define correct?
+          (cdr answer))
+        (haml
+         (:div
+          (ct-question-label q)
+          (:br)
+          (:small
+           (:strong
+            "You previously answered " (car answer) " which was " (if correct? "true" "false") "."))))]
+       [else (ct-question-label q)])
+     (rw (~a (ct-question-key q))
+         (forms:widget-radio-group
+          (ct-question-answers q)))
+     ,@(rw (~a (ct-question-key q))
+           (forms:widget-errors))))))
+
+(define (ct-questions-score+feedback pairs)
+  (for/fold ([score 0]
+             [feedback (hasheq)])
+            ([p (in-list pairs)])
+    (define q (car p))
+    (define r (cdr p))
+    (define correct?
+      (equal? (ct-question-correct-answer q) r))
+    (define next-score
+      (+ score (if correct? 1 0)))
+    (define next-feedback
+      (hash-set feedback (ct-question-key q) (cons r correct?)))
+    (values next-score next-feedback)))
+
+(define ((make-comprehension-test-step questions [epilog (λ () (haml (:div)))]))
+  (define attempt
+    (cond [(get 'attempt #f) => values]
+          [else (begin0 1
+                  (put 'attempt 1))]))
+
+  (define last-attempt
+    (get 'last-attempt #f))
+
+  (page
+   (haml
+    (.container
+     (:h1 (format "Comprehension Test (~a attempt)"
+                  (case attempt
+                    [(1) "first"]
+                    [(2) "second"]
+                    [(3) "third"]
+                    [(4) "fourth"])))
+
+     (:p (format "You can attempt the comprehension test ~a times. If you need help to answer the questions, reread the study instructions below the test." max-attempts))
+
+     (when (> attempt 2)
+       (haml
+        (.alert
+         (:h4 "Hints")
+         (:ul ,@(map ct-question-hint questions)))))
+
+     (form
+      (forms:form
+       list
+       (for/list ([q (in-list questions)])
+         (cons
+          (ct-question-key q)
+          (forms:ensure forms:binding/text (forms:required)))))
+      (lambda (res)
+        (define-values (score last-attempt)
+          (ct-questions-score+feedback
+           (map cons questions res)))
+        (put 'all-attempts (cons last-attempt (get 'all-attempts null)))
+        (put 'last-attempt last-attempt)
+        (put 'attempt (add1 (get 'attempt)))
+        (put 'comprehension-test-score score))
+      (lambda (rw)
+        (haml
+         (:div
+          ,@(for/list ([q (in-list questions)])
+              (render-ct-question q rw last-attempt))
+          submit-button))))
+     (epilog)))))
+
 (define (pilot-tutorial)
 
-  (define (pilot-comprehension-test)
-    (define attempt
-      (cond [(get 'attempt #f) => values]
-            [else (begin0 1
-                    (put 'attempt 1))]))
-
-    (define last-attempt
-      (get 'last-attempt #f))
-
-    (struct radio-question
-      (key label hint answers correct-answer))
-    (define when-paid-question
-      (radio-question
+  (define pilot-comprehension-test
+    (make-comprehension-test-step
+     (list
+      (ct-question
        'when-paid
        "When will you receive the payments?"
        (haml (:li "Regarding when you receive the payments, see the start of the 'Payments' section at the bottom of the page."))
        '(("1" . "Immediately after the tutorial.")
          ("2" . "Immediately after the main session.")
          ("3" . "Within three days after the main session."))
-       "3"))
-    (define how-many-baseline-abstracts-question
-      (radio-question
+       "3")
+      (ct-question
        'how-many-baseline-abstracts
        "How many abstracts do you have to do as baseline work before you do the abstracts based on your choice?"
        (haml (:li "You definitely do have to do some baseline abstracts, see the section on 'Abstract Categorization Tasks'."))
@@ -1627,9 +1710,8 @@
          ("2" . "30 abstracts")
          ("3" . "50 abstracts")
          ("4" . "None"))
-       "2"))
-    (define how-many-abstracts-question
-      (radio-question
+       "2")
+      (ct-question
        'how-many-abstracts
        "Suppose that you chose 'Categorize 50 abstracts into Animal Rights or Other' in the decision that counts. Then how many abstracts do you have to do in total, including the baseline abstracts?"
        (haml (:li "Regarding how many abstracts you have to do: note that you have to do a certain amount of baseline abstracts (see the section on 'Abstract Categorization Tasks'). Then you do the abstracts from the choice " (:strong "in addition") " to these baseline abstracts."))
@@ -1637,9 +1719,8 @@
          ("2" . " 30 in total")
          ("3" . "100 in total")
          ("4" . " 80 in total"))
-       "4"))
-    (define reasons-to-reveal-question
-      (radio-question
+       "4")
+      (ct-question
        'reasons-to-reveal
        "Suppose you face a decision with buttons to reveal reasons for each option. Then which of the following is true?"
        (haml (:li "Regarding the reasons, see the subsection on 'Revealing Reasons'. When there is a reason, how many do you have to reveal?"))
@@ -1647,93 +1728,7 @@
          ("2" . "You can choose an option and submit your choice only after revealing both reasons.")
          ("3" . "You can choose an option and submit your choice after revealing any number of reasons."))
        "1"))
-    (define (radio-question-radios q)
-      (radios
-       (cond
-         [last-attempt
-          (define answer
-            (hash-ref last-attempt (radio-question-key q)))
-          (define correct?
-            (cdr answer))
-          (haml
-           (:div
-            (radio-question-label q)
-            (:br)
-            (:small
-             (:strong
-              "You previously answered " (car answer) " which was " (if correct? "true" "false") "."))))]
-         [else
-          (radio-question-label q)])
-       (radio-question-answers q)))
-    (define (radio-questions-score+feedback pairs)
-      (for/fold ([score 0]
-                 [feedback (hasheq)])
-                ([p (in-list pairs)])
-        (define q (car p))
-        (define r (cdr p))
-        (define correct?
-          (equal? (radio-question-correct-answer q) r))
-        (define next-score
-          (+ score (if correct? 1 0)))
-        (define next-feedback
-          (hash-set feedback (radio-question-key q) (cons r correct?)))
-        (values next-score next-feedback)))
-
-    (page
-     (haml
-      (.container
-       (:h1 (format "Comprehension Test (~a attempt)"
-                    (case attempt
-                      [(1) "first"]
-                      [(2) "second"]
-                      [(3) "third"]
-                      [(4) "fourth"])))
-
-       (:p (format "You can attempt the comprehension test ~a times. If you need help to answer the questions, reread the study instructions below the test." max-attempts))
-
-       (when (> attempt 2)
-         (haml
-          (.alert
-           (:h4 "Hints")
-           (:ul
-            ,@(map radio-question-hint
-                   (list
-                    when-paid-question
-                    how-many-baseline-abstracts-question
-                    how-many-abstracts-question
-                    reasons-to-reveal-question))))))
-
-       (formular
-        (haml
-         (:div
-          (:div
-           (#:when-paid
-            (radio-question-radios when-paid-question)))
-          (:div
-           (#:how-many-baseline-abstracts
-            (radio-question-radios how-many-baseline-abstracts-question)))
-          (:div
-           (#:how-many-abstracts
-            (radio-question-radios how-many-abstracts-question)))
-          (:div
-           (#:reasons-to-reveal
-            (radio-question-radios reasons-to-reveal-question)))
-          submit-button))
-        (lambda (#:when-paid when-paid
-                 #:how-many-abstracts how-many-abstracts
-                 #:how-many-baseline-abstracts n-baseline
-                 #:reasons-to-reveal reasons-to-reveal)
-          (define-values (score last-attempt)
-            (radio-questions-score+feedback
-             `((,when-paid-question . ,when-paid)
-               (,how-many-baseline-abstracts-question . ,n-baseline)
-               (,how-many-abstracts-question . ,how-many-abstracts)
-               (,reasons-to-reveal-question . ,reasons-to-reveal))))
-          (put 'all-attempts (cons last-attempt (get 'all-attempts null)))
-          (put 'last-attempt last-attempt)
-          (put 'attempt (add1 (get 'attempt)))
-          (put 'comprehension-test-score score)))
-       (pilot-instructions)))))
+     pilot-instructions))
 
   (define (introduction)
     (page
@@ -1746,7 +1741,6 @@
                    (conf 'pilot-tutorial-duration-estimate)))
 
        (button void "Continue")))))
-
 
   (make-study
    "pilot tutorial"
