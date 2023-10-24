@@ -34,4 +34,5 @@
     (congame-example-study/quizzes info-econ-quiz2)
     (congame-example-study/quizzes info-econ-quiz3)
     (congame-example-study/quizzes info-econ-quiz4)
-    (congame-example-study/reproducible-bug reproducible-bug-study)))
+    (congame-example-study/reproducible-bug reproducible-bug-study)
+    (congame-example-study/prolific-redirect prolific-redirect)))
