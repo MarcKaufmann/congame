@@ -1673,10 +1673,10 @@
          (cons
           (ct-question-key q)
           (forms:ensure forms:binding/text (forms:required)))))
-      (lambda (res)
+      (lambda (answers)
         (define-values (score last-attempt)
           (ct-questions-score+feedback
-           (map cons questions res)))
+           (map cons questions answers)))
         (put 'all-attempts (cons last-attempt (get 'all-attempts null)))
         (put 'last-attempt last-attempt)
         (put 'attempt (add1 (get 'attempt)))
