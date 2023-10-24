@@ -33,9 +33,21 @@
     (next-dispatcher))
   (define the-user
     (user-manager-create-anon! users))
+  (define target
+    (reverse-uri 'study-page slug))
   (auth-manager-login!/nopass auth the-user)
   (core:enroll-participant! db (user-id the-user) (core:study-instance-id the-instance))
-  (redirect-to (reverse-uri 'study-page slug)))
+  (page
+   #:subtitle "Redirecting..."
+   (haml
+    (.container
+     (:h1 "You are being redirected...")
+     (:p "Please wait to be redirected or "
+         (:a ([:href target]) "click here")
+         " if nothing happens after a few seconds.")
+     (:meta
+      ([:http-equiv "refresh"]
+       [:content (format "3; ~a" target)]))))))
 
 
 ;; token login ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
