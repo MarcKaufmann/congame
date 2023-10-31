@@ -74,7 +74,8 @@
  get
  get/instance
  get/instance-file
- get/linked/instance)
+ get/linked/instance
+ get-progress)
 
 (define/contract current-git-sha
   (parameter/c (or/c #f string?))
@@ -193,6 +194,15 @@ QUERY
       [maybe-value => deserialize*]
       [(procedure? default) (default)]
       [else default])))
+
+(define (get-progress)
+  (with-database-connection [conn (current-database)]
+    (for/hasheqv ([(pid progress)
+                   (in-entities conn (~> (from study-participant #:as p)
+                                         (select p.id p.progress)
+                                         (where (= p.instance-id ,(study-participant-instance-id
+                                                                   (current-participant))))))])
+      (values pid (pg-array->list progress)))))
 
 (define (call-with-study-transaction f)
   (let loop ()

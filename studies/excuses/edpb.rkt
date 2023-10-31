@@ -9,6 +9,7 @@
          racket/pretty
          racket/random
          racket/serialize
+         racket/string
          web-server/http
          (only-in xml xexpr/c)
          koyo/haml
@@ -988,12 +989,12 @@
 (define (admin-page)
   (define progress
     (get/instance* 'progress (hash)))
+  (eprintf "p: ~s~n" progress)
   (define progress-with-bonus
     (for/hash ([(id p) (in-hash progress)])
       (values id (hash-set p 'bonus (compute-total-bonus p)))))
 
   (define (enroll> p1 p2)
-    (eprintf "p1: ~a, p2: ~a~n~n" p1 p2)
     (define t1 (hash-ref (cdr p1) 'time-enrolled 0))
     (define t2 (hash-ref (cdr p2) 'time-enrolled 0))
     (moment>? (posix->moment t1) (posix->moment t2)))
@@ -1015,6 +1016,30 @@
                    (put/instance* 'progress (hash)))
                  "Delete progress data"
                  #:to-step-id 'admin)
+
+         (:table
+          (:thead
+           (:tr
+            (:td "Participant ID")
+            (:td "Progress")))
+          (:tbody
+           ,@(for/list ([(pid progress) (in-hash (get-progress))])
+               (haml
+                (:tr
+                 (:td (~a pid))
+                 (:td
+                  (:details
+                   (:summary
+                    (last progress))
+                   ,@(let loop ([progress progress])
+                       (if (null? progress)
+                           (list)
+                           (list
+                            (haml
+                             (:ul
+                              (:li
+                               (:code (car progress))
+                               ,@(loop (cdr progress)))))))))))))))
 
          (:table
           (:thead
