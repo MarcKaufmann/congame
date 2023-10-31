@@ -1079,6 +1079,17 @@
 
          (:h4 "Participants who should be approved")
 
+         ;; A way to define "insert":
+         #;(with-study-transaction
+             (define maybe-v (get 'foo #f))
+             (when maybe-v
+               (error 'insert "foo is already set"))
+             (put 'foo 42))
+
+         ;; FIXME(marc): Refactor table below and progress update.
+         #;(put-completed )
+         #;(display-to-approve)
+
          (:table
           (:thead
            (:tr
