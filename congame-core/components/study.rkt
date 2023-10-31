@@ -139,6 +139,7 @@
        #:participant-id participant-id
        'group-stack (reverse (cons group-name (cdr group-stack)))))
 
+;; SECURITY: See note on `get'.
 (define (put k v
              #:root [root-id '*root*]
              #:round [round-stack (list "")]
@@ -149,7 +150,16 @@
   (log-study-debug
    "put~n  stack: ~s~n  root: ~s~n  round: ~s~n  group: ~s~n  key: ~s~n  value: ~.s~n  participant-id: ~s"
    (current-study-ids) root-id reversed-round-stack reversed-group-stack k v participant-id)
-  (with-database-connection [conn (current-database)]
+  (with-database-transaction [conn (current-database)]
+    (define current-instance-id
+      (study-participant-instance-id (current-participant)))
+    (define target-instance-id
+      (query-maybe-value conn (~> (from "study_participants" #:as p)
+                                  (select p.instance-id)
+                                  (where (= p.id ,participant-id)))))
+    (unless (eqv? current-instance-id target-instance-id)
+      (error 'put "target participant is in a different study"))
+
     (query-exec conn #<<QUERY
 INSERT INTO study_data (
   participant_id, study_stack, round_stack, group_stack, key, value, git_sha
@@ -168,6 +178,15 @@ QUERY
                 (serialize* v)
                 (current-git-sha))))
 
+;; SECURITY: When performing gets, we try to make sure the current
+;; participant's study instance id is the same as the study instance id
+;; of the target participant id. This prevents inadvertent access to
+;; other study instances' data. However, since we base our notion of
+;; "current participant" on a parameter, and that parameter is provided
+;; by this module, anyone with access to the code can fake it. For
+;; #lang conscript, we can simply not provide users with the structures
+;; necessary to fake that information, but for regular studies this
+;; poses a potential security threat.
 (define (get k [default (lambda ()
                           (error 'get "value not found for key ~.s" k))]
              #:root [root-id '*root*]
@@ -182,13 +201,15 @@ QUERY
   (with-database-connection [conn (current-database)]
     (define maybe-value
       (query-maybe-value conn (~> (from "study_data" #:as d)
+                                  (join "study_participants" #:as p #:on (= d.participant-id p.id))
                                   (select d.value)
                                   (where (and
                                           (= d.participant-id ,participant-id)
                                           (= d.study-stack ,(current-study-array root-id))
                                           (= d.round-stack ,(list->pg-array reversed-round-stack))
                                           (= d.group-stack ,(list->pg-array reversed-group-stack))
-                                          (= d.key ,(symbol->string k)))))))
+                                          (= d.key ,(symbol->string k))
+                                          (= p.instance-id ,(study-participant-instance-id (current-participant))))))))
 
     (cond
       [maybe-value => deserialize*]
