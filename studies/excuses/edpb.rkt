@@ -1028,18 +1028,20 @@
                 (:tr
                  (:td (~a pid))
                  (:td
-                  (:details
-                   (:summary
-                    (last progress))
-                   ,@(let loop ([progress progress])
-                       (if (null? progress)
-                           (list)
-                           (list
-                            (haml
-                             (:ul
-                              (:li
-                               (:code (car progress))
-                               ,@(loop (cdr progress)))))))))))))))
+                  (unless (empty? progress)
+                    (haml
+                     (:details
+                      (:summary
+                       (last progress))
+                      ,@(let loop ([progress progress])
+                          (if (null? progress)
+                              (list)
+                              (list
+                               (haml
+                                (:ul
+                                 (:li
+                                  (:code (car progress))
+                                  ,@(loop (cdr progress)))))))))))))))))
 
          (:table
           (:thead
