@@ -12,6 +12,7 @@
                "koyo-lib"
                "marionette-lib"
                "sentry-lib"
+               "studies"
                "web-server-lib"))
 (define build-deps '("rackunit-lib"))
 (define congame-studies
