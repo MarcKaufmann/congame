@@ -1,19 +1,41 @@
-# From conscript
-
-Styling: add some padding below final button.
-
-Moritz: 
-
-- did they have all this info on single page? It's bad.
-- I forgot which type I was
-- Tell people that submit-button is necessary for forms, throw an error or warning otherwise
-  - Throw error, provide other form otherwise if one wants to be cleverer
-- The --> notation is ambiguous:
-  [a --> b --> c --> d]
-  [e --> b --> f --> g]
-  Does not work as expected, since b either will always go to c or always to f, but not to f if it came from e and so on.
-
 # Completed Features
+
+## Status Fall 2023
+
+In the last year, we achieved the following:
+
+- We created the first prototype of conscript, a domain-specific language (DSL) on top of congame that I used in one of my classes to let students code replications of existing studies. While it was usable by students, it lacked a lot of features that the students needed, it was not sufficiently simple for students to use by themselves, and it revealed several bugs that we needed fixing. Nonetheless, most students managed to code parts of existing studies up in conscript, showing the potential for an improved version that we are working on currently.
+- `formular` improvements: 
+  - elements of a form can now be randomized within a page
+  - we added lots of default widgets (input-number etc)
+  - we added ways to dynamically create specialized forms, such as tables with multiple columns, that act as inputs.
+  - we created default behavior such that normal uses of formular require less code by storing all the values by default under separate names. We added additional functions to switch to other common behaviors.
+- Documentation: 
+  - We wrote some basic documentation for the central features of congame.
+  - We have a separate page for the documentation of congame.
+- Admin interface improvements:
+  - We display a summary of each data object, which can be expanded to provide the details when needed. This reduces visual clutter when dealing with large objects, such as large hashes.
+  - We now catch several types of errors so that the admin page doesn't fail to load when these occur.
+- Testing:
+  - We created many tests, including snapshot tests for conscript studies, to better catch many errors
+- getting and putting data:
+  - We created new variants of `get` and `put` that store values at the global level; at the global instance level; or at some other root (such as '*new-root*, instead of the default '*root*) to avoid name collisions and allow features to work well with each other.
+- We fixed several big performance bugs, that slowed down the study dramatically:
+  - One was identified by a student, literally grinding even minor studies to the ground (see https://github.com/MarcKaufmann/congame/commit/8cb69a0f869e0f49cd36579605326fbe00938361 for the resolution)
+  - We catch errors in transition graphs, disallowing one step to have multiple follow-up targets, since each step can only have one well-defined step (which can be a step that transitions to one of several steps depending on which conditions prevails).
+  - We found two other performance bugs that leaked memory, so that eventually the server had to be restarted to run. 
+- Data extraction
+  - We have now several scripts for extracting data, providing convenient templates for future data extractions.
+- I wrote several studies in congame:
+  - Several surveys that I used in class
+  - One survey used for the economics department to test new names for its programme
+  - Several experiments for research project
+- Different study instances can now be linked so that they can share data between each other
+- We allow dynamic (runtime) substudies, which allows simplifying and abstracting a lot of code.
+  - We added `for/study`, which creates a new substudy consisting of the looped steps inside the for loop.
+- We can use unpoly widgets to provide some element of dynamic behavior on the frontend page (see up-*)
+
+## Status Fall 2022
 
 - transition graphs that allow adding transitions at the study level rather than the step level
     - When transition graphs are used, it is possible to create a pdf visualizing the transition graph of the study
@@ -30,16 +52,17 @@ Moritz:
 - studies with multiple participants are now possible. congame-example-study contains some studies illustrating this feature, including multi-review.rkt which I used in one of my classes to have students submit assignments and peer review each other. 
 - admins can impersonate users, run bots in bot sets (multiple bots) to test studies, or even simulate studies by creating the right model (our term) for bots.
 - We now distinguish between admins who can administer the studies they created (or were given explicit access to) and superadmins who can see all studies.
+- The server can now be connected to dbg, to monitor its memory and pcu usage, which helps in debugging.
 
-# Features in Progress
+# Plans
 
-The following features are partially implemented and available in the current version, but need fleshing out and improvement:
+The main plan for now is to use congame even more in production; to update conscript based on the lessons learned from last year and all the code improvements since; and to document congame, conscript, and the current list of features.
 
-- Libraries of ready-made studies/steps/widgets/bots
-- The current studies implemented in congame highlight some patterns that are common across studies. We are refactoring some of these out into specific libraries to make it easier and faster to build studies that use common components.
-- Improve debugging and administration of single studies
-    
-# Planned Features
+Additional secondary goals are to improve the data export by creating functionality that simplifies the workflow; and to improve and better integrate defining, modeling, and analysing bots.
+
+# List of Potential Features
+
+This list of features does not represent a roadmap. These are features that came up, but many may not be desirable and create feature bloat.
 
 - Domain-specific language (DSL) to create studies from existing widgets/studies/study-pieces at a higher level that does not require study designers (whether for research or teaching) to learn Racket
   + including randomizations and treatments
