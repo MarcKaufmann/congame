@@ -17,7 +17,8 @@
  static-uri
  container
  page
- page/xexpr)
+ page/xexpr
+ mathjax-scripts)
 
 (define (static-uri path)
   (define path/full (format "/static/~a?rev=~a" path config:version))
@@ -54,21 +55,25 @@
      (:title (if subtitle (~a subtitle " - congame") "congame"))
      (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
      (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
+
      (unless (getenv "CI")
        (haml
         (:script
          ([:crossorigin "anonymous"]
           [:src "https://js.sentry-cdn.com/fb877e2559424bf292eeb8331b8479b9.min.js"]))))
+
+     (:link ([:rel "stylesheet"] [:href "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.11.2/cdn/themes/light.css"]))
      (:script
-      ([:src "https://polyfill.io/v3/polyfill.min.js?features=es6"]))
-     (:script
-      ([:id "MathJax-script"]
-       [:async ""]
-       [:src "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"]) )
-     (:script
-      ([:src (static-uri "vendor/unpoly.min.js")]))
-     (:script
-      ([:src (static-uri "js/app.js")])))
+      ([:type "module"]
+       [:blocking "render"])
+      #<<SCRIPT
+import 'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.11.2/cdn/components/radio-group/radio-group.js';
+import 'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.11.2/cdn/components/radio/radio.js';
+SCRIPT
+      )
+
+     (:script ([:src (static-uri "vendor/unpoly.min.js")]))
+     (:script ([:src (static-uri "js/app.js")])))
     (:body
      (when (impostor?)
        (haml
@@ -130,3 +135,12 @@
          (displayln "<!doctype html>")
          (write-xml/content (xexpr->xml page))
          (profile-write profile))))))
+
+(define (mathjax-scripts)
+  (haml
+   (:script
+    ([:src "https://polyfill.io/v3/polyfill.min.js?features=es6"]))
+   (:script
+    ([:id "MathJax-script"]
+     [:async ""]
+     [:src "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"]))))

@@ -19,6 +19,7 @@
          (prefix-in tpl: congame-web/components/template)
          congame/components/export
          congame/components/for-study
+         congame/components/shoelace
          congame/components/study
          congame/components/transition-graph
          congame/components/formular
@@ -1675,7 +1676,7 @@
             "You previously answered " (car answer) " which was " (if correct? "true" "false") "."))))]
        [else (ct-question-label q)])
      (rw (~a (ct-question-key q))
-         (forms:widget-radio-group
+         (widget-sl-radios
           (ct-question-answers q)))
      ,@(rw (~a (ct-question-key q))
            (forms:widget-errors))))))
