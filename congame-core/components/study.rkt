@@ -1123,6 +1123,7 @@ QUERY
  current-participant-owner?
  current-study-instance-id
  current-study-instance-name
+ current-study-instance-slug
  clear-participant-progress!
  participant-enrolled?
  enroll-participant!
@@ -1265,6 +1266,10 @@ QUERY
 
 (define (current-study-instance-name)
   (study-instance-name
+   (lookup-study-instance (current-database) (current-study-instance-id))))
+
+(define (current-study-instance-slug)
+  (study-instance-slug
    (lookup-study-instance (current-database) (current-study-instance-id))))
 
 (define (current-study-instance-owner-id)

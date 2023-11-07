@@ -1017,31 +1017,7 @@
                  "Delete progress data"
                  #:to-step-id 'admin)
 
-         (:table
-          (:thead
-           (:tr
-            (:td "Participant ID")
-            (:td "Progress")))
-          (:tbody
-           ,@(for/list ([(pid progress) (in-hash (get-progress))])
-               (haml
-                (:tr
-                 (:td (~a pid))
-                 (:td
-                  (unless (empty? progress)
-                    (haml
-                     (:details
-                      (:summary
-                       (last progress))
-                      ,@(let loop ([progress progress])
-                          (if (null? progress)
-                              (list)
-                              (list
-                               (haml
-                                (:ul
-                                 (:li
-                                  (:code (car progress))
-                                  ,@(loop (cdr progress)))))))))))))))))
+         (progress-table)
 
          (:table
           (:thead
@@ -1195,6 +1171,42 @@
               (:p "No completion code is set.")
               (button void "Change Completion Code" #:to-step-id 'completion-code-admin)))])))))
 
+(define (progress-table)
+  (define study-path
+    (cdr (reverse (current-study-stack))))
+  (haml
+   (:table.progress-table
+    ([:up-poll ""]
+     [:up-source (format "/study/~a/view/~a/admin"
+                         (current-study-instance-slug)
+                         (string-join (map symbol->string study-path) "/"))]
+     [:up-target "table.progress-table"]
+     [:up-interval "5000"])
+    (:thead
+     (:tr
+      (:td "Participant ID")
+      (:td "Progress")))
+    (:tbody
+     ,@(for/list ([(pid progress) (in-hash (get-progress))])
+         (haml
+          (:tr
+           (:td (~a pid))
+           (:td
+            (unless (empty? progress)
+              (haml
+               (:details
+                (:summary
+                 (last progress))
+                ,@(let loop ([progress progress])
+                    (if (null? progress)
+                        (list)
+                        (list
+                         (haml
+                          (:ul
+                           (:li
+                            (:code (car progress))
+                            ,@(loop (cdr progress)))))))))))))))))))
+
 (define (completion-code/admin)
   (page
    (haml
@@ -1261,7 +1273,12 @@
                           (goto admin))])
 
    (list
-    (make-step 'admin admin-page)
+    (make-step 'admin admin-page
+               #:view-handler
+               (lambda (_req)
+                 (if (current-participant-owner?)
+                     (response/xexpr (progress-table))
+                     (response/xexpr (haml (:h1 "Not Found"))))))
     (make-step 'completion-code-admin completion-code/admin)
     (make-step/study
      'abstracts-admin
