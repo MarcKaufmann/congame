@@ -53,7 +53,7 @@
 
 (define (response/xexpr* e #:validator [validator validate-xexpr])
   (with-handlers ([exn:fail:xexpr? (λ (_e) (response/xexpr (validator e)))])
-    (response/xexpr e)))
+    (response/xexpr #:preamble #"<!DOCTYPE html>" e)))
 
 (define (exn:fail:xexpr? e)
   (and (exn? e)
