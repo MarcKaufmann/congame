@@ -10,6 +10,7 @@
          koyo/continuation
          koyo/database
          koyo/haml
+         koyo/http
          koyo/random
          (except-in forms form)
          racket/contract
@@ -410,6 +411,26 @@ QUERY
 (define (get-all-payments)
   (lookup-payments (current-database) (current-participant-id)))
 
+
+;; timings ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ current-step-timings)
+
+;; current-step-timings : (cons total-time focus-time)
+;; Undefined behavior when accessed within a step. Only read this data
+;; within a widget's action or during a step transition.
+(define current-step-timings
+  (make-parameter (cons #f #f)))
+
+(define (call-with-timings req proc)
+  (define binds (request-bindings/raw req))
+  (define tt (bindings-ref-number binds '__tt))
+  (define ft (bindings-ref-number binds '__ft))
+  (parameterize ([current-step-timings (cons tt ft)])
+    (proc)))
+
+
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
@@ -522,14 +543,20 @@ QUERY
      [:data-widget-id (when-bot id)]
      [:href
       (embed
-       (lambda (_req)
-         (action)
-         (cond [to-step-id
-                (continue to-step-id)]
-               [else
-                (continue)])))])
+       (lambda (req)
+         (call-with-timings
+          req
+          (lambda ()
+            (action)
+            (if to-step-id
+                (continue to-step-id)
+                (continue))))))])
     label)))
 
+;; NOTE: This approach seems like a bad idea. Instead, use a separate
+;; step to implement the confirm/cancel part of this in order to better
+;; integrate with the rest of the system. Currently, this does not play
+;; well with timings.
 (define/widget (button/confirm label
                                #:id [id ""]
                                #:cancel-id [cancel-id ""]
@@ -563,9 +590,12 @@ QUERY
                      #:defaults [defaults (hash)])
   (match (form-run f this-request #:defaults defaults)
     [(list 'passed res _)
-     (redirect/get/forget/protect)
-     (action res)
-     (continue)]
+     (call-with-timings
+      this-request
+      (lambda ()
+        (redirect/get/forget/protect)
+        (action res)
+        (continue)))]
 
     [(list _ _ rw)
      (haml
@@ -589,14 +619,17 @@ QUERY
   (haml
    (:a.button.attachment-button
     ([:href (embed
-             (lambda (_req)
-               (response/output
-                #:mime-type (string->bytes/utf-8 content-type)
-                #:headers (list
-                           (make-header
-                            #"content-disposition"
-                            (string->bytes/utf-8 (format "attachment; filename=\"~a\"" filename))))
-                proc)))])
+             (lambda (req)
+               (call-with-timings
+                req
+                (lambda ()
+                  (response/output
+                   #:mime-type (string->bytes/utf-8 content-type)
+                   #:headers (list
+                              (make-header
+                               #"content-disposition"
+                               (string->bytes/utf-8 (format "attachment; filename=\"~a\"" filename))))
+                   proc)))))])
     label)))
 
 
@@ -725,7 +758,8 @@ QUERY
        [:data-study-stack (when-bot (call-with-output-string
                                      (lambda (out)
                                        (write (current-study-stack) out))))]
-       [:data-step-id (when-bot (step-id s))])
+       [:data-step-id (when-bot (step-id s))]
+       [:data-track-timings ""])
       (r))))))
 
 (define (response/step s)
