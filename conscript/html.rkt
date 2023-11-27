@@ -18,7 +18,7 @@
 (define-syntax (html* stx)
   (syntax-parse stx
     [(_ elt ...)
-     #'(paragraphify `(div () ,elt ...))]))
+     #'(paragraphify `(div ([class "container"]) ,elt ...))]))
 
 (define (paragraphify? e)
   (memq (car e) '(aside div form section)))
