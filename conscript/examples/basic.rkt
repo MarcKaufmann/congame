@@ -1,4 +1,6 @@
 #lang conscript
 
 (defstep (info)
-  @html{Hello world!})
+  @html{@h1{Hello world!}
+        Foo
+        @p{Test}})

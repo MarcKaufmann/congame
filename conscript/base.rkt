@@ -2,7 +2,8 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
-         koyo/haml)
+         congame/components/struct
+         "html.rkt")
 
 ;; kernel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -16,8 +17,8 @@
 ;; syntax ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- defstep
- [rename-out (haml html)])
+ (all-from-out "html.rkt")
+ defstep)
 
 (begin-for-syntax
   (define-splicing-syntax-class function-arg
