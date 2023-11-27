@@ -12,7 +12,7 @@
      (define attributes
        (for/list ([kw (in-list kws)]
                   [kw-arg (in-list kw-args)])
-         `(,(keyword->string kw) ,kw-arg)))
+         `(,(string->symbol (keyword->string kw)) ,kw-arg)))
      `(,id ,attributes ,@args))))
 
 (define-syntax (define-element stx)
