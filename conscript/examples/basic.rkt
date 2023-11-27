@@ -13,5 +13,10 @@
         Do you consent to join the study?
         @button[void]{Give Consent}})
 
+(defstep (done)
+  @html{@h1{Done}
+        You're done.})
+
 (defstudy (example)
-  [info --> consent --> ,done])
+  [info --> consent --> done]
+  [done --> done])

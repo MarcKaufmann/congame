@@ -90,7 +90,9 @@
           #:transitions
           (transition-graph
            transition-e ...)
-          (list
-           (if (study? step-id)
-               (make-step/study 'step-id step-id)
-               (make-step 'step-id step-id)) ...)))]))
+          (list (make-step* 'step-id step-id) ...)))]))
+
+(define (make-step* id v)
+  (if (study? v)
+      (make-step/study id v)
+      (make-step id v)))
