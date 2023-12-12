@@ -2,7 +2,8 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
-         congame/components/study
+         (prefix-in congame: congame/components/study)
+         (except-in congame/components/study button)
          congame/components/transition-graph
          "html.rkt")
 
@@ -27,10 +28,10 @@
  list list? null null? cons pair? car cdr
 
  ;; Congame Syntax
- -->
+ --> goto
 
  ;; Congame Runtime
- button done
+ done
  )
 
 ;; syntax ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -107,3 +108,14 @@
   (if (study? v)
       (make-step/study id v)
       (make-step id v)))
+
+
+;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ button)
+
+(define button
+  (case-lambda
+    [(label) (congame:button void label)]
+    [args (apply congame:button args)]))

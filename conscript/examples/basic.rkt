@@ -6,12 +6,12 @@
 (defstep (info)
   @html{@h1{Hello!}
         Welcome to the study.
-        @button[void]{Continue}})
+        @button{Continue}})
 
 (defstep (consent)
   @html{@h1{Consent}
         Do you consent to join the study?
-        @button[void]{Give Consent}})
+        @button{Give Consent}})
 
 (defstep (done)
   @html{@h1{Done}
