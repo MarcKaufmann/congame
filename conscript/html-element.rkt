@@ -44,6 +44,7 @@
   [h5]
   [h6]
   [img (#:alt #:src)]
+  [label]
   [li]
   [ol]
   [p]

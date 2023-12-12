@@ -3,8 +3,9 @@
 (require (for-syntax racket/base
                      syntax/parse)
          (prefix-in congame: congame/components/study)
-         (except-in congame/components/study button)
+         (except-in congame/components/study button form)
          congame/components/transition-graph
+         "form.rkt"
          "html.rkt")
 
 ;; kernel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -26,6 +27,7 @@
  lambda λ
  void
  list list? null null? cons pair? car cdr
+ display displayln print println printf eprintf write writeln
 
  ;; Congame Syntax
  --> goto
@@ -37,6 +39,7 @@
 ;; syntax ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ (all-from-out "form.rkt")
  (all-from-out "html.rkt")
  defstep
  defstudy)

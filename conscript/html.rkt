@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
-         congame/components/study
+         (except-in congame/components/study form)
          racket/match
          "html-element.rkt")
 

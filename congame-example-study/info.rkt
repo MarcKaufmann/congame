@@ -14,6 +14,7 @@
 (define build-deps '())
 (define congame-studies
   '((congame-example-study/conscript conscript-example)
+    (congame-example-study/conscript-form conscript-form-example)
     (congame-example-study/deferred deferred-study)
     (congame-example-study/deferred wrapped-deferred-study)
     (congame-example-study/edpb-survey briq-study)
