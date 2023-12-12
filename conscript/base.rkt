@@ -86,7 +86,12 @@
 
 (define-syntax (defstudy stx)
   (syntax-parse stx
-    [(_ (id:id) transition-e:transition ...+)
+    [(_ id:id
+        {~alt
+         ;; TODO: pass these to make-study
+         {~optional {~seq #:requires requires}}
+         {~optional {~seq #:provides provides}}} ...
+        transition-e:transition ...+)
      #:with ((step-id step-expr) ...)
      (for/fold ([stxs null]
                 [seen (hash)]

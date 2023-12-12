@@ -24,7 +24,7 @@
           @submit-button[]
         }})
 
-(defstep (give-consent name)
+(defstep (give-consent)
   (define (accepted)
     (set! consented? #t))
   (define (rejected)
@@ -45,10 +45,12 @@
 (defstep (done)
   @html{Thanks! You're done.})
 
-(defstudy (consent name)
+(defstudy consent
+  #:requires (name)
+  #:provides (consented?)
   [give-consent --> ,(λ () (if consented? 'consented 'didnt-consent))]
   [consented --> ,done]
   [didnt-consent --> ,done])
 
-(defstudy (example)
-  [info --> tell-name --> ,(consent name) --> done])
+(defstudy example
+  [info --> tell-name --> consent --> done])

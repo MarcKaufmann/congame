@@ -17,6 +17,6 @@
   @html{@h1{Done}
         You're done.})
 
-(defstudy (conscript-example)
+(defstudy conscript-example
   [info --> consent --> done]
   [done --> done])

@@ -22,6 +22,6 @@
   @html{@h1{Done}
         You're done.})
 
-(defstudy (conscript-form-example)
+(defstudy conscript-form-example
   [info --> the-form --> done]
   [done --> done])
