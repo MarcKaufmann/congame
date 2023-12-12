@@ -22,6 +22,7 @@
  provide
 
  ;; Racket Runtime
+ lambda λ
  void
  list list? null null? cons pair? car cdr
 
