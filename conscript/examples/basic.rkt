@@ -1,7 +1,7 @@
 #lang conscript
 
 (provide
- example)
+ conscript-example)
 
 (defstep (info)
   @html{@h1{Hello!}
@@ -17,6 +17,8 @@
   @html{@h1{Done}
         You're done.})
 
-(defstudy (example)
-  [info --> consent --> done]
+(defstudy (conscript-example)
+  [info --> {consent1 consent}
+        --> {consent2 consent}
+        --> done]
   [done --> done])

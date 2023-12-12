@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     racket/list
                      syntax/parse)
          congame/components/study
          congame/components/transition-graph
@@ -57,40 +56,51 @@
      #'(define head . body)]))
 
 (begin-for-syntax
+  ;; Extends the regular transition graph syntax with support for
+  ;; binders in the middle of a transition. Rewrites binders to drop the
+  ;; rhs before passing the stx to `transition-graph' (via `tg-e').
   (define-splicing-syntax-class transition-arrow
     #:literals (--> unquote)
     {pattern (unquote e)
-             #:with (step-id ...) #'()}
+             #:with (tg-e ...) #'((unquote e))
+             #:with ((step-id step-e) ...) #'()}
     {pattern step:id
-             #:with (step-id ...) #'(step)}
-    {pattern {~seq step:id --> e:transition-arrow}
-             #:with (step-id ...) #'(step e.step-id ...)})
+             #:with (tg-e ...) #'(step)
+             #:with ((step-id step-e) ...) #'((step step))}
+    {pattern [step:id step-expr:id]
+             #:with (tg-e ...) #'(step)
+             #:with ((step-id step-e) ...) #'((step step-expr))}
+    {pattern {~seq lhs:transition-arrow --> rhs:transition-arrow}
+             #:with (tg-e ...) #'{lhs.tg-e ... --> rhs.tg-e ...}
+             #:with ((step-id step-e) ...) #'((lhs.step-id lhs.step-e) ... (rhs.step-id rhs.step-e) ...)})
 
   (define-syntax-class transition
     {pattern [arrow:transition-arrow]
-             #:with (step-id ...) #'(arrow.step-id ...)}))
+             #:with tg-e #'(arrow.tg-e ...)
+             #:with ((step-id step-e) ...) #'((arrow.step-id arrow.step-e) ...)}))
 
 (define-syntax (defstudy stx)
   (syntax-parse stx
     [(_ (id:id) transition-e:transition ...+)
-     #:with (step-id ...)
+     #:with ((step-id step-expr) ...)
      (for/fold ([stxs null]
                 [seen (hash)]
                 #:result (reverse stxs))
-               ([step-id-stx (in-list (syntax-e #'(transition-e.step-id ... ...)))])
+               ([step-id-stx (in-list (syntax-e #'(transition-e.step-id ... ...)))]
+                [step-expr-stx (in-list (syntax-e #'(transition-e.step-e ... ...)))])
        (define step-id
          (syntax->datum step-id-stx))
        (if (hash-has-key? seen step-id)
            (values stxs seen)
-           (values (cons step-id-stx stxs)
+           (values (cons (list step-id-stx step-expr-stx) stxs)
                    (hash-set seen step-id #t))))
      #'(define id
          (make-study
           (symbol->string 'id)
           #:transitions
           (transition-graph
-           transition-e ...)
-          (list (make-step* 'step-id step-id) ...)))]))
+           transition-e.tg-e ...)
+          (list (make-step* 'step-id step-expr) ...)))]))
 
 (define (make-step* id v)
   (if (study? v)
