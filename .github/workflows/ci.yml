@@ -48,6 +48,7 @@ jobs:
         ./ci/setup-catalogs.sh
         raco pkg install -D --auto --skip-installed \
           congame-core/ \
+          conscript/ \
           congame-example-study/ \
           congame-identity/ \
           studies/ \
@@ -55,10 +56,10 @@ jobs:
           congame-price-lists/ \
           congame-smtp-proxy/ \
           congame-tests/ \
-          congame-web/ \
-          conscript/
+          congame-web/
         raco setup --pkgs \
           congame-core \
+          cosncript \
           congame-example-study \
           congame-identity \
           studies \
