@@ -88,7 +88,6 @@
   (syntax-parse stx
     [(_ id:id
         {~alt
-         ;; TODO: pass these to make-study
          {~optional {~seq #:requires requires}}
          {~optional {~seq #:provides provides}}} ...
         transition-e:transition ...+)
@@ -107,6 +106,8 @@
      #'(define id
          (make-study
           (symbol->string 'id)
+          #:requires {~? requires null}
+          #:provides {~? provides null}
           #:transitions
           (transition-graph
            transition-e.tg-e ...)
