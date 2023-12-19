@@ -99,6 +99,7 @@
       #:headless? #f
       (lambda (p)
         (page-goto! p (~a root target-path))
+        (element-click! (page-query-selector! p "#skip")) ;; skip auth redir page
         (check-not-false (page-query-selector! p "#study-done")))))))
 
 (module+ test

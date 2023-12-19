@@ -33,7 +33,7 @@
     (.container
      (:h1 "You are being redirected...")
      (:p "Please wait to be redirected or "
-         (:a ([:href target]) "click here")
+         (:a#skip ([:href target]) "click here")
          " if nothing happens after a few seconds.")
      (:meta
       ([:http-equiv "refresh"]
