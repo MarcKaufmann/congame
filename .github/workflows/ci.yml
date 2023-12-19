@@ -59,7 +59,7 @@ jobs:
           congame-web/
         raco setup --pkgs \
           congame-core \
-          cosncript \
+          conscript \
           congame-example-study \
           congame-identity \
           studies \
