@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
+         (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
          (except-in congame/components/study button form)
          congame/components/transition-graph
@@ -23,6 +24,8 @@
  unquote
  provide
 
+ if case cond else unless when
+
  ;; Racket Runtime
  lambda λ
  void
@@ -33,6 +36,7 @@
  --> goto
 
  ;; Congame Runtime
+ make-step make-step/study
  get put
  done
  )
@@ -43,6 +47,7 @@
  (all-from-out "form.rkt")
  (all-from-out "html.rkt")
  defstep
+ defstep/study
  defstudy)
 
 (begin-for-syntax
@@ -60,6 +65,19 @@
   (syntax-parse stx
     [(_ head:function-header . body)
      #'(define head . body)]))
+
+(define-syntax (defstep/study stx)
+  (syntax-parse stx
+    [(_ id:id
+        {~alt
+         {~seq #:study study-expr}
+         {~optional {~seq #:require-bindings (require-binder ...)}}
+         {~optional {~seq #:provide-bindings (provide-binder ...)}}} ...)
+     #'(define id
+         (make-step/study
+          #:require-bindings `(require-binder ...)
+          #:provide-bindings `(provide-binder ...)
+          'id study-expr ...))]))
 
 (begin-for-syntax
   ;; Extends the regular transition graph syntax with support for
@@ -115,9 +133,15 @@
           (list (make-step* 'step-id step-expr) ...)))]))
 
 (define (make-step* id v)
-  (if (study? v)
-      (make-step/study id v)
-      (make-step id v)))
+  (cond
+    [(step/study? v)
+     (struct-copy congame:step/study v [id #:parent congame:step id])]
+    [(step? v)
+     (struct-copy congame:step v [id id])]
+    [(study? v)
+     (make-step/study id v)]
+    [else
+     (make-step id v)]))
 
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
