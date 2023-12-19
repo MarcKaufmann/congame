@@ -26,6 +26,19 @@
 (provide
  anon-login-page)
 
+(define (redirect-page target [duration 3])
+  (page
+   #:subtitle "Redirecting..."
+   (haml
+    (.container
+     (:h1 "You are being redirected...")
+     (:p "Please wait to be redirected or "
+         (:a ([:href target]) "click here")
+         " if nothing happens after a few seconds.")
+     (:meta
+      ([:http-equiv "refresh"]
+       [:content (format "~a; ~a" duration target)]))))))
+
 (define/contract ((anon-login-page auth db users) _req slug)
   (-> auth-manager? database? user-manager? (-> request? string? response?))
   (define the-instance (core:lookup-study-instance/by-slug db slug))
@@ -37,17 +50,7 @@
     (reverse-uri 'study-page slug))
   (auth-manager-login!/nopass auth the-user)
   (core:enroll-participant! db (user-id the-user) (core:study-instance-id the-instance))
-  (page
-   #:subtitle "Redirecting..."
-   (haml
-    (.container
-     (:h1 "You are being redirected...")
-     (:p "Please wait to be redirected or "
-         (:a ([:href target]) "click here")
-         " if nothing happens after a few seconds.")
-     (:meta
-      ([:http-equiv "refresh"]
-       [:content (format "3; ~a" target)]))))))
+  (redirect-page target))
 
 
 ;; token login ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -63,7 +66,7 @@
   (unless maybe-user
     (next-dispatcher))
   (auth-manager-login!/nopass auth maybe-user)
-  (redirect-to (bindings-ref bindings 'return-url)))
+  (redirect-page (bindings-ref bindings 'return-url)))
 
 
 ;; login & logout ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
