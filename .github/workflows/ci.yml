@@ -55,7 +55,8 @@ jobs:
           congame-price-lists/ \
           congame-smtp-proxy/ \
           congame-tests/ \
-          congame-web/
+          congame-web/ \
+          conscript/
         raco setup --pkgs \
           congame-core \
           congame-example-study \
