@@ -7,11 +7,16 @@
     "congame-core"
     "congame-web"
     "csv-reading"
+    "forms-lib"
     "gregor-lib"
+    "htdp-lib"
     "koyo-lib"
+    "marionette-lib"
     "sentry-lib"
+    "threading-lib"
     "web-server-lib"))
-(define build-deps '())
+(define build-deps
+  '("at-exp-lib"))
 (define congame-studies
   '((studies/EMBA/src src-survey)
     (studies/excuses/edpb edpb-intro)

@@ -1,16 +1,19 @@
 #lang info
 
 (define collection "congame-example-study")
-(define deps '("base"
-               "component-lib"
-               "congame-core"
-               "congame-web"
-               "gregor-lib"
-               "forms-lib"
-               "koyo-lib"
-               "sentry-lib"
-               "threading-lib"
-               "web-server-lib"))
+(define deps
+  '("base"
+    "component-lib"
+    "congame-core"
+    "congame-web"
+    "conscript"
+    "gregor-lib"
+    "forms-lib"
+    "koyo-lib"
+    "sentry-lib"
+    "studies"
+    "threading-lib"
+    "web-server-lib"))
 (define build-deps '())
 (define congame-studies
   '((congame-example-study/conscript conscript-example)
