@@ -1,13 +1,14 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse)
+                     syntax/parse/pre)
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
          (except-in congame/components/study button form)
          congame/components/transition-graph
          "form.rkt"
-         "html.rkt")
+         "html.rkt"
+         "var.rkt")
 
 ;; kernel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -25,6 +26,7 @@
  provide
 
  if case cond else unless when
+ set!
 
  ;; Racket Runtime
  lambda λ
@@ -48,7 +50,8 @@
  (all-from-out "html.rkt")
  defstep
  defstep/study
- defstudy)
+ defstudy
+ defvar)
 
 (begin-for-syntax
   (define-splicing-syntax-class function-arg
@@ -142,6 +145,26 @@
      (make-step/study id v)]
     [else
      (make-step id v)]))
+
+(define-syntax (defvar stx)
+  (syntax-parse stx
+    [(_ id:id unique-id:id)
+     #`(begin
+         (ensure-var-id-is-unique! #,(syntax-source stx) 'unique-id)
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put-var 'unique-id 'id v)]
+                [id (identifier? #'id) #'(get-var 'unique-id 'id)])))))]))
+
+(define (put-var uid k v)
+  (parameterize ([current-study-stack null])
+    (put #:root (string->symbol (format "*dynamic:~a*" uid)) k v)))
+
+(define (get-var uid k)
+  (parameterize ([current-study-stack null])
+    (get #:root (string->symbol (format "*dynamic:~a*" uid)) k)))
 
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

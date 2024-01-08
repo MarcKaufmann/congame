@@ -4,6 +4,7 @@
 (define deps '("base"
                "component-lib"
                "congame-core"
+               "conscript"
                "crypto-lib"
                "db-lib"
                "dbg"

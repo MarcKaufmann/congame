@@ -11,6 +11,7 @@
          (prefix-in config: congame-web/config)
          congame/components/registry
          congame/components/study
+         conscript/var
          db
          (prefix-in dbg: debugging/server)
          deta/reflect
@@ -24,7 +25,8 @@
          koyo/mail/postmark
          koyo/server
          koyo/session
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          racket/file
          racket/runtime-path
          sentry
@@ -150,7 +152,8 @@
     (delete-directory/files "congame-web/studies/compiled")
     (exit 0))
   (study-registry-allow-conflicts? #t)
-  (schema-registry-allow-conflicts? #t))
+  (schema-registry-allow-conflicts? #t)
+  (clear-known-var-ids!))
 
 (define (get-registered-studies)
   (for*/list ([path (find-relevant-directories '(congame-studies))]
