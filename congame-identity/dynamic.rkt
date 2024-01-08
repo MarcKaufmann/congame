@@ -95,6 +95,7 @@
                 (mail-adapter         . ,config:log-level)
                 (memory-session-store . ,config:log-level)
                 (north-adapter        . ,config:log-level)
+                (request              . ,config:log-level)
                 (server               . ,config:log-level)
                 (session              . ,config:log-level)
                 (smtp-server          . ,config:log-level)

@@ -3,12 +3,18 @@
 (require koyo
          koyo/database/migrator
          koyo/sentry
-         racket/contract
+         net/url
+         racket/contract/base
+         racket/contract/region
+         racket/format
          racket/list
+         racket/string
          sentry
          threading
          web-server/dispatch
          (prefix-in sequencer: web-server/dispatchers/dispatch-sequencer)
+         web-server/http
+         (only-in web-server/http/response current-header-handler)
          web-server/managers/lru
          web-server/servlet-dispatch
          (prefix-in config: "../config.rkt")
@@ -26,6 +32,27 @@
 
 (struct app (dispatcher)
   #:transparent)
+
+(define-logger request)
+
+(define ((make-logging-dispatcher disp) conn req)
+  (define start-ms
+    (current-inexact-monotonic-milliseconds))
+  (parameterize ([current-header-handler
+                  (λ (resp)
+                    (begin0 resp
+                      (log-request-debug
+                       "~a /~a ~a [~a] [~a] [~ams]"
+                       (request-method req)
+                       (string-join (map path/param-path (url-path (request-uri req))) "/")
+                       (response-code resp)
+                       (request-client-ip req)
+                       (and~>
+                        (headers-assq* #"user-agent" (request-headers/raw req))
+                        (header-value))
+                       (~r #:precision '(= 2)
+                           (- (current-inexact-monotonic-milliseconds) start-ms)))))])
+    (disp conn req)))
 
 (define/contract (make-app auth broker db flashes mailer _migrator sessions users
                            #:debug? [debug? #f]
@@ -122,4 +149,5 @@
      (dispatch/servlet #:manager manager (stack dispatch))
      (dispatch/servlet #:manager manager (stack not-found-page))))
 
-  (app (apply sequencer:make (filter-map values dispatchers))))
+  (app (make-logging-dispatcher
+        (apply sequencer:make (filter-map values dispatchers)))))
