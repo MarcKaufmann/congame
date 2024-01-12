@@ -22,110 +22,149 @@ If you have a researcher or admin role, you will see navigation for 'Admin' and 
 To start, note that @tech{conscript} is based on @tech{scribble} syntax: this means that all operators start with an @"@", followed by the name of the operator, followed either by square brackets ("[]") or curly brackets ("{}") that contain additional content. To get started, let us create a @tech{conscript} study that displays a single page with some text. To do so, store the following text in @filepath{tutorial.scrbl}:
 
 @codeblock|{
-@step[start]{
-    @h1{The Beginning is the End}}
+#lang conscript
 
-@study[
-  tutorial1
-  #:transitions
-  [start --> start]]
+(defstep (start)
+  @html{
+    @h1{The Beginning is the End}
+
+    This is all there is.
+  })
+
+(defstudy tutorial1
+  [start --> start])
 }|
 
-This code defines a @tech{step} named 'start', and a @tech{study} named 'tutorial', which starts with a single step and ends with a single step. You can upload the code to your congame server as follows, where you have to provide the name of the study that should be run as the @emph{Study ID}. To do so, follow these steps:
+This code defines a @tech{step} named 'start', and a @tech{study} named 'tutorial', which starts with a single step and ends with a single step. You can upload the code to your congame server as follows, where you have to provide the name of the study that should be run as the @emph{Study ID}. To do so, first create a new study, and then create a new instance of this study.
+
+@subsection{Create a New Study}
 
 @itemlist[
+  @item{Save the code above in a file called @filepath{tutorial1.scrbl}}
   @item{Log in to your researcher account}
   @item{Go the @emph{Admin} page}
   @item{Click on @emph{New Study}}
   @item{Provide a @emph{Name} such as "Tutorial <your name>"}
   @item{As @emph{Type}, choose @emph{DSL}}
-  @item{As @emph{Study ID}, take the ID of the study from your source code, @emph{tutorial1} if you used the code above}
-  @item{As @emph{DSL source}, browse for your @filepath{tutorial.scrbl} file}
+  @item{As @emph{Study ID}, take the ID of the study from your source code, which for the code above is @emph{tutorial1}}
+  @item{As @emph{DSL source}, browse to your @filepath{tutorial.scrbl} file}
   @item{Click the @emph{Create} button}
 ]
 
-If everything went well, you will see a page with instances of your tutorial study, which should be none. Create a @emph{New Instance}. You can give it whatever name you want, and don't need to add any other field. Simply click @emph{create}.
+If everything went well, you will see a page with instances of your tutorial study, which should be none.
 
-Now when you go back to the @emph{Dashboard}, you should see your study with the name you gave it as an instance. You can now enroll in that study yourself (for testing) and should see the first page. Congratulations!
+@subsection{Create a New Instance of the Study}
+
+Create a @emph{New Instance}. You can give it whatever name you want, and don't need to add any other field. Simply click @emph{create}.
+
+If everything went as planned, then when you go to the @emph{Dashboard}, you should see your study with the name you gave it as an instance. You can now enroll in that study yourself (for testing) and should see the first page.
+
+Congratulations!
 
 @section{Multi-Step Studies}
 
-Having a study that consists of a single page isn't very interesting. Let us add two more steps, one intermediate one, where we will ask for the name and age, and a final one to thank the person by name.
+Having a study that consists of a single page isn't very interesting. Let us add two more steps, one intermediate one, where we ask for the name and age of the person, and a final one to thank the person by name.
 
 There are several new parts in this multi-step study:
 
 @itemize[
-  @item{How to put multiple steps in sequence}
-  @item{How to write a form}
+  @item{How to write a simple form to get data from the user and store it}
   @item{How to get and use data that is stored}
+  @item{How to sequence multiple steps}
 ]
 
-Suppose that we have three steps, creatively named @racket[step1], @racket[step2], and @racket[step3]. To create a study with these steps in order, with @racket[step3] the final one, we write:
+Let's cover each in turn.
+
+@subsection{How to write a simple form}
+
+The primary goal of studies is to collect data from participants, and @racket[form]s are the main way of getting input from participants. The simplest forms will contain one or more @racket[input] fields, and a @racket[submit-button]. The input field for free-form text answers (e.g. when asking for a name) is @racket[input-text]. In order to store the answer provided by the user, we need to provide an ID for each piece of data we collect. This ID must be preceded by the characters @tt{#:}:
 
 @codeblock|{
-  @study[
-    three-steps
-    #:transitions
-    [step1 --> step2 --> step3 --> step3]]
+  @input-text[#:first-name]{What is your name?}
+}|
+
+This input field ensures that the answer the user provided is a string (due to using @racket{input-text}) and stores the text under the ID @racket[first-name].
+
+Finally, we have to state where we want the submit-button to be placed by using @racket{submit-button}.
+
+Our complete form to get the first name and the age of a person will then look as follows:
+
+@codeblock|{
+  @html{
+    @form{
+      @input-text[#:first-name]{What is your first name?}
+      @input-number[#:age]{What is your age (in years)?}
+      @submit-button[]}}
+}|
+
+Note that every function - such as @racket[form], @racket[input-text], etc - used inside of the definition of a step should be preceded by the @"@"-symbol.
+
+It is important not to confuse square ("[]") and curly ("{}") brackets. The main difference is that curly brackets interpret their content as a string by default (although they correctly expand other @"@" forms, such as @code|{@get}| that we'll see later). Therefore much of what users see will be in curly brackets. Square brackets on the other hand interpret their content as data: therefore identifiers of studies and steps, numbers, or keys to extract data should be enclosed in square brackets. Square brackets are optional, but when used have to come before curly brackets (which are also optional).
+
+@subsection{How to get and use stored data}
+
+Once a study stores data, we can get it by using @code|{@get}|. Suppose the user provided their first name, then we can get the value with @code|{@get['first-name]}| -- note the single quote (') in front of first-name, which identifies it as a @emph{symbol} rather than as the object named @racket[first-name].
+
+Thus the final step to thank the user will be:
+@codeblock|{
+(defstep (thank-you)
+  @html{
+    @h1{Thank you @get['first-name]}
+
+    Thank you for participating in our survey @get['first-name]!})
+}|
+
+@subsection{How to sequence multiple steps}
+
+Suppose that we have three steps, creatively named @racket[step1], @racket[step2], and @racket[step3]. We will define these three steps below. To create a study with these steps in order, with @racket[step3] the final one, we write:
+
+@codeblock|{
+  (defstudy three-steps
+    [step1 --> step2 --> step3 --> step3])
 }|
 
 The first argument of @racket[study] is the ID of the study. It must be followed by the keyword @racket[#:transitions], followed by one or more transition entries enclosed in square brackets. The simplest type of transition entry is a sequence of step IDs connected by @racket[-->]'s, such as @racket[step1 --> step2]. The arrow indicates that after completing @racket[step1], we transition to @racket[step2].
 
 Note that every step has to explicitly define a transition, even if it is meant to be the final step. Thus to make @racket[step3] the final step, we have to write that it transitions to itself: @racket[step3 --> step3].
 
-The primary goal of studies is to collect data from participants, and @racket[form]s are the main way of getting input from participants. The simplest forms will contain one or more @racket[input] fields, and a @racket[submit-button]. The input field for free-form text answers (e.g. when asking for a name) is @racket[input-text]. In order to be able to store the answer provided by the user when the form is submitted, we need to provide an ID for the data:
+Moreover, in order to know when to transition to the next step, we have to add a @racket[button] to each step with a label for the button, except for pages containing a @racket[form], which transitions to the next page when the user clicks on the @racket[submit-button].
 
-@codeblock|{
-  @input-text[first-name]{What is your name?}
-}|
-
-This input field ensures that the answer the user provided is a string and stores it as such with the ID @racket[first-name]. A form to get the first name and the age of a person will thus look as follows:
-
-@codeblock|{
-  @form{
-    @input-text[first-name]{What is your first name?}
-    @input-number[age]{What is your age (in years)?}
-    @submit-button[]}
-}|
-
-It is important not to confuse square ("[]") and curly ("{}") brackets. The main difference is that curly brackets interpret their content as a string by default (although they correctly expand other @"@" forms, such as @code|{@get}| that we'll see later). Therefore much of what users see will be in curly brackets. Square brackets on the other hand interpret their content as data: therefore identifiers of studies and steps, numbers, or keys to extract data should be enclosed in square brackets. Square brackets are optional, but when used have to come before curly brackets (which are also optional).
-
-Once a study stores data, we can get it by using @code|{@get}|. Suppose the user provided their first name, then we can get the value with @code|{@get['first-name]}| -- note the single quote (') in front of first-name, which identifies it as a @emph{symbol} rather than as the object named @racket[first-name].
+@subsection{Putting it all together}
 
 Putting all of this together, we can create our first multi-step study by updating @filepath{tutorial.scrbl} as follows:
 
 @codeblock|{
-@step[description]{
-  @h1{The study}
+#lang conscript
 
-  Welcome to our study. In this study, we will ask for
+(defstep (description)
+  @html{
+    @h1{The study}
 
-  @ul{
-    @li{your first name}
-    @li{your age}}
+    Welcome to our study. In this study, we will ask for
 
-  @button{Start Survey}
-}
+    @ul{
+      @li{your first name}
+      @li{your age}}
 
-@step[age-name-survey]{
-  @h1{Survey}
+    @button{Start Survey}})
 
-  @form{
-    @input-text[first-name]{What is your first name?}
-    @input-number[age]{What is your age (in years)?}
-    @submit-button[]}
-}
+(defstep (age-name-survey)
+  @html{
+    @h1{Survey}
 
-@step[thank-you]{
-  @h1{Thank you @(ev (get 'first-name))}
+    @form{
+      @input-text[first-name]{What is your first name?}
+      @input-number[age]{What is your age (in years)?}
+      @submit-button[]}})
 
-  Thank you for participating in our survey @(ev (get 'first-name))!
-}
+(defstep (thank-you)
+  @html{
+    @h1{Thank you @(ev (get 'first-name))}
 
-@study[
-  tutorial2
-  #:transitions
-  [description --> age-name-survey --> thank-you --> thank-you]]
+    Thank you for participating in our survey @(ev (get 'first-name))!})
+
+(defstudy tutorial2
+  [description --> age-name-survey --> thank-you --> thank-you])
 }|
 
 We have to update the code on the congame server to reflect these changes. Go to the admin page, and follow these steps to update the study code and the study run for tutorial:

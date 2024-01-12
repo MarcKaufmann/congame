@@ -2,6 +2,17 @@
 
 @title{Conscript}
 
+@section{Goals and Philosophy}
+
+@deftech{conscript} aims to provide a simpler and streamlined syntax for writing studies compared to @tech{congame}. There are two dialects of @tech{conscript}:
+
+@itemize[
+  @item{Plain @tech{conscript}, which cannot require @tech{Racket} functions that we are not providing by default.}
+  @item{@deftech{conscript/with-require}, which allows the user to require.}
+]
+
+Since @tech{conscript/with-require} provides a mechanism to require arbitrary Racket packages, it has essentially the same power as full @tech{congame}, while @tech{conscript} can only use a limited set of libraries and functionality of Racket. Due to this limited functionality of @tech{conscript}, we can allow such studies to be uploaded to a congame server by users with 'researcher' accounts, and be run without requiring access to the code repository. This is not possible (out of security concerns) with @tech{conscript/with-require} studies.
+
 @section{Grammar}
 
 @racketgrammar*[
@@ -100,12 +111,4 @@
              study-id
              imported-id]
 ]
-
-@section{Goals and Philosophy}
-
-@deftech{conscript} is aimed at creating simple studies fast and without fuss. It provides a more user-friendly syntax than @tech{congame}, which requires taking a deep dive and using full @tech{Racket}. @tech{conscript} makes it especially convenient to mix the text seen by users with small amounts of logic. It is not well-suited to complicated logic, or studies that manipulate complicated data objects.
-
-One nice feature of @tech{conscript} is the ability to compile it to full @tech{congame} studies, which can then be reused to build larger @tech{congame} studies --- although this feature should not be abused, since the code generated is not as readable as handcrafted code. Nothing beats artisanal code from your local code bakery.
-
-For this reason, @tech{conscript} will never be feature-complete and expose the same power as @tech{congame}: doing so would necessarily lead to the same complexity. When @tech{conscript} proves too limited for your needs, it is time to take the red pill and take the deep dive into @tech{congame}.
 
