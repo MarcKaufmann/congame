@@ -30,6 +30,7 @@
          racket/pretty
          racket/string
          racket/vector
+         sentry
          threading
          web-server/dispatchers/dispatch
          web-server/http)
@@ -143,6 +144,7 @@
         [(dsl)
          (if (and dsl-id dsl-source)
              (with-handlers ([exn:fail? (λ (e)
+                                          (sentry-capture-exception! e)
                                           (err `((dsl-source . ,(exn-message e)))))])
                (dsl-require (binding:file-content dsl-source) dsl-id) ;; for effect
                (ok (list name slug type dsl-id dsl-source)))
@@ -354,7 +356,9 @@
 (define edit-study-dsl-form
   (form* ([dsl-id (ensure binding/symbol (required))]
           [dsl-source (ensure binding/file (required))])
-    (with-handlers ([exn:fail? (λ (e) (err `((dsl-source . ,(exn-message e)))))])
+    (with-handlers ([exn:fail? (λ (e)
+                                 (sentry-capture-exception! e)
+                                 (err `((dsl-source . ,(exn-message e)))))])
       (dsl-require (binding:file-content dsl-source) dsl-id) ;; for effect
       (list dsl-id (bytes->string/utf-8 (binding:file-content dsl-source))))))
 
