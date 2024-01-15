@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require "base.rkt")
+(require (except-in "base.rkt" require))
 
 (provide
  (all-from-out "base.rkt")

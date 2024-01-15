@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base
+                     racket/runtime-path
                      syntax/parse/pre)
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
@@ -46,12 +47,28 @@
 ;; syntax ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ (rename-out [conscript-require require])
  (all-from-out "form.rkt")
  (all-from-out "html.rkt")
  defstep
  defstep/study
  defstudy
  defvar)
+
+(begin-for-syntax
+  (define-runtime-path module-whitelist.rktd
+    "module-whitelist.rktd")
+  (define whitelist
+    (call-with-input-file module-whitelist.rktd read))
+  (define (check-module-whitelisted mod-stx)
+    (unless (memq (syntax->datum mod-stx) whitelist)
+      (raise-syntax-error 'require "required module not whitelisted" mod-stx))))
+
+(define-syntax (conscript-require stx)
+  (syntax-parse stx
+    [(_ mod:id ...+)
+     (for-each check-module-whitelisted (syntax-e #'(mod ...)))
+     #'(require mod ...)]))
 
 (begin-for-syntax
   (define-splicing-syntax-class function-arg
