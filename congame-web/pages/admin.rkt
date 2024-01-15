@@ -10,6 +10,7 @@
          congame-web/components/user
          congame-web/pages/render
          congame-web/studies/all ;; required for its effects
+         congame/components/dsl
          congame/components/export
          congame/components/instance-link
          congame/components/registry
@@ -141,7 +142,10 @@
              (ok (list name slug type study-id #f)))]
         [(dsl)
          (if (and dsl-id dsl-source)
-             (ok (list name slug type dsl-id dsl-source))
+             (with-handlers ([exn:fail? (λ (e)
+                                          (err `((dsl-source . ,(exn-message e)))))])
+               (dsl-require (binding:file-content dsl-source) dsl-id) ;; for effect
+               (ok (list name slug type dsl-id dsl-source)))
              (err (filter
                    cdr
                    `((dsl-id . ,(and (not dsl-id) "required for DSL-based studies"))
@@ -350,7 +354,9 @@
 (define edit-study-dsl-form
   (form* ([dsl-id (ensure binding/symbol (required))]
           [dsl-source (ensure binding/file (required))])
-    (list dsl-id (bytes->string/utf-8 (binding:file-content dsl-source)))))
+    (with-handlers ([exn:fail? (λ (e) (err `((dsl-source . ,(exn-message e)))))])
+      (dsl-require (binding:file-content dsl-source) dsl-id) ;; for effect
+      (list dsl-id (bytes->string/utf-8 (binding:file-content dsl-source))))))
 
 (define (render-edit-study-dsl-form target rw)
   (haml
