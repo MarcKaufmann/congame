@@ -12,6 +12,8 @@
   conscript/with-require
   #:read (lambda (in) (do-read-syntax #f in))
   #:read-syntax do-read-syntax
+  #:info (lambda (key defval proc)
+           ((dynamic-require 'conscript/tool 'get-info) key defval proc))
   (require scribble/reader)
   (define (do-read-syntax src in)
     (parameterize ([current-readtable (make-at-readtable)])

@@ -1,5 +1,7 @@
 #lang scribble/manual
 
+@(require (for-label conscript racket/base))
+
 @; TODO
 @; Be consistent in the use of 'I', 'We', 'you'
 
