@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     racket/runtime-path
                      syntax/parse/pre)
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
@@ -56,10 +55,14 @@
  defvar)
 
 (begin-for-syntax
-  (define-runtime-path module-whitelist.rktd
-    "module-whitelist.rktd")
   (define whitelist
-    (call-with-input-file module-whitelist.rktd read))
+    '(racket/format
+      racket/list
+      racket/match
+      racket/math
+      racket/random
+      racket/string
+      racket/vector))
   (define (check-module-whitelisted mod-stx)
     (unless (memq (syntax->datum mod-stx) whitelist)
       (raise-syntax-error 'require "required module not whitelisted" mod-stx))))
