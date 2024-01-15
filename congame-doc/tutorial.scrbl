@@ -5,24 +5,40 @@
 
 @title{Conscript Tutorial}
 
-You will create a simple study that gets some information from people (their age, their height), elicits a probability about some belief from them, and finally asks them to choose their favorite color between orange and blue, which will determine how the final page looks.
+You will create a simple study that gets some information from people
+(their age, their height), elicits a probability about some belief from
+them, and finally asks them to choose their favorite color between
+orange and blue, which will determine how the final page looks.
 
 @section{Create researcher account}
 
-To follow along with this tutorial, you need to create an account with the 'researcher' or 'admin' roles on a @tech{congame} server. To do so, create an account on your @tech{congame} server, then in your database, set the researcher role in the database. In postgres:
+To follow along with this tutorial, you need to create an account with
+the ``researcher'' or ``admin'' roles on a @tech{congame} server. To
+do so, create an account on your @tech{congame} server, then in your
+database, set the researcher role in the database. In postgres:
 
 @codeblock|{
   UPDATE users SET roles = '{researcher}' WHERE ID = <id-of-your-user>;
 }|
 
-If you have a researcher or admin role, you will see navigation for 'Admin' and 'Jobs'.
+If you have a researcher or admin role, you will see navigation for
+``Admin'' and ``Jobs''.
 
 @section{The first study}
 
-To start, note that @tech{conscript} is based on @tech{scribble} syntax: this means that all operators start with an @"@", followed by the name of the operator, followed either by square brackets ("[]") or curly brackets ("{}") that contain additional content. To get started, let us create a @tech{conscript} study that displays a single page with some text. To do so, store the following text in @filepath{tutorial.scrbl}:
+To start, note that @tech{conscript} is based on @tech{scribble} syntax:
+this means that all operators start with an @tt{@"@"}, followed by the
+name of the operator, followed either by square brackets (@tt{[]})
+or curly brackets (@tt{{}}) that contain additional content. To
+get started, let us create a @tech{conscript} study that displays a
+single page with some text. To do so, store the following text in
+@filepath{tutorial.rkt}:
 
 @codeblock|{
 #lang conscript
+
+(provide
+ tutorial)
 
 (defstep (start)
   @html{
@@ -31,39 +47,50 @@ To start, note that @tech{conscript} is based on @tech{scribble} syntax: this me
     This is all there is.
   })
 
-(defstudy tutorial1
+(defstudy tutorial
   [start --> start])
 }|
 
-This code defines a @tech{step} named 'start', and a @tech{study} named 'tutorial', which starts with a single step and ends with a single step. You can upload the code to your congame server as follows, where you have to provide the name of the study that should be run as the @emph{Study ID}. To do so, first create a new study, and then create a new instance of this study.
+This code defines a @tech{step} named @racket[start], and a @tech{study}
+named @racket[tutorial], which starts with a single step and ends with a
+single step. You can upload the code to your congame server as described
+in the sections below, where you have to provide the name of the study
+that should be run as the @emph{Study ID}.
 
 @subsection{Create a New Study}
 
 @itemlist[
-  @item{Save the code above in a file called @filepath{tutorial1.scrbl}}
+  @item{Save the code above in a file called @filepath{tutorial.rkt}}
   @item{Log in to your researcher account}
   @item{Go the @emph{Admin} page}
   @item{Click on @emph{New Study}}
   @item{Provide a @emph{Name} such as "Tutorial <your name>"}
   @item{As @emph{Type}, choose @emph{DSL}}
-  @item{As @emph{Study ID}, take the ID of the study from your source code, which for the code above is @emph{tutorial1}}
-  @item{As @emph{DSL source}, browse to your @filepath{tutorial.scrbl} file}
+  @item{As @emph{Study ID}, take the ID provided by your source code, which for the code above is @emph{tutorial}}
+  @item{As @emph{DSL source}, browse to your @filepath{tutorial.rkt} file}
   @item{Click the @emph{Create} button}
 ]
 
-If everything went well, you will see a page with instances of your tutorial study, which should be none.
+If everything went well, you will see a page with instances of your
+tutorial study, which should be none.
 
 @subsection{Create a New Instance of the Study}
 
-Create a @emph{New Instance}. You can give it whatever name you want, and don't need to add any other field. Simply click @emph{create}.
+Create a @emph{New Instance}. You can give it whatever name you want,
+and don't need to add any other field. Simply click @emph{create}.
 
-If everything went as planned, then when you go to the @emph{Dashboard}, you should see your study with the name you gave it as an instance. You can now enroll in that study yourself (for testing) and should see the first page.
+If everything went as planned, then when you go to the @emph{Dashboard},
+you should see your study with the name you gave it as an instance. You
+can now enroll in that study yourself (for testing) and should see the
+first page.
 
 Congratulations!
 
 @section{Multi-Step Studies}
 
-Having a study that consists of a single page isn't very interesting. Let us add two more steps, one intermediate one, where we ask for the name and age of the person, and a final one to thank the person by name.
+Having a study that consists of a single page isn't very interesting.
+Let us add two more steps, one intermediate one, where we ask for the
+name and age of the person, and a final one to thank the person by name.
 
 There are several new parts in this multi-step study:
 
@@ -77,36 +104,64 @@ Let's cover each in turn.
 
 @subsection{How to write a simple form}
 
-The primary goal of studies is to collect data from participants, and @racket[form]s are the main way of getting input from participants. The simplest forms will contain one or more @racket[input] fields, and a @racket[submit-button]. The input field for free-form text answers (e.g. when asking for a name) is @racket[input-text]. In order to store the answer provided by the user, we need to provide an ID for each piece of data we collect. This ID must be preceded by the characters @tt{#:}:
+The primary goal of studies is to collect data from participants, and
+@racket[form]s are the main way of getting input from participants.
+The simplest forms will contain one or more input fields, and a
+@racket[submit-button]. The input field for free-form text answers (e.g.
+when asking for a name) is @racket[input-text]. In order to store the
+answer provided by the user, we need to provide an ID for each piece of
+data we collect. This ID must be preceded by the characters @tt{#:}:
 
 @codeblock|{
   @input-text[#:first-name]{What is your name?}
 }|
 
-This input field ensures that the answer the user provided is a string (due to using @racket{input-text}) and stores the text under the ID @racket[first-name].
+This input field ensures that the answer the user provided is a string
+(due to using @racket{input-text}) and stores the text under the ID
+@racket[first-name].
 
-Finally, we have to state where we want the submit-button to be placed by using @racket{submit-button}.
+Finally, we have to state where we want the submit-button to be placed
+by using @racket{submit-button}.
 
-Our complete form to get the first name and the age of a person will then look as follows:
+Our complete form to get the first name and the age of a person will
+then look as follows:
 
-@codeblock|{
-  @html{
-    @form{
-      @input-text[#:first-name]{What is your first name?}
-      @input-number[#:age]{What is your age (in years)?}
-      @submit-button[]}}
+@margin-note{
+  Note that every function - such as @racket[form], @racket[input-text],
+  etc - used inside curly brackets should be preceded by the
+  @"@"-symbol.
+}
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+@html{
+  @form{
+    @input-text[#:first-name]{What is your first name?}
+    @input-number[#:age]{What is your age (in years)?}
+    @submit-button}}
 }|
 
-Note that every function - such as @racket[form], @racket[input-text], etc - used inside of the definition of a step should be preceded by the @"@"-symbol.
-
-It is important not to confuse square ("[]") and curly ("{}") brackets. The main difference is that curly brackets interpret their content as a string by default (although they correctly expand other @"@" forms, such as @code|{@get}| that we'll see later). Therefore much of what users see will be in curly brackets. Square brackets on the other hand interpret their content as data: therefore identifiers of studies and steps, numbers, or keys to extract data should be enclosed in square brackets. Square brackets are optional, but when used have to come before curly brackets (which are also optional).
+It is important not to confuse square (@tt{[]}) and curly (@tt{{}})
+brackets. The main difference is that curly brackets interpret their
+content as a string by default. Therefore much of what users see will
+be in curly brackets. Square brackets on the other hand interpret their
+content as data: therefore identifiers of studies and steps, numbers,
+or keys to extract data should be enclosed in square brackets. Square
+brackets are optional, but when used have to come before curly brackets
+(which are also optional).
 
 @subsection{How to get and use stored data}
 
-Once a study stores data, we can get it by using @code|{@get}|. Suppose the user provided their first name, then we can get the value with @code|{@get['first-name]}| -- note the single quote (') in front of first-name, which identifies it as a @emph{symbol} rather than as the object named @racket[first-name].
+Once a study stores data, we can get it by using @code|{@get}|. Suppose
+the user provided their first name, then we can get the value with
+@code|{@get['first-name]}| -- note the single quote (') in front of
+first-name, which identifies it as a @emph{symbol} rather than as the
+object named @racket[first-name].
 
 Thus the final step to thank the user will be:
-@codeblock|{
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
 (defstep (thank-you)
   @html{
     @h1{Thank you @get['first-name]}
@@ -116,25 +171,44 @@ Thus the final step to thank the user will be:
 
 @subsection{How to sequence multiple steps}
 
-Suppose that we have three steps, creatively named @racket[step1], @racket[step2], and @racket[step3]. We will define these three steps below. To create a study with these steps in order, with @racket[step3] the final one, we write:
+Suppose that we have three steps, creatively named @racket[step1],
+@racket[step2], and @racket[step3]. We will define these three steps
+below. To create a study with these steps in order, with @racket[step3]
+the final one, we write:
 
-@codeblock|{
-  (defstudy three-steps
-    [step1 --> step2 --> step3 --> step3])
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstudy three-steps
+  [step1 --> step2 --> step3]
+  [step3 --> step3])
 }|
 
-The first argument of @racket[study] is the ID of the study. It must be followed by the keyword @racket[#:transitions], followed by one or more transition entries enclosed in square brackets. The simplest type of transition entry is a sequence of step IDs connected by @racket[-->]'s, such as @racket[step1 --> step2]. The arrow indicates that after completing @racket[step1], we transition to @racket[step2].
+The first argument of @racket[study] is the ID of the study. It must
+be followed by one or more transition entries enclosed in square
+brackets. The simplest type of transition entry is a sequence of step
+IDs connected by @racket[-->]'s, such as @racket[step1 --> step2]. The
+arrow indicates that after completing @racket[step1], we transition to
+@racket[step2].
 
-Note that every step has to explicitly define a transition, even if it is meant to be the final step. Thus to make @racket[step3] the final step, we have to write that it transitions to itself: @racket[step3 --> step3].
+Every step has to explicitly define a transition, even if it is meant to
+be the final step. Thus to make @racket[step3] the final step, we have
+to write that it transitions to itself: @racket[step3 --> step3].
 
-Moreover, in order to know when to transition to the next step, we have to add a @racket[button] to each step with a label for the button, except for pages containing a @racket[form], which transitions to the next page when the user clicks on the @racket[submit-button].
+Moreover, in order to know when to transition to the next step, we have
+to add a @racket[button] to each step with a label for the button,
+except for pages containing a @racket[form], which transitions to the
+next page when the user clicks on the @racket[submit-button].
 
 @subsection{Putting it all together}
 
-Putting all of this together, we can create our first multi-step study by updating @filepath{tutorial.scrbl} as follows:
+Putting all of this together, we can create our first multi-step study
+by updating @filepath{tutorial.rkt} as follows:
 
 @codeblock|{
 #lang conscript
+
+(provide
+ tutorial)
 
 (defstep (description)
   @html{
@@ -155,32 +229,50 @@ Putting all of this together, we can create our first multi-step study by updati
     @form{
       @input-text[first-name]{What is your first name?}
       @input-number[age]{What is your age (in years)?}
-      @submit-button[]}})
+      @submit-button}})
 
 (defstep (thank-you)
   @html{
-    @h1{Thank you @(ev (get 'first-name))}
+    @h1{Thank you @get['first-name]}
 
-    Thank you for participating in our survey @(ev (get 'first-name))!})
+    Thank you for participating in our survey @get['first-name]!})
 
-(defstudy tutorial2
-  [description --> age-name-survey --> thank-you --> thank-you])
+(defstudy tutorial
+  [description --> age-name-survey --> thank-you]
+  [thank-you --> thank-you])
 }|
 
-We have to update the code on the congame server to reflect these changes. Go to the admin page, and follow these steps to update the study code and the study run for tutorial:
+We have to update the code on the congame server to reflect these
+changes. Go to the admin page, and follow these steps to update the
+study code and the study run for tutorial:
 
 @itemize[
   @item{Click on your existing study instance}
   @item{Click on @emph{Edit DSL}}
-  @item{Change the DSL ID to @emph{tutorial2}, since we call the new study @emph{tutorial2}}
-  @item{Pick the updated version of @filepath{tutorial.scrbl}}
+  @item{Pick the updated version of @filepath{tutorial.rkt}}
   @item{Click @emph{Update}}]
 
-Try to resume the study. If you did the the @emph{tutorial1} study, you should now see an error. This is because when you did @emph{tutorial1}, you progressed to the step with the ID @emph{start}. Since such a step does not exist in @emph{tutorial2}, you get an error.
+Try to resume the study. If you enrolled into the first
+@racket{tutorial} study, which had a single step called @racket[start],
+you should now see an error. This is because when you did enrolled into
+@racket{tutorial}, you progressed to the step with the ID @emph{start}.
+Since such a step does not exist in the latest version, you get an
+error.
 
-To fix this, you have to clear the progress of your user for this study instance. Go to the admin page of the tutorial instance (@emph{Admin}, click on the name of your tutorial instance). Towards the bottom, you will see a list of instances under @bold{Instance Name}. Click on your instance. At the bottom of the next page is the list of participants who have enrolled in this study. Click on your ID (which you can identify by the email if you enrolled from your congame server). Then click on @emph{Clear participant progress}. (Note: it may look like there was no progress, if the table is empty. That's because the progress shows only additional data that you store explicitly, not implicit progress such as the current step you are on.)
+To fix this, you have to clear the progress of your user for this study
+instance. Go to the admin page of the tutorial instance (@emph{Admin},
+click on the name of your tutorial instance). Towards the bottom, you
+will see a list of instances under @bold{Instance Name}. Click on your
+instance. At the bottom of the next page is the list of participants who
+have enrolled in this study. Click on your ID (which you can identify
+by the email if you enrolled from your congame server). Then click on
+@emph{Clear participant progress}. (Note: it may look like there was no
+progress, if the table is empty. That's because the progress shows only
+additional data that you store explicitly, not implicit progress such as
+the current step you are on.)
 
-Now you can bo back to the dashboard and go through the study. Congratulations, this is your first survey in @tech{conscript}!
+Now you can bo back to the dashboard and go through the study.
+Congratulations, this is your first survey in @tech{conscript}!
 
 @section{Using standard functions}
 
