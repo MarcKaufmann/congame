@@ -19,6 +19,7 @@
   '((congame-example-study/conscript conscript-example)
     (congame-example-study/conscript-defvar conscript-defvar-example)
     (congame-example-study/conscript-form conscript-form-example)
+    (congame-example-study/conscript-markdown conscript-markdown-example)
     (congame-example-study/conscript-reqprovide conscript-reqprovide-example)
     (congame-example-study/deferred deferred-study)
     (congame-example-study/deferred wrapped-deferred-study)

@@ -8,6 +8,7 @@
          congame/components/transition-graph
          "form.rkt"
          "html.rkt"
+         "markdown.rkt"
          "var.rkt")
 
 ;; kernel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -49,6 +50,7 @@
  (rename-out [conscript-require require])
  (all-from-out "form.rkt")
  (all-from-out "html.rkt")
+ (all-from-out "markdown.rkt")
  defstep
  defstep/study
  defstudy

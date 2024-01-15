@@ -8,17 +8,18 @@
 
 (provide
  (all-from-out "html-element.rkt")
- html)
+ html
+ html*)
 
 (define-syntax (html stx)
   (syntax-parse stx
     [(_ elt ...)
-     #'(page (html* elt ...))]))
+     #'(page `(div ([class "container"]) ,(html* elt ...)))]))
 
 (define-syntax (html* stx)
   (syntax-parse stx
     [(_ elt ...)
-     #'(paragraphify `(div ([class "container"]) ,elt ...))]))
+     #'(paragraphify `(div () ,elt ...))]))
 
 (define (paragraphify? e)
   (memq (car e) '(aside div form section)))
