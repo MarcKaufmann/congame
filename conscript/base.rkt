@@ -37,6 +37,7 @@
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling
  = < > <= >= equal? eq?
  sqrt expt exp log
+ regexp-match?
 
  ;; Congame Syntax
  --> goto
