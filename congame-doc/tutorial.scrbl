@@ -276,6 +276,8 @@ the current step you are on.)
 Now you can bo back to the dashboard and go through the study.
 Congratulations, this is your first survey in @tech{conscript}!
 
+
+@;{
 @section{Using standard functions}
 
 Basic conscript is purposefully underpowered and comes with a small number of built-in features. Many @tech{Racket} functions are provided by default, and we will add more as they become useful.
@@ -399,7 +401,7 @@ The final clause must always start with the keyword @racket[else], which is a ca
 @section{CSS with #:style}
 
 On the launch page, let us highlight the font of "Study launched!" in red, which requires that we change the following CSS rule (CSS stands for @emph{Cascading Style Sheet}) with "h1 { color: red; }".
-}|
+
 
 In @tech{conscript}, we can add CSS styles to @tt{div} tags by using the @tt{#:style} keyword argument. To change the @tt{h1} tag, we need to wrap it in a @tt{div} tag and style it accordingly:
 
@@ -873,3 +875,5 @@ If you want to include it in html markup, don't forget to transform the number t
 
 Your remaining life expectancy is @(ev (~a (- 80 (get 'age)))).
 }|
+
+}
