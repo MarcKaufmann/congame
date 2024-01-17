@@ -45,7 +45,7 @@
 
  ;; Congame Runtime
  make-step make-step/study
- get put
+ get put put/identity
  done
  )
 

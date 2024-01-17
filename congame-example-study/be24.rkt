@@ -24,6 +24,7 @@
         })
 
 (defstep (end)
+  ; Inefficient since it runs on each refresh.
   (define score
     (apply
      +
@@ -35,6 +36,8 @@
            (< 1500 (abs (- (get 'n-participants) 18123)))
            (regexp-match? #rx".*(?i:c)ompetition.*(?i:m)oral.*" (get 'research-question))))))
 
+  (put/identity 'reading1-quiz score)
+
   @md{
       # Thanks for participating
 
@@ -45,7 +48,7 @@
       - The common research question in Huber et al (2023) was "Does competition affect moral behavior?"
       - The Huber et al (2023) study had somewhat more than 18,000 participants.
 
-      You got @score of these right it seems.
+      You got @score of these right. If you think that's wrong, let me know.
       })
 
 (defstudy reading1-quiz
