@@ -28,8 +28,8 @@
   (define score
     (apply
      +
-     (map (function (x)
-                    (if x 1 0))
+     (map (lambda (x)
+            (if x 1 0))
           (list
            (equal? (get 'n-research-teams) 45)
            (< 5 (abs (- (get 'replication-rate) 35)))
