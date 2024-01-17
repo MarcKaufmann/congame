@@ -4,6 +4,7 @@
                      syntax/parse/pre)
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
+         congame-web/components/identity
          (except-in congame/components/study button form)
          congame/components/transition-graph
          "form.rkt"
