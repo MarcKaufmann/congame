@@ -45,4 +45,5 @@
 
 (defstudy reading1-quiz
   [summary --> quiz
-           --> end])
+           --> end]
+  [end --> end])
