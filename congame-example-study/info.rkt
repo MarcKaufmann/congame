@@ -28,6 +28,7 @@
     (congame-example-study/example consent-study)
     (congame-example-study/example simple-study)
     (congame-example-study/example wrapped-simple-study)
+    (congame-example-study/be24 reading1-quiz)
     (congame-example-study/inline inline-study)
     (congame-example-study/instructor-review instructor-review/study)
     (congame-example-study/looping looping-study)

@@ -34,6 +34,9 @@
  void
  list list? null null? cons pair? car cdr
  display displayln print println printf eprintf write writeln
+ + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling
+ = < > <= >=
+ sqrt expt exp log
 
  ;; Congame Syntax
  --> goto
