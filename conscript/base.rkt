@@ -20,6 +20,7 @@
  #%module-begin
  #%top
  #%top-interaction
+ apply
  define
  quote
  quasiquote

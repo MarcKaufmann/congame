@@ -25,10 +25,15 @@
 
 (defstep (end)
   (define score
-    (+ (equal? (get 'n-research-teams) 45)
-       (< 5 (abs (- (get 'replication-rate) 35)))
-       (< 1500 (abs (- (get 'n-participants) 18123)))
-       (regexp-match? #rx".*(?i:c)ompetition.*(?i:m)oral.*" (get 'research-question))))
+    (apply
+     +
+     (map (function (x)
+                    (if x 1 0))
+          (list
+           (equal? (get 'n-research-teams) 45)
+           (< 5 (abs (- (get 'replication-rate) 35)))
+           (< 1500 (abs (- (get 'n-participants) 18123)))
+           (regexp-match? #rx".*(?i:c)ompetition.*(?i:m)oral.*" (get 'research-question))))))
 
   @md{
       # Thanks for participating
