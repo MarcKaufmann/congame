@@ -34,6 +34,7 @@
  lambda λ
  void
  list list? null null? cons pair? car cdr
+ map
  display displayln print println printf eprintf write writeln
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling
  = < > <= >= equal? eq?
