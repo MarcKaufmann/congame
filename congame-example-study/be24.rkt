@@ -1,5 +1,7 @@
 #lang conscript
 
+(require racket/format)
+
 (provide
  reading1-quiz)
 
@@ -38,17 +40,18 @@
 
   (put/identity 'reading1-quiz score)
 
-  @md{
-      # Thanks for participating
+  @html{
+      @h1{Thanks for participating}
 
       Here are the answers to the quiz question:
 
-      - There were 45 research teams that participated in Huber et al (2023) until the end.
-      - The replication rate in the Reproducibility Project: Psychology (2015) was 35%, i.e. 35 of the original 100 studies had a significant effect
-      - The common research question in Huber et al (2023) was "Does competition affect moral behavior?"
-      - The Huber et al (2023) study had somewhat more than 18,000 participants.
+      @ul{
+          @li{There were 45 research teams that participated in Huber et al (2023) until the end.}
+          @li{The replication rate in the Reproducibility Project: Psychology (2015) was 35%, i.e. 35 of the original 100 studies had a significant effect}
+          @li{The common research question in Huber et al (2023) was "Does competition affect moral behavior?"}
+          @li{The Huber et al (2023) study had somewhat more than 18,000 participants.}}
 
-      You got @score of these right. If you think that's wrong, let me know.
+      You got @(~a score) of these right. If you think that's wrong, let me know.
       })
 
 (defstudy reading1-quiz
