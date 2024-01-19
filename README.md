@@ -42,13 +42,16 @@ The features that will get implemented will however be determined by the priorit
 ### First-time Setup
 
     $ nvm use && npm install && npm run build
-    $ raco pkg install chief              # install and build chief to launch web server
-    $ raco pkg install congame-core/      # install and build the core library and its deps
-    $ raco pkg install congame-identity/  # install and build the application and its deps
-    $ raco pkg install congame-smtp-proxy # install and build the smtp-proxy dispatching traffic 
-                                          # to the right identity server (staging or production)
-    $ raco pkg install congame-web/       # install and build the application and its deps
-    $ raco pkg install congame-doc/       # install and build the docs and their deps
+    $ raco pkg install chief                 # install and build chief to launch web server
+    $ raco pkg install congame-core/         # install and build the core library and its deps
+    $ raco pkg install congame-identity/     # install and build the application and its deps
+    $ raco pkg install congame-smtp-proxy    # install and build the smtp-proxy dispatching traffic 
+                                             # to the right identity server (staging or production)
+    $ raco pkg install conscript/            # install and build #lang conscript and dialects
+    $ raco pkg install congame-web/          # install and build the application and its deps
+    $ raco pkg install studies/              # install studies used in congame-example-study
+    $ raco pkg install congame-example-study # install example studies; needed for congame-doc
+    $ raco pkg install congame-doc/          # install and build the docs and their deps
     # To install a package or study that tests depend on (e.g. congame-pjb-studies),
     # uncomment the following line and replace by appropriate package.
     # raco pkg install congame-price-lists/  # needed by congame-pjb-studies

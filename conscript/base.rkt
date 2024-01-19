@@ -4,7 +4,6 @@
                      syntax/parse/pre)
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
-         congame-web/components/identity
          (except-in congame/components/study button form)
          congame/components/transition-graph
          "form.rkt"
@@ -47,7 +46,7 @@
 
  ;; Congame Runtime
  make-step make-step/study
- get put put/identity
+ get put
  done
  )
 
