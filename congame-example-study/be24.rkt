@@ -9,7 +9,6 @@
   @html{
         @form{
               @textarea[#:huber-summary]{Briefly summarize the Huber et al (2023) paper. Make sure to mention the difference between the organizing team of authors and the research teams.}
-              @textarea[#:reproducibility-replicability]{In your own words, briefly describe what reproducibility and replicability mean.}
               @submit-button
               }
         })
@@ -18,16 +17,13 @@
   @html{
         @form{
               @input-number[#:n-research-teams]{How many research teams participated in the study until the end?}
-              @input-number[#:replication-rate #:min 0 #:max 100]{The Dreber and Johannesson (2023) working paper mentioned the Reproducibility Project: Psychology (2015), a project that replicated 100 studies in psychology to see how many replicated. What was the replication rate of papers -- that is, how many of the 100 studies did replicate?}
-              @input-text[#:research-question]{What was the common research question that all research teams tried to answer?}
-              @input-number[#:n-participants]{How many participants did Huber et al (2023) roughly for all the studies?}
               @submit-button
               }
         })
 
 (defstep (end)
   ; Inefficient since it runs on each refresh.
-  (define score
+  #;(define score
     (apply
      +
      (map (lambda (x)
@@ -38,7 +34,7 @@
            (> 1500 (abs (- (get 'n-participants) 18123)))
            (regexp-match? #rx".*(?i:c)ompetition.*(?i:m)oral.*" (get 'research-question))))))
 
-  (put 'score score)
+  #;(put 'score score)
 
   @html{
       @h1{Thanks for participating}
@@ -51,10 +47,35 @@
           @li{The common research question in Huber et al (2023) was "Does competition affect moral behavior?"}
           @li{The Huber et al (2023) study had somewhat more than 18,000 participants.}}
 
-      You got @(~a score) of these right. If you think that's wrong, let me know.
       })
 
 (defstudy reading1-quiz
-  [summary --> quiz
+  [summary --> [summary1 summary]
+           --> [summary2 summary]
+           --> [summary3 summary]
+           --> [summary4 summary]
+           --> [summary5 summary]
+           --> [summary6 summary]
+           --> [summary8 summary]
+           --> [summary9 summary]
+           --> [summary10 summary]
+           --> [summary11 summary]
+           --> [summary12 summary]
+           --> [summary13 summary]
+           --> [summary14 summary]
+           --> [summary15 summary]
+           --> [summary16 summary]
+           --> [summary17 summary]
+           --> [summary18 summary]
+           --> [summary19 summary]
+           --> quiz
+           --> [quiz2 quiz]
+           --> [quiz3 quiz]
+           --> [quiz4 quiz]
+           --> [quiz5 quiz]
+           --> [quiz6 quiz]
+           --> [quiz7 quiz]
+           --> [quiz8 quiz]
+           --> [quiz9 quiz]
            --> end]
   [end --> end])
