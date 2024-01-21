@@ -33,6 +33,7 @@
     (congame-example-study/instructor-review instructor-review/study)
     (congame-example-study/looping looping-study)
     (congame-example-study/looping nested-looping-study)
+    (congame-example-study/memory-leak memory-leak)
     (congame-example-study/matchmaking matchmaking-study)
     (congame-example-study/multi-review submit+review-pdf)
     (congame-example-study/multi-review submit+review-pdf/beliefs)
@@ -45,3 +46,5 @@
     (congame-example-study/quizzes info-econ-quiz3)
     (congame-example-study/quizzes info-econ-quiz4)
     (congame-example-study/reproducible-bug reproducible-bug-study)))
+(define congame-bots
+  '((congame-example-study/memory-leak make-ml-bot #:for memory-leak #:models (ml-bot-model))))
