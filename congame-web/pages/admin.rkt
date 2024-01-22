@@ -153,11 +153,11 @@
                    `((dsl-id . ,(and (not dsl-id) "required for DSL-based studies"))
                      (dsl-source . ,(and (not dsl-source) "required for DSL-based studies"))))))]))))
 
-(define ((field-group label [w (widget-text)]) name value errors)
+(define ((field-group label [w (widget-text)] [ew (widget-errors)]) name value errors)
   (haml
    (.field-group
     (:label label " " (w name value errors))
-    ,@((widget-errors) name value errors))))
+    ,@(ew name value errors))))
 
 (define (tooltip label info)
   (haml
@@ -199,7 +199,8 @@
      (rw "dsl-source"
          (field-group
           (tooltip "Study Source" "The file that contains your study. While all extensions work, .scrbl is encouraged.")
-          (widget-file))))
+          (widget-file)
+          (widget-preformatted-error))))
     (:button
      ([:type "submit"])
      "Create"))))
@@ -369,10 +370,19 @@
      [:method "POST"]
      [:enctype "multipart/form-data"])
     (rw "dsl-id" (field-group "Study ID"))
-    (rw "dsl-source" (field-group "Study Source" (widget-file)))
+    (rw "dsl-source" (field-group "Study Source"
+                                  (widget-file)
+                                  (widget-preformatted-error)))
     (:button
      ([:type "submit"])
      "Update"))))
+
+(define ((widget-preformatted-error) name _value errors)
+  (define source-error
+    (assq (string->symbol name) errors))
+  (if source-error
+      `((pre ([class "errors"]) ,(cdr source-error)))
+      null))
 
 (define/contract ((edit-study-dsl-page db) req study-id)
   (-> database? (-> request? id/c response?))
