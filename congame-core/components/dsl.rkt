@@ -1,11 +1,15 @@
 #lang racket/base
 
-(require racket/file)
+(require racket/file
+         racket/format)
 
 (provide
  dsl-require)
 
+(define-logger dsl)
+
 (define (dsl-require src id)
+  (log-dsl-debug "dsl-require: ~a" (~.s #:max-width 1024 src))
   (unless (regexp-match? #rx"^#lang conscript *\n" src)
     (error 'dsl-require "only #lang conscript is supported"))
   (define path #f)

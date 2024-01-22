@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          congame-web/components/auth
+         congame-web/components/memory
          congame-web/components/prolific
          congame-web/components/replication
          congame-web/components/sentry
@@ -227,6 +228,7 @@
         ((wrap-browser-locale sessions))
         (wrap-sentry)
         (wrap-prolific)
+        ((wrap-memory-limit (* 64 1024 1024))) ;; memory leaks only guarded "up" from here
         ((wrap-errors config:debug))
         ((wrap-flash flashes))
         ((wrap-session sessions))

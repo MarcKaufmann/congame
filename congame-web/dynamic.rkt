@@ -111,6 +111,7 @@
   (define stop-logger
     (start-logger
      #:levels `((app                  . ,config:log-level)
+                (dsl                  . ,config:log-level)
                 (identity             . ,config:log-level)
                 (jsexprable           . ,config:log-level)
                 (marionette           . ,config:log-level)
