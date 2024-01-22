@@ -54,7 +54,8 @@
        (make-step
         (string->symbol
          (format "quiz~a" i))
-        (quiz i))))
+        (quiz i)
+        #:for-bot quiz/bot)))
     (list
      (make-step 'end end #:for-bot bot:completer)))))
 
