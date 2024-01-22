@@ -128,7 +128,7 @@
     {pattern [step:id step-expr:id]
              #:with (tg-e ...) #'(step)
              #:with ((step-id step-e) ...) #'((step step-expr))}
-    {pattern {~seq lhs:transition-arrow --> rhs:transition-arrow}
+    {pattern {~seq lhs:transition-arrow ~! --> rhs:transition-arrow}
              #:with (tg-e ...) #'{lhs.tg-e ... --> rhs.tg-e ...}
              #:with ((step-id step-e) ...) #'((lhs.step-id lhs.step-e) ... (rhs.step-id rhs.step-e) ...)})
 
