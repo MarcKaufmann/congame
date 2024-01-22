@@ -534,7 +534,7 @@ QUERY
 (define/widget (button action label
                        #:id [id ""]
                        #:to-step-id [to-step-id #f]
-                       #:up-target [up-target ".container"]
+                       #:up-target [up-target ".step"]
                        #:up-transition [up-transition "none"])
   (haml
    (:a.button.next-button
