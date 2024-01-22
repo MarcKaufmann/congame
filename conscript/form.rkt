@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse)
+                     syntax/parse/pre)
          (prefix-in congame: congame/components/formular)
          (prefix-in congame: (submod congame/components/formular tools)))
 
