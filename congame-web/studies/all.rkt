@@ -4,7 +4,7 @@
                      racket/match
                      racket/syntax
                      setup/getinfo
-                     syntax/parse)
+                     syntax/parse/pre)
          congame/components/registry
          congame/components/study
          racket/runtime-path)
