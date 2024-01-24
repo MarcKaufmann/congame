@@ -2,6 +2,13 @@
 
 @(require (for-label conscript racket/base))
 
+@(define exercise-counter 0)
+
+@(define (exercise description)
+   (set! exercise-counter (add1 exercise-counter))
+   (para
+    (bold (format "Exercise ~a: " exercise-counter)) @description))
+
 @; TODO
 @; Be consistent in the use of 'I', 'We', 'you'
 
@@ -285,13 +292,12 @@ To illustrate this, let us add a display of the person's age to the previous stu
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
-
 (defstep (thank-you)
   @html{
-        @h1{Thank you, @get['first-name]}
+    @h1{Thank you, @get['first-name]}
 
-        Thank you for participating in our survey, @get['first-name] - and for telling us that you are @get['age] years old!})
-}|
+    Thank you for participating in our survey, @get['first-name] - and for
+telling us that you are @get['age] years old!}) }|
 
 You might expect this to display the age on the page. Instead, you are likely to find that the final page does not display the age at all, and you see only "You are the most awesome &-year old!" (or some other strange character in place of the @tt{&}) instead. What is going on?
 
@@ -301,17 +307,71 @@ To fix this, all we need to do is to convert numbers to strings before displayin
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
-
 (defstep (thank-you)
   @html{
         @h1{Thank you, @get['first-name]}
 
-        Thank you for participating in our survey, @get['first-name] - and for telling us that you are @~a[@get['age]] years old!})
+        Thank you for participating in our survey, @get['first-name] - and for
+telling us that you are @~a[@get['age]] years old!}) }|
+
+@section{Input Types}
+
+Conscript provides the following input types by default, corresponding to their
+HTML namesakes, wich can only be used inside of a @racket[@form]:
+
+@itemlist[
+  @item{@racket[input-text]: the user enters short text into a single-line box}
+  @item{@racket[textarea]: the user enters a  long text into a multi-row box}
+  @item{@racket[input-number]: the user enters a number}
+  @item{@racket[input-range]: the user selects a number with a slider}
+  @item{@racket[input-date]: the user selects or enters a date}
+  @item{@racket[input-time]: the user selects or enters a time}
+  @item{@racket[input-file]: the user selects a file to upload}
+  @item{@racket[checkbox]: the user has to check a box}
+  @item{@racket[radios]: the user selects one of several visible options}
+  @item{@racket[select]: the user selects one of several options from a dropdown menu}
+  ]
+
+By default, every input field is required: a participant will not be able to
+submit the form unless they fill in the field. If you want to make a field
+optional, you have to set the @racket[#:required?] keyword to @racket[#false],
+or its short form @racket[#f]. In addition, some inputs can take further keyword
+arguments (those starting with @racket[#:]), such as numbers having a minimum or
+maximum that they cannot exceed.
+
+Let us illustrate this with age. First, everyone's age is positive, so let us put a minimum for age at 0. Morevoer, some people would rather not reveal their age, so let's make it optional. Then our input for age becomes:
+
+@margin-note{
+While the order of the other keyword arguments does not matter, the first keyword argument @emph{must} always be the identifier of the input, here @racket[#:age].
+}
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+@input-number[#:age #:required? #f #:min 0]{What is your age (in years)?}
 }|
+
+Sometimes when asking for a range, we may want to offer a slider, especially when we don't expect people to have a precise number in mind. That's when we can use @racket[input-range]. Like @racket[input-number], it takes optional keyword arguments for @racket[#:min] and @racket[#:max]. When none are provided, the browser will default to a range from 0 to 100. You can try out as follows:
+
+@codeblock[#:keep-lang-line?]|{
+#lang conscript
+@input-number[#:agree]{How strongly do you agree with using `input-range` for
+this question rather than `input-number`? (0: not at all, 100 completely)}
+}|
+
+@exercise{Build a study using all the inputs above except radio, select, and input-file.}
 
 @;{
 @; Continue here next time
 @; Add exercises, that's the main thing needed.
+
+@section{Exercises}
+
+@exercise[1]{Create a study where the user enters a number between 0 and 5 and then display double the number on the next page.}
+
+@exercise[2]{Implement a step that elicits a multiple price list. How painful would it be to figure out at which bullet point people are switching?}
+
+@exercise[3]{Add an admin page to the study in part 1 that shows you how many participants have already completed the study and what numbers they have chosen.}
+
 @section{Studies with Logic}
 
 We often want to respond to participants, whether it is to display different messages as we progress, or based on their answers. We will now create a few studies using some of the programming features that conscript provides.
