@@ -229,8 +229,8 @@ by updating @filepath{tutorial.rkt} as follows:
     @h1{Survey}
 
     @form{
-      @input-text[first-name]{What is your first name?}
-      @input-number[age]{What is your age (in years)?}
+      @input-text[#:first-name]{What is your first name?}
+      @input-number[#:age]{What is your age (in years)?}
       @submit-button}})
 
 (defstep (thank-you)
@@ -277,33 +277,41 @@ Now you can bo back to the dashboard and go through the study.
 Congratulations, this is your first survey in @tech{conscript}!
 
 
-@;{
-@section{Using standard functions}
+@section{Using Racket functions}
 
-Basic conscript is purposefully underpowered and comes with a small number of built-in features. Many @tech{Racket} functions are provided by default, and we will add more as they become useful.
+You can use a limited set of @tech{Racket} functions directly in @tech{conscript}.
 
 To illustrate this, let us add a display of the person's age to the previous study. It may seem straightforward, and you might try to do change the code of the final @racket[thank-you] step as follows:
 
-@codeblock|{
-@step[thank-you]{
-  @h1{Thank you, @(ev (get 'first-name))}
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
 
-  Thank you for participating in our survey, @(ev (get 'first-name))! You are the most awesome @(ev (get 'age))-year old!
-}
+(defstep (thank-you)
+  @html{
+        @h1{Thank you, @get['first-name]}
+
+        Thank you for participating in our survey, @get['first-name] - and for telling us that you are @get['age] years old!})
 }|
 
-You might expect this to display the age on the page. Instead, you are likely to find that the final page does not display the age at all, and you see only "You are the most awesome &-year old!" (or some other strange character in place of the &) instead. What is going on?
+You might expect this to display the age on the page. Instead, you are likely to find that the final page does not display the age at all, and you see only "You are the most awesome &-year old!" (or some other strange character in place of the @tt{&}) instead. What is going on?
 
-What is going on is that when we are storing a number, we are storing a number and not a string! So when we use @code|{@(ev (get 'age))}| to display the age, we are providing the age as a number and not as a string, and since numbers are encoded differently, this leads to the strange display you get. To fix this, all we need to do is to convert numbers to strings before displaying them. Fortunately, @racket[number->string] is provided by default. To use it, just call it inside an @code|{@(ev ...)}| call:
+What is going on is that when we are storing a number, we are storing a number and not a string! So when we write @code|{@get['age]}| to display the age, we are providing the age as a number and not as a string, and when the number is sent, as bytes, to your browser, your browser interprets it as some other special symbol. This leads to the strange display you get.
 
-@codeblock|{
-@step[thank-you]{
-  @h1{Thank you, @(ev (get 'first-name))}
+To fix this, all we need to do is to convert numbers to strings before displaying them. Fortunately, @racket[~a] is provided by default, which turns its argument into a string (and more). To use it, call it like @racket[get]:
 
-  Thank you for participating in our survey, @(ev (get 'first-name))! You are the most awesome @(ev (number->string (get 'age)))-year old!
-}
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+
+(defstep (thank-you)
+  @html{
+        @h1{Thank you, @get['first-name]}
+
+        Thank you for participating in our survey, @get['first-name] - and for telling us that you are @~a[@get['age]] years old!})
 }|
 
+@;{
+@; Continue here next time
+@; Add exercises, that's the main thing needed.
 @section{Studies with Logic}
 
 We often want to respond to participants, whether it is to display different messages as we progress, or based on their answers. We will now create a few studies using some of the programming features that conscript provides.

@@ -5,6 +5,7 @@
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
          (except-in congame/components/study button form)
+         (only-in racket/format ~a)
          congame/components/transition-graph
          "form.rkt"
          "html.rkt"
@@ -40,6 +41,7 @@
  = < > <= >= equal? eq?
  sqrt expt exp log
  regexp-match?
+ format ~a number->string symbol->string
 
  ;; Congame Syntax
  --> goto
