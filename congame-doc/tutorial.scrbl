@@ -4,7 +4,7 @@
 
 @(define exercise-counter 0)
 
-@(define (exercise description)
+@(define (exercise . description)
    (set! exercise-counter (add1 exercise-counter))
    (para
     (bold (format "Exercise ~a: " exercise-counter)) @description))
@@ -358,7 +358,7 @@ Sometimes when asking for a range, we may want to offer a slider, especially whe
 this question rather than `input-number`? (0: not at all, 100 completely)}
 }|
 
-@exercise{Build a study using all the inputs above except radio, select, and input-file.}
+@exercise{Build a study using all the inputs above except @racket[radio], @racket[select], and @racket[input-file].}
 
 @;{
 @; Continue here next time
