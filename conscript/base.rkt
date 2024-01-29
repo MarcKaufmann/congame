@@ -5,12 +5,16 @@
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
          (except-in congame/components/study button form)
-         (only-in racket/format ~a)
          congame/components/transition-graph
+         racket/format
+         racket/lazy-require
          "form.rkt"
          "html.rkt"
          "markdown.rkt"
          "var.rkt")
+
+(lazy-require
+ [congame-web/components/identity (put/identity)])
 
 ;; kernel ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -47,8 +51,12 @@
  --> goto
 
  ;; Congame Runtime
+ (rename-out
+  [congame:with-study-transaction with-study-transaction]
+  [congame:get/instance get/instance]
+  [congame:put/instance put/instance])
  make-step make-step/study
- get put
+ get put put/identity
  done
  )
 
