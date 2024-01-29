@@ -2,23 +2,25 @@
 
 (require congame-web/components/auth
          congame-web/components/user
+         congame/components/bot
          congame/components/export
          (only-in congame/components/study
                   current-study-instance-id
-                  current-study-stack)
+                  current-study-stack
+                  put)
          db
          koyo/url
          (prefix-in http: net/http-easy)
-         racket/contract
+         racket/contract/base
          racket/format)
 
 (provide
- put/identity)
+ (contract-out
+  [put/identity (-> symbol? any/c void?)]))
 
 (define-logger identity)
 
-(define/contract (put/identity key value)
-  (-> symbol? any/c void?)
+(define (put/identity key value)
   (define u (current-user))
   (cond
     [(and (not (sql-null? (user-identity-service-url u)))
@@ -30,17 +32,18 @@
                    (user-identity-service-key u))))
      (define data
        (hasheq
-        'congame-url (->jsexpr (make-application-url))
-        'key (->jsexpr key)
-        'stack (->jsexpr (current-study-stack))
-        'value (->jsexpr value)))
-     ; FIXME: do authorization check based on an api user for congame server. use congame_servers table rather than users.
-     (define res
-       (http:put url #:json data))
+        'congame-url (make-application-url)
+        'key key
+        'stack (current-study-stack)
+        'value value))
+     (define res (http:put url #:json (->jsexpr data)))
      (log-identity-debug "put/identity~n  url: ~a~n  data: ~e" url data)
      (unless (= (http:response-status-code res) 201)
        (error 'put/identity "request failed~n  response: ~a" (http:response-body res)))]
 
+    [(current-user-bot?)
+     (put #:root '*identity* key value)]
+
     [else
-     ; TODO: Is it a feature or a bug that non-identity users trigger this?
-     (log-identity-warning "failed to put/identity~n current user is not an identity user~n  username: ~a~n  key: ~a" (user-username u) key)]))
+     (error 'put/identity "current user is not an identity user~n username: ~s~n key: ~s~n value: ~s"
+            (user-username (current-user)) key value)]))
