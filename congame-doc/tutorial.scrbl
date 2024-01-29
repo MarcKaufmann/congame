@@ -352,7 +352,7 @@ While the order of the other keyword arguments does not matter, the first keywor
 
 Sometimes when asking for a range, we may want to offer a slider, especially when we don't expect people to have a precise number in mind. That's when we can use @racket[input-range]. Like @racket[input-number], it takes optional keyword arguments for @racket[#:min] and @racket[#:max]. When none are provided, the browser will default to a range from 0 to 100. You can try out as follows:
 
-@codeblock[#:keep-lang-line?]|{
+@codeblock[#:keep-lang-line? #f]|{
 #lang conscript
 @input-number[#:agree]{How strongly do you agree with using `input-range` for
 this question rather than `input-number`? (0: not at all, 100 completely)}
@@ -360,12 +360,12 @@ this question rather than `input-number`? (0: not at all, 100 completely)}
 
 @exercise{Build a study using all the inputs above except @racket[radio], @racket[select], and @racket[input-file].}
 
-@scribble{Writing pages in Markdown}
+@section{Writing pages in Markdown}
 
 When writing mostly texts, it is often convenient to write it in markdown. In
 markdown, '#', '##', etc indicate headers in decreasing order, enclosing a word
 in single asterisks @code{*emphasizes*} it, double asterisks @code{**boldens**}
-it, etc. See @hyperlink[https://commonmark.org/help/]{this markdown help} for
+it, etc. See @hyperlink["https://commonmark.org/help/"]{this markdown help} for
 details.
 
 To write markdown, use @racket{@md} to create a whole markdown page. So we can
@@ -401,6 +401,133 @@ rewrite the steps in the tutorial study as follows:
 }|
 
 Since it is easier to write, I suggest that you write most pages with lots of text in markdown.
+
+@section{Reusing steps and whole studies}
+
+In many studies, we repeatedly measure the same thing: willingness to pay, mood, fatigue, and many others. When doing so, we need need to take care in naming the values that we measure so that we don't overwrite old values by the new ones.
+
+First, let us try to define a step and reuse it 3 times:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(provide
+  three-fatigues)
+
+(defstep (description)
+  @md{
+    # Fatigue Survey
+
+    In this study we will ask you three times how tired you are.
+
+    @button{Start study}})
+
+(defstep (how-tired-are-you)
+  @md{
+  # Fatigue question
+
+  @form{
+    @input-number[#:fatigue #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
+    @submit-button[]
+  }})
+
+(defstep (done)
+  @md{
+    # You are done!
+
+    Thank you for participating.})
+
+(defstudy three-fatigues
+  @; This will not work
+  [description --> how-tired-are-you
+               --> how-tired-are-you
+               --> how-tired-are-you
+               --> done]
+  [done --> done])
+}|
+
+@margin-note{If you wonder why we did not decide to let @code|{a --> a --> b}| stand for ``first step @racket[a], then step @racket[a], then step @racket[b]'', ask yourself the following: how could you distinguish, in words to a person or in code, between the first and second instance of step @racket[a]? To avoid solving this problem implicitly, we prefer to require the study writer to give a unique and explicitly specified name to every step.}
+
+The above does not work, because @code|{a --> b}| stands for ``the step @racket[a] is always followed by the step @racket[b]''. So @code|{a --> a --> a --> b}| is both redundant and inconsistent. It is redundant because the first @code|{a --> a}| means the same as the second. It is ambiguous because @code|{a --> b}| contradicts @code|{a --> a}|, since it would mean that the step @racket[a] is always followed by the step @racket[a] and also always followed by the step @racket[b].
+
+Moreover, even if this study did run, the problem is that the answer to the latest question would always overwrite the previous answers, so we can never store more than one answer.
+
+One way to solve the problem, albeit a bit cumbersome, is to define three separate steps that do the same thing, but store it in different values:
+
+@codeblock|{
+#lang conscript
+
+(provide
+  three-fatigues)
+
+(defstep (how-tired-are-you1)
+  @md{
+  # Fatigue question
+
+  @form{
+    @input-number[fatigue1 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
+    @submit-button[]
+  }})
+
+(defstep (how-tired-are-you2)
+  @md{
+  # Fatigue question
+
+  @form{
+    @input-number[fatigue1 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
+    @submit-button[]
+  }})
+
+(defstep (how-tired-are-you3)
+  @md{
+  # Fatigue question
+
+  @form{
+    @input-number[fatigue3 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
+    @submit-button[]
+  }})
+
+(defstudy three-fatigues
+  [description --> how-tired-are-you1
+               --> how-tired-are-you2
+               --> how-tired-are-you3
+               --> done]
+  [done --> done])
+}|
+
+This has several problems. First, because I copy-pasted the code of the first step and forgot to change the name of the input from @racket[fatigue1] to @racket[fatigue2], the answer to the second step would overwrite the answer to the first step. But even if we fixed this, one of the more famous mottos in software engineering is @emph{Don't Repeat Yourself}, or @emph{DRY} for short. While one can overdo it with DRY, here we repeated the same operation three times, manually changing names of steps and of identifiers. This is error-prone and brittle: imagine doing this for 10 repetitions, only to realize that you want to change the wording, so now you have to find and change it in 10 different places.
+
+This brings us to one of the nicer features of conscript: we can reuse whole studies as substudies of a larger study. Moreover, by default data is stored on substudies, so that different substudies do not overwrite each other's data. So by defining a study that saves the answer under the id @tt{'fatigue}, we can reuse it multiple times in a way that saves all the answers.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+
+@; take the `description` and `done` steps from above
+@; ...
+
+@; Add the following
+(defstep (how-tired-are-you)
+  @md{
+  # Fatigue question
+
+  @form{
+    @input-number[fatigue #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
+    @submit-button[]
+  }})
+
+(defstudy fatigue
+  [how-tired-are-you --> ,(lambda () done)])
+
+(defstudy three-fatigues
+  [description --> [fatigue1 fatigue]
+               --> [fatigue2 fatigue]
+               --> [fatigue3 fatigue]
+               --> done]
+  [done --> done])
+}|
+
+This is the first time that we define two studies and reuse the first study, named @tt{fatigue} three times in the second one. To do soe, we define transtions as follows: @tt{--> [<name-the-step> <study-or-step-to-run>]}, where the @emph{<name-of-the-step>} is the unique id of this step as part of @tt{three-fatigues}, while @tt{<study-or-step-to-run>} is the study (or step) that should be run in this step. Hence we provide three different names, yet reuse the same study each time.
+
+It is necessary that the substudy ends in a transition @code|{... --> ,(lambda () done)}|, which indicates that the substudy should exit and continue in the parent study. I won't explain this code, just include it as a magic incantation.
 
 @;{
 @; Continue here next time
@@ -532,133 +659,6 @@ To add multiple style properties, we separate them by a semicolon:
   }
 }
 }|
-
-@section{Reusing steps and whole studies}
-
-In many studies, it is useful to repeatedly measure the same thing: a willingness to pay, the mood, fatigue, and many others. In countdown, we saw one way of repeating a step that displays similar information again and again. Now we will see several other ways, including ones where we elicit information again and again. Note that one major problem we will have to deal with is how to name the values that we measure: if we always use the identifier @tt{'fatigue} to store how tired a person is, then we run the danger of overwriting it.
-
-First, let us try to define a step and reuse it 3 times:
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@step[description]{
-  @h1{Fatigue Survey}
-
-  In this study we will ask you three times how tired you are.
-
-  @button{Start study}
-}
-
-@step[how-tired-are-you]{
-  @h1{Fatigue question}
-
-  @form{
-    @input-number[fatigue #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
-    @submit-button[]
-  }
-}
-
-@step[done]{
-  @h1{You are done!}
-
-  Thank you for participating.
-}
-
-@study[
-  three-fatigues
-  #:transitions
-  @; This will not work as expected
-  [description --> how-tired-are-you --> how-tired-are-you --> how-tired-are-you --> done]
-  [done --> done]
-]
-}|
-
-The above does not work, as it is interpreted as saying that after the step @tt{how-tired-are-you} comes the step @tt{how-tired-are-you}, and the next arrow simply repeats this information again. We could add a counter as we did for countdown, but that will not work. When you look at the data in the database after submitting two or more answers, you will see that only a single answer (the last one) was stored. This problem persists when we use the counter.
-
-One way to solve the problem is to define three separate steps that do the same thing, but store it in different values:
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@step[how-tired-are-you1]{
-  @h1{Fatigue question}
-
-  @form{
-    @input-number[fatigue1 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
-    @submit-button[]
-  }
-}
-
-@step[how-tired-are-you2]{
-  @h1{Fatigue question}
-
-  @form{
-    @input-number[fatigue2 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
-    @submit-button[]
-  }
-}
-
-@step[how-tired-are-you3]{
-  @h1{Fatigue question}
-
-  @form{
-    @input-number[fatigue3 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
-    @submit-button[]
-  }
-}
-
-@study[
-  three-fatigues
-  #:transitions
-  [description --> how-tired-are-you1
-               --> how-tired-are-you2
-               --> how-tired-are-you3
-               --> done]
-  [done --> done]
-]
-}|
-
-This will work. But one of the more famous mottos in programming is @emph{Don't Repeat Yourself}, or @emph{DRY} for short. While one can overdo it with DRY, here we have literally had to repeat whole steps three times, and moreover manually needed to change the name of the step and of the value we want to store. Imagine a more complicated survey with 10 questions: we would have to change 10 names for each repetition, which is a recipe for disaster!
-
-This brings us to one of the nicer features of conscript: we can reuse whole studies as substudies of a larger study. Moreover, substudies never overwrite data from other substudies  (unless you use advanced features, which require you being explicit about it). In our context, that means that if we define a study that saves a respondent's fatigue with the identifier @tt{'fatigue}, we can reuse it multiple times, and each saves its own identifier @tt{'fatigue}, leaving all the others alone.
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@; take the `description` and `done` steps from above
-@; ...
-
-@; Add the following
-@step[how-tired-are-you]{
-  @h1{Fatigue question}
-
-  @form{
-    @input-number[fatigue #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
-    @submit-button[]
-  }
-}
-
-@study[
-  fatigue
-  #:transitions
-  [how-tired-are-you --> @(ev (lambda () done))]
-]
-
-@study[
-  three-fatigues
-  #:transitions
-  [description --> [fatigue1 fatigue]
-               --> [fatigue2 fatigue]
-               --> [fatigue3 fatigue]
-               --> done]
-  [done --> done]
-]
-}|
-
-This is the first time that we define two studies. Then we reuse the first study, named @tt{fatigue} three times in the second one, by using the following pattern for the transition: @tt{--> [<name-the-step> <study-to-run>]}, where the @emph{<name-of-the-step>} is what you want to call this step as part of the @tt{three-fatigues} study, while @tt{<study-to-run>} is the study that will be run. Hence we provide three different names, yet the same study each time, since we want to run the same study.
-
-It is important that for the study that we want to use as a substudy that we add a transition at the end that looks as follows: @code|{@(ev (lambda () done))}|. This tells conscript that at this point it should leave the substudy and go back to the parent study.
 
 @section{Intermezzo: Some exercises}
 
