@@ -1146,6 +1146,7 @@ QUERY
  list-study-instances-for-owner
  list-all-study-instances
  list-active-study-instances
+ list-active-study-instances/by-owner
  list-study-instance-participants/admin
  list-study-instance-payments/admin
  list-study-instance-total-payments/admin
@@ -1367,6 +1368,15 @@ QUERY
     (sequence->list
      (in-entities conn (~> (from study-instance #:as i)
                            (where (= i.status "active"))
+                           (order-by ([i.created-at #:desc])))))))
+
+(define/contract (list-active-study-instances/by-owner db owner-id)
+  (-> database? id/c (listof study-instance?))
+  (with-database-connection [conn db]
+    (sequence->list
+     (in-entities conn (~> (from study-instance #:as i)
+                           (where (and (= i.status "active")
+                                       (= i.owner-id ,owner-id)))
                            (order-by ([i.created-at #:desc])))))))
 
 (define/contract (list-study-instance-vars db instance-id)

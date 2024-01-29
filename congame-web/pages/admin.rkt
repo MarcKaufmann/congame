@@ -150,8 +150,8 @@
                (ok (list name slug type dsl-id dsl-source)))
              (err (filter
                    cdr
-                   `((dsl-id . ,(and (not dsl-id) "required for DSL-based studies"))
-                     (dsl-source . ,(and (not dsl-source) "required for DSL-based studies"))))))]))))
+                   `((dsl-id . ,(and (not dsl-id) "required for Conscript studies"))
+                     (dsl-source . ,(and (not dsl-source) "required for Conscript studies"))))))]))))
 
 (define ((field-group label [w (widget-text)] [ew (widget-errors)]) name value errors)
   (haml
@@ -178,7 +178,7 @@
     (rw "type" (field-group (tooltip "Type" "Leave as-is for now.")
                             (widget-select
                              #:attributes `([data-mask "type"])
-                             `(("dsl" . "DSL")
+                             `(("dsl" . "Conscript")
                                ("racket" . "Racket")))))
     (:div
      ([:data-mask-group "racket"]
@@ -194,11 +194,11 @@
      ([:data-mask-group "dsl"])
      (rw "dsl-id"
          (field-group
-          (tooltip "Study ID" "The id of the @study in your source code.")
+          (tooltip "Study ID" "The id of the provided study in your source code.")
           (widget-text)))
      (rw "dsl-source"
          (field-group
-          (tooltip "Study Source" "The file that contains your study. While all extensions work, .scrbl is encouraged.")
+          (tooltip "Study Source" "The file that contains your study. While all extensions work, .rkt is encouraged.")
           (widget-file)
           (widget-preformatted-error))))
     (:button
@@ -303,17 +303,17 @@
              (:h4
               (:a
                ([:href (reverse-uri 'admin:edit-study-dsl-page study-id)])
-               "Edit DSL"))
+               "Edit Conscript Source"))
              (:h4
               (:a
                ([:href (embed/url
                         (lambda (_req)
                           (response/output
                            #:mime-type #"text/plain"
-                           #:headers (list (make-header #"content-disposition" #"attachment; filename=\"study.scrbl\""))
+                           #:headers (list (make-header #"content-disposition" #"attachment; filename=\"study.rkt\""))
                            (lambda (out)
                              (write-string (study-meta-dsl-source meta) out)))))])
-               "Download DSL Source")))))
+               "Download Conscript Source")))))
          instances-xexpr
          (:br)
          (:a
@@ -410,7 +410,7 @@
            (tpl:container
             (haml
              (:section.create-study
-              (:h1 "Edit DSL Source")
+              (:h1 "Edit Conscript Source")
               (render-edit-study-dsl-form (embed/url loop) rw)))))])))))
 
 (define study-instance-form

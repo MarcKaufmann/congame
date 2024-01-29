@@ -7,6 +7,7 @@
          (except-in forms form)
          koyo/continuation
          koyo/haml
+         koyo/http
          koyo/url
          racket/match
          web-server/dispatchers/dispatch
@@ -18,28 +19,41 @@
  study-page
  study-view-page)
 
-(define ((study-instances-page db) _req)
-  (cond [(user-enrolled-via-identity? (current-user))
-         (define identity-dashboard-url
-           (user-identity-service-url (current-user)))
-         (redirect/get/forget)
-         (redirect-to identity-dashboard-url)]
+(define ((study-instances-page db) req)
+  (cond
+    [(user-enrolled-via-identity? (current-user))
+     (define identity-dashboard-url
+       (user-identity-service-url (current-user)))
+     (redirect/get/forget)
+     (redirect-to identity-dashboard-url)]
 
-        [else
-         (send/suspend/dispatch/protect
-          (lambda (embed/url)
-            (tpl:page
-             (haml
-              (.container
-               (:ul
-                ,@(for/list ([i (in-list (list-active-study-instances db))])
-                    (haml
-                     (:li
-                      (study-instance-name i)
-                      " " 'mdash " "
-                      (:a
-                       ([:href (embed/url (enroll db i))])
-                       (enroll/resume-message db i)))))))))))]))
+    [else
+     (send/suspend/dispatch/protect
+      (lambda (embed/url)
+        (define bindings (request-bindings/raw req))
+        (define tab (bindings-ref bindings 'tab))
+        (define instances
+          (if (equal? tab "my-instances")
+              (list-active-study-instances/by-owner db (user-id (current-user)))
+              (list-active-study-instances db)))
+        (tpl:page
+         (haml
+          (.container
+           (:h2
+            "Study Instances ("
+            (:a ([:href "?tab=all"]) "all")
+            " | "
+            (:a ([:href "?tab=my-instances"]) "my instances")
+            ")")
+           (:ul
+            ,@(for/list ([i (in-list instances)])
+                (haml
+                 (:li
+                  (study-instance-name i)
+                  " " 'mdash " "
+                  (:a
+                   ([:href (embed/url (enroll db i))])
+                   (enroll/resume-message db i)))))))))))]))
 
 (define (home-page _req)
   (tpl:page
