@@ -47,6 +47,7 @@
  view-study-participant-page
  create-study-instance-bot-sets-page
  view-study-instance-bot-set-page
+ bulk-archive-instances-page
  stop-impersonation-page
  create-replication-page)
 
@@ -80,7 +81,11 @@
           (:h4
            (:a
             ([:href (reverse-uri 'admin:create-study-page)])
-            "New Study"))
+            "New Study")
+           " "
+           (:a
+            ([:href (reverse-uri 'admin:bulk-archive-instances-page)])
+            "Bulk Archive"))
           (:ul.study-list
            ,@(for/list ([s (in-list studies)])
                (haml
@@ -451,16 +456,14 @@
          (hash "no-enrollment-code?" "1"))
        (match (form-run study-instance-form req #:defaults defaults)
          [(list 'passed (list name slug enrollment-code status) _)
-          (define the-study-instance
-            (with-database-connection [conn db]
-              (insert-one! conn (make-study-instance
-                                 #:owner-id (user-id (current-user))
-                                 #:study-id study-id
-                                 #:name name
-                                 #:slug slug
-                                 #:enrollment-code enrollment-code
-                                 #:status status))))
-
+          (with-database-connection [conn db]
+            (insert-one! conn (make-study-instance
+                               #:owner-id (user-id (current-user))
+                               #:study-id study-id
+                               #:name name
+                               #:slug slug
+                               #:enrollment-code enrollment-code
+                               #:status status)))
           (redirect-to (reverse-uri 'admin:view-study-page study-id))]
 
          [(list _ _ rw)
@@ -1093,6 +1096,61 @@
    (reverse-uri 'admin:view-study-instance-page
                 (study-meta-id the-study)
                 (study-instance-id the-instance))))
+
+(define/contract ((bulk-archive-instances-page db) req)
+  (-> database? (-> request? response?))
+  (define studies (list-studies db #:owner (user-id (current-user))))
+  (define instances (list-active-study-instances/by-owner db (user-id (current-user))))
+  (define instances-by-study
+    (for/fold ([instances-by-study (hasheqv)])
+              ([i (in-list instances)])
+      (hash-update
+       instances-by-study (study-instance-study-id i)
+       (λ (is) (cons i is)) null)))
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (let loop ([req req])
+       (cond
+         [(equal? (request-method req) #"POST")
+          (define bindings (request-bindings/raw req))
+          (define instance-ids
+            (for/list ([bind (in-list (bindings-assq-all #"instances" bindings))])
+              (string->number
+               (bytes->string/utf-8
+                (binding:form-value bind)))))
+          (bulk-archive-study-instances! db (user-id (current-user)) instance-ids)
+          (redirect/get/forget/protect)
+          (redirect-to (reverse-uri 'admin:studies-page))]
+         [else
+          (tpl:page
+           (tpl:container
+            (haml
+             (:div
+              (:h1 "Bulk Archive Study Instances")
+              (:form
+               ([:action (embed/url loop)]
+                [:method "POST"])
+               (:label
+                "Study Instances"
+                (:br)
+                (:select
+                 ([:name "instances"]
+                  [:multiple ""]
+                  [:style "height: 200px"])
+                 ,@(for/list ([s (in-list studies)]
+                              #:when (hash-has-key? instances-by-study (study-meta-id s)))
+                     (haml
+                      (:optgroup
+                       ([:label (study-meta-name s)])
+                       ,@(for/list ([i (in-list (hash-ref instances-by-study (study-meta-id s)))])
+                           (haml
+                            (:option
+                             ([:value (~a (study-instance-id i))])
+                             (study-instance-name i)))))))))
+               (:br)
+               (:button
+                ([:type "submit"])
+                "Archive"))))))])))))
 
 (define/contract ((stop-impersonation-page am) _req)
   (-> auth-manager? (-> request? response?))

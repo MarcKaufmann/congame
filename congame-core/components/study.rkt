@@ -1152,6 +1152,7 @@ QUERY
  list-study-instance-total-payments/admin
  list-study-instance-vars
  clear-study-instance-vars!
+ bulk-archive-study-instances!
  current-participant-id
  lookup-participant-email
  lookup-participant-identity-url
@@ -1433,6 +1434,14 @@ QUERY
     (query-exec conn (~> (from study-instance-var #:as v)
                          (where (= v.instance-id ,instance-id))
                          (delete)))))
+
+(define/contract (bulk-archive-study-instances! db owner-id instance-ids)
+  (-> database? id/c (listof id/c) void?)
+  (with-database-connection [conn db]
+    (query-exec conn (~> (from study-instance #:as i)
+                         (where (and (= i.owner-id ,owner-id)
+                                     (in i.id ,@instance-ids)))
+                         (update [status "archived"])))))
 
 (define/contract (participant-enrolled? db user-id instance-id)
   (-> database? id/c id/c boolean?)

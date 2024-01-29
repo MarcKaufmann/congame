@@ -101,6 +101,10 @@
       #:roles (admin)
       (admin:create-study-page db)]
 
+     [("admin" "studies" "bulk-archive")
+      #:roles (admin)
+      (admin:bulk-archive-instances-page db)]
+
      [("admin" "studies" (integer-arg))
       #:roles (admin)
       (admin:view-study-page db)]
