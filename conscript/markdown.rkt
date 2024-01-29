@@ -3,7 +3,9 @@
 (require (for-syntax racket/base
                      syntax/parse/pre)
          commonmark
-         congame/components/study)
+         congame/components/study
+         racket/string
+         xml)
 
 (provide
  md
@@ -23,13 +25,20 @@
      #'(markdown->xexprs content ...)]))
 
 (define (markdown->xexprs . all-content)
-  `(div () ,@(apply append (for/list ([content (in-list all-content)])
-                             (if (string? content)
-                                 (document->xexprs (string->document content))
-                                 (list content))))))
+  (define doc
+    (string->document
+     (string-join
+      (for/list ([content (in-list all-content)])
+        (if (string? content)
+            content
+            (xexpr->string content)))
+      "")))
+  `(div () ,@(document->xexprs doc)))
 
 (module+ test
-  (require rackunit)
+  (require koyo/haml
+           racket/port
+           rackunit)
 
   (check-equal?
    @md*{# Start
@@ -37,7 +46,36 @@
         Hello.
 
         @list['br]}
-   '(div
+   `(div
+     ()
      (h1 "Start")
      (p "Hello.")
-     (br))))
+     ,(cdata #f #f "<br/>")))
+
+  (define name "Marc")
+  (check-equal?
+   @md*{# Start
+
+        Hello @|name|.}
+   '(div
+     ()
+     (h1 "Start")
+     (p "Hello Marc.")))
+
+  (define (button label)
+    (haml
+     (:button
+      ([:type "submit"])
+      label)))
+
+  (check-equal?
+   (call-with-output-string
+    (lambda (out)
+      (write-xexpr
+       @md*{# Start
+
+            Hello @|name|.
+
+            @button{test}}
+       out)))
+   "<div><h1>Start</h1><p>Hello Marc.</p><p><button type=\"submit\">test</button></p></div>"))
