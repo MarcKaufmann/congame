@@ -2,6 +2,8 @@
 
 (require (for-syntax racket/base
                      syntax/parse/pre)
+         (prefix-in bot: congame/components/bot-maker)
+         (prefix-in bot: (submod congame/components/bot actions))
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
          (except-in congame/components/study button form)
@@ -37,7 +39,7 @@
 
  ;; Racket Runtime
  lambda λ
- void
+ void sleep
  list list? null null? cons pair? car cdr map for-each
  display displayln print println printf eprintf write writeln
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling
@@ -50,6 +52,9 @@
  --> goto
 
  ;; Congame Runtime
+ (all-from-out
+  congame/components/bot-maker
+  (submod congame/components/bot actions))
  (rename-out
   [congame:with-study-transaction with-study-transaction]
   [congame:get/instance get/instance]
@@ -100,12 +105,17 @@
     {pattern {~seq kwd:keyword arg:id}}
     {pattern {~seq kwd:keyword [arg:id default-expr:expr]}})
   (define-syntax-class function-header
-    {pattern (nested:function-header arg:function-arg ...)}
+    {pattern (nested:function-header arg:function-arg ...) #:with name 'nested.name}
     {pattern (name:id arg:function-arg ...)}
     {pattern (name:id . args-id:id)}))
 
 (define-syntax (defstep stx)
   (syntax-parse stx
+    [(_ (name:id) #:bot bot-expr . body)
+     #'(define name
+         (make-step
+          'name (lambda () . body)
+          #:for-bot bot-expr))]
     [(_ head:function-header . body)
      #'(define head . body)]))
 

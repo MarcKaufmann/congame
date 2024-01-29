@@ -17,6 +17,7 @@
 (define build-deps '())
 (define congame-studies
   '((congame-example-study/conscript conscript-example)
+    (congame-example-study/conscript-bot conscript-bot-example)
     (congame-example-study/conscript-defvar conscript-defvar-example)
     (congame-example-study/conscript-form conscript-form-example)
     (congame-example-study/conscript-markdown conscript-markdown-example)
@@ -47,4 +48,5 @@
     (congame-example-study/quizzes info-econ-quiz4)
     (congame-example-study/reproducible-bug reproducible-bug-study)))
 (define congame-bots
-  '((congame-example-study/memory-leak make-ml-bot #:for memory-leak #:models (ml-bot-model))))
+  '((congame-example-study/memory-leak make-ml-bot #:for memory-leak #:models (ml-bot-model))
+    (congame-example-study/conscript-bot make-conscript-bot #:for conscript-bot-example #:models (conscript-bot-model))))

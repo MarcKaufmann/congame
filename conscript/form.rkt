@@ -11,6 +11,7 @@
   [congame:~errors ~errors]
   [congame:~all-errors ~all-errors]
   [congame:checkbox checkbox]
+  [congame:formular-autofill bot:autofill]
   [congame:input-date input-date]
   [congame:input-file input-file]
   [congame:input-number input-number]
@@ -63,7 +64,11 @@
 
 (define-syntax (form stx)
   (syntax-parse stx
-    [(_ #:action action:expr body:form-expr ...+)
-     #'(congame:formular `(div () ,body.form-e ...) action)]
-    [(_ body:form-expr ...+)
-     #'(congame:formular `(div () ,body.form-e ...))]))
+    [(_ {~alt
+         {~optional {~seq #:action action:expr}}
+         {~optional {~seq #:bot bot}}} ...
+        body:form-expr ...+)
+     #'(congame:formular
+        {~? {~@ #:bot bot}}
+        `(div () ,body.form-e ...)
+        {~? {~@ action}})]))

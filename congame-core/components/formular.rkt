@@ -281,7 +281,7 @@
          (m:element-attribute field-el "type")
          (m:element-tag field-el)))
       (case field-type
-        [("text")
+        [("text" "textarea")
          (values elts-to-click (hash-set elts-to-type field-el value))]
 
         [("number")
