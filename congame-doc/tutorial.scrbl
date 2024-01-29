@@ -7,7 +7,7 @@
 @(define (exercise . description)
    (set! exercise-counter (add1 exercise-counter))
    (para
-    (bold (format "Exercise ~a: " exercise-counter)) @description))
+    (bold (format "Exercise ~a: " exercise-counter)) description))
 
 @; TODO
 @; Be consistent in the use of 'I', 'We', 'you'
@@ -359,6 +359,48 @@ this question rather than `input-number`? (0: not at all, 100 completely)}
 }|
 
 @exercise{Build a study using all the inputs above except @racket[radio], @racket[select], and @racket[input-file].}
+
+@scribble{Writing pages in Markdown}
+
+When writing mostly texts, it is often convenient to write it in markdown. In
+markdown, '#', '##', etc indicate headers in decreasing order, enclosing a word
+in single asterisks @code{*emphasizes*} it, double asterisks @code{**boldens**}
+it, etc. See @hyperlink[https://commonmark.org/help/]{this markdown help} for
+details.
+
+To write markdown, use @racket{@md} to create a whole markdown page. So we can
+rewrite the steps in the tutorial study as follows:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (description)
+  @md{
+    # The study
+
+    Welcome to our study. In this study, we will ask for
+
+    - your first name
+    - your age
+
+    @button{Start Survey}})
+
+(defstep (age-name-survey)
+  @md{
+    # Survey
+
+    @form{
+      @input-text[#:first-name]{What is your first name?}
+      @input-number[#:age]{What is your age (in years)?}
+      @submit-button}})
+
+(defstep (thank-you)
+  @md{
+    # Thank you @get['first-name]
+
+    Thank you for participating in our survey @get['first-name]!})
+}|
+
+Since it is easier to write, I suggest that you write most pages with lots of text in markdown.
 
 @;{
 @; Continue here next time
