@@ -27,6 +27,9 @@
      (redirect/get/forget)
      (redirect-to identity-dashboard-url)]
 
+    [(user-anon? (current-user))
+     (next-dispatcher)]
+
     [else
      (send/suspend/dispatch/protect
       (lambda (embed/url)

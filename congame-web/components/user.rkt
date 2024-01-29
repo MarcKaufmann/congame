@@ -26,6 +26,7 @@
  user-has-role?
  user-admin-like?
  user-researcher?
+ user-anon?
  generate-api-key)
 
 (define (non-empty-vectorof c)
@@ -100,6 +101,10 @@
 (define/contract (user-password-valid? u h p)
   (-> user? hasher? string? boolean?)
   (hasher-hash-matches? h (user-password-hash u) p))
+
+(define/contract (user-anon? u)
+  (-> user? boolean?)
+  (regexp-match? #rx"@anon.congame$" (user-username u)))
 
 
 ;; password reset ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
