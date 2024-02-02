@@ -29,6 +29,11 @@ studies) gets refreshed.
 To add a new study from an already installed package, you should
 update the @filepath{info.rkt} file of the package, recompile the package via @exec{raco setup <package-name>}, and then refresh the cache.
 
+@section{How to bulk archive study instances}
+
+If you create lots of study instances, your dashboard may get cluttered with all the study instances. To archive them, click on ``Admin'' and then on ``Bulk Archive''. This brings up a multi-select, that lists in @bold{bold} all your studies followed by the active study instances for this type of study. You can then select all the instances you want to archive (hold Ctrl or Cmd before clicking to select several), and then on ``Archive''.
+
+
 @section{How to pass values from a substudy to its caller}
 
 When running a study with @racket[make-step/study], then the values
@@ -93,23 +98,26 @@ perform its duties and then remove the @tech{nonce}.  Otherwise, it
 should do nothing.
 
 
-@section{Style Guide}
+@section{Conscript Style Guide}
 
 @compare0[
   @codeblock0[#:keep-lang-line? #f]|{
     #lang scribble/manual
     @; don't indent top-level forms
-    @step[my-step]{
+    (defstep (my-step)
       @; within a form, ident using two spaces
-      @h1{Hello World}
-    }
+      @html{
+        @h1{Hello World}
+      })
   }|
   @codeblock0[#:keep-lang-line? #f]|{
     #lang scribble/manual
 
-      @step[my-step]{
+      (defstep (my-step)
 
+      @html{
       @h1{Hello World}
       }
+      )
   }|
 ]
