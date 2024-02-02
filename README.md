@@ -122,7 +122,7 @@ See `ci/README.md`.
 
 ## Acknowledgement
 
-The creation of this software was supported by Central European University (CEU).
+The creation of this software was supported by Közép-Európai Egyetem (KEE) and Central European University GmbH (CEU GmbH).
 
 ## License
 
