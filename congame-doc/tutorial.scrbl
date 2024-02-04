@@ -33,6 +33,31 @@ database, set the researcher role in the database. In postgres:
 If you have a researcher or admin role, you will see navigation for
 ``Admin'' and ``Jobs''.
 
+@section{Syntax Hightlighting and Checking in DrRacket}
+
+If you want to get some syntax highlighting and checking in DrRacket for
+conscript studies, then you should install the conscript package. Since it is
+not yet published as an official package on the catalog, you have to install it
+manually. First you have to install the @tt{congame-core} package, then the
+@tt{conscript} package. Follow these steps to install @tt{congame-core} in
+DrRacket:
+
+@itemize[
+  #:style 'ordered
+  @item{Go to ``File'' and select ``Package Manager''}
+  @item{Copy the following url into the line saying ``Package Source'':
+  @tt{git://github.com/MarcKaufmann/congame?path=congame-core}}
+  @item{Click on ``Show Details''}
+  @item{Under the option for ``Dependencies Mode'', select ``Auto + Update''}
+  @item{Click on the ``Install'' button. @bold{Note:} If you only see an
+  ``Update'' button, then you already installed @tt{congame-core} and you can
+  skip this step.}
+]
+
+Once this completed successfully, install @tt{conscript} by following the same
+steps, but using @tt{git://github.com/MarcKaufmann/congame?path=conscript} as
+the url for the package source.
+
 @section{The first study}
 
 To start, note that @tech{conscript} is based on @tech{scribble} syntax:
@@ -528,6 +553,63 @@ This brings us to one of the nicer features of conscript: we can reuse whole stu
 This is the first time that we define two studies and reuse the first study, named @tt{fatigue} three times in the second one. To do soe, we define transtions as follows: @tt{--> [<name-the-step> <study-or-step-to-run>]}, where the @emph{<name-of-the-step>} is the unique id of this step as part of @tt{three-fatigues}, while @tt{<study-or-step-to-run>} is the study (or step) that should be run in this step. Hence we provide three different names, yet reuse the same study each time.
 
 It is necessary that the substudy ends in a transition @code|{... --> ,(lambda () done)}|, which indicates that the substudy should exit and continue in the parent study. I won't explain this code, just include it as a magic incantation.
+
+@section{Other inputs: @racket[radio], @racket[select]}
+
+Let us now implement radio buttons and selects, both of which allow the user to select a single option from a list of predetermined options. The difference is that with @racket[radio] buttons we display all the options with a radio button next to each option, while with a @racket[select] the user chooses the option from a long dropdown.
+
+We will create a dropdown selector first for the question "What is your occupation?", taken from the research team ACH91 of the ``Many Designs'' study: @;FIXME put a proper link to the study here
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(define (socio-demographics)
+  @html{
+    @h1{Socio-demographics}
+
+    Please answer the following questions:
+
+    @form{
+      @select[
+        #:occupation
+        "What is your occupation?"
+        '(
+          ("1"  . "Management, professional, and related")
+          ("2"  . "Service")
+          ("3"  . "Sales and office")
+          ("4"  . "Farming, fishing, and forestry")
+          ("5"  . "Constuction, extraction, and maintenance")
+          ("6"  . "Production, transportation, and material moving")
+          ("7"  . "Government")
+          ("8"  . "Retired")
+          ("9"  . "Unemployed")
+          ("10" . "Student")
+          ("11" . "Other"))]
+      @radios[
+        #:gender
+        "What is your gender?"
+        '(
+          ("1" . "Male")
+          ("2" . "Female")
+          ("3" . "Other")
+          )]
+      @submit-button}})
+}|
+
+If a person chooses ``Government'' and ``Other'', then this will store the value of @tt{"7"} for @racket[occupation] and @tt{"3"} for @racket[gender]. Notice that these are both strings, not numbers! Now suppose that you you come across these values in the database without context, then it is hard to figure out what they mean. While the descriptions of the occupations are a bit long, those for genders are short enough, so we can replace it by the following:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+@; the page and form omitted
+@radios[
+  #:gender
+  '(
+    ("male"   . "Male")
+    ("female" . "Female")
+    ("other"  . "Other"))
+]
+}|
+
+In this case, the string @racket{"other"} would have been saved in the database, which along with the fact that the identifier is @racket['gender] is pretty self-documenting.
 
 @;{
 @; Continue here next time
