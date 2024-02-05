@@ -61,6 +61,7 @@
   (submod congame/components/bot actions))
  (rename-out
   [congame:with-study-transaction with-study-transaction]
+  [congame:get/linked/instance get/linked/instance]
   [congame:get/instance get/instance]
   [congame:put/instance put/instance])
  make-step make-step/study
