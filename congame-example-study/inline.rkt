@@ -49,8 +49,9 @@
       #:bot
       ([ok (#:a "field a")
            (#:b "field b")])
-      #:fields ([a (input-text "field a")]
-                [b (input-text "field b")])
+      #:fields
+      ([a (input-text "field a")]
+       [b (input-text "field b")])
       (match (shuffle (list a b))
         [(list f1 f2)
          (haml

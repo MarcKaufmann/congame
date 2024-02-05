@@ -10,6 +10,7 @@
          congame/components/transition-graph
          racket/format
          racket/lazy-require
+         racket/list
          "form.rkt"
          "html.rkt"
          "markdown.rkt"
@@ -32,6 +33,7 @@
  quote
  quasiquote
  unquote
+ unquote-splicing
  provide
 
  if case cond else unless when
@@ -40,7 +42,7 @@
  ;; Racket Runtime
  lambda λ
  void sleep
- list list? null null? cons pair? car cdr map for-each
+ list list? list* null null? cons pair? car cdr map for-each shuffle
  display displayln print println printf eprintf write writeln
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling
  = < > <= >= equal? eq?

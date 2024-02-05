@@ -77,9 +77,11 @@
   (syntax-parse stx
     [(_ {~alt
          {~optional {~seq #:action action:expr}}
-         {~optional {~seq #:bot bot}}} ...
+         {~optional {~seq #:bot bot}}
+         {~optional {~seq #:fields fields}}} ...
         body:form-expr ...+)
      #'(congame:formular
         {~? {~@ #:bot bot}}
+        {~? {~@ #:fields fields}}
         `(div () ,body.form-e ...)
         {~? {~@ action}})]))
