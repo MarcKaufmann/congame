@@ -194,6 +194,12 @@ body {
 
 li {
   margin: 0em 1em;
+
+  // Workaround for commonmark bug:
+  // https://github.com/lexi-lambda/racket-commonmark/issues/5
+  & > p {
+    display: inline-block;
+  }
 }
 
 ul, ol, dl {
