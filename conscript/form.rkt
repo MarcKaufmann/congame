@@ -18,14 +18,25 @@
   [congame:input-range input-range]
   [congame:input-text input-text]
   [congame:input-time input-time]
-  [congame:radios radios]
-  [congame:select select]
   [congame:submit-button submit-button]
   [congame:textarea textarea])
- form)
+ form
+ radios
+ select)
 
 (define (splice xexpr)
   (if (null? xexpr) "" (car xexpr)))
+
+;; Flips the `options` and `label` arguments of the given procedure to
+;; make it so that the `label` is last and can be used inside curly
+;; braces in Scribble.
+(define (make-flipped-procedure proc)
+  (make-keyword-procedure
+   (lambda (kws kw-args options label . args)
+     (keyword-apply proc kws kw-args label options args))))
+
+(define radios (make-flipped-procedure congame:radios))
+(define select (make-flipped-procedure congame:select))
 
 (begin-for-syntax
   (define-literal-set error-bindings
@@ -42,9 +53,9 @@
      congame:input-range
      congame:input-text
      congame:input-time
-     congame:radios
-     congame:select
-     congame:textarea))
+     congame:textarea
+     radios
+     select))
 
   (define widget-binding?
     (literal-set->predicate widget-bindings))

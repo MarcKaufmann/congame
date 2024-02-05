@@ -571,9 +571,7 @@ We will create a dropdown selector first for the question "What is your occupati
     @form{
       @select[
         #:occupation
-        "What is your occupation?"
-        '(
-          ("1"  . "Management, professional, and related")
+        '(("1"  . "Management, professional, and related")
           ("2"  . "Service")
           ("3"  . "Sales and office")
           ("4"  . "Farming, fishing, and forestry")
@@ -583,15 +581,14 @@ We will create a dropdown selector first for the question "What is your occupati
           ("8"  . "Retired")
           ("9"  . "Unemployed")
           ("10" . "Student")
-          ("11" . "Other"))]
+          ("11" . "Other"))
+      ]{What is your occupation?}
       @radios[
         #:gender
-        "What is your gender?"
-        '(
-          ("1" . "Male")
+        '(("1" . "Male")
           ("2" . "Female")
-          ("3" . "Other")
-          )]
+          ("3" . "Other"))
+      ]{What is your gender?}
       @submit-button}})
 }|
 
@@ -602,11 +599,10 @@ If a person chooses ``Government'' and ``Other'', then this will store the value
 @; the page and form omitted
 @radios[
   #:gender
-  '(
-    ("male"   . "Male")
+  '(("male"   . "Male")
     ("female" . "Female")
     ("other"  . "Other"))
-]
+]{What is your gender?}
 }|
 
 In this case, the string @racket{"other"} would have been saved in the database, which along with the fact that the identifier is @racket['gender] is pretty self-documenting.
