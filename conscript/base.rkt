@@ -7,6 +7,7 @@
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
          (except-in congame/components/study button form)
+         congame/components/for-study
          congame/components/transition-graph
          racket/format
          racket/lazy-require
@@ -42,6 +43,7 @@
  ;; Racket Runtime
  lambda λ
  void sleep
+ for for/list in-range in-inclusive-range in-list
  list list? list* null null? cons pair? car cdr map for-each shuffle
  display displayln print println printf eprintf write writeln
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling
@@ -51,7 +53,7 @@
  format ~a number->string symbol->string
 
  ;; Congame Syntax
- --> goto
+ --> goto for/study
 
  ;; Congame Runtime
  (all-from-out
@@ -146,7 +148,7 @@
     {pattern step:id
              #:with (tg-e ...) #'(step)
              #:with ((step-id step-e) ...) #'((step step))}
-    {pattern [step:id step-expr:id]
+    {pattern [step:id step-expr:expr]
              #:with (tg-e ...) #'(step)
              #:with ((step-id step-e) ...) #'((step step-expr))}
     {pattern {~seq lhs:transition-arrow ~! --> rhs:transition-arrow}

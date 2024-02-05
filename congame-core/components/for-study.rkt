@@ -2,7 +2,7 @@
 
 (require (for-syntax racket/base
                      syntax/for-body
-                     syntax/parse)
+                     syntax/parse/pre)
          congame/components/study)
 
 (provide

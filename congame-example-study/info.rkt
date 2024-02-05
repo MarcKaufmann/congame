@@ -19,6 +19,7 @@
   '((congame-example-study/conscript conscript-example)
     (congame-example-study/conscript-bot conscript-bot-example)
     (congame-example-study/conscript-defvar conscript-defvar-example)
+    (congame-example-study/conscript-for-study conscript-for-study-example)
     (congame-example-study/conscript-form conscript-form-example)
     (congame-example-study/conscript-form-inline conscript-form-inline-example)
     (congame-example-study/conscript-markdown conscript-markdown-example)
