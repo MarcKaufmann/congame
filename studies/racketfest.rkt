@@ -1,11 +1,11 @@
 #lang racket/base
 
-(require congame/components/study
-         congame/components/formular
+(require congame/components/formular
+         congame/components/study
          congame/components/transition-graph
-         studies/real-effort/tasks
          koyo/haml
-         racket/list)
+         racket/list
+         studies/real-effort/tasks)
 
 (provide toy-study)
 

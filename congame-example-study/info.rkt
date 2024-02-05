@@ -11,7 +11,6 @@
     "forms-lib"
     "koyo-lib"
     "sentry-lib"
-    "studies"
     "threading-lib"
     "web-server-lib"))
 (define build-deps '())
