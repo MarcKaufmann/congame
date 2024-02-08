@@ -100,7 +100,8 @@ that should be run as the @emph{Study ID}.
   @item{Click on @emph{New Study}}
   @item{Provide a @emph{Name} such as "Tutorial <your name>"}
   @item{As @emph{Type}, choose @emph{DSL}}
-  @item{As @emph{Study ID}, take the ID provided by your source code, which for the code above is @emph{tutorial}}
+  @item{As @emph{Study ID}, take the ID provided by your source code, which for
+  the code above is @emph{tutorial}}
   @item{As @emph{DSL source}, browse to your @filepath{tutorial.rkt} file}
   @item{Click the @emph{Create} button}
 ]
@@ -313,7 +314,9 @@ Congratulations, this is your first survey in @tech{conscript}!
 
 You can use a limited set of @tech{Racket} functions directly in @tech{conscript}.
 
-To illustrate this, let us add a display of the person's age to the previous study. It may seem straightforward, and you might try to do change the code of the final @racket[thank-you] step as follows:
+To illustrate this, let us add a display of the person's age to the previous
+study. It may seem straightforward, and you might try to do change the code of
+the final @racket[thank-you] step as follows:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -324,11 +327,20 @@ To illustrate this, let us add a display of the person's age to the previous stu
     Thank you for participating in our survey, @get['first-name] - and for
 telling us that you are @get['age] years old!}) }|
 
-You might expect this to display the age on the page. Instead, you are likely to find that the final page does not display the age at all, and you see only "You are the most awesome &-year old!" (or some other strange character in place of the @tt{&}) instead. What is going on?
+You might expect this to display the age on the page. Instead, you are likely to
+find that the final page does not display the age at all, and you see only "You
+are the most awesome &-year old!" (or some other strange character in place of
+the @tt{&}) instead. What is going on?
 
-What is going on is that when we are storing a number, we are storing a number and not a string! So when we write @code|{@get['age]}| to display the age, we are providing the age as a number and not as a string, and when the number is sent, as bytes, to your browser, your browser interprets it as some other special symbol. This leads to the strange display you get.
+What is going on is that when we are storing a number, we are storing a number
+and not a string! So when we write @code|{@get['age]}| to display the age, we
+are providing the age as a number and not as a string, and when the number is
+sent, as bytes, to your browser, your browser interprets it as some other
+special symbol. This leads to the strange display you get.
 
-To fix this, all we need to do is to convert numbers to strings before displaying them. Fortunately, @racket[~a] is provided by default, which turns its argument into a string (and more). To use it, call it like @racket[get]:
+To fix this, all we need to do is to convert numbers to strings before
+displaying them. Fortunately, @racket[~a] is provided by default, which turns
+its argument into a string (and more). To use it, call it like @racket[get]:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -364,18 +376,24 @@ or its short form @racket[#f]. In addition, some inputs can take further keyword
 arguments (those starting with @racket[#:]), such as numbers having a minimum or
 maximum that they cannot exceed.
 
-Let us illustrate this with age. First, everyone's age is positive, so let us put a minimum for age at 0. Morevoer, some people would rather not reveal their age, so let's make it optional. Then our input for age becomes:
+Let us illustrate this with age. First, everyone's age is positive, so let us
+put a minimum for age at 0. Morevoer, some people would rather not reveal their
+age, so let's make it optional. Then our input for age becomes:
 
-@margin-note{
-While the order of the other keyword arguments does not matter, the first keyword argument @emph{must} always be the identifier of the input, here @racket[#:age].
-}
+@margin-note{ While the order of the other keyword arguments does not matter,
+the first keyword argument @emph{must} always be the identifier of the input,
+here @racket[#:age]. }
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
 @input-number[#:age #:required? #f #:min 0]{What is your age (in years)?}
 }|
 
-Sometimes when asking for a range, we may want to offer a slider, especially when we don't expect people to have a precise number in mind. That's when we can use @racket[input-range]. Like @racket[input-number], it takes optional keyword arguments for @racket[#:min] and @racket[#:max]. When none are provided, the browser will default to a range from 0 to 100. You can try out as follows:
+Sometimes when asking for a range, we may want to offer a slider, especially
+when we don't expect people to have a precise number in mind. That's when we can
+use @racket[input-range]. Like @racket[input-number], it takes optional keyword
+arguments for @racket[#:min] and @racket[#:max]. When none are provided, the
+browser will default to a range from 0 to 100. You can try out as follows:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -383,7 +401,8 @@ Sometimes when asking for a range, we may want to offer a slider, especially whe
 this question rather than `input-number`? (0: not at all, 100 completely)}
 }|
 
-@exercise{Build a study using all the inputs above except @racket[radio], @racket[select], and @racket[input-file].}
+@exercise{Build a study using all the inputs above except @racket[radio],
+@racket[select], and @racket[input-file].}
 
 @section{Writing pages in Markdown}
 
@@ -425,11 +444,14 @@ rewrite the steps in the tutorial study as follows:
     Thank you for participating in our survey @get['first-name]!})
 }|
 
-Since it is easier to write, I suggest that you write most pages with lots of text in markdown.
+Since it is easier to write, I suggest that you write most pages with lots of
+text in markdown.
 
 @section{Reusing steps and whole studies}
 
-In many studies, we repeatedly measure the same thing: willingness to pay, mood, fatigue, and many others. When doing so, we need need to take care in naming the values that we measure so that we don't overwrite old values by the new ones.
+In many studies, we repeatedly measure the same thing: willingness to pay, mood,
+fatigue, and many others. When doing so, we need need to take care in naming the
+values that we measure so that we don't overwrite old values by the new ones.
 
 First, let us try to define a step and reuse it 3 times:
 
@@ -451,13 +473,14 @@ First, let us try to define a step and reuse it 3 times:
   # Fatigue question
 
   @form{
-    @input-number[#:fatigue #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
-    @submit-button[]
+    @input-number[#:fatigue #:min 1 #:max 5]{On a scale from 1 (very tired) to 5
+    (very awake), how tired are you?}
+    @submit-button
   }})
 
-(defstep (done)
+(defstep (end)
   @md{
-    # You are done!
+    # This is the end!
 
     Thank you for participating.})
 
@@ -466,17 +489,31 @@ First, let us try to define a step and reuse it 3 times:
   [description --> how-tired-are-you
                --> how-tired-are-you
                --> how-tired-are-you
-               --> done]
-  [done --> done])
+               --> end]
+  [end --> end])
 }|
 
-@margin-note{If you wonder why we did not decide to let @code|{a --> a --> b}| stand for ``first step @racket[a], then step @racket[a], then step @racket[b]'', ask yourself the following: how could you distinguish, in words to a person or in code, between the first and second instance of step @racket[a]? To avoid solving this problem implicitly, we prefer to require the study writer to give a unique and explicitly specified name to every step.}
+@margin-note{If you wonder why we did not decide to let @code|{a --> a --> b}|
+stand for ``first step @racket[a], then step @racket[a], then step @racket[b]'',
+ask yourself the following: how could you distinguish, in words to a person or
+in code, between the first and second instance of step @racket[a]? To avoid
+solving this problem implicitly, we prefer to require the study writer to give a
+unique and explicitly specified name to every step.}
 
-The above does not work, because @code|{a --> b}| stands for ``the step @racket[a] is always followed by the step @racket[b]''. So @code|{a --> a --> a --> b}| is both redundant and inconsistent. It is redundant because the first @code|{a --> a}| means the same as the second. It is ambiguous because @code|{a --> b}| contradicts @code|{a --> a}|, since it would mean that the step @racket[a] is always followed by the step @racket[a] and also always followed by the step @racket[b].
+The above does not work, because @code|{a --> b}| stands for ``the step
+@racket[a] is always followed by the step @racket[b]''. So @code|{a --> a --> a
+--> b}| is both redundant and inconsistent. It is redundant because the first
+@code|{a --> a}| means the same as the second. It is ambiguous because @code|{a
+--> b}| contradicts @code|{a --> a}|, since it would mean that the step
+@racket[a] is always followed by the step @racket[a] and also always followed by
+the step @racket[b].
 
-Moreover, even if this study did run, the problem is that the answer to the latest question would always overwrite the previous answers, so we can never store more than one answer.
+Moreover, even if this study did run, the problem is that the answer to the
+latest question would always overwrite the previous answers, so we can never
+store more than one answer.
 
-One way to solve the problem, albeit a bit cumbersome, is to define three separate steps that do the same thing, but store it in different values:
+One way to solve the problem, albeit a bit cumbersome, is to define three
+separate steps that do the same thing, but store it in different values:
 
 @codeblock|{
 #lang conscript
@@ -489,8 +526,9 @@ One way to solve the problem, albeit a bit cumbersome, is to define three separa
   # Fatigue question
 
   @form{
-    @input-number[fatigue1 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
-    @submit-button[]
+    @input-number[#:fatigue1 #:min 1 #:max 5]{On a scale from 1 (very tired) to
+    5 (very awake), how tired are you?}
+    @submit-button
   }})
 
 (defstep (how-tired-are-you2)
@@ -498,8 +536,9 @@ One way to solve the problem, albeit a bit cumbersome, is to define three separa
   # Fatigue question
 
   @form{
-    @input-number[fatigue1 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
-    @submit-button[]
+    @input-number[#:fatigue1 #:min 1 #:max 5]{On a scale from 1 (very tired) to
+    5 (very awake), how tired are you?}
+    @submit-button
   }})
 
 (defstep (how-tired-are-you3)
@@ -507,26 +546,40 @@ One way to solve the problem, albeit a bit cumbersome, is to define three separa
   # Fatigue question
 
   @form{
-    @input-number[fatigue3 #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
-    @submit-button[]
+    @input-number[#:fatigue3 #:min 1 #:max 5]{On a scale from 1 (very tired) to
+    5 (very awake), how tired are you?}
+    @submit-button
   }})
 
 (defstudy three-fatigues
   [description --> how-tired-are-you1
                --> how-tired-are-you2
                --> how-tired-are-you3
-               --> done]
-  [done --> done])
+               --> end]
+  [end --> end])
 }|
 
-This has several problems. First, because I copy-pasted the code of the first step and forgot to change the name of the input from @racket[fatigue1] to @racket[fatigue2], the answer to the second step would overwrite the answer to the first step. But even if we fixed this, one of the more famous mottos in software engineering is @emph{Don't Repeat Yourself}, or @emph{DRY} for short. While one can overdo it with DRY, here we repeated the same operation three times, manually changing names of steps and of identifiers. This is error-prone and brittle: imagine doing this for 10 repetitions, only to realize that you want to change the wording, so now you have to find and change it in 10 different places.
+This has several problems. First, because I copy-pasted the code of the first
+step and forgot to change the name of the input from @racket[fatigue1] to
+@racket[fatigue2], the answer to the second step would overwrite the answer to
+the first step. But even if we fixed this, one of the more famous mottos in
+software engineering is @emph{Don't Repeat Yourself}, or @emph{DRY} for short.
+While one can overdo it with DRY, here we repeated the same operation three
+times, manually changing names of steps and of identifiers. This is error-prone
+and brittle: imagine doing this for 10 repetitions, only to realize that you
+want to change the wording, so now you have to find and change it in 10
+different places.
 
-This brings us to one of the nicer features of conscript: we can reuse whole studies as substudies of a larger study. Moreover, by default data is stored on substudies, so that different substudies do not overwrite each other's data. So by defining a study that saves the answer under the id @tt{'fatigue}, we can reuse it multiple times in a way that saves all the answers.
+This brings us to one of the nicer features of conscript: we can reuse whole
+studies as substudies of a larger study. Moreover, by default data is stored on
+substudies, so that different substudies do not overwrite each other's data. So
+by defining a study that saves the answer under the id @tt{'fatigue}, we can
+reuse it multiple times in a way that saves all the answers.
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
 
-@; take the `description` and `done` steps from above
+@; take the `description` and `end` steps from above
 @; ...
 
 @; Add the following
@@ -535,30 +588,48 @@ This brings us to one of the nicer features of conscript: we can reuse whole stu
   # Fatigue question
 
   @form{
-    @input-number[fatigue #:min 1 #:max 5]{On a scale from 1 (very tired) to 5 (very awake), how tired are you?}
-    @submit-button[]
+    @input-number[#:fatigue #:min 1 #:max 5]{On a scale from 1 (very tired) to 5
+    (very awake), how tired are you?}
+    @submit-button
   }})
 
 (defstudy fatigue
+  @; `,(lambda () done)` is magic sauce that says that this substudy is `done`
+  @; now. This exits the substudy and gives control to the parent study.
   [how-tired-are-you --> ,(lambda () done)])
 
 (defstudy three-fatigues
   [description --> [fatigue1 fatigue]
                --> [fatigue2 fatigue]
                --> [fatigue3 fatigue]
-               --> done]
-  [done --> done])
+               --> end]
+  [end --> end])
 }|
 
-This is the first time that we define two studies and reuse the first study, named @tt{fatigue} three times in the second one. To do soe, we define transtions as follows: @tt{--> [<name-the-step> <study-or-step-to-run>]}, where the @emph{<name-of-the-step>} is the unique id of this step as part of @tt{three-fatigues}, while @tt{<study-or-step-to-run>} is the study (or step) that should be run in this step. Hence we provide three different names, yet reuse the same study each time.
+This is the first time that we define two studies and reuse the first study,
+named @tt{fatigue} three times in the second one. To do soe, we define
+transtions as follows: @tt{--> [<name-the-step> <study-or-step-to-run>]}, where
+the @emph{<name-of-the-step>} is the unique id of this step as part of
+@tt{three-fatigues}, while @tt{<study-or-step-to-run>} is the study (or step)
+that should be run in this step. Hence we provide three different names, yet
+reuse the same study each time.
 
-It is necessary that the substudy ends in a transition @code|{... --> ,(lambda () done)}|, which indicates that the substudy should exit and continue in the parent study. I won't explain this code, just include it as a magic incantation.
+It is necessary that the substudy ends in a transition @code|{... --> ,(lambda
+() done)}|, which indicates that the substudy should exit and continue in the
+parent study. I won't explain this code, just include it as a magic incantation.
 
 @section{Other inputs: @racket[radio], @racket[select]}
 
-Let us now implement radio buttons and selects, both of which allow the user to select a single option from a list of predetermined options. The difference is that with @racket[radio] buttons we display all the options with a radio button next to each option, while with a @racket[select] the user chooses the option from a long dropdown.
+Let us now implement radio buttons and selects, both of which allow the user to
+select a single option from a list of predetermined options. The difference is
+that with @racket[radio] buttons we display all the options with a radio button
+next to each option, while with a @racket[select] the user chooses the option
+from a long dropdown.
 
-We will create a dropdown selector first for the question "What is your occupation?", taken from the research team ACH91 of the ``Many Designs'' study: @;FIXME put a proper link to the study here
+We will create a dropdown selector first for the question "What is your
+occupation?", taken from the research team ACH91 of the ``Many Designs'' study:
+
+@;FIXME put a proper link to the study here
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -592,7 +663,12 @@ We will create a dropdown selector first for the question "What is your occupati
       @submit-button}})
 }|
 
-If a person chooses ``Government'' and ``Other'', then this will store the value of @tt{"7"} for @racket[occupation] and @tt{"3"} for @racket[gender]. Notice that these are both strings, not numbers! Now suppose that you you come across these values in the database without context, then it is hard to figure out what they mean. While the descriptions of the occupations are a bit long, those for genders are short enough, so we can replace it by the following:
+If a person chooses ``Government'' and ``Other'', then this will store the value
+of @tt{"7"} for @racket[occupation] and @tt{"3"} for @racket[gender]. Notice
+that these are both strings, not numbers! Now suppose that you you come across
+these values in the database without context, then it is hard to figure out what
+they mean. While the descriptions of the occupations are a bit long, those for
+genders are short enough, so we can replace it by the following:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -605,7 +681,9 @@ If a person chooses ``Government'' and ``Other'', then this will store the value
 ]{What is your gender?}
 }|
 
-In this case, the string @racket{"other"} would have been saved in the database, which along with the fact that the identifier is @racket['gender] is pretty self-documenting.
+In this case, the string @racket{"other"} would have been saved in the database,
+which along with the fact that the identifier is @racket['gender] is pretty
+self-documenting.
 
 @;{
 @; Continue here next time
@@ -855,7 +933,7 @@ Next, let us implement a simple version of the dictator game to highlight a more
         ("5"  . "$5 for yourself, $5 for the other person")
        )
     ]{Please choose which of these options you prefer:}
-    @submit-button[]}
+    @submit-button}
 }
 
 @action[check-answer]{
