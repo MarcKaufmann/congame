@@ -198,7 +198,7 @@ li {
   // Workaround for commonmark bug:
   // https://github.com/lexi-lambda/racket-commonmark/issues/5
   & > p {
-    display: inline-block;
+    display: inline;
   }
 }
 
