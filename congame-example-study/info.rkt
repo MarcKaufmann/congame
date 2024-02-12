@@ -15,7 +15,8 @@
     "web-server-lib"))
 (define build-deps '())
 (define congame-studies
-  '((congame-example-study/conscript conscript-example)
+  '((congame-example-study/calibration calibration)
+    (congame-example-study/conscript conscript-example)
     (congame-example-study/conscript-bot conscript-bot-example)
     (congame-example-study/conscript-defvar conscript-defvar-example)
     (congame-example-study/conscript-for-study conscript-for-study-example)
