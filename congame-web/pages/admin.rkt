@@ -131,7 +131,7 @@
       (regexp-replace " +" _ "-")
       (regexp-replace* "[^a-z0-9-]" _ "")))
 
-(define create-study-form
+(define (make-create-study-form db)
   (form* ([name (ensure binding/text (required))]
           [slug (ensure binding/text)]
           [type (ensure binding/text (required) (one-of '(("racket" . racket)
@@ -141,22 +141,24 @@
           [dsl-id (ensure binding/symbol)]
           [dsl-source (ensure binding/file)])
     (let ([slug (or slug (slugify name))])
-      (case type
-        [(racket)
-         (if (not study-id)
-             (err '((study-id . "required for Racket-based studies")))
-             (ok (list name slug type study-id #f)))]
-        [(dsl)
-         (if (and dsl-id dsl-source)
-             (with-handlers ([exn:fail? (λ (e)
-                                          (sentry-capture-exception! e)
-                                          (err `((dsl-source . ,(exn-message e)))))])
-               (dsl-require (binding:file-content dsl-source) dsl-id) ;; for effect
-               (ok (list name slug type dsl-id dsl-source)))
-             (err (filter
-                   cdr
-                   `((dsl-id . ,(and (not dsl-id) "required for Conscript studies"))
-                     (dsl-source . ,(and (not dsl-source) "required for Conscript studies"))))))]))))
+      (if (lookup-study-meta/by-slug db slug)
+          (err '((slug . "This slug is taken by another study.")))
+          (case type
+            [(racket)
+             (if (not study-id)
+                 (err '((study-id . "required for Racket-based studies")))
+                 (ok (list name slug type study-id #f)))]
+            [(dsl)
+             (if (and dsl-id dsl-source)
+                 (with-handlers ([exn:fail? (λ (e)
+                                              (sentry-capture-exception! e)
+                                              (err `((dsl-source . ,(exn-message e)))))])
+                   (dsl-require (binding:file-content dsl-source) dsl-id) ;; for effect
+                   (ok (list name slug type dsl-id dsl-source)))
+                 (err (filter
+                       cdr
+                       `((dsl-id . ,(and (not dsl-id) "required for Conscript studies"))
+                         (dsl-source . ,(and (not dsl-source) "required for Conscript studies"))))))])))))
 
 (define ((field-group label [w (widget-text)] [ew (widget-errors)]) name value errors)
   (haml
@@ -215,7 +217,7 @@
   (let loop ([req req])
     (send/suspend/dispatch/protect
      (lambda (embed/url)
-       (match (form-run create-study-form req)
+       (match (form-run (make-create-study-form db) req)
          [`(passed (,name ,slug ,type ,id ,dsl-source) ,_)
           (define the-study
             (let ([dsl-source (if dsl-source
@@ -418,7 +420,7 @@
               (:h1 "Edit Conscript Source")
               (render-edit-study-dsl-form (embed/url loop) rw)))))])))))
 
-(define study-instance-form
+(define (make-study-instance-form db [maybe-instance #f])
   (form* ([name (ensure binding/text (required))]
           [slug (ensure binding/text)]
           [enrollment-code (ensure binding/text)]
@@ -426,10 +428,17 @@
           [status (ensure binding/text (required) (one-of '(("active" . active)
                                                             ("inactive" . inactive)
                                                             ("archived" . archived))))])
-    (list name
-          (or slug (slugify name))
-          (if no-enrollment-code? "" (or enrollment-code (generate-random-string 16)))
-          status)))
+    (let ([slug (or slug (slugify name))]
+          [enrollment-code (if no-enrollment-code? "" (or enrollment-code (generate-random-string 16)))])
+      (define maybe-other-instance
+        (lookup-study-instance/by-slug db slug))
+      (define maybe-instance-id
+        (and maybe-instance (study-instance-id maybe-instance)))
+      (define maybe-other-instance-id
+        (and maybe-other-instance (study-instance-id maybe-other-instance)))
+      (if (eqv? maybe-instance-id (or maybe-other-instance-id maybe-instance-id))
+          (list name slug enrollment-code status)
+          (err '((slug . "This slug is being used by another instance.")))))))
 
 (define (render-study-instance-form target rw [submit-label "Create"])
   (haml
@@ -454,7 +463,7 @@
      (lambda (embed/url)
        (define defaults
          (hash "no-enrollment-code?" "1"))
-       (match (form-run study-instance-form req #:defaults defaults)
+       (match (form-run (make-study-instance-form db) req #:defaults defaults)
          [(list 'passed (list name slug enrollment-code status) _)
           (with-database-connection [conn db]
             (insert-one! conn (make-study-instance
@@ -493,7 +502,7 @@
        (let ([defaults (if (equal? "" (study-instance-enrollment-code the-instance))
                            (hash-set defaults "no-enrollment-code?" "1")
                            defaults)])
-         (match (form-run study-instance-form req #:defaults defaults)
+         (match (form-run (make-study-instance-form db the-instance) req #:defaults defaults)
            [`(passed (,name ,slug ,enrollment-code ,status) ,_)
             (with-database-connection [conn db]
               (update-one! conn (~> the-instance

@@ -1166,6 +1166,7 @@ QUERY
  lookup-study
  lookup-study*
  lookup-study-meta
+ lookup-study-meta/by-slug
  lookup-study-instance
  lookup-study-instance/by-slug
  lookup-study-instance-for-researcher
@@ -1516,6 +1517,12 @@ QUERY
   (with-database-connection [conn db]
     (lookup conn (~> (from study-meta #:as s)
                      (where (= s.id ,study-id))))))
+
+(define/contract (lookup-study-meta/by-slug db slug)
+  (-> database? string? (or/c #f study-meta?))
+  (with-database-connection [conn db]
+    (lookup conn (~> (from study-meta #:as s)
+                     (where (= s.slug ,slug))))))
 
 (define/contract (lookup-study-instance db instance-id)
   (-> database? id/c (or/c #f study-instance?))

@@ -2,7 +2,8 @@
 
 (require koyo/database
          koyo/haml
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          racket/format
          web-server/http
          "../components/congame-server.rkt"
