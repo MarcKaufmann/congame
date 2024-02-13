@@ -9,6 +9,8 @@
          (except-in congame/components/study button form)
          congame/components/for-study
          congame/components/transition-graph
+         net/url
+         racket/contract/base
          racket/format
          racket/lazy-require
          racket/list
@@ -220,6 +222,23 @@
 (define (get-var uid k)
   (parameterize ([current-study-stack null])
     (get #:root (string->symbol (format "*dynamic:~a*" uid)) k)))
+
+
+;; util ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ (contract-out
+  [~url (->* [string?]
+             [#:params (listof (cons/c symbol? string?))]
+             string?)]))
+
+(define (~url urlish #:params [params null])
+  (define u
+    (string->url
+     (if (not (regexp-match? #rx"^[^:]+?://" urlish))
+         (string-append "https://" urlish)
+         urlish)))
+  (url->string (struct-copy url u [query params])))
 
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
