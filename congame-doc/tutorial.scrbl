@@ -380,7 +380,7 @@ Let us illustrate this with age. First, everyone's age is positive, so let us
 put a minimum for age at 0. Morevoer, some people would rather not reveal their
 age, so let's make it optional. Then our input for age becomes:
 
-@margin-note{ While the order of the other keyword arguments does not matter,
+@margin-note{While the order of the other keyword arguments does not matter,
 the first keyword argument @emph{must} always be the identifier of the input,
 here @racket[#:age]. }
 
@@ -687,7 +687,12 @@ self-documenting.
 
 @section{CSS with #:style}
 
-Often times, we want to format and style our pages. For basic formatting --- such as @bold{bold}, @italic{italic}, or highlight code --- we can look up HTML tags (see, e.g., the Mozilla Developer Network on @hyperlink["https://developer.mozilla.org/en-US/docs/Learn/HTML/Introduction_to_HTML/HTML_text_fundamentals#emphasis_and_importance"]{basic text formatting}) if you use @racket{html} to generate the page; or the markdown syntax (e.g., at @hyperlink["https://commonmark.org/help/"]{Commonmark}).
+Often times, we want to format and style our pages. For basic formatting ---
+such as @bold{bold}, @italic{italic}, or highlight code --- we can look up HTML
+tags (see, e.g., the Mozilla Developer Network on
+@hyperlink["https://developer.mozilla.org/en-US/docs/Learn/HTML/Introduction_to_HTML/HTML_text_fundamentals#emphasis_and_importance"]{basic
+text formatting}) if you use @racket{html} to generate the page; or the markdown
+syntax (e.g., at @hyperlink["https://commonmark.org/help/"]{Commonmark}).
 
 Consider the following page, once using @racket{html}, once @racket{md}:
 
@@ -697,49 +702,164 @@ Consider the following page, once using @racket{html}, once @racket{md}:
   @html{
     @h1{A Page with Basic Formatting}
 
-    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for @strong{strongly} emphasizing a word is @strong{strong}.
-})
+    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for
+@strong{strongly} emphasizing a word is @strong{strong}.})
 
 (defstep (basic-style-md)
   @md{
     # A Page with Basic Formatting
 
-    The syntax for *emphasizing* a word in markdown is to wrap a string in asterisks ("*"), while the syntax for **strongly** emphasizing a word is to wrap a string in double asterisks ("**").
+    The syntax for *emphasizing* a word in markdown is to wrap a string in
+asterisks ("*"), while the syntax for **strongly** emphasizing a word is to wrap
+a string in double asterisks ("**").
 })
 }|
 
-Now suppose that we want to style this page so that the font of the title is in red. For this we have to add CSS (Cascading Style Sheet) rules to the items that we want to style. To learn more about CSS go to @hyperlink["https://developer.mozilla.org/en-US/docs/Learn/CSS"]{MDN's resource on CSS}. Here we assume that you know what CSS rules you want to use and show how to add them to items. For simple styles, you can usually quickly find appropriate CSS rule.
+Now suppose that we want to style this page so that the font of the title is in
+red. For this we have to add CSS (Cascading Style Sheet) rules to the items that
+we want to style. To learn more about CSS go to
+@hyperlink["https://developer.mozilla.org/en-US/docs/Learn/CSS"]{MDN's resource
+on CSS}. Here we assume that you know what CSS rules you want to use and show
+how to add them to items. For simple styles, you can usually quickly find
+appropriate CSS rule.
 
-The most direct way to add CSS styles to an individual HTML element is @emph{inline}, by defining the style directly on the element. For example, to change the font color of the header to red, we set the @tt{style} to @tt{"color: red"} on the @racket{h1} element:
+The most direct way to add CSS styles to an individual HTML element is
+@emph{inline}, by defining the style directly on the element. For example, to
+change the font color of the header to red, we set the @tt{style} to @tt{"color:
+red"} on the @racket{h1} element:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
 (defstep (basic-style-html)
   @html{
-    @h1['([style "color: red"])]{A Page with Basic Formatting}
+    @h1[#:style "color: red"]{A Page with Basic Formatting}
 
-    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for @strong{strongly} emphasizing a word is @strong{strong}.
+    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for
+@strong{strongly} emphasizing a word is @strong{strong}.
 })
 }|
 
-To add multiple style properties, we list them all, separating them by a semicolon. For instance, if we also want to center the header, then we need to add the additional rule @tt{"text-align: center"}.
+To add multiple style properties, we list them all, separating them by a
+semicolon. For instance, if we also want to center the header, then we need to
+add the additional rule @tt{"text-align: center"}.
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
 (defstep (basic-style-html)
   @html{
-    @h1['([style "color: red; text-align: center;"])]{A Page with Basic Formatting}
+    @h1[#:style "color: red; text-align: center;"]{A Page with Basic Formatting}
 
-    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for @strong{strongly} emphasizing a word is @strong{strong}.
+    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for
+@strong{strongly} emphasizing a word is @strong{strong}.
 })
 }|
 
-Adding styles inline becomes old fast if you keep repeating the same style over and over. Suppose that we had several headers on the same page and want all of them to be in red and centered. The following monstrosity would work:
+You should now have a red header, centered in the middle of the page:
+
+@image["images/css-basic.png" #:scale 0.6]
+
+Adding styles inline becomes old fast if you keep repeating the same style over
+and over. Suppose that we had several headers on the same page and want all of
+them to be in red and centered. The following monstrosity would work:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
-;; NEXT
+(defstep (messy-css)
+  @html{
+    @h1[#:style "color: red; text-align: center;"]{A Page with Multiple Repeated
+Inline Styles}
+
+    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for
+@strong{strongly} emphasizing a word is @strong{strong}.
+
+    @h2[#:style "color: red; text-align: center;"]{Another Header}
+
+
+    @h2[#:style "color: red; text-align: center;"]{And Another}
+})
 }|
+
+@margin-note{An even better way is to define a single CSS file (or set of files)
+that you reuse for your whole study. This however requires that you bundle the
+CSS files with the server, so it requires that you have access to the server and
+redeploy when you change the files.}
+But a much better way is to use an inline style sheet defined inside of a
+@racket{style} element like so:
+
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (clean-css)
+  @html{
+
+    @style{
+      h1, h2 {
+        color: red;
+        text-align: center;
+      }
+    }
+
+    @h1{A Page with Multiple Repeated Inline Styles}
+
+    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for
+@strong{strongly} emphasizing a word is @strong{strong}.
+
+    @h2{Another Header}
+
+    @h2{And Another}
+  })
+}|
+
+This defines a style that should hold for the whole page, in this case that
+every @racket{h1} and @racket{h2} element should be in red font and centered.
+This leads to the following outcome:
+
+@image["images/css-style.png" #:scale 0.6]
+
+Finally, if you want to reuse this style across multiple steps, you don't want
+to keep adding the whole style each time. In that case, you can define the style
+element in a reusable way by using @racket{html*}. While @racket{html} defines a
+full and complete HTML page --- wrapped inside all the elements needed ---
+@racket{html*} defines a piece of an HTML page that can be used to create a
+larger page.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(provide
+ reuse-style)
+
+(define my-style
+  @html*{
+    @style{
+      h1, h2 {
+        color: red;
+        text-align: center;
+      }
+    }
+  })
+
+(defstep (use-style)
+  @html{
+    @my-style
+
+    @h1{First use}
+
+    @button{Continue}
+  })
+
+(defstep (reuse-style)
+  @html{
+    @my-style
+
+    @h1{Using the same style again}
+
+  })
+
+(defstudy reuse-style
+  [use-style --> reuse-style
+             --> reuse-style])
+}|
+
 
 @section{Intermezzo: Some exercises}
 

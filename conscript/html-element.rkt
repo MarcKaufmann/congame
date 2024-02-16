@@ -51,6 +51,7 @@
   [section]
   [span]
   [strong]
+  [style]
   [table]
   [tbody]
   [td]
