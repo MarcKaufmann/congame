@@ -122,7 +122,7 @@ See `ci/README.md`.
 
 ## Acknowledgement
 
-The creation of this software was supported by Közép-Európai Egyetem (KEE) and Central European University GmbH (CEU GmbH).
+The creation of congame was supported by Közép-Európai Egyetem and Central European University Private University.
 
 ## License
 
