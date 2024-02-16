@@ -681,139 +681,64 @@ genders are short enough, so we can replace it by the following:
 ]{What is your gender?}
 }|
 
-In this case, the string @racket{"other"} would have been saved in the database,
-which along with the fact that the identifier is @racket['gender] is pretty
+In this case, the string @tt{"other"} would have been saved in the database,
+which along with the fact that the identifier is @tt{'gender} is pretty
 self-documenting.
-
-@;{
-@; Continue here next time
-@; Add exercises, that's the main thing needed.
-
-@section{Exercises}
-
-@exercise[1]{Create a study where the user enters a number between 0 and 5 and then display double the number on the next page.}
-
-@exercise[2]{Implement a step that elicits a multiple price list. How painful would it be to figure out at which bullet point people are switching?}
-
-@exercise[3]{Add an admin page to the study in part 1 that shows you how many participants have already completed the study and what numbers they have chosen.}
-
-@section{Studies with Logic}
-
-We often want to respond to participants, whether it is to display different messages as we progress, or based on their answers. We will now create a few studies using some of the programming features that conscript provides.
-
-First, let us count down from 10 to 0 and display the pages to the
-user. We could of course define a separate step for each number,
-calling them @racket[step10] down to @racket[step0] and then string
-them together as @tt{step10 --> ... --> step0}, but that is
-tedious. Instead, for every user, let us store the value of
-@racket[counter] and every time the user progresses, we decrease the
-value of @racket[counter] and display it on the screen. To store a
-value for a user, we use @code[#:lang "scribble/manual"]|{@put[id value]}|.
-
-The most important building block for this is the @code[#:lang
-"scribble/manual"]|{@action}| operator. Whenever you want to change or update
-some value or variable in conscript, you have to define a named @tt{action}
-which will be evaluated when called. In the case of the countdown, we need to do
-two things. First, we need an action that initializes the user's counter to 10;
-second, we need an action that decreases the counter by 1 when called:
-
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@action[initialize-counter]{
-  @(ev (put 'counter 10))
-}
-
-@action[decrement-counter]{
-  @(ev (put 'counter (sub1 (get 'counter))))
-}
-}|
-
-Here we use @racket[sub1], which subtracts 1 from its argument. Later we'll see another way to do basic arithmetic.
-
-Next, we need to call the @tt{action}s in the right places. There are two places where you can use actions: before a step is displayed by using @code|{@step[step-name #:pre action-id]}|; or after a button click (and before the next step is executed) using @code|{@button[#:action-id action-id]{Next}}|. We will the button approach here:
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@; Here goes the above code defining the actions
-@; ...
-
-@step[description]{
-  @h1{The countdown is about to begin}
-
-  @button[#:action initialize-counter]{Start Countdown}
-}
-
-@step[show-counter]{
-  @h1{@(ev (number->string (get 'counter)))}
-
-  @button[#:action decrement-counter]{Count down!}
-}
-
-@study[
-  countdown
-  #:transitions
-  [description --> show-counter]
-  [show-counter --> show-counter]
-]
-}|
-
-While this works, it has a fatal flaw. We keep counting down forever and ever. Instead, we would like to stop once we hit 0, and display the launch page.
-
-@section{Conditions}
-
-In order to stop once the counter hits 0, we need to change the transitions. Specifically, we want to transition to the @tt{launch} step when the counter is 0, and otherwise keep displaying the @tt{show-counter} step. To do so, we use @racket[cond] inside a transition, which has to be wrapped in something mysterious called a @racket[lambda]:
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@step[launch]{
-  @h1{Study launched!}
-}
-
-@study[
-  countdown
-  #:transitions
-  [description --> show-counter
-               --> @(ev (lambda ()
-                          (cond
-                            [(= (get 'counter) 0)
-                             'launch]
-                            [else
-                             'show-counter])))]
-  [launch --> launch]
-]
-}|
-
-For now, ignore what the @racket[lambda] part does, simply type it and run with it. As for the @racket[cond], it is relatively straightforward: it consists of two or more clauses that are wrapped in square brackets ('[]'). Each clause starts with a condition, such as @tt{(= (get 'counter) 0)}, which checks whether the value of @tt{'counter} is 0 or not. If the condition holds, then the transition continues to the step at the end of the clause, here @tt{'launch}, which has a quote (') in front of it. (Note: this will soon change, as we will write it @tt{(goto launch)}, with no quote (') in front of launch.)
-
-The final clause must always start with the keyword @racket[else], which is a catchall for the case where none of the conditions in previous clauses were met.
 
 @section{CSS with #:style}
 
-On the launch page, let us highlight the font of "Study launched!" in red, which requires that we change the following CSS rule (CSS stands for @emph{Cascading Style Sheet}) with "h1 { color: red; }".
+Often times, we want to format and style our pages. For basic formatting --- such as @bold{bold}, @italic{italic}, or highlight code --- we can look up HTML tags (see, e.g., the Mozilla Developer Network on @hyperlink["https://developer.mozilla.org/en-US/docs/Learn/HTML/Introduction_to_HTML/HTML_text_fundamentals#emphasis_and_importance"]{basic text formatting}) if you use @racket{html} to generate the page; or the markdown syntax (e.g., at @hyperlink["https://commonmark.org/help/"]{Commonmark}).
 
+Consider the following page, once using @racket{html}, once @racket{md}:
 
-In @tech{conscript}, we can add CSS styles to @tt{div} tags by using the @tt{#:style} keyword argument. To change the @tt{h1} tag, we need to wrap it in a @tt{div} tag and style it accordingly:
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (basic-style-html)
+  @html{
+    @h1{A Page with Basic Formatting}
 
-@codeblock|{
-@step[launch]{
-  @div[#:style "color: red;"]{
-    @h1{Study launched!}
-  }
-}
+    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for @strong{strongly} emphasizing a word is @strong{strong}.
+})
+
+(defstep (basic-style-md)
+  @md{
+    # A Page with Basic Formatting
+
+    The syntax for *emphasizing* a word in markdown is to wrap a string in asterisks ("*"), while the syntax for **strongly** emphasizing a word is to wrap a string in double asterisks ("**").
+})
 }|
 
-To add multiple style properties, we separate them by a semicolon:
+Now suppose that we want to style this page so that the font of the title is in red. For this we have to add CSS (Cascading Style Sheet) rules to the items that we want to style. To learn more about CSS go to @hyperlink["https://developer.mozilla.org/en-US/docs/Learn/CSS"]{MDN's resource on CSS}. Here we assume that you know what CSS rules you want to use and show how to add them to items. For simple styles, you can usually quickly find appropriate CSS rule.
 
-@codeblock|{
-@step[launch]{
-  @div[#:style "color: red; font-size: 2rem;"]{
-    @h1{Study launched!}
-  }
-}
+The most direct way to add CSS styles to an individual HTML element is @emph{inline}, by defining the style directly on the element. For example, to change the font color of the header to red, we set the @tt{style} to @tt{"color: red"} on the @racket{h1} element:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (basic-style-html)
+  @html{
+    @h1['([style "color: red"])]{A Page with Basic Formatting}
+
+    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for @strong{strongly} emphasizing a word is @strong{strong}.
+})
+}|
+
+To add multiple style properties, we list them all, separating them by a semicolon. For instance, if we also want to center the header, then we need to add the additional rule @tt{"text-align: center"}.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (basic-style-html)
+  @html{
+    @h1['([style "color: red; text-align: center;"])]{A Page with Basic Formatting}
+
+    The HTML tag for @em{emphasizing} a word is @em{em}, while the tag for @strong{strongly} emphasizing a word is @strong{strong}.
+})
+}|
+
+Adding styles inline becomes old fast if you keep repeating the same style over and over. Suppose that we had several headers on the same page and want all of them to be in red and centered. The following monstrosity would work:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+;; NEXT
 }|
 
 @section{Intermezzo: Some exercises}
@@ -1141,5 +1066,103 @@ If you want to include it in html markup, don't forget to transform the number t
 
 Your remaining life expectancy is @(ev (~a (- 80 (get 'age)))).
 }|
+
+}
+
+@;{ TAKE OUTS
+@section{Studies with Logic}
+
+We often want to respond to participants, whether it is to display different messages as we progress, or based on their answers. We will now create a few studies using some of the programming features that conscript provides.
+
+First, let us count down from 10 to 0 and display the pages to the
+user. We could of course define a separate step for each number,
+calling them @racket[step10] down to @racket[step0] and then string
+them together as @tt{step10 --> ... --> step0}, but that is
+tedious. Instead, for every user, let us store the value of
+@racket[counter] and every time the user progresses, we decrease the
+value of @racket[counter] and display it on the screen. To store a
+value for a user, we use @code[#:lang "scribble/manual"]|{@put[id value]}|.
+
+The most important building block for this is the @code[#:lang
+"scribble/manual"]|{@action}| operator. Whenever you want to change or update
+some value or variable in conscript, you have to define a named @tt{action}
+which will be evaluated when called. In the case of the countdown, we need to do
+two things. First, we need an action that initializes the user's counter to 10;
+second, we need an action that decreases the counter by 1 when called:
+
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@action[initialize-counter]{
+  @(ev (put 'counter 10))
+}
+
+@action[decrement-counter]{
+  @(ev (put 'counter (sub1 (get 'counter))))
+}
+}|
+
+Here we use @racket[sub1], which subtracts 1 from its argument. Later we'll see another way to do basic arithmetic.
+
+Next, we need to call the @tt{action}s in the right places. There are two places where you can use actions: before a step is displayed by using @code|{@step[step-name #:pre action-id]}|; or after a button click (and before the next step is executed) using @code|{@button[#:action-id action-id]{Next}}|. We will the button approach here:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@; Here goes the above code defining the actions
+@; ...
+
+@step[description]{
+  @h1{The countdown is about to begin}
+
+  @button[#:action initialize-counter]{Start Countdown}
+}
+
+@step[show-counter]{
+  @h1{@(ev (number->string (get 'counter)))}
+
+  @button[#:action decrement-counter]{Count down!}
+}
+
+@study[
+  countdown
+  #:transitions
+  [description --> show-counter]
+  [show-counter --> show-counter]
+]
+}|
+
+While this works, it has a fatal flaw. We keep counting down forever and ever. Instead, we would like to stop once we hit 0, and display the launch page.
+
+@section{Conditions}
+
+In order to stop once the counter hits 0, we need to change the transitions. Specifically, we want to transition to the @tt{launch} step when the counter is 0, and otherwise keep displaying the @tt{show-counter} step. To do so, we use @racket[cond] inside a transition, which has to be wrapped in something mysterious called a @racket[lambda]:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@step[launch]{
+  @h1{Study launched!}
+}
+
+@study[
+  countdown
+  #:transitions
+  [description --> show-counter
+               --> @(ev (lambda ()
+                          (cond
+                            [(= (get 'counter) 0)
+                             'launch]
+                            [else
+                             'show-counter])))]
+  [launch --> launch]
+]
+}|
+
+For now, ignore what the @racket[lambda] part does, simply type it and run with it. As for the @racket[cond], it is relatively straightforward: it consists of two or more clauses that are wrapped in square brackets ('[]'). Each clause starts with a condition, such as @tt{(= (get 'counter) 0)}, which checks whether the value of @tt{'counter} is 0 or not. If the condition holds, then the transition continues to the step at the end of the clause, here @tt{'launch}, which has a quote (') in front of it. (Note: this will soon change, as we will write it @tt{(goto launch)}, with no quote (') in front of launch.)
+
+The final clause must always start with the keyword @racket[else], which is a catchall for the case where none of the conditions in previous clauses were met.
+}
 
 }
