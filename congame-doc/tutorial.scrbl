@@ -855,7 +855,7 @@ larger page.
              --> reuse-style])
 }|
 
-
+@;{
 @section{Intermezzo: Some exercises}
 
 @bold{Exercise 1} The function @racket[rand] can be used to generate random numbers: @tt{(rand 10)} returns a random integer between 0 and 9. Use this to create the following study. Draw a random number between 0 and 9 for a person and store it. Now repeat the following steps three times:
@@ -1278,6 +1278,4 @@ In order to stop once the counter hits 0, we need to change the transitions. Spe
 For now, ignore what the @racket[lambda] part does, simply type it and run with it. As for the @racket[cond], it is relatively straightforward: it consists of two or more clauses that are wrapped in square brackets ('[]'). Each clause starts with a condition, such as @tt{(= (get 'counter) 0)}, which checks whether the value of @tt{'counter} is 0 or not. If the condition holds, then the transition continues to the step at the end of the clause, here @tt{'launch}, which has a quote (') in front of it. (Note: this will soon change, as we will write it @tt{(goto launch)}, with no quote (') in front of launch.)
 
 The final clause must always start with the keyword @racket[else], which is a catchall for the case where none of the conditions in previous clauses were met.
-}
-
 }
