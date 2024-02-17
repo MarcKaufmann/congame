@@ -754,9 +754,9 @@ add the additional rule @tt{"text-align: center"}.
 })
 }|
 
-You should now have a red header, centered in the middle of the page:
+You should now have a red header, centered in the middle of the page.
 
-@image["images/css-basic.png" #:scale 0.6]
+;@image["images/css-basic.png" #:scale 0.6]
 
 Adding styles inline becomes old fast if you keep repeating the same style over
 and over. Suppose that we had several headers on the same page and want all of
@@ -812,9 +812,9 @@ But a much better way is to use an inline style sheet defined inside of a
 
 This defines a style that should hold for the whole page, in this case that
 every @racket{h1} and @racket{h2} element should be in red font and centered.
-This leads to the following outcome:
+;This leads to the following outcome:
 
-@image["images/css-style.png" #:scale 0.6]
+;@image["images/css-style.png" #:scale 0.6]
 
 Finally, if you want to reuse this style across multiple steps, you don't want
 to keep adding the whole style each time. In that case, you can define the style
