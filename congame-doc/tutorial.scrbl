@@ -855,6 +855,106 @@ larger page.
              --> reuse-style])
 }|
 
+@section{Randomizing participants into treatments}
+
+To randomize participants into treatments, create a preliminary step use the function @racket[assigning-treatments]. To illustrate this, let us suppose that we have two studies defined, called @tt{control-study} and @tt{treatment-study}. Our goal is to randomize participants in a balanced way: for every pair of participants that arrives, we want one of them to be assigned to control and one to treatment in a random fashion. To do so, we create first a landing page where we welcome participants, and add a function to the @tt{Continue} @racket[button], which takes care of this. Finally, if the participant is in the @tt{control} treatment, they continue to the @tt{control-study}, otherwise they continue to the @tt{treatment-study}.
+
+@codeblock|{
+#lang conscript
+
+(provide
+  randomized-study)
+
+(define (randomize-treatments)
+  (assigning-treatments
+    (list 'control 'treatment)))
+
+(defstep (control-page)
+  @md{
+    # Control Page
+
+    You are in the control treatment.
+
+    @button{Continue}})
+
+(defstudy control-study
+  [control-page --> ,(lambda () done)])
+
+(defstep (treatment-page)
+  @md{
+    # Treatment Page
+
+    You are in the treatment treatment. (I know.)
+
+    @button{Continue}
+})
+
+(defstudy treatment-study
+  [treatment-page --> ,(lambda () done)])
+
+(defstep (welcome)
+  @md{
+    # Welcome
+
+    Thank you for participating in this study.
+
+    @button[randomize-treatments]{Continue}})
+
+(define (final-page)
+  (define participant-treatment
+    (~a (get* 'role)))
+
+  @md{
+    # Final Page
+
+    Thank you for having participated in the *@|participant-treatment|* treatment.})
+
+(defstudy randomized-study
+  [welcome --> ,(lambda ()
+                   (case (get* 'role)
+                     [(control)   'control-study]
+                     [(treatment) 'treatment-study]))]
+
+  [control-study --> final-page]
+  [treatment-study --> final-page]
+  [final-page --> final-page])
+}|
+
+When the participants hits the @tt{Continue} button, the function @racket[randomized-treatments] is called, which randomizes the order of the treatments and balance them across participants as they arrive across the treatments that you list in the call to @racket[assigning-treatments]. That means that when there are two treatments (as in the example), every set of 2 participants is assigned to these 2 roles to ensure that we always have 1 person in control and 1 in treatment. The order in which they are assigned these roles is randomized.
+
+This works by storing the treatment of the participant as a participant variable in @racket['role] @;and the set of treatments for the current group of participants as an instance variable in @racket['treatments].
+Importantly, this variable is stored at the global level @;(@tt{(*root*)})
+, so it can be retrieved in any substudy via @racket[get*]. @;, @racket[put*] for the @racket['role] and with @racket[get/instance/global] and @racket[put/instance/global] for the @racket['treatments] (you should not mess with the latter though).
+@;You can overrule these with @racket[#:treatments-key] and @racket[#:role-key]. So if you prefer storing the next set of treatments in @racket['my-treatments] and the treatment of the participant in @racket['treatment], then you need to change the action as follows:
+
+Once @racket[randomized-treatments] is called, we then check in the transition whether the @racket['role] of the participant is @tt{control} or @tt{treatment} and send them to the appropriate branch of the study.
+
+On the final page, we display the role in the text, by first assigning it to the variable @racket[participant-treatment]. In order to display this correctly, we have to turn @racket['control] into the string @racket["control"], which is what @racket[(~a (get 'role))] does. Then inside the markdown, we want to @emph{emphasize} the name of the treatment, so we surround it by asterisks. However, this would lead to an error, since it would attempt to look up the variable @racket[participant-treatment*]. Therefore we surround @racket[participant-treatment] by bars (@tt{|}), which highlights the start and end of the variable we are looking up.
+
+@;{
+@codeblock[#:keep-lang-line? #f]|{
+#lang scribble/manual
+
+@action[assigning-treatments]{
+  @(ev
+    (being
+      (define treatments
+        (list
+          'buyer 'buyer 'seller 'seller 'seller
+          'observer 'observer 'observer 'observer 'observer))
+      (assigning-treatments treatments
+                            #:treatments-key 'my-treatments
+                            #:role-key       'treatment)))
+}
+
+@step[show-treatment]{
+  @h1{Your treatment is @(ev (~a (get/global 'role)))}
+}
+}|
+
+Notice the use of @racket[get/global] instead of @racket[get] to retrieve the role. This gets the value of @racket['role] stored at the top level study (@tt{(*root*)}), so that it is available from all substudies. Do not overuse the @tt{/global} versions of @racket[get] and @racket[put]. These set global variables, which is bad practice in general, as it leads to buggier code.
+}
+
 @;{
 @section{Intermezzo: Some exercises}
 

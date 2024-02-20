@@ -6,6 +6,7 @@
          (prefix-in bot: (submod congame/components/bot actions))
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
+         (prefix-in congame: (submod congame/components/study accessors))
          (except-in congame/components/study button form)
          congame/components/for-study
          congame/components/transition-graph
@@ -65,7 +66,9 @@
   [congame:with-study-transaction with-study-transaction]
   [congame:get/linked/instance get/linked/instance]
   [congame:get/instance get/instance]
-  [congame:put/instance put/instance])
+  [congame:get* get*]
+  [congame:put/instance put/instance]
+  [congame:put* put*])
  make-step make-step/study
  get put put/identity
  done
@@ -250,3 +253,25 @@
   (case-lambda
     [(label) (congame:button void label)]
     [args (apply congame:button args)]))
+
+;; functionality for students - provide elsewhere? ;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ assigning-treatments)
+
+(define (assigning-treatments
+         treatments
+         #:treatments-key [treatments-key 'treatments]
+         #:role-key [role-key 'role])
+  (unless (congame:get* role-key #f)
+    (with-study-transaction
+      (when (empty? (congame:get/instance* treatments-key '()))
+        (congame:put/instance* treatments-key (shuffle treatments)))
+      (define remaining-treatments
+        (congame:get/instance* treatments-key))
+      (define role
+        (first remaining-treatments))
+      (congame:put* role-key role)
+      (define updated-treatments
+        (rest remaining-treatments))
+      (congame:put/instance* treatments-key updated-treatments))))
