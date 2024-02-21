@@ -2,7 +2,11 @@
 
 ;; How to build pages that are similar.
 
-;; Approach 1: define reusable html snippets.
+;; Approach 1: define reusable html snippets. Important aspect: you create a
+;; reusable html snipped with either html*{...} or md*{...} (use whichever you
+;; find more convenient) - that is, don't use html{...} or md{...}, the versions
+;; without *. Both html{...} and md{...} create a whole page, so it cannot be
+;; plugged inside of another page.
 (define common-instructions
   @md*{
     # Instructions
@@ -39,8 +43,10 @@
   [instructions1 --> instructions2
                  --> ,(lambda () done)])
 
-;; Approach 2: define a function that returns a step with a variable part, and then give different names in the transition graph of the study
+;; Approach 2: define a function that returns a step with a variable part, and
+;; then give different names in the transition graph of the study
 
+;; Note the double parentheses around `hello-message m`!
 (defstep ((hello-message m))
   @md{
       # Hello!
@@ -54,8 +60,11 @@
                                          --> [meh-hello (hello-message "meh")]
                                          --> ,(lambda () done)])
 
-;; Both approach 1 and 2 assume that you know in advance what the variable part is. So this does not work if, say, the variable part is something that the participant submits themselves, such as their own name.
-;; For that, you have to ask the participant, store it in the DB, and then display it as shown in the tutorial.
+;; Both approach 1 and 2 assume that you know in advance what the variable part
+;; is. So this does not work if, say, the variable part is something that the
+;; participant submits themselves, such as their own name. For that, you have to
+;; ask the participant, store it in the DB, and then display it as shown in the
+;; tutorial.
 
 (provide
  reuse-all)
