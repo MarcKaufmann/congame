@@ -18,10 +18,10 @@
           @textarea[#:text]{Content:}
           @submit-button}})
 
-(defstep (done)
-  @html{@h1{Done}
+(defstep (end)
+  @html{@h1{The End}
         You're done.})
 
 (defstudy conscript-form-example
-  [info --> the-form --> done]
-  [done --> done])
+  [info --> the-form --> end]
+  [end --> end])
