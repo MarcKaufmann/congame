@@ -84,7 +84,8 @@
  defstep
  defstep/study
  defstudy
- defvar)
+ defvar
+ with-bot)
 
 (begin-for-syntax
   ;; Be careful what you provide here. Avoid providing access to
@@ -121,11 +122,6 @@
 
 (define-syntax (defstep stx)
   (syntax-parse stx
-    [(_ (name:id) #:bot bot-expr . body)
-     #'(define name
-         (make-step
-          'name (lambda () . body)
-          #:for-bot bot-expr))]
     [(_ head:function-header . body)
      #'(define head . body)]))
 
@@ -216,6 +212,11 @@
           (transition-graph
            transition-e.tg-e ...)
           (list (make-step* 'step-id step-expr) ...)))]))
+
+(define-syntax (with-bot stx)
+  (syntax-parse stx
+    [(_ step-expr:expr bot-expr:expr)
+     #'(make-step 'anon step-expr #:for-bot bot-expr)]))
 
 (define (make-step* id v)
   (cond

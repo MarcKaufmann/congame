@@ -9,7 +9,6 @@
   (bot:continuer))
 
 (defstep (info)
-  #:bot info-bot
   @html{@h1{Hello!}
         Welcome to the study.
         @button{continue}})
@@ -18,7 +17,6 @@
   (bot:autofill 'example))
 
 (defstep (the-form)
-  #:bot autofill-the-form
   (define (on-submit #:name n #:text t)
     (eprintf "name: ~s text: ~s~n" n t))
 
@@ -31,12 +29,13 @@
           @submit-button}})
 
 (defstep (end)
-  #:bot bot:completer
   @html{@h1{Done}
         You're done.})
 
 (defstudy conscript-bot-example
-  [info --> the-form --> end]
+  [{info (with-bot info info-bot)}
+   --> {the-form (with-bot the-form autofill-the-form)}
+   --> end]
   [end --> end])
 
 (define (conscript-bot-model _id bot)
