@@ -272,9 +272,14 @@
  button)
 
 (define button
-  (case-lambda
-    [(label) (congame:button void label)]
-    [args (apply congame:button args)]))
+  (make-keyword-procedure
+   (lambda (kws kw-args action-or-label . args)
+     (define-values (action label args*)
+       (if (null? args)
+           (values void action-or-label null)
+           (values action-or-label (car args) (cdr args))))
+     (keyword-apply congame:button kws kw-args action label args*))))
+
 
 ;; functionality for students - provide elsewhere? ;;;;;;;;;;;;;;;;;;;;;
 

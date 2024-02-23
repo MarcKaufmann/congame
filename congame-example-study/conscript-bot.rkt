@@ -12,7 +12,7 @@
   #:bot info-bot
   @html{@h1{Hello!}
         Welcome to the study.
-        @button{Continue}})
+        @button{continue}})
 
 (define (autofill-the-form)
   (bot:autofill 'example))
@@ -30,14 +30,14 @@
           @textarea[#:text]{Content:}
           @submit-button}})
 
-(defstep (done)
+(defstep (end)
   #:bot bot:completer
   @html{@h1{Done}
         You're done.})
 
 (defstudy conscript-bot-example
-  [info --> the-form --> done]
-  [done --> done])
+  [info --> the-form --> end]
+  [end --> end])
 
 (define (conscript-bot-model _id bot)
   (bot))
