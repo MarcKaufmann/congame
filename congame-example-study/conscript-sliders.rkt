@@ -51,14 +51,47 @@
     Finally we can display to the user whether they got the slider right and what bonus they get:
 
     ```
-    You got the slider @message, so your bonus is @|bonus|.
+    You got the slider @message, so your bonus is @"@"~a[bonus].
     ```
 
-    Note that we have to put |'s around the last bonus, otherwise the code refers to the varialbe named 'bonus.' not to the variable 'bonus' due to the dot ('.') at the end.
+    Note that we apply `@"@"~a` to `bonus` to convert it from a number to a string, otherwise it would not display properly.
 
-    In your case, you got the slider @message, so your bonus is @|bonus|.
+    In your case, you got the slider @message, so your bonus is @~a[bonus].
 
     @button{Continue} })
+
+(define (slider-display-value)
+  @md{
+    @script{
+      document.addEventListener('DOMContentLoaded', function (){
+        const sliders = document.querySelectorAll(".slider");
+
+        sliders.forEach((el) => {
+          let input = el.querySelector("input");
+          let value = el.querySelector("output");
+
+          value.textContent = input.value;
+          input.addEventListener("input", (event) => {
+            value.textContent = event.target.value;
+          })
+        });
+      })
+    }
+
+    # Sliders with displayed values
+
+    You may want to display the value of the slider like so:
+
+    @form{
+      @div[#:class "slider"]{
+        @input-range[#:slider1] @span{Value: @output{}}
+      }
+      @div[#:class "slider"]{
+        @input-range[#:slider2] @span{Value: @output{}}
+      }
+      @submit-button
+    }
+  })
 
 (define (end)
   @md{
@@ -70,5 +103,6 @@
 
 (defstudy sliders
   [simple-slider --> working-with-selected-value
+                 --> slider-display-value
                  --> end
                  --> simple-slider])

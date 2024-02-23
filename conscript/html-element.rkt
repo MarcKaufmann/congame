@@ -47,6 +47,7 @@
   [label]
   [li]
   [ol]
+  [output]
   [p]
   [script]
   [section]
