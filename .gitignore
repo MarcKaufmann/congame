@@ -14,3 +14,4 @@ ip-notifications/
 node_modules
 static
 study-administration/
+**/*.rkt~
