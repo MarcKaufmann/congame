@@ -146,7 +146,7 @@
   ;; Extends the regular transition graph syntax with support for
   ;; binders in the middle of a transition. Rewrites binders to drop the
   ;; rhs before passing the stx to `transition-graph' (via `tg-e').
-  (define-splicing-syntax-class transition-arrow
+  (define-syntax-class transition-arrow-expr
     #:literals (--> unquote)
     {pattern (unquote e)
              #:with (tg-e ...) #'((unquote e))
@@ -156,8 +156,13 @@
              #:with ((step-id step-e) ...) #'((step step))}
     {pattern [step:id step-expr:expr]
              #:with (tg-e ...) #'(step)
-             #:with ((step-id step-e) ...) #'((step step-expr))}
-    {pattern {~seq lhs:transition-arrow ~! --> rhs:transition-arrow}
+             #:with ((step-id step-e) ...) #'((step step-expr))})
+
+  (define-splicing-syntax-class transition-arrow
+    {pattern e:transition-arrow-expr
+             #:with (tg-e ...) #'{e.tg-e ...}
+             #:with ((step-id step-e) ...) #'((e.step-id e.step-e) ...)}
+    {pattern {~seq lhs:transition-arrow-expr --> rhs:transition-arrow}
              #:with (tg-e ...) #'{lhs.tg-e ... --> rhs.tg-e ...}
              #:with ((step-id step-e) ...) #'((lhs.step-id lhs.step-e) ... (rhs.step-id rhs.step-e) ...)})
 
@@ -181,10 +186,25 @@
                 [step-expr-stx (in-list (syntax-e #'(transition-e.step-e ... ...)))])
        (define step-id
          (syntax->datum step-id-stx))
-       (if (hash-has-key? seen step-id)
-           (values stxs seen)
-           (values (cons (list step-id-stx step-expr-stx) stxs)
-                   (hash-set seen step-id #t))))
+       (define binder?
+         (not (eq? step-id-stx step-expr-stx)))
+       (define seen?
+         (hash-ref seen step-id #f))
+       (define seen-binder?
+         (eq? seen? 'binder))
+       (when (and binder? seen-binder?)
+         (with-syntax ([step-id step-id-stx]
+                       [step-expr step-expr-stx])
+           (define binder-stx #'[step-id step-expr])
+           (raise-syntax-error 'defstudy "step already has a binding expression" stx binder-stx)))
+       (values
+        (if seen? stxs (cons (list step-id-stx step-expr-stx) stxs))
+        (hash-set
+         seen step-id
+         (cond
+           [seen-binder? 'binder]
+           [binder? 'binder]
+           [else 'id]))))
      #'(define id
          (make-study
           (symbol->string 'id)
