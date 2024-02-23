@@ -280,26 +280,3 @@
            (values void action-or-label null)
            (values action-or-label (car args) (cdr args))))
      (keyword-apply congame:button kws kw-args action label args*))))
-
-
-;; functionality for students - provide elsewhere? ;;;;;;;;;;;;;;;;;;;;;
-
-(provide
- assigning-treatments)
-
-(define (assigning-treatments
-         treatments
-         #:treatments-key [treatments-key 'treatments]
-         #:role-key [role-key 'role])
-  (unless (congame:get* role-key #f)
-    (with-study-transaction
-      (when (empty? (congame:get/instance* treatments-key '()))
-        (congame:put/instance* treatments-key (shuffle treatments)))
-      (define remaining-treatments
-        (congame:get/instance* treatments-key))
-      (define role
-        (first remaining-treatments))
-      (congame:put* role-key role)
-      (define updated-treatments
-        (rest remaining-treatments))
-      (congame:put/instance* treatments-key updated-treatments))))

@@ -862,6 +862,8 @@ To randomize participants into treatments, create a preliminary step use the fun
 @codeblock|{
 #lang conscript
 
+(require conscript/treatment)
+
 (provide
   randomized-study)
 
