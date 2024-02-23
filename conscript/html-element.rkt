@@ -48,6 +48,7 @@
   [li]
   [ol]
   [p]
+  [script]
   [section]
   [span]
   [strong]
