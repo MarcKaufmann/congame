@@ -195,7 +195,9 @@
        (when (and binder? seen-binder?)
          (with-syntax ([step-id step-id-stx]
                        [step-expr step-expr-stx])
-           (define binder-stx #'[step-id step-expr])
+           (define binder-stx
+             (syntax/loc step-id-stx
+               [step-id step-expr]))
            (raise-syntax-error 'defstudy "step already has a binding expression" stx binder-stx)))
        (values
         (if seen? stxs (cons (list step-id-stx step-expr-stx) stxs))
