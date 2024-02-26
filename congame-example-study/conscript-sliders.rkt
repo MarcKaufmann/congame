@@ -60,7 +60,7 @@
 
     @button{Continue} })
 
-(define (slider-display-value)
+(defstep (slider-display-value)
   @md{
     @script{
       document.addEventListener('DOMContentLoaded', function (){
