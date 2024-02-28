@@ -6,6 +6,11 @@
 
          koyo/haml)
 
+(provide
+ make-sliders
+ make-sliders-3
+ make-sliders-4)
+
 (define-syntax (make-sliders stx)
   (syntax-parse stx
     [(_ n:nat)
@@ -24,7 +29,7 @@
                   (haml
                    (:span "Value: " (:output ""))))) ... )))]))
 
-(make-sliders 2)
+;(make-sliders 2)
 
 ;(make-sliders 2 slider-builder)
 
@@ -73,17 +78,11 @@
           (:div
            (#,make-slider 'kwd) ... )))]))
 
-(make-sliders-3 2)
+(make-sliders-3
+  2)
 
-(define-syntax (make-sliders-4 stx)
-  (syntax-parse stx
-    [(_ n:nat)
-     (with-syntax ([(kwd ...)
-                    (map
-                     string->keyword
-                     (build-list
-                      (syntax-e #'n)
-                      (lambda (i) (format "slider-~a" i))))])
-       #`(haml
-          (:div
-           (#,make-slider 'kwd) ... )))]))
+(define (make-sliders-4 n proc)
+  (haml
+   (:div
+    ,@(for/list ([i n])
+        (proc (string->keyword (format "slider-~a" i)))))))
