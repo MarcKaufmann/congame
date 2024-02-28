@@ -64,24 +64,27 @@
     @button{Continue} })
 
 (defstep (slider-display-value)
-  @md{
-    @script{
-      document.addEventListener('DOMContentLoaded', function (){
-        const sliders = document.querySelectorAll(".slider");
+  @html{
+    @html*{
+      @script{
+        document.addEventListener('DOMContentLoaded', function (){
+          console.log("Running this script...");
+          const sliders = document.querySelectorAll(".slider");
 
-        sliders.forEach((el) => {
-          let input = el.querySelector("input");
-          let value = el.querySelector("output");
+          sliders.forEach((el) => {
+            let input = el.querySelector("input");
+            let value = el.querySelector("output");
 
-          value.textContent = input.value;
-          input.addEventListener("input", (event) => {
-            value.textContent = event.target.value;
-          })
-        });
-      })
+            value.textContent = input.value;
+            input.addEventListener("input", (event) => {
+              value.textContent = event.target.value;
+            })
+          });
+        })
+      }
     }
 
-    # Sliders with displayed values
+    @h1{Sliders with displayed values}
 
     You may want to display the value of the slider like so:
 
@@ -100,6 +103,7 @@
   @html*{
     @script{
       document.addEventListener('DOMContentLoaded', function (){
+                                                                console.log("Running this script...");
         const sliders = document.querySelectorAll(".slider");
 
         sliders.forEach((el) => {
@@ -115,14 +119,13 @@
     }})
 
 (define (macro-sliders)
-  @md{
+  @html{
     @slider-js
 
-    # Macro Sliders
+    @h1{Macro Sliders}
 
-    @form{
-      submit-button
-    }})
+    @make-sliders[2]
+  })
 
 (define (end)
   @md{

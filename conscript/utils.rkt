@@ -2,7 +2,8 @@
 
 (require (for-syntax racket/base
                      syntax/parse/pre)
-         congame/components/formular
+         (prefix-in congame: congame/components/formular)
+         (prefix-in congame: (submod congame/components/formular tools))
 
          koyo/haml)
 
@@ -21,14 +22,18 @@
                      (build-list
                       (syntax-e #'n)
                       (lambda (i) (format "slider-~a" i))))])
-       #'(haml
-          (:div
-           (:div ([:class "slider"])
-                 (list
-                  'kwd
-                  (input-range "")
-                  (haml
-                   (:span "Value: " (:output ""))))) ... )))]))
+       #`(congame:formular
+          (haml
+           (:div
+            (:div
+             (:div ([:class "slider"])
+                   (kwd
+                    (congame:input-range))
+                   (:span "Value: " (:output ""))) ... )
+            congame:submit-button))))]))
+;                   (input-range "")
+;                   (haml (:span "Value: " (:output ""))))) ...
+;            ))))]))
 
 ;(make-sliders 2)
 
