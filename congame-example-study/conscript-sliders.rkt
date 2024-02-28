@@ -121,7 +121,6 @@
     # Macro Sliders
 
     @form{
-      @make-sliders-3[2]
       submit-button
     }})
 
