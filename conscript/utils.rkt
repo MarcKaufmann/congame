@@ -78,9 +78,6 @@
           (:div
            (#,make-slider 'kwd) ... )))]))
 
-(make-sliders-3
-  2)
-
 (define (make-sliders-4 n proc)
   (haml
    (:div
