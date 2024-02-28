@@ -8,8 +8,9 @@
 
 (provide
  make-sliders
- make-sliders-3
- make-sliders-4)
+ ;make-sliders-3
+ ;make-sliders-4
+ )
 
 (define-syntax (make-sliders stx)
   (syntax-parse stx
@@ -56,7 +57,7 @@
          (:span "Value: " (:output ""))))))
 
 
-(define-for-syntax (make-slider kwd)
+#;(define-for-syntax (make-slider kwd)
   `(haml
     (:div ([:class "slider"])
           (list
@@ -65,7 +66,7 @@
            (haml
             (:span "Value: " (:output "")))))))
 
-(define-syntax (make-sliders-3 stx)
+#;(define-syntax (make-sliders-3 stx)
   (syntax-parse stx
     [(_ n:nat)
      (with-syntax ([(kwd ...)
@@ -78,7 +79,7 @@
           (:div
            (#,make-slider 'kwd) ... )))]))
 
-(define (make-sliders-4 n proc)
+#;(define (make-sliders-4 n proc)
   (haml
    (:div
     ,@(for/list ([i n])
