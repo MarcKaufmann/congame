@@ -92,7 +92,7 @@
   ;; things that might allow the user to "escape" #lang conscript, eg.
   ;; racket/system, ffi/unsafe or any system-level functionality.
   (define whitelist
-    '(conscript/utils
+    '(conscript/survey-tools
       conscript/timer
       conscript/treatment
       racket/format

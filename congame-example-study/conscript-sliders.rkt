@@ -1,7 +1,7 @@
 #lang conscript
 
 (require
- conscript/utils)
+ conscript/survey-tools)
 
 (provide
  sliders)
@@ -69,7 +69,7 @@
 
     @h1{Sliders with displayed values}
 
-    You may want to display the currently selected value of the slider as the slider is moved. To do so, you need to include some Javascript code by writing `@"@"slider-js` at the top of the HTML. For that to work, you need to add `(require conscript/utils)` at the top of your conscript file, which will provide you with the definition of the Javascript code.
+    You may want to display the currently selected value of the slider as the slider is moved. To do so, you need to include some Javascript code by writing `@"@"slider-js` at the top of the HTML. For that to work, you need to add `(require conscript/survey-tools)` at the top of your conscript file, which will provide you with the definition of the Javascript code.
 
     Finally, `slider-js` expects the HTML of the sliders to look as follows:
 
