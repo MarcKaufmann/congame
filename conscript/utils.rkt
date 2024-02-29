@@ -5,13 +5,22 @@
          (prefix-in congame: congame/components/formular)
          (prefix-in congame: (submod congame/components/formular tools))
 
-         koyo/haml)
+         congame/components/resource
+         koyo/haml
+         racket/runtime-path)
 
 (provide
  make-sliders
  ;make-sliders-3
  ;make-sliders-4
+ slider-js
  )
+
+(define-static-resource slider.js "slider.js")
+
+(define slider-js
+  (haml
+    (:script ([:src (resource-uri slider.js)]))))
 
 (define-syntax (make-sliders stx)
   (syntax-parse stx
@@ -25,6 +34,7 @@
        #`(congame:formular
           (haml
            (:div
+            slider-js
             (:div
              (:div ([:class "slider"])
                    (kwd
@@ -89,3 +99,23 @@
    (:div
     ,@(for/list ([i n])
         (proc (string->keyword (format "slider-~a" i)))))))
+
+;;; Survey questions
+(provide
+ questions)
+
+(define questions
+  (hash 'occupation (list
+                     "What is your occupation?"
+                     '(
+                       ("1"  . "Management, professional, and related")
+                       ("2"  . "Service")
+                       ("3"  . "Sales and office")
+                       ("4"  . "Farming, fishing, and forestry")
+                       ("5"  . "Constuction, extraction, and maintenance")
+                       ("6"  . "Production, transportation, and material moving")
+                       ("7"  . "Government")
+                       ("8"  . "Retired")
+                       ("9"  . "Unemployed")
+                       ("10" . "Student")
+                       ("11" . "Other")))))
