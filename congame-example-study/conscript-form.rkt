@@ -9,13 +9,25 @@
         @button{Continue}})
 
 (defstep (the-form)
-  (define (on-submit #:name n #:text t)
-    (eprintf "name: ~s text: ~s~n" n t))
+  (define (on-submit #:name n #:text t #:checkboxes cs)
+    (eprintf "name: ~s text: ~s checkboxes: ~s~n" n t cs))
+
+  (define options
+    '((a . "Option a")
+      (b . "Option b")))
+  (define (render-checkboxes options render-checkbox)
+    `(div
+      ()
+      ,@(for/list ([o (in-list options)])
+          (define v (car o))
+          (define l (cdr o))
+          (render-checkbox v l))))
 
   @html{@h1{The Form}
         @form[#:action on-submit]{
           @label{Name: @input-text[#:name] @~error[#:name]}
           @textarea[#:text]{Content:}
+          @binding[#:checkboxes @make-checkboxes[options render-checkboxes]]
           @submit-button}})
 
 (defstep (end)

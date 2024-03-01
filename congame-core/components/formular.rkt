@@ -37,6 +37,7 @@
  input-text
  input-time
  textarea
+ make-checkboxes
  make-radios)
 
 (define (kwd->symbol kwd)
@@ -528,6 +529,50 @@
              ,@((widget-errors) name value errors)))
            elt))]))
 
+(define ((required/list [message "You must select one or more items."]) xs)
+  (if (and xs
+           (pair? xs)
+           (not (null? xs)))
+      (ok xs)
+      (err message)))
+
+(define ((make-checkboxes options
+                          render-proc
+                          #:required? [required? #t]
+                          #:validators [validators null]
+                          #:attributes [attributes null]) meth)
+  (match meth
+    ['validator
+     (apply ensure
+            binding/list
+            (cond
+              [(string? required) (cons (required/list required) validators)]
+              [required? (cons (required/list) validators)]
+              [else validators]))]
+
+    ['widget
+     (lambda (name value errors)
+       (define (make-checkbox option [label ""])
+         (define the-values
+           (and value
+                (for/list ([bind (in-list (if (pair? value) value (list value)))])
+                  (string->symbol (bytes->string/utf-8 (binding:form-value bind))))))
+         (define attributes*
+           (if (and the-values (memq option the-values))
+               (cons '(checked "") attributes)
+               attributes))
+         `(label
+           (input
+            ([name ,name]
+             [type "checkbox"]
+             [value ,(symbol->string option)]
+             ,@attributes*))
+           ,label))
+       (haml
+        (.group
+         (render-proc options make-checkbox)
+         ,@((widget-errors) name value errors))))]))
+
 (define ((make-radios options
                       render-proc
                       #:required? [required? #t]
@@ -556,6 +601,7 @@
         (.group
          (render-proc options make-radio)
          ,@((widget-errors) name value errors))))]))
+
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
