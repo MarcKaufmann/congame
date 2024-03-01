@@ -5,7 +5,7 @@
                "at-exp-lib"
                "db-lib"
                "deta-lib"
-               "forms-lib"
+               ["forms-lib" #:version "0.6.1"]
                "gregor-lib"
                "koyo-lib"
                "marionette-lib"

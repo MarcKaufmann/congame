@@ -587,8 +587,12 @@ QUERY
 (define/widget (form f action render
                      #:id [id ""]
                      #:enctype [enctype "multipart/form-data"]
+                     #:combine [combine-proc (λ (_k _v1 v2) v2)]
                      #:defaults [defaults (hash)])
-  (match (form-run f this-request #:defaults defaults)
+  (match (form-run
+          #:combine combine-proc
+          #:defaults defaults
+          f this-request)
     [(list 'passed res _)
      (call-with-timings
       this-request

@@ -225,6 +225,10 @@
                       (cons 'dynamic-field-kwd (cons (symbol->string 'dynamic-field-id) dynamic-field-id)) ...))])
            (study:form
             #:defaults defaults
+            #:combine (λ (_k v1 v2)
+                        (if (pair? v1)
+                            (cons v2 v1)
+                            (list v2 v1)))
             (form* ([field-id (field-id 'validator)]
                     ...
                     [dynamic-field-id (dynamic-field-id 'validator)]

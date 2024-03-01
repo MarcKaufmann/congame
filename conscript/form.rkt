@@ -19,10 +19,12 @@
   [congame:input-text input-text]
   [congame:input-time input-time]
   [congame:submit-button submit-button]
-  [congame:textarea textarea])
+  [congame:textarea textarea]
+  [congame:make-checkboxes make-checkboxes])
  form
  radios
- select)
+ select
+ binding)
 
 (define (splice xexpr)
   (if (null? xexpr) "" (car xexpr)))
@@ -37,6 +39,9 @@
 
 (define radios (make-flipped-procedure congame:radios))
 (define select (make-flipped-procedure congame:select))
+
+(define-syntax (binding stx)
+  (raise-syntax-error 'binding "may only be used inside a form block" stx))
 
 (begin-for-syntax
   (define-literal-set error-bindings
@@ -62,6 +67,9 @@
 
   (define-syntax-class form-expr
     #:literal-sets (error-bindings widget-bindings)
+    #:literals (binding)
+    {pattern (binding name:keyword arg)
+             #:with form-e #'(name arg)}
     {pattern (id:id name:keyword ...)
              #:when (error-binding? #'id)
              #:with form-e #'(splice (congame:~error name ...))}
