@@ -73,17 +73,19 @@
 
     Finally, `slider-js` expects the HTML of the sliders to look as follows:
 
-    ```
-    @"@"form{
-      @"@"div[#:class "slider"]{
-        @"@"input-range[#:slider1] @"@"span{Value: @"@"output{}}
+    @html*{
+      @pre{
+        @"@"form{
+          @"@"div[#:class "slider"]{
+            @"@"input-range[#:slider1] @"@"span{Value: @"@"output{}}
+          }
+          @"@"div[#:class "slider"]{
+            @"@"input-range[#:slider2] @"@"span{Value: @"@"output{}}
+          }
+          @"@"submit-button
+        }
       }
-      @"@"div[#:class "slider"]{
-        @"@"input-range[#:slider2] @"@"span{Value: @"@"output{}}
-      }
-      @"@"submit-button
     }
-    ```
 
     This will create the following form:
 

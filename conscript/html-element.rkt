@@ -49,6 +49,7 @@
   [ol]
   [output]
   [p]
+  [pre]
   [script]
   [section]
   [span]
