@@ -1,7 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse)
+                     syntax/parse/pre)
          (except-in congame/components/study form)
          racket/match
          "html-element.rkt")
