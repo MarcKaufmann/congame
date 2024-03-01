@@ -20,7 +20,9 @@
 
 (define slider-js
   (haml
-    (:script ([:src (resource-uri slider.js)]))))
+    (:script
+     ([:defer ""]
+      [:src (resource-uri slider.js)]))))
 
 (define-syntax (make-sliders stx)
   (syntax-parse stx
