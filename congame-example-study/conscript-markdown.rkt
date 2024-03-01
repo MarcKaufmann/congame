@@ -10,5 +10,14 @@
 
       @button{Continue}})
 
+(defstep (script-example)
+  @md{# Script Example
+
+      @script{(() => {
+                console.log("hello from the script");
+              })()}
+
+      @button{Back to start}})
+
 (defstudy conscript-markdown-example
-  [start --> start])
+  [start --> script-example --> start])
