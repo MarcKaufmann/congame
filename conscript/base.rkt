@@ -18,7 +18,13 @@
          "form.rkt"
          "html.rkt"
          "markdown.rkt"
-         "var.rkt")
+         "var.rkt"
+         ; FIXME: remove once we fix problem of requiring this directly
+         "treatment.rkt")
+
+; FIXME: next provide is temporary until fixing `(require conscript/treatment)`
+(provide
+ assigning-treatments)
 
 (lazy-require
  [congame-web/components/identity (put/identity)])
