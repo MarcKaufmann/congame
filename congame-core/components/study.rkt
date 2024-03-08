@@ -1187,6 +1187,7 @@ QUERY
    [slug string/f #:contract non-empty-string?]
    [racket-id symbol/f]
    [(dsl-source "") string/f #:contract string?]
+   [(dsl-archive-path sql-null) string/f #:contract string? #:nullable]
    [(created-at (now/moment)) datetime-tz/f]))
 
 (define-schema study-instance
@@ -1512,9 +1513,13 @@ QUERY
       (lambda (id)
         (error 'lookup-registered-study "No such registered study: ~s~n. Did you install the necessary congame-studies?" id)))]
     [(dsl)
-     (dsl-require
-      (study-meta-dsl-source meta)
-      (study-meta-racket-id meta))]))
+     (if (sql-null? (study-meta-dsl-archive-path meta))
+         (dsl-require
+          (study-meta-dsl-source meta)
+          (study-meta-racket-id meta))
+         (dsl-require
+          `(archive ,(study-meta-dsl-archive-path meta))
+          (study-meta-racket-id meta)))]))
 
 (define/contract (lookup-study-meta db study-id)
   (-> database? id/c (or/c #f study-meta?))
