@@ -4,19 +4,22 @@
                      syntax/parse/pre)
          (prefix-in congame: congame/components/formular)
          (prefix-in congame: (submod congame/components/formular tools))
-
+         (prefix-in congame: congame/components/study)
+         (submod congame/components/study accessors)
          congame/components/resource
          koyo/haml
+         racket/list
          racket/runtime-path)
+
+
+;; Slider ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
  make-sliders
- ;make-sliders-3
- ;make-sliders-4
- slider-js
- )
+ slider-js)
 
-(define-static-resource slider.js "slider.js")
+(define-static-resource slider.js
+  "resources/js/slider.js")
 
 (define slider-js
   (haml
@@ -43,64 +46,46 @@
                     (congame:input-range))
                    (:span "Value: " (:output ""))) ... )
             congame:submit-button))))]))
-;                   (input-range "")
-;                   (haml (:span "Value: " (:output ""))))) ...
-;            ))))]))
-
-;(make-sliders 2)
-
-;(make-sliders 2 slider-builder)
-
-#;(define-syntax (make-sliders-2 stx)
-  (syntax-parse stx
-    [(_ n:nat tmp)
-     (with-syntax ([(kwd ...)
-                    (map
-                     string->keyword
-                     (build-list
-                      (syntax-e #'n)
-                      (lambda (i) (format "slider-~a" i))))])
-       #'(haml
-          (:div
-           tmp ... )))]))
-
-#;(make-sliders-2
- 2
- (:div ([:class "slider"])
-       (list
-        kwd
-        (input-range "")
-        (haml
-         (:span "Value: " (:output ""))))))
 
 
-#;(define-for-syntax (make-slider kwd)
-  `(haml
-    (:div ([:class "slider"])
-          (list
-           ,kwd
-           (input-range "")
-           (haml
-            (:span "Value: " (:output "")))))))
+;; Timer ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-#;(define-syntax (make-sliders-3 stx)
-  (syntax-parse stx
-    [(_ n:nat)
-     (with-syntax ([(kwd ...)
-                    (map
-                     string->keyword
-                     (build-list
-                      (syntax-e #'n)
-                      (lambda (i) (format "slider-~a" i))))])
-       #`(haml
-          (:div
-           (#,make-slider 'kwd) ... )))]))
+(provide
+ timer)
 
-#;(define (make-sliders-4 n proc)
+(define-static-resource timer.js
+  "resources/js/timer.js")
+
+(define (timer n)
   (haml
    (:div
-    ,@(for/list ([i n])
-        (proc (string->keyword (format "slider-~a" i)))))))
+    (:div#timer-target)
+    (:script
+     ([:data-timer-n (number->string n)]
+      [:src (resource-uri timer.js)])))))
+
+
+;; Treatment ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ assigning-treatments)
+
+(define (assigning-treatments
+         treatments
+         #:treatments-key [treatments-key 'treatments]
+         #:role-key [role-key 'role])
+  (unless (get* role-key #f)
+    (congame:with-study-transaction
+      (when (null? (get/instance* treatments-key '()))
+        (put/instance* treatments-key (shuffle treatments)))
+      (define remaining-treatments
+        (get/instance* treatments-key))
+      (define role
+        (car remaining-treatments))
+      (put* role-key role)
+      (define updated-treatments
+        (cdr remaining-treatments))
+      (put/instance* treatments-key updated-treatments))))
 
 ;;; Survey questions
 (provide

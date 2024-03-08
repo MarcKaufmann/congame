@@ -18,13 +18,7 @@
          "form.rkt"
          "html.rkt"
          "markdown.rkt"
-         "var.rkt"
-         ; FIXME: remove once we fix problem of requiring this directly
-         "treatment.rkt")
-
-; FIXME: next provide is temporary until fixing `(require conscript/treatment)`
-(provide
- assigning-treatments)
+         "var.rkt")
 
 (lazy-require
  [congame-web/components/identity (put/identity)])
@@ -99,8 +93,6 @@
   ;; racket/system, ffi/unsafe or any system-level functionality.
   (define whitelist
     '(conscript/survey-tools
-      conscript/timer
-      conscript/treatment
       racket/format
       racket/list
       racket/match

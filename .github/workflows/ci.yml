@@ -160,7 +160,12 @@ jobs:
         mkdir build
         raco koyo dist -t build/identity ++lang north congame-identity/dynamic.rkt
         raco koyo dist -t build/smtp-proxy congame-smtp-proxy/main.rkt
-        raco koyo dist -t build/web ++lang conscript ++lang north congame-web/dynamic.rkt
+        raco koyo dist \
+          -t build/web \
+          ++lang conscript \
+          ++lib conscript/survey-tools \
+          ++lang north \
+          congame-web/dynamic.rkt
 
     - name: Log into GHCR
       run: |
