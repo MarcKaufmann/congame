@@ -1044,6 +1044,81 @@ default key for roles --- while we get the ones for the market role with
 @racket[(get 'market-role)], since that's the value for the @racket[#:role-key]
 keyword argument in the call to @racket[assigning-treatments].
 
+@section{How to add Images}
+
+In order to add images --- or any other files --- to use in a page, we need to
+upload a zip folder containing our study and all the resources that we need. The
+zip file must contain a file named @tt{study.rkt} which provides the study we
+want to run. We then can declare static resources such as images relative to
+this @tt{study.rkt} file: that means that if the zip folder contains the
+@tt{study.rkt} file and a directory called @tt{img/} where we store an image
+called @tt{code-screenshot.png}, say, then we declare the static resource for
+this image with @code|{(define-static-resource my-screenshot
+"img/code-screenshot.png")}|.
+
+To create a complete example, do the following:
+
+@itemlist[
+  #:style 'ordered
+  @item{Create a new folder, which you can call @tt{zipped-study-with-images.}}
+  @item{Inside this folder, create a file called @tt{study.rkt}. @bold{The file
+  must be called @tt{study.rkt}, nothing else!}}
+  @item{Inside this folder --- and next to @tt{study.rkt} --- create another
+  folder called @tt{img}. You can call this folder anything, as long as you
+  change the code below accordingly.}
+  @item{Inside of the @tt{img} folder, put one or more images you want to
+  display inside your study, and call one of them @tt{test.png}.}
+]
+
+If you followed the above steps, then you are ready to write the following code
+inside of @tt{study.rkt}:
+
+@codeblock|{
+#lang conscript
+
+(provide
+  image-study)
+
+; Create the resource that points at the image.
+(define-static-resource screenshot "img/test.png")
+
+(defstep (show-image)
+  @html{
+    @h1{A Page with an Image}
+
+    ; The image tag takes two keywords:
+    ; - #:alt holds a textual replacement for the image.
+    ; - #:src contains the path to the image
+    ; See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/img.
+    @img[
+      #:alt "Screenshot"
+      ; `resource-uri` creates the path for static resources, here an image
+      #:src (resource-uri screenshot)
+    ]})
+
+(defstudy image-study
+  [show-image --> show-image])
+}|
+
+You can remove the comments, which explain how this works. In more detail:
+
+@itemlist[
+  #:style 'ordered
+  @item{@code|{(define-static-resource screenshot "img/test.png")}|: declares
+  that we want to use the static resource that can be found at that path.}
+  @item{@code|{@img[#:alt "Screenshot" #:src (resource-uri screenshot)]}|:
+  creates the HTML element for an image, with the alternative text of
+  "Screenshot" and with the correct path to the image generated via
+  @racket[resource-uri] based on the static resource @racket[screenshot].}
+]
+
+Finally, once you have saved this file, you should compress the whole folder
+@tt{zipped-study-with-images} into a zip file, and then upload this entire
+folder instead of just the study file on the server.
+
+If everything goes well, you now have a study displaying exactly one page with
+one image.
+
 @;{
 @codeblock[#:keep-lang-line? #f]|{
 #lang scribble/manual
