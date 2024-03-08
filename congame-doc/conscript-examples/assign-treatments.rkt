@@ -3,6 +3,9 @@
 (provide
  randomized-study)
 
+(require
+ conscript/survey-tools)
+
 (define (randomize-treatments)
   (assigning-treatments
     (list 'control 'treatment)))

@@ -867,10 +867,10 @@ the file:
 @codeblock|{
 #lang conscript
 
-(require conscript/treatment)
+(require conscript/survey-tools)
 }|
 
-If you fail to @racket[require] @tt{conscript/treatment} and you try to run your
+If you fail to @racket[require] @tt{conscript/survey-tools} and you try to run your
 code, then you will get an error that @tt{assigning-treatments} is undefined.
 
 To illustrate how to use this, we will define two toy studies, called
@@ -886,7 +886,7 @@ continue to the @tt{control-study}, otherwise they continue to the
 @codeblock|{
 #lang conscript
 
-(require conscript/treatment)
+(require conscript/survey-tools)
 
 (provide
   randomized-study)
