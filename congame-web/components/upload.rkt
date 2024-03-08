@@ -1,7 +1,8 @@
 #lang racket/base
 
 (require koyo/random
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          racket/format
          racket/port
          web-server/http)

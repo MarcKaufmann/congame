@@ -1,12 +1,14 @@
 #lang racket/base
 
-(require (submod congame/components/bot actions)
+(require db
+         (submod congame/components/bot actions)
          congame-web/components/auth
          congame-web/components/bot-set
          congame-web/components/prolific
          congame-web/components/replication
          congame-web/components/tag
          (prefix-in tpl: congame-web/components/template)
+         congame-web/components/upload
          congame-web/components/user
          congame-web/pages/render
          congame-web/studies/all ;; required for its effects
@@ -153,12 +155,30 @@
                  (with-handlers ([exn:fail? (λ (e)
                                               (sentry-capture-exception! e)
                                               (err `((dsl-source . ,(exn-message e)))))])
-                   (dsl-require (binding:file-content dsl-source) dsl-id) ;; for effect
-                   (ok (list name slug type dsl-id dsl-source)))
+                   (define source
+                     (binding:file->dsl-source dsl-source dsl-id))
+                   (ok (list name slug type dsl-id source)))
                  (err (filter
                        cdr
                        `((dsl-id . ,(and (not dsl-id) "required for Conscript studies"))
                          (dsl-source . ,(and (not dsl-source) "required for Conscript studies"))))))])))))
+
+(define (binding:file->dsl-source b dsl-id)
+  (define content-type
+    (and~>
+     (headers-assq* #"content-type" (binding:file-headers b))
+     (header-value)))
+  (case content-type
+    [(#"application/zip")
+     (define archive-path (save-file! b))
+     (dsl-require `(archive ,archive-path) dsl-id)
+     `(archive ,archive-path)]
+    [else
+     (define source
+       (bytes->string/utf-8
+        (binding:file-content b)))
+     (dsl-require source dsl-id) ;; for effect
+     `(source ,source)]))
 
 (define ((field-group label [w (widget-text)] [ew (widget-errors)]) name value errors)
   (haml
@@ -220,17 +240,19 @@
        (match (form-run (make-create-study-form db) req)
          [`(passed (,name ,slug ,type ,id ,dsl-source) ,_)
           (define the-study
-            (let ([dsl-source (if dsl-source
-                                  (bytes->string/utf-8 (binding:file-content dsl-source))
-                                  "")])
-              (with-database-connection [conn db]
-                (insert-one! conn (make-study-meta
-                                   #:owner-id (user-id (current-user))
-                                   #:name name
-                                   #:slug slug
-                                   #:type type
-                                   #:racket-id id
-                                   #:dsl-source dsl-source)))))
+            (with-database-connection [conn db]
+              (insert-one! conn (make-study-meta
+                                 #:owner-id (user-id (current-user))
+                                 #:name name
+                                 #:slug slug
+                                 #:type type
+                                 #:racket-id id
+                                 #:dsl-source (match dsl-source
+                                                [`(source ,src) src]
+                                                [_ ""])
+                                 #:dsl-archive-path (match dsl-source
+                                                      [`(archive ,path) path]
+                                                      [_ sql-null])))))
 
           (redirect-to (reverse-uri 'admin:view-study-page (study-meta-id the-study)))]
 
@@ -367,8 +389,7 @@
     (with-handlers ([exn:fail? (λ (e)
                                  (sentry-capture-exception! e)
                                  (err `((dsl-source . ,(exn-message e)))))])
-      (dsl-require (binding:file-content dsl-source) dsl-id) ;; for effect
-      (list dsl-id (bytes->string/utf-8 (binding:file-content dsl-source))))))
+      (list dsl-id (binding:file->dsl-source dsl-source dsl-id)))))
 
 (define (render-edit-study-dsl-form target rw)
   (haml
