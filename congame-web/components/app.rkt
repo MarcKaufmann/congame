@@ -217,7 +217,10 @@
       serve-resource-page]
 
      [("resource" (string-arg) (string-arg))
-      serve-resource-page]))
+      serve-resource-page]
+
+     [("dsl-resource" (integer-arg) (string-arg) ...)
+      (serve-dsl-resource-page db)]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define wrap-sentry
