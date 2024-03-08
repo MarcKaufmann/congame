@@ -32,8 +32,8 @@
 
 (defstep (end)
   @html{@h1{The End}
-        You're done.})
+        You're done.
+        @button{Start Over}})
 
 (defstudy conscript-form-example
-  [info --> the-form --> end]
-  [end --> end])
+  [info --> the-form --> end --> info])
