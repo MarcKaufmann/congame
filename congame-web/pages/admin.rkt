@@ -428,9 +428,17 @@
        (match (form-run edit-study-dsl-form req #:defaults defaults)
          [(list 'passed (list dsl-id dsl-source) _)
           (with-database-connection [conn db]
-            (update-one! conn (~> meta
-                                  (set-study-meta-racket-id _ dsl-id)
-                                  (set-study-meta-dsl-source _ dsl-source))))
+            (~> meta
+                (set-study-meta-racket-id dsl-id)
+                (set-study-meta-dsl-source
+                 (match dsl-source
+                   [`(source ,source) source]
+                   [_ ""]))
+                (set-study-meta-dsl-archive-path
+                 (match dsl-source
+                   [`(archive ,path) path]
+                   [_ sql-null]))
+                (update-one! conn _)))
           (redirect-to (reverse-uri 'admin:view-study-page study-id))]
 
          [(list _ _ rw)

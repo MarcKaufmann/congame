@@ -18,6 +18,7 @@
          "form.rkt"
          "html.rkt"
          "markdown.rkt"
+         "resource.rkt"
          "var.rkt")
 
 (lazy-require
@@ -81,6 +82,7 @@
  (all-from-out "form.rkt")
  (all-from-out "html.rkt")
  (all-from-out "markdown.rkt")
+ (all-from-out "resource.rkt")
  defstep
  defstep/study
  defstudy
