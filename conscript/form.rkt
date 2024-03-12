@@ -19,6 +19,7 @@
   [congame:input-text input-text]
   [congame:input-time input-time]
   [congame:submit-button submit-button]
+  [congame:submit-button/label submit-button/label]
   [congame:textarea textarea]
   [congame:make-checkboxes make-checkboxes])
  form

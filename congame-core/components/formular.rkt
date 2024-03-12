@@ -629,6 +629,7 @@
 (module+ tools
   (provide
    submit-button
+   submit-button/label
    input-likert
    input-patience
    input-risk
@@ -637,6 +638,10 @@
   (define submit-button
     (haml
      (:button.button.next-button ([:type "submit"]) "Submit")))
+
+  (define (submit-button/label label)
+    (haml
+     (:button.button.next-button ([:type "submit"]) label)))
 
   (define (select-scale label from to)
     (select label

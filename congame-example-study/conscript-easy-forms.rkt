@@ -13,16 +13,27 @@
     2. @button[#:to-step-id 'display-table]{Table}
     3. @button[#:to-step-id 'generate-random-number]{Generate Random Number}
     4. @button[#:to-step-id 'display-math]{Display Math with Latex: Mathjax}
+    5. @button[#:to-step-id 'labeled-submit-button]{Submit button with custom text}
+    6. @button[#:to-step-id 'free-form-forms1]{Free-Form Forms}
+
+    The buttons on this page show that you can jump to different pages by providing a `#:to-step-id` argument to `button`.
     })
 
 (defstep (display-results)
   (define checkboxes
     (~a (get 'multiple-checkboxes '())))
 
+  (define free-form
+     (get 'n-required #f))
+
+  (define twice-free-form
+    (if free-form (* 2 free-form) "no value provided"))
+
   @md{
     # Results so far
 
     1. Result from `Multiple Checkboxes`: @checkboxes
+    2. Twice the result from `Free-Form Forms`: @(~a twice-free-form)
 
     @button{Go back to choosing Forms}})
 
@@ -110,6 +121,96 @@
     @button{Back to Choice}
       })
 
+(defstep (labeled-submit-button)
+  @md{
+    # Submit Button with Custom Label
+
+    @form{
+      There is no field here to fill in. What a form.
+      @submit-button/label{A Custom Label for Submissions!}}
+      })
+
+(defstep (free-form-forms1)
+  @md{
+    @style{
+      .red-asterisk {
+        color: red;
+        font-weight: bold;
+      }
+
+      .green-exclamation {
+        border-radius: 50%;
+        width: 1rem;
+        line-height: 1rem;
+        background: green;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        display: inline-block;
+      }
+    }
+
+    # Forming Free-Form Forms
+
+    Here is a form where the labels and input fields are moved around more freely, and the fields have more advanced styles. The next page illustrates how you can reuse these styles so that you don't have to redefine them over and over.
+
+    @form{
+      @div[#:class "question-group"]{
+        @div{@span[#:class "red-asterisk"]{*}How many required questions are on this page?}
+        @div{@span[#:class "green-exclamation"]{!}Only positive integer values may be entered in this field.}
+        @input-number[#:n-required #:min 0] @~error[#:n-required]}
+      @submit-button}
+      })
+
+
+(defstep (free-form-forms2)
+  (define special*
+    @html*{
+      @span[#:class "red-asterisk"]{*}})
+  (define special!
+    @html*{@span[#:class "green-exclamation"]{!}})
+
+  @html{
+    @style{
+      .red-asterisk {
+        color: red;
+        font-weight: bold;
+      }
+
+      .green-exclamation {
+        border-radius: 50%;
+        width: 1rem;
+        line-height: 1rem;
+        background: green;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        display: inline-block;
+      }
+    }
+
+    @h1{Freeing Forming Free-Form Forms}
+
+    Now suppose you have multiple forms on the previous page. (Just to show how to display twice the value you submitted: it is @(~a (* 2 (get 'n-required))).) It becomes quickly tedious to type all that HTML for each question, especially if multiple questions all take the same styling. Therefore we do what every lazy programmer does, and define a function that wraps the label in the HTML with the right classes, and similarly for requirements.
+
+    @form{
+      @div[#:class "question-group"]{
+        @span{@special* How many required questions are on this page?}
+        @span{@special! Only positive integer values may be entered in this field.}
+        @input-number[#:n-required #:min 0] @~error[#:n-required]}
+
+      @div[#:class "question-group"]{
+        @radios[
+            #:tall
+            '(("1" . "Yes")
+              ("2" . "No"))
+        ]{@md*{
+            @special* Are you tall?
+
+            @special! Choose one of the following answers}
+      }
+      @submit-button}}})
+
 (defstudy easy-forms
   [choose-page --> choose-page]
 
@@ -121,4 +222,8 @@
 
   [generate-random-number --> choose-page]
 
-  [display-math --> choose-page])
+  [display-math --> choose-page]
+
+  [labeled-submit-button --> choose-page]
+
+  [free-form-forms1 --> display-results --> choose-page])
