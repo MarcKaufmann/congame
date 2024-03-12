@@ -7,6 +7,7 @@
          (prefix-in congame: congame/components/study)
          (submod congame/components/study accessors)
          congame/components/resource
+         congame-web/components/template
          koyo/haml
          racket/list
          racket/runtime-path)
@@ -47,6 +48,22 @@
                    (:span "Value: " (:output ""))) ... )
             congame:submit-button))))]))
 
+;; Multiple Checkboxes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ make-multiple-checkboxes)
+
+; FIXME: We have no way to require a certain number of choices. Implement.
+(define (render-checkbox-list options render-checkbox)
+  `(div
+    ()
+    ,@(for/list ([o (in-list options)])
+        (define v (car o))
+        (define l (cdr o))
+        (render-checkbox v l))))
+
+(define (make-multiple-checkboxes options [render-proc render-checkbox-list])
+  (congame:make-checkboxes options render-proc))
 
 ;; Timer ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -106,3 +123,8 @@
                        ("9"  . "Unemployed")
                        ("10" . "Student")
                        ("11" . "Other")))))
+
+;;;; Mathjax
+
+(provide
+ mathjax-scripts)

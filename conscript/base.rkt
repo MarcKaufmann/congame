@@ -52,7 +52,7 @@
  display displayln print println printf eprintf write writeln
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling
  = < > <= >= equal? eq?
- sqrt expt exp log
+ sqrt expt exp log random
  regexp-match?
  format ~a number->string symbol->string
 
