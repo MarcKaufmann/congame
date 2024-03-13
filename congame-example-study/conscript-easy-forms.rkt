@@ -15,6 +15,7 @@
     4. @button[#:to-step-id 'display-math]{Display Math with Latex: Mathjax}
     5. @button[#:to-step-id 'labeled-submit-button]{Submit button with custom text}
     6. @button[#:to-step-id 'free-form-forms1]{Free-Form Forms}
+    7. @button[#:to-step-id 'vertical-whitespace]{More whitespace between paragraphs}
 
     The buttons on this page show that you can jump to different pages by providing a `#:to-step-id` argument to `button`.
     })
@@ -211,6 +212,27 @@
       }
       @submit-button}}})
 
+(defstep (vertical-whitespace)
+  @md{
+    # More Vertical Whitespace
+
+    Let us add more more whitespace after this.
+    \
+    \
+    \
+    \
+    Lots of it.
+
+    @html*{
+      In `html`, you do it via the `br` tag.
+      @br{}
+      @br{}
+      @br{}
+      See? Easy.
+    }
+
+    @button{Back to Choice Page}})
+
 (defstudy easy-forms
   [choose-page --> choose-page]
 
@@ -226,4 +248,6 @@
 
   [labeled-submit-button --> choose-page]
 
-  [free-form-forms1 --> display-results --> choose-page])
+  [free-form-forms1 --> display-results --> choose-page]
+
+  [vertical-whitespace --> choose-page])
