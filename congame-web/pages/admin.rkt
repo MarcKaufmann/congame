@@ -169,7 +169,7 @@
      (headers-assq* #"content-type" (binding:file-headers b))
      (header-value)))
   (case content-type
-    [(#"application/zip")
+    [(#"application/zip" #"application/x-zip-compressed")
      (define archive-path (save-file! b))
      (dsl-require `(archive ,archive-path) dsl-id)
      `(archive ,archive-path)]
