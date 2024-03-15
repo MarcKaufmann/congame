@@ -166,10 +166,9 @@
 
 (defstep (free-form-forms2)
   (define special*
-    @html*{
-      @span[#:class "red-asterisk"]{*}})
+    @span[#:class "red-asterisk"]{*})
   (define special!
-    @html*{@span[#:class "green-exclamation"]{!}})
+    @span[#:class "green-exclamation"]{!})
 
   @html{
     @style{
@@ -248,6 +247,6 @@
 
   [labeled-submit-button --> choose-page]
 
-  [free-form-forms1 --> display-results --> choose-page]
+  [free-form-forms1 --> free-form-forms2 --> display-results --> choose-page]
 
   [vertical-whitespace --> choose-page])
