@@ -30,11 +30,15 @@
   (define twice-free-form
     (if free-form (* 2 free-form) "no value provided"))
 
+  (define radios-with-other
+    (get 'radios-with-other #f))
+
   @md{
     # Results so far
 
     1. Result from `Multiple Checkboxes`: @checkboxes
     2. Twice the result from `Free-Form Forms`: @(~a twice-free-form)
+    3. Radios with other: @(~a radios-with-other)
 
     @button{Go back to choosing Forms}})
 
@@ -211,6 +215,14 @@
       }
       @submit-button}}})
 
+(defstep (free-form-radios-with-other-choice)
+  @md{# Radios with "other" choice
+
+      @form{@binding[#:radios-with-other
+                     (make-radios-with-other '((a . "A")
+                                               (b . "B")))]
+            @submit-button}})
+
 (defstep (vertical-whitespace)
   @md{
     # More Vertical Whitespace
@@ -247,6 +259,10 @@
 
   [labeled-submit-button --> choose-page]
 
-  [free-form-forms1 --> free-form-forms2 --> display-results --> choose-page]
+  [free-form-forms1
+   --> free-form-forms2
+   --> free-form-radios-with-other-choice
+   --> display-results
+   --> choose-page]
 
   [vertical-whitespace --> choose-page])

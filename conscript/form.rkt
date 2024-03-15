@@ -21,7 +21,9 @@
   [congame:submit-button submit-button]
   [congame:submit-button/label submit-button/label]
   [congame:textarea textarea]
-  [congame:make-checkboxes make-checkboxes])
+  [congame:make-checkboxes make-checkboxes]
+  [congame:make-radios make-radios]
+  [congame:make-radios-with-other make-radios-with-other])
  form
  radios
  select
