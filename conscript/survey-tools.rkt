@@ -30,23 +30,24 @@
 
 (define-syntax (make-sliders stx)
   (syntax-parse stx
-    [(_ n:nat)
-     (with-syntax ([(kwd ...)
-                    (map
-                     string->keyword
-                     (build-list
-                      (syntax-e #'n)
-                      (lambda (i) (format "slider-~a" i))))])
-       #`(congame:formular
-          (haml
-           (:div
-            slider-js
-            (:div
-             (:div ([:class "slider"])
-                   (kwd
-                    (congame:input-range))
-                   (:span "Value: " (:output ""))) ... )
-            congame:submit-button))))]))
+    [(_ n:nat {~optional make-widget-proc-expr:expr})
+     (with-syntax ([((slider-id kwd) ...)
+                    (build-list
+                     (syntax-e #'n)
+                     (lambda (i)
+                       (list i (string->keyword (format "slider-~a" i)))))])
+       #`(let ([make-widget-proc {~? make-widget-proc-expr (λ (_) (congame:input-range))}])
+           (congame:formular
+            (haml
+             (:div
+              slider-js
+              (:div
+               (:div
+                ([:class "slider"])
+                (kwd (make-widget-proc slider-id))
+                (:span "Value: " (:output ""))) ... )
+              congame:submit-button)))))]))
+
 
 ;; Multiple Checkboxes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
