@@ -58,8 +58,7 @@
          (:meta ([:name "viewport"] [:content "width=device-width, initial-scale=1"]))
 
          (:title (if subtitle (~a subtitle " - congame-identity") "congame-identity"))
-         (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
-         (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")])))
+         (:link ([:rel "stylesheet"] [:href (static-uri "app.css")])))
         (:body
          (when show-nav?
            (if (current-user)
@@ -83,8 +82,7 @@
 
          (.content ,@content)
 
-         (:script ([:src (static-uri "vendor/unpoly.min.js")]))
-         (:script ([:src (static-uri "js/app.js")]))))))
+         (:script ([:src (static-uri "app.js")]))))))
 
     (response
      200

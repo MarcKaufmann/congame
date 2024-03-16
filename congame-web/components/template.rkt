@@ -53,8 +53,7 @@
      (:meta ([:name "viewport"] [:content "width=device-width, initial-scale=1"]))
 
      (:title (if subtitle (~a subtitle " - congame") "congame"))
-     (:link ([:rel "stylesheet"] [:href (static-uri "css/screen.css")]))
-     (:link ([:rel "stylesheet"] [:href (static-uri "vendor/unpoly.min.css")]))
+     (:link ([:rel "stylesheet"] [:href (static-uri "app.css")]))
 
      (unless (getenv "CI")
        (haml
@@ -72,8 +71,7 @@ import 'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.11.2/cdn/compone
 SCRIPT
       )
 
-     (:script ([:src (static-uri "vendor/unpoly.min.js")]))
-     (:script ([:src (static-uri "js/app.js")])))
+     (:script ([:src (static-uri "app.js")])))
     (:body
      (when (impostor?)
        (haml
