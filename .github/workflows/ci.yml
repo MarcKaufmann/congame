@@ -150,6 +150,9 @@ jobs:
     - name: Install Node packages
       run: npm install
 
+    - name: Lint Frontend Sources
+      run: npm run lint
+
     - name: Build Node assets
       run: npm run build
 
