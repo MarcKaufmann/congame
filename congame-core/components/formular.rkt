@@ -4,6 +4,7 @@
                      racket/syntax
                      syntax/parse/pre)
          forms
+         json
          koyo/haml
          (prefix-in m: marionette)
          racket/list
@@ -160,10 +161,7 @@
                (kwd:keyword _ _)}
           #'(let ([entry (hash-ref tbl 'kwd)])
               (let ([widget ((cdr entry) 'widget)])
-                (if widget
-                    (rw (car entry) widget)
-                    (((cdr entry) 'widget/ns)
-                     (widget-namespace (car entry) rw)))))]
+                (rw (car entry) widget)))]
 
          [(e ...)
           #`(#,@(map loop (syntax-e #'(e ...))))]
@@ -174,10 +172,7 @@
           #:with kwd (datum->syntax #'e (string->keyword (symbol->string (syntax-e #'e))))
           #'(let ([entry (hash-ref tbl 'kwd)])
               (let ([widget ((cdr entry) 'widget)])
-                (if widget
-                    (rw (car entry) widget)
-                    (((cdr entry) 'widget/ns)
-                     (widget-namespace (car entry) rw)))))]
+                (rw (car entry) widget)))]
 
          [e #'e]))
      #:with defaults
@@ -624,73 +619,42 @@
 
 (define ((make-radios-with-other options
                                  #:required? [required? #t]
-                                 #:other-label [other-label "Other:"]
-                                 #:radio-validators [radio-validators null]
-                                 #:other-validators [other-validators null]
-                                 #:radio-attributes [radio-attributes null]
-                                 #:other-attributes [other-attributes '((placeholder "Other..."))]) meth)
+                                 #:validators [validators null]) meth)
   (match meth
     ['validator
-     (form* ([radio-value (apply ensure binding/symbol radio-validators)]
-             [other-value (apply ensure binding/text other-validators)])
-       (if other-value
-           (ok other-value)
-           (if radio-value
-               (ok radio-value)
-               (if required?
-                   (err '((radio-value . "You must pick a value or write something in the other field.")))
-                   (ok #f)))))]
-    ['widget #f]
-    ['widget/ns
-     (lambda (rw)
-       (define (widget-radio-value name value _errors)
-         (let ([value (get-binding-value value)])
-           `(div
-             ,@(for/list ([opt (in-list options)])
-                 (match-define (cons option label)
-                   opt)
-                 `(div
-                   (label
-                    (input
-                     ([name ,name]
-                      [type "radio"]
-                      [value ,(symbol->string option)]
-                      ,@(if (eq? (string->symbol value) option)
-                            (cons '(checked "") radio-attributes)
-                            radio-attributes)))
-                    ,label))))))
-
-       (define (widget-other-value name value _errors)
-         `(label
-           ,other-label
-           (script
-            #<<SCRIPT
-function $$congame$$formular$$unradio() {
-  this.parentNode.parentNode.parentNode.querySelectorAll('[type=radio]').forEach(el => (el.checked = false));
-}
-SCRIPT
-            )
-           (input
-            ([name ,name]
-             [type "text"]
-             [value ,(get-binding-value value)]
-             [onchange "$$congame$$formular$$unradio.apply(this)"]
-             [onfocus "$$congame$$formular$$unradio.apply(this)"]
-             ,@other-attributes))))
-
+     (apply ensure
+            binding/text
+            (cons/required?
+             required?
+             (cons
+              (lambda (json-data)
+                (if (not json-data)
+                    (ok #f)
+                    (with-handlers ([exn:fail? (λ (_) (err "failed to parse radio JSON"))])
+                      (define ht (string->jsexpr json-data))
+                      (define radio-value (hash-ref ht 'radioValue (json-null)))
+                      (define other-value (hash-ref ht 'otherValue (json-null)))
+                      (cond
+                        [(and (eq? radio-value (json-null))
+                              (eq? other-value (json-null)))
+                         (err "you must pick a value or write something in the 'Other' field")]
+                        [(eq? other-value (json-null))
+                         (ok radio-value)]
+                        [else
+                         (ok other-value)]))))
+              validators)))]
+    ['widget
+     (lambda (name value errors)
        (haml
         (.group
-         (rw "radio-value" widget-radio-value)
-         ,@(rw "radio-value" (widget-errors))
-         (rw "other-value" widget-other-value)
-         ,@(rw "other-value" (widget-errors)))))]))
-
-(define (get-binding-value bind)
-  (or
-   (and~> bind
-          (binding:form-value)
-          (bytes->string/utf-8))
-   ""))
+         (:cg-radios-with-other
+          ([:name name]
+           [:options (jsexpr->string
+                      (for/list ([opt (in-list options)])
+                        (match-define (cons value label) opt)
+                        (hasheq 'value (symbol->string value) 'label label)))]
+           [:value "{\"radioValue\": null, \"otherValue\": null}"]))
+         ,@((widget-errors) name value errors))))]))
 
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
