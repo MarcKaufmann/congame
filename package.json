@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "NODE_ENV=production node build.mjs",
-    "lint": "tsc -noEmit resources/js/app.ts",
+    "lint": "tsc -noEmit -p .",
     "watch": "node build.mjs"
   },
   "dependencies": {
