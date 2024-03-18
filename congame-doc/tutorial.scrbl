@@ -12,7 +12,7 @@
 @; TODO
 @; Be consistent in the use of 'I', 'We', 'you'
 
-@title{Conscript Tutorial}
+@title[#:tag "Tutorial"]{Conscript Tutorial}
 
 You will create a simple study that gets some information from people
 (their age, their height), elicits a probability about some belief from
@@ -1120,44 +1120,6 @@ If everything goes well, you now have a study displaying exactly one page with
 one image.
 
 @;{
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@action[assigning-treatments]{
-  @(ev
-    (being
-      (define treatments
-        (list
-          'buyer 'buyer 'seller 'seller 'seller
-          'observer 'observer 'observer 'observer 'observer))
-      (assigning-treatments treatments
-                            #:treatments-key 'my-treatments
-                            #:role-key       'treatment)))
-}
-
-@step[show-treatment]{
-  @h1{Your treatment is @(ev (~a (get/global 'role)))}
-}
-}|
-
-Notice the use of @racket[get/global] instead of @racket[get] to retrieve the role. This gets the value of @racket['role] stored at the top level study (@tt{(*root*)}), so that it is available from all substudies. Do not overuse the @tt{/global} versions of @racket[get] and @racket[put]. These set global variables, which is bad practice in general, as it leads to buggier code.
-}
-
-@;{
-@section{Intermezzo: Some exercises}
-
-@bold{Exercise 1} The function @racket[rand] can be used to generate random numbers: @tt{(rand 10)} returns a random integer between 0 and 9. Use this to create the following study. Draw a random number between 0 and 9 for a person and store it. Now repeat the following steps three times:
-
-@itemlist[
-  @item{Elicit the person's belief that their number is greater than or equal to 5}
-  @item{Pick a random number. Tell the person whether their number is larger than (or equal to) or smaller than this new random number, which you show them.}
-]
-
-For example, you might pick the random number 3 for them. Then you pick the numbers 6 ("Your number is smaller than 6"), 9 ("Your number is smaller than 9"), and 2 ("Your number is larger than (or equl to) 2").
-
-@bold{Exercise 2} Pick an experiment from a paper of your choice. Stub out the experiment: this means that you create a page for every page of the experiment, but for pages that might require some interface (e.g. some game or an involved elicitation method), you simply write what would happen there and what functionality you need to be able to implement it.
-
-
 @section{Studies involving multiple Participants}
 
 Many studies involve participants who interact or affect each other: the dictator game, the public goods game, any study with markets, auctions, or negotiations. This requires also that we somehow share values across participants. While @racket{get} and @racket{put} provide a way to store values for a given participant, these values are private. This makes sense by default. Consider what would happen in the countdown study if two participants took the same study instance, and one participant has already progressed to the point where the counter is 3. Then the other participant would see the counter at 3 right from the start, which is clearly not the behavior we want.
