@@ -8,9 +8,23 @@
          (submod congame/components/study accessors)
          congame/components/resource
          koyo/haml
+         racket/format
          racket/list
          racket/runtime-path)
 
+
+
+;; Helper Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ ~$ ~pound ~euro)
+
+(define ((~currency [currency "$"]) a)
+  (format "~a~a" currency (~r a #:precision 2)))
+
+(define ~$ (~currency "$"))
+(define ~pound (~currency "£"))
+(define ~euro (~currency "€"))
 
 ;; Slider ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

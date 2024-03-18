@@ -64,3 +64,46 @@ code repository. This is not possible (out of security concerns) with
               [step-id --> ,(lambda () expr)]
               [step-id --> {step-id expr}]]
 ]
+
+@section{How Tos}
+
+The Tutorial explains how to use conscript. Here we list some @emph{How Tos}
+that are not covered in a terse style, providing examples to achieve a given
+goal without providing the full study around or explaining how it works.
+
+@subsection{How to add links}
+
+To provide a link on a study page, use the anchor tag @racket[a]:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (links)
+  @md{# Links
+
+      A link to the @a[#:href
+      "https://docs.totalinsightmanagement.com/Conscript_Tutorial.html"]{Conscript
+      Tutorial}.
+
+      Sometimes you want a link to open in a new tab, so you provide the
+      attribute `target` with the value `"_blank"`:
+
+      @a[ #:href
+      "https://docs.totalinsightmanagement.com/Conscript_Tutorial.html" #:target
+      "_blank" ]{Open conscript tutorial in new tab}}) }|
+
+
+@subsection{How to display monetary amounts}
+
+To display monetary amounts, first @racket[require] the module @racket[conscript/survey-tools] which provides @racket[~$] for dollars, @racket[~euro] for euros, or @racket[~pound] for pounds:
+
+@codeblock[#:keep-lang-file? #f]|{
+#lang conscript
+(require conscript/survey-tools)
+
+(define (payments)
+  (define bonus 4.25)
+  @md{# Bonus
+
+      Your bonus is @(~$ bonus).
+  })
+}|
