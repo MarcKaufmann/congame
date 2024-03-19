@@ -113,6 +113,31 @@
     @make-sliders[10]
   })
 
+(define (many-many-sliders-with-random-starting-point)
+  (define (make-custom-slider _)
+    (define start-value (~a (random 100)))
+    @input-range[#:attributes `([value ,start-value])])
+
+  @md{# More sliders than you can handle
+
+      @make-sliders[10 make-custom-slider]
+  })
+
+(define (many-many-customized-sliders-with-increasing-starting-point)
+  (define (make-custom-slider i)
+    (define r (* 2 (random 50 100)))
+    @input-range[
+      #:max r
+      #:attributes `([value ,(~a (* 10 i))]
+                     [style ,(format "width: ~apx" r)])
+    ])
+
+  @md{# More sliders than you can handle
+
+      @make-sliders[10 make-custom-slider]
+  })
+
+
 (define (end)
   @md{
     # The End
@@ -125,5 +150,7 @@
   [simple-slider --> working-with-selected-value
                  --> slider-display-value
                  --> easy-sliders
+                 --> many-many-sliders-with-random-starting-point
+                 --> many-many-customized-sliders-with-increasing-starting-point
                  --> end
                  --> simple-slider])
