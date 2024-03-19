@@ -471,7 +471,7 @@ you will get errors.
 You will need to require @racket[conscript/survey-tools] to use
 @racket[is-equal].
 
-@codeblock[#:keep-lang-line #f]|{
+@codeblock[#:keep-lang-line? #f]|{
 #lang conscript
 (require conscript/survey-tools)
 
