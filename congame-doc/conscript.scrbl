@@ -96,7 +96,7 @@ To provide a link on a study page, use the anchor tag @racket[a]:
 
 To display monetary amounts, first @racket[require] the module @racket[conscript/survey-tools] which provides @racket[~$] for dollars, @racket[~euro] for euros, or @racket[~pound] for pounds:
 
-@codeblock[#:keep-lang-file? #f]|{
+@codeblock[#:keep-lang-line? #f]|{
 #lang conscript
 (require conscript/survey-tools)
 
