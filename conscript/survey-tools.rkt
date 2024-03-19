@@ -7,6 +7,7 @@
          (prefix-in congame: congame/components/study)
          (submod congame/components/study accessors)
          congame/components/resource
+         (except-in forms form)
          koyo/haml
          racket/format
          racket/list
@@ -76,8 +77,24 @@
         (define l (cdr o))
         (render-checkbox v l))))
 
-(define (make-multiple-checkboxes options [render-proc render-checkbox-list])
-  (congame:make-checkboxes options render-proc))
+(define (make-multiple-checkboxes options [render-proc render-checkbox-list]
+                                  #:n [n 0]
+                                  #:required? [required? #t])
+  (congame:make-checkboxes
+   options
+   render-proc
+   #:n n
+   #:required? required?))
+
+;; radio-button validator
+
+(provide
+ is-equal)
+
+(define ((is-equal a #:message [message #f]) v)
+  (if (equal? v a)
+      (ok v)
+      (err (or message (format "Should be equal to ~a" a)))))
 
 ;; Timer ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

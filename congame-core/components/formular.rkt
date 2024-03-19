@@ -539,15 +539,25 @@
              ,@((widget-errors) name value errors)))
            elt))]))
 
-(define ((required/list [message "You must select one or more items."]) xs)
-  (if (and xs
+(define ((required/list [n 0] [message (lambda (i) (format "You must select ~a or more items." i))]) xs)
+  #;(if (and xs
            (pair? xs)
            (not (null? xs)))
       (ok xs)
-      (err message)))
+      (err message))
+  (eprintf "required/list: xs is ~a" xs)
+  (eprintf "is xs false? ~a" (equal? #f xs))
+  (if (or (and (zero? n)
+               (equal? #f xs))
+          (and xs
+               (list? xs)
+               (>= (length xs) n)))
+      (ok xs)
+      (err (if (string? message) message (message n)))))
 
 (define ((make-checkboxes options
                           render-proc
+                          #:n [n 0]
                           #:required? [required? #t]
                           #:validators [validators null]
                           #:attributes [attributes null]) meth)
@@ -556,8 +566,8 @@
      (apply ensure
             binding/list
             (cond
-              [(string? required) (cons (required/list required) validators)]
-              [required? (cons (required/list) validators)]
+              [(string? required?) (cons (required/list n required?) validators)]
+              [required? (cons (required/list n) validators)]
               [else validators]))]
 
     ['widget

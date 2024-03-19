@@ -149,10 +149,9 @@ This page assumes that there are steps called @racket['multiple-checkboxes],
 The default checkbox provides a single checkbox. You may want to provide
 multiple options at once, allowing a person to choose one or more options. You
 can do so with @racket[make-multiple-checkboxes] fromt the
-@racket[conscript/survey-tools] library. (Warning: the current version requires
-that you select at least one option - this will hopefully be fixed soon.) Here
+@racket[conscript/survey-tools] library. Here
 is an example of a form to choose between four options, "a" to "d" and how to
-include it in the form.
+include it in the form. For @racket[#:multiple-checkboxes-1], any number of checkboxes can be selected, for @racket[#:multiple-checkboxes-2] a person has to select 2 or more checkboxes.
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -170,7 +169,8 @@ include it in the form.
     # Form with Multiple Checkboxes
 
     @form{
-      @binding[#:multiple-checkboxes @make-multiple-checkboxes[opts]]
+      @binding[#:multiple-checkboxes-1 @make-multiple-checkboxes[opts]]
+      @binding[#:multiple-checkboxes-2 @make-multiple-checkboxes[opts #:n 2]]
       @submit-button}})
 }|
 
@@ -464,4 +464,30 @@ you will get errors.
     }
 
     @button{Back to Choice Page}})
+}|
+
+@subsection{How to provide error message when wrong radio button is chosen}
+
+You will need to require @racket[conscript/survey-tools] to use
+@racket[is-equal].
+
+@codeblock[#:keep-lang-line #f]|{
+#lang conscript
+(require conscript/survey-tools)
+
+(define (radio-with-error)
+  @md{# Radio with Error
+
+      The correct answer to the next radio button is "Option C", try it out by
+      picking first another option:
+
+      @form{
+        @radios[
+          #:radios-with-error
+          '(("a" . "Option A")
+            ("b" . "Option B")
+            ("c" . "Option C"))
+          #:validators (list (is-equal "c" #:message "Wrong answer, LOL!!!"))
+        ]{The correct option is C - but try something else first maybe!}
+}})
 }|

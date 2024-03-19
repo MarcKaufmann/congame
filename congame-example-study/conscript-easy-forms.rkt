@@ -16,13 +16,14 @@
     5. @button[#:to-step-id 'labeled-submit-button]{Submit button with custom text}
     6. @button[#:to-step-id 'free-form-forms1]{Free-Form Forms}
     7. @button[#:to-step-id 'vertical-whitespace]{More whitespace between paragraphs}
+    8. @button[#:to-step-id 'radio-with-error]{Radio buttons with error message}
 
     The buttons on this page show that you can jump to different pages by providing a `#:to-step-id` argument to `button`.
     })
 
 (defstep (display-results)
   (define checkboxes
-    (~a (get 'multiple-checkboxes '())))
+    (~a (get 'multiple-checkboxes-1 '())))
 
   (define free-form
      (get 'n-required #f))
@@ -55,7 +56,8 @@
     # Form with Multiple Checkboxes
 
     @form{
-      @binding[#:multiple-checkboxes @make-multiple-checkboxes[opts]]
+      @binding[#:multiple-checkboxes-1 @make-multiple-checkboxes[opts]]
+      @binding[#:multiple-checkboxes-2 @make-multiple-checkboxes[opts #:n 2]]
       @submit-button}})
 
 (defstep (display-table)
@@ -255,6 +257,22 @@
 
     @button{Back to Choice Page}})
 
+(define (radio-with-error)
+  @md{# Radio with Error
+
+      The correct answer to the next radio button is "Option C", try it out by picking first another option:
+
+      @form{
+        @radios[
+          #:radios-with-error
+          '(("a" . "Option A")
+            ("b" . "Option B")
+            ("c" . "Option C"))
+          #:validators (list (is-equal "c" #:message "Wrong answer, LOL!!!"))
+        ]{The correct option is C - but try something else first maybe!}
+        @submit-button
+}})
+
 (defstudy easy-forms
   [choose-page --> choose-page]
 
@@ -275,5 +293,7 @@
    --> free-form-radios-with-other-choice
    --> display-results
    --> choose-page]
+
+  [radio-with-error --> choose-page]
 
   [vertical-whitespace --> choose-page])
