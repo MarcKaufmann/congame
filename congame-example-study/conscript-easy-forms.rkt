@@ -64,16 +64,27 @@
 
     For this, you need to write the table in HTML, although you can write the whole page in markdown (with `md`) and only write the table in HTML (with `html*`, not `html`).
 
-    @html*{
-      @table{
-        @thead{
-          @tr{
-            @th{Animal} @th{Legs}}}
-        @tbody{
-          @tr{
-            @td{Dog} @td{4}}
-          @tr{
-            @td{Spider} @td{8}}}}}
+    A manual table:
+    @table{
+      @thead{
+        @tr{
+          @th{Animal} @th{Legs}}}
+      @tbody{
+        @tr{
+          @td{Dog} @td{4}}
+        @tr{
+          @td{Spider} @td{8}}}}
+
+    A table with generated rows:
+    @table{
+      @thead{
+        @tr{
+          @th{Animal} @th{Legs}}}
+      @(apply
+        tbody
+        (for/list ([animal '("Dog" "Spider" "Cat" "Fish" "Human" "Ant")]
+                   [legs '(4 8 4 0 2 6)])
+          @tr{@td{@animal} @td{@(~a legs)}}))}
 
     @button{Go back}
     })

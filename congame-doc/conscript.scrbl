@@ -389,3 +389,79 @@ use this index, since we create a random starting value for the slider. Our
 second version uses the index, using ten times the index as the starting value,
 and also varies the total range, which we use to also set the width of via the
 "style" attribute.
+
+@subsection{How to add a table to a page}
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (table-step)
+  @md{# A table
+
+      A manual table:
+      @table{
+        @thead{
+          @tr{
+            @th{Animal} @th{Legs}}}
+        @tbody{
+          @tr{
+            @td{Dog} @td{4}}
+          @tr{
+            @td{Spider} @td{8}}}}
+
+
+    A table with generated rows:
+    @table{
+      @thead{
+        @tr{
+          @th{Animal} @th{Legs}}}
+      @(apply
+        tbody
+        (for/list ([animal '("Dog" "Spider" "Cat" "Fish" "Human" "Ant")]
+                   [legs '(4 8 4 0 2 6)])
+          @tr{@td{@animal} @td{@(~a legs)}}))}
+
+    @button{Next}})
+}|
+
+Note that the numbers in @racket[legs] have to be converted to strings, or else
+you will get errors.
+
+@subsection{How to customize the text of a submit button}
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (labeled-submit-button)
+  @md{
+    # Submit Button with Custom Label
+
+    @form{
+      There is no field here to fill in. What a form.
+      @submit-button/label{A Custom Label for Submissions!}}
+      })
+}|
+
+@subsection{How to add blank lines}
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (vertical-whitespace)
+  @md{
+    # More Vertical Whitespace
+
+    Let us add more more whitespace after this.
+    \
+    \
+    \
+    \
+    Lots of it.
+
+    @html*{
+      In `html`, you do it via the `br` tag.
+      @br{}
+      @br{}
+      @br{}
+      See? Easy.
+    }
+
+    @button{Back to Choice Page}})
+}|
