@@ -1119,6 +1119,126 @@ folder instead of just the study file on the server.
 If everything goes well, you now have a study displaying exactly one page with
 one image.
 
+@section{Basic Arithmetic}
+
+You can use basic arithmetic in @tech{Racket}, which is infix based:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+; Add two or more numbers
+(+ 2 3)     ; 2 + 3
+(+ 1 2 3 4) ; 1 + 2 + 3 + 4
+
+; Subtract two numbers
+(- 3 4) ; 3 - 4
+
+; Multiply two or more numbers
+(* 2 3)   ; 2 * 3
+(* 2 3 4) ; 2 * 3 * 4
+(* 2 -3)  ; 2 * (-3)
+
+; Divide
+(/ 9 3)   ; 9 / 3 => 3
+(/ 7 2)   ; 7 / 2 => the fraction 7/2!
+(/ 7 2.0) ; 7 / 2.0 => floating point 3.5
+
+; compute mean of 4 numbers
+(/ (+ 1 2 3 4) 4.0)
+
+; Get the remainder or quotient
+(remainder 7 2) ; => 1
+(quotient 7 2)  ; => 3
+}|
+
+If you want to include it in html markup, don't forget to transform the number to a string by using either @racket[number->string] or @racket[~a] (which turns every input into a string, so also works for symbols (@tt{'age}) or lists or other items):
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (numbers-to-strings)
+  @md{# Twice your age is @(number->string (* 2 (get 'age)))
+
+      Your remaining life expectancy is @(~a (- 80 (get 'age))).
+
+      @button{Next}})
+}|
+
+@section{Studies with Logic}
+
+We often want to respond to participants, whether it is to display different
+messages as we progress, or based on their answers. We will now create a few
+studies using some of the programming features that conscript provides.
+
+First, let us count down from 10 to 0 and display the pages to the
+user. We could of course define a separate step for each number,
+calling them @racket[step10] down to @racket[step0] and then string
+them together as @tt{step10 --> ... --> step0}, but that is
+tedious. Instead, for every user, let us store the value of
+@racket[counter] and every time the user progresses, we decrease the
+value of @racket[counter] and display it on the screen. To store a
+value for a user, we use @code[#:lang "conscript"]|{(put id value)}|. @margin-note{@racket[put] is what the forms use to store the answers of users in the database, but this happens without you having to do anything. Thus, by default, an input @code|{@input-number[#:the-number]}| will call @code|{(put 'the-number value-provided-by-the-user)}| behind the scenes, which is why you can get the value via @code|{(get 'the-number)}|.}
+
+
+To implement the countdown, we need to do two things. First, we need an action that initializes the user's counter to 10; second, we need an action that decreases the counter by 1 whenever we advance:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(define (initialize-counter)
+  (put 'counter 10))
+
+(define (decrement-counter)
+  ; Get the old value --- (get 'counter) --- subtract 1 from it, then store the
+  ; new value in 'counter.
+  (put 'counter (sub1 (get 'counter))))
+}|
+
+This uses @racket[sub1], which subtracts 1 from its argument.
+
+Here we will implement the logic by calling the action whenever the next button is clicked. We can pass an argument to the @racket[button] via @code[#:lang "conscript"]|{@button[my-action]{Next}}|, which will evaluate @racket[my-action] and then advance to the next step.
+
+@codeblock|{
+#lang conscript
+
+@; Code defining the actions above
+@; ...
+
+(defstep (description)
+  @md{# The countdown is about to begin
+
+      @button[initialize-counter]{Start Countdown}})
+
+(defstep (show-counter)
+  @md{@(number->string (get 'counter))
+
+      @button[decrement-counter]{Count down!}})
+
+(defstudy countdown
+  [description --> show-counter]
+  [show-counter --> show-counter])
+}|
+
+While this works, it has a fatal flaw. We keep counting down forever and ever. (Try it.) Instead, we would like to stop once we hit 0, and display the launch page.
+
+@subsection{Conditions}
+
+In order to stop once the counter hits 0, we need to change the transitions. Specifically, we want to transition to the @tt{launch} step when the counter is 0, and otherwise keep displaying the @tt{show-counter} step. To do so, we use @racket[if] inside a transition, which has to be wrapped in something mysterious called a @racket[lambda]:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (launch)
+  @md{# Study launched!})
+
+(defstudy countdown
+  [description --> show-counter
+               --> @(lambda ()
+                      (if (= (get 'counter) 0)
+                         'launch
+                         'show-counter))]
+  [launch --> launch])
+}|
+
+For now, ignore @racket[lambda] line, simply type it and run with it. As for the @racket[if], it is straightforward: it first checks a condition, here @code[#:lang "conscript"]|{(= (get 'counter) 0)}|, which checks whether the value of @tt{'counter} is 0 or not. If the condition holds, then the transition continues to the value of the next expression (called the @tt{if} clause), here @tt{'launch}. If the condition fails, then the transition continues to the value of the final expression (called the @tt{else} clause), here @tt{'show-counter}.@margin-note{Note that the name of the step has a quote (') in front of it, so that @tt{'show-counter} denotes the symbol @tt{show-counter}. This is because internally the names of steps are stored as symbols.}
+
+
 @;{
 @section{Studies involving multiple Participants}
 
@@ -1290,242 +1410,4 @@ Next, let us implement a simple version of the dictator game to highlight a more
 ]
 }|
 
-@section{Example Studies on Github}
-
-You can find example studies on GitHub at @url{https://github.com/MarcKaufmann/congame/tree/master/congame-doc/conscript-examples} that illustrate a variety of features:
-
-@itemlist[
-  @item{how to include tables (tables.scrbl)}
-  @item{the form input types available (all-inputs.scrbl)}
-  @item{how to randomize participants into multiple treatments (assign-treatments.scrbl)}
-  @item{how to use @code|{@refresh-every}| to wait for input from another player (wait-for-partner.scrbl)}
-  @item{how to use html tags inside of @tt{(ev ...)} (tags-in-ev.scrbl)}
-  @item{how to use images, and apply CSS styles to them with @code|{@style}|, @tt{#:style}, and @tt{#:class} (images.scrbl)}
-]
-
-@section{Randomizing participants into treatments}
-
-While the example study on github provides an example for randomizing participants into treatments from scratch, you can use the function @racket[assigning-treatments] that you can use inside @tt{(ev ...)}. Thus the action that assigns treatments simply becomes:
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@action[assigning-treatments]{
-  @(ev
-    (begin
-      (define treatments
-        (list
-          'buyer 'buyer 'seller 'seller 'seller
-          'observer 'observer 'observer 'observer 'observer))
-      (assigning-treatments treatments)))
-}
-}|
-
-This will randomize the order of the treatments and balance them across participants as they arrive. That means that in the case of 10 treatments (as in the example), every set of 10 participants is assigned to these 10 roles to ensure that we always have 2 buyers, 3 sellers, and 5 observers. The order in which they are assigned these roles is randomized.
-
-This works by storing the treatment of the participant as a participant variable in @racket['role] and the set of treatments for the current group of participants as an instance variable in @racket['treatments]. Importantly, both of these variables are stored at the top level (@tt{(*root*)}), so they can be set and retrieved with @racket[get/global], @racket[put/global] for the @racket['role] and with @racket[get/instance/global] and @racket[put/instance/global] for the @racket['treatments] (you should not mess with the latter though). You can overrule these with @racket[#:treatments-key] and @racket[#:role-key]. So if you prefer storing the next set of treatments in @racket['my-treatments] and the treatment of the participant in @racket['treatment], then you need to change the action as follows:
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@action[assigning-treatments]{
-  @(ev
-    (being
-      (define treatments
-        (list
-          'buyer 'buyer 'seller 'seller 'seller
-          'observer 'observer 'observer 'observer 'observer))
-      (assigning-treatments treatments
-                            #:treatments-key 'my-treatments
-                            #:role-key       'treatment)))
-}
-
-@step[show-treatment]{
-  @h1{Your treatment is @(ev (~a (get/global 'role)))}
-}
-}|
-
-Notice the use of @racket[get/global] instead of @racket[get] to retrieve the role. This gets the value of @racket['role] stored at the top level study (@tt{(*root*)}), so that it is available from all substudies. Do not overuse the @tt{/global} versions of @racket[get] and @racket[put]. These set global variables, which is bad practice in general, as it leads to buggier code.
-
-@section{Using buttons to jump to different steps}
-
-You can use the @racket[#:to-step] keyword of buttons to override the default transition and instead jump to the step mentioned in the button as follows:
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-step[a]{
-  @h1{Step b}
-
-  @button[#:to-step c]{To step c}
-  @button[#:to-step d]{To step d}
-  @button{Default transition (to step b)}
-}
-
-step[b]{
-  @h1{Step b}
-  @button{Next}
-}
-
-step[c]{
-  @h1{Step c}
-  @button{Next}
-}
-
-step[d]{
-  @h1{Step d}
-  @button{Next}
-}
-
-step[final]{
-  @h1{Final}
-}
-
-@study[
-  skippy
-  #:transitions
-  [a --> b --> c --> d --> final]
-  [final --> final]
-]
-}|
-
-This study would usually go from step a through d to the final page. But if we click on the appropriate button on the first page, we will instead directly jump to step c or d, overriding the defaults.
-
-@section{Basic Arithmetic}
-
-You can use basic arithmetic in @tt{ev} based on @tech{Racket}'s arithmetic, which means that it is infix based:
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@; Add two or more numbers
-@(ev (+ 2 3))     @; 2 + 3
-@(ev (+ 1 2 3 4)) @; 1 + 2 + 3 + 4
-
-@; Subtract two numbers
-@(ev (- 3 4)) @; 3 - 4
-
-@; Multiply two or more numbers
-@(ev (* 2 3))   @; 2 * 3
-@(ev (* 2 -3))  @; 2 * (-3)
-
-@; Divide
-@(ev (/ 9 3))   @; 9 / 3 => 3
-@(ev (/ 7 2))   @; 7 / 2 => the fraction 7/2!
-@(ev (/ 7 2.0)) @; 7 / 2.0 => floating point 3.5
-
-@; compute mean of 4 numbers
-@(ev (/ (+ 1 2 3 4) 4.0))
-
-@; Get the remainder or quotient
-@(ev (remainder 7 2)) @; => 1
-@(ev (quotient 7 2))  @; => 3
-}|
-
-If you want to include it in html markup, don't forget to transform the number to a string by using either @racket[number->string] or @racket[~a] (which turns every input into a string, so also works for symbols (@tt{'age}) or lists or other items):
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@h1{Twice your age is @(ev (number->string (* 2 (get 'age))))}
-
-Your remaining life expectancy is @(ev (~a (- 80 (get 'age)))).
-}|
-
-}
-
-@;{ TAKE OUTS
-@section{Studies with Logic}
-
-We often want to respond to participants, whether it is to display different messages as we progress, or based on their answers. We will now create a few studies using some of the programming features that conscript provides.
-
-First, let us count down from 10 to 0 and display the pages to the
-user. We could of course define a separate step for each number,
-calling them @racket[step10] down to @racket[step0] and then string
-them together as @tt{step10 --> ... --> step0}, but that is
-tedious. Instead, for every user, let us store the value of
-@racket[counter] and every time the user progresses, we decrease the
-value of @racket[counter] and display it on the screen. To store a
-value for a user, we use @code[#:lang "scribble/manual"]|{@put[id value]}|.
-
-The most important building block for this is the @code[#:lang
-"scribble/manual"]|{@action}| operator. Whenever you want to change or update
-some value or variable in conscript, you have to define a named @tt{action}
-which will be evaluated when called. In the case of the countdown, we need to do
-two things. First, we need an action that initializes the user's counter to 10;
-second, we need an action that decreases the counter by 1 when called:
-
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@action[initialize-counter]{
-  @(ev (put 'counter 10))
-}
-
-@action[decrement-counter]{
-  @(ev (put 'counter (sub1 (get 'counter))))
-}
-}|
-
-Here we use @racket[sub1], which subtracts 1 from its argument. Later we'll see another way to do basic arithmetic.
-
-Next, we need to call the @tt{action}s in the right places. There are two places where you can use actions: before a step is displayed by using @code|{@step[step-name #:pre action-id]}|; or after a button click (and before the next step is executed) using @code|{@button[#:action-id action-id]{Next}}|. We will the button approach here:
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@; Here goes the above code defining the actions
-@; ...
-
-@step[description]{
-  @h1{The countdown is about to begin}
-
-  @button[#:action initialize-counter]{Start Countdown}
-}
-
-@step[show-counter]{
-  @h1{@(ev (number->string (get 'counter)))}
-
-  @button[#:action decrement-counter]{Count down!}
-}
-
-@study[
-  countdown
-  #:transitions
-  [description --> show-counter]
-  [show-counter --> show-counter]
-]
-}|
-
-While this works, it has a fatal flaw. We keep counting down forever and ever. Instead, we would like to stop once we hit 0, and display the launch page.
-
-@section{Conditions}
-
-In order to stop once the counter hits 0, we need to change the transitions. Specifically, we want to transition to the @tt{launch} step when the counter is 0, and otherwise keep displaying the @tt{show-counter} step. To do so, we use @racket[cond] inside a transition, which has to be wrapped in something mysterious called a @racket[lambda]:
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang scribble/manual
-
-@step[launch]{
-  @h1{Study launched!}
-}
-
-@study[
-  countdown
-  #:transitions
-  [description --> show-counter
-               --> @(ev (lambda ()
-                          (cond
-                            [(= (get 'counter) 0)
-                             'launch]
-                            [else
-                             'show-counter])))]
-  [launch --> launch]
-]
-}|
-
-For now, ignore what the @racket[lambda] part does, simply type it and run with it. As for the @racket[cond], it is relatively straightforward: it consists of two or more clauses that are wrapped in square brackets ('[]'). Each clause starts with a condition, such as @tt{(= (get 'counter) 0)}, which checks whether the value of @tt{'counter} is 0 or not. If the condition holds, then the transition continues to the step at the end of the clause, here @tt{'launch}, which has a quote (') in front of it. (Note: this will soon change, as we will write it @tt{(goto launch)}, with no quote (') in front of launch.)
-
-The final clause must always start with the keyword @racket[else], which is a catchall for the case where none of the conditions in previous clauses were met.
 }

@@ -42,6 +42,7 @@
  provide
 
  if case cond else unless when
+ or and
  set!
 
  ;; Racket Runtime
@@ -54,7 +55,7 @@
  = < > <= >= equal? eq?
  sqrt expt exp log random
  regexp-match?
- format ~a number->string symbol->string
+ format ~a number->string string->number symbol->string string->symbol
 
  ;; Congame Syntax
  --> goto for/study
@@ -69,7 +70,8 @@
   [congame:get/instance get/instance]
   [congame:get* get*]
   [congame:put/instance put/instance]
-  [congame:put* put*])
+  [congame:put* put*]
+  [congame:skip skip])
  make-step make-step/study
  get put put/identity
  done
