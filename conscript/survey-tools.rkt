@@ -27,6 +27,21 @@
 (define ~pound (~currency "£"))
 (define ~euro (~currency "€"))
 
+;; Dice Roll
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ ; Assumes that you have a container with class "diceroll", inside of which there is a btn and an output element. When the button is clicked, the output displays the value of the roll.
+ diceroll-js)
+
+(define-static-resource diceroll.js "resources/js/diceroll.js")
+
+(define diceroll-js
+  (haml
+   (:script
+    ([:defer ""]
+     [:src (resource-uri diceroll.js)]))))
+
 ;; Slider ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide

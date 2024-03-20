@@ -7,6 +7,14 @@
 
 (defstep (choose-page)
   @md{
+    @style{
+      .button.next-button {
+        width: 50%;
+        display: inline-block;
+        margin: 0.5rem 0rem 0.5rem 0rem;
+      }
+    }
+
     # Choose which feature you want to see in action
 
     1. @button[#:to-step-id 'multiple-checkboxes]{Show Multiple Checkboxes}
@@ -17,6 +25,7 @@
     6. @button[#:to-step-id 'free-form-forms1]{Free-Form Forms}
     7. @button[#:to-step-id 'vertical-whitespace]{More whitespace between paragraphs}
     8. @button[#:to-step-id 'radio-with-error-and-horizontal]{Radio with Horizontal Buttons and Error Message}
+    9. @button[#:to-step-id 'diceroll]{Button to roll a dice displaying a number}
 
     The buttons on this page show that you can jump to different pages by providing a `#:to-step-id` argument to `button`.
     })
@@ -274,6 +283,23 @@
         @submit-button
 }})
 
+(defstep (diceroll)
+  @md{@diceroll-js
+      @style{
+        .diceroll > .button {
+          width: 5rem;
+          display: inline-block;
+        }
+      }
+      # Diceroll
+
+      @div[#:class "diceroll"]{
+        @a[#:class "button" #:href ""]{Roll}
+        @output{}
+
+      @button{Go Back}
+      }})
+
 (defstudy easy-forms
   [choose-page --> choose-page]
 
@@ -297,4 +323,6 @@
 
   [radio-with-error-and-horizontal --> choose-page]
 
-  [vertical-whitespace --> choose-page])
+  [vertical-whitespace --> choose-page]
+
+  [diceroll --> choose-page])

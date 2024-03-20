@@ -512,3 +512,29 @@ Wrap the @racket[radios] in a @racket[div] with class "radio-horizontal":
         @submit-button
 }})
 }|
+
+@subsection{Page with dice roll button}
+
+Example with some custom CSS for the button:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(require conscript/survey-tools)
+
+(defstep (diceroll)
+  @md{@diceroll-js
+      @style{
+        .diceroll > .button {
+          width: 5rem;
+          display: inline-block;
+        }
+      }
+      # Diceroll
+
+      @div[#:class "diceroll"]{
+        @a[#:class "button" #:href ""]{Roll}
+        @output{}
+
+      @button{Go Back}
+      }})
+}|
