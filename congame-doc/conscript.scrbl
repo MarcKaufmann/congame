@@ -497,6 +497,7 @@ You will need to require @racket[conscript/survey-tools] to use
 Wrap the @racket[radios] in a @racket[div] with class "radio-horizontal":
 
 @codeblock[#:keep-lang-line? #f]|{
+#lang conscript
 (define (radio-horizontal)
   @md{# Radio with Horizontal Buttons
 
