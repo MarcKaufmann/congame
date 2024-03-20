@@ -16,7 +16,7 @@
     5. @button[#:to-step-id 'labeled-submit-button]{Submit button with custom text}
     6. @button[#:to-step-id 'free-form-forms1]{Free-Form Forms}
     7. @button[#:to-step-id 'vertical-whitespace]{More whitespace between paragraphs}
-    8. @button[#:to-step-id 'radio-with-error]{Radio buttons with error message}
+    8. @button[#:to-step-id 'radio-with-error-and-horizontal]{Radio with Horizontal Buttons and Error Message}
 
     The buttons on this page show that you can jump to different pages by providing a `#:to-step-id` argument to `button`.
     })
@@ -257,19 +257,20 @@
 
     @button{Back to Choice Page}})
 
-(define (radio-with-error)
-  @md{# Radio with Error
+(define (radio-with-error-and-horizontal)
+  @md{# Radio with Horizontal Buttons and Error Message
 
       The correct answer to the next radio button is "Option C", try it out by picking first another option:
 
       @form{
-        @radios[
-          #:radios-with-error
-          '(("a" . "Option A")
-            ("b" . "Option B")
-            ("c" . "Option C"))
-          #:validators (list (is-equal "c" #:message "Wrong answer, LOL!!!"))
-        ]{The correct option is C - but try something else first maybe!}
+        @div[#:class "radio-horizontal"]{
+          @radios[
+            #:radios-with-error
+            '(("a" . "Option A")
+              ("b" . "Option B")
+              ("c" . "Option C"))
+            #:validators (list (is-equal "c" #:message "Wrong answer, LOL!!!"))
+          ]{The correct option is C - but try something else first maybe!}}
         @submit-button
 }})
 
@@ -294,6 +295,6 @@
    --> display-results
    --> choose-page]
 
-  [radio-with-error --> choose-page]
+  [radio-with-error-and-horizontal --> choose-page]
 
   [vertical-whitespace --> choose-page])

@@ -223,6 +223,11 @@ input {
   display: block;
 }
 
+// Horizontal alignment requires wrapping in div with clas "radio-horizontal"
+.radio-horizontal .radio-group label {
+  display: inline-block;
+}
+
 /* Screenshots */
 
 .screenshot {

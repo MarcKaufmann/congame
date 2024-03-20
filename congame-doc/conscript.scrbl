@@ -491,3 +491,23 @@ You will need to require @racket[conscript/survey-tools] to use
         ]{The correct option is C - but try something else first maybe!}
 }})
 }|
+
+@subsection{How to display radio buttons on a single line}
+
+Wrap the @racket[radios] in a @racket[div] with class "radio-horizontal":
+
+@codeblock[#:keep-lang-line? #f]|{
+(define (radio-horizontal)
+  @md{# Radio with Horizontal Buttons
+
+      @form{
+        @div[#:class "radio-horizontal"]{
+          @radios[
+            #:radios-with-error
+            '(("a" . "Option A")
+              ("b" . "Option B")
+              ("c" . "Option C"))
+          ]{Choose Horizontally}}
+        @submit-button
+}})
+}|
