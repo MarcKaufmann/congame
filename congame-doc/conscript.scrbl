@@ -319,10 +319,10 @@ top):
       # Slider with Value Displayed
 
       @form{
-        @div[#:class slider]{
+        @div[#:class "slider"]{
           @input-range[#:slider-1] @span{Value: @output{}}
         }
-        @div[#:class slider]{
+        @div[#:class "slider"]{
           @input-range[#:slider-2] @span{Value: @output{}}
         }
         @submit-button
