@@ -230,7 +230,9 @@
                    (where (in s.id (subquery
                                     (~> (from "study_instances" #:as si)
                                         (select si.study-id)
-                                        (where (in si.id ,@instance-ids))))))))
+                                        (where (in si.id ,@instance-ids)))))))
+               (lambda (s)
+                 (set-study-meta-owner-id s (user-id admin-user))))
 
               ;; copy study-instances
               (copy-rows!
@@ -276,12 +278,12 @@
                  (apply query-exec
                         dst-conn
                         (~a "INSERT INTO study_data("
-                            "  participant_id, study_stack, key, value, git_sha, last_put_at, first_put_at, round_name, group_name"
+                            "  participant_id, study_stack, key, value, git_sha, last_put_at, first_put_at, round_stack, group_stack"
                             ") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)")
                         columns))
                (in-query src-conn
                          (~a "SELECT"
-                             "  participant_id, study_stack, key, value, git_sha, last_put_at, first_put_at, round_name, group_name"
+                             "  participant_id, study_stack, key, value, git_sha, last_put_at, first_put_at, round_stack, group_stack"
                              " FROM"
                              "  study_data"
                              " WHERE"
