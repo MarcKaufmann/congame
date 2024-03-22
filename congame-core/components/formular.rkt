@@ -621,13 +621,13 @@
                     (ok #f)
                     (with-handlers ([exn:fail? (λ (_) (err "failed to parse radio JSON"))])
                       (define ht (string->jsexpr json-data))
-                      (define radio-value (hash-ref ht 'radioValue (json-null)))
-                      (define other-value (hash-ref ht 'otherValue (json-null)))
+                      (define radio-value (json-null->string (hash-ref ht 'radioValue (json-null))))
+                      (define other-value (json-null->string (hash-ref ht 'otherValue (json-null))))
                       (cond
-                        [(and (eq? radio-value (json-null))
-                              (eq? other-value (json-null)))
-                         (err "you must pick a value or write something in the 'Other' field")]
-                        [(eq? other-value (json-null))
+                        [(and (equal? radio-value "")
+                              (equal? other-value ""))
+                         (err "You must pick a value or write something in the 'Other' field.")]
+                        [(equal? other-value "")
                          (ok radio-value)]
                         [else
                          (ok other-value)]))))
@@ -644,6 +644,9 @@
                         (hasheq 'value (symbol->string value) 'label label)))]
            [:value "{\"radioValue\": null, \"otherValue\": null}"]))
          ,@((widget-errors) name value errors))))]))
+
+(define (json-null->string v)
+  (if (eq? v (json-null)) "" v))
 
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
