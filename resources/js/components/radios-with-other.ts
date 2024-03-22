@@ -35,7 +35,6 @@ export default class CgRadiosWithOther extends LitElement {
 
   private onRadioChanged(e: Event) {
     this.value = {
-      ...this.value,
       radioValue: (e.target as any).value,
       otherValue: null,
     };
@@ -44,7 +43,6 @@ export default class CgRadiosWithOther extends LitElement {
 
   private onOtherChanged(e: Event) {
     this.value = {
-      ...this.value,
       radioValue: null,
       otherValue: (e.target as any).value,
     };
@@ -58,7 +56,7 @@ export default class CgRadiosWithOther extends LitElement {
           type="radio"
           name=${this.name}
           .value=${value}
-          ?checked=${value === this.value.radioValue}
+          .checked=${value === this.value.radioValue}
           @change=${(e: Event) => this.onRadioChanged(e)}
         />
         ${label}</label
@@ -68,8 +66,8 @@ export default class CgRadiosWithOther extends LitElement {
       ><input
         type="radio"
         name=${this.name}
-        .value=${null}
-        ?checked=${this.value.otherValue !== null}
+        .value=${this.value.otherValue}
+        .checked=${this.value.otherValue !== null}
         @change=${(e: Event) => this.onRadioChanged(e)} />
       Other:
       <input
