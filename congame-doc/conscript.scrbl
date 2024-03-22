@@ -148,7 +148,7 @@ This page assumes that there are steps called @racket['multiple-checkboxes],
 
 The default checkbox provides a single checkbox. You may want to provide
 multiple options at once, allowing a person to choose one or more options. You
-can do so with @racket[make-multiple-checkboxes] fromt the
+can do so with @racket[make-multiple-checkboxes] from the
 @racket[conscript/survey-tools] library. Here
 is an example of a form to choose between four options, "a" to "d" and how to
 include it in the form. For @racket[#:multiple-checkboxes-1], any number of checkboxes can be selected, for @racket[#:multiple-checkboxes-2] a person has to select 2 or more checkboxes.

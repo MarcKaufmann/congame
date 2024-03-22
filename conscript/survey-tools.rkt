@@ -94,12 +94,12 @@
 
 (define (make-multiple-checkboxes options [render-proc render-checkbox-list]
                                   #:n [n 0]
-                                  #:required? [required? #t])
+                                  #:message [message #f])
   (congame:make-checkboxes
    options
    render-proc
    #:n n
-   #:required? required?))
+   #:message message))
 
 ;; radio-button validator
 

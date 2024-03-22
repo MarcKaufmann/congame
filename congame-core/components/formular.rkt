@@ -535,28 +535,24 @@
            elt))]))
 
 (define ((list-longer-than [n 0] [message (format "You must select ~a or more items." n)]) xs)
-  (if (or (and (zero? n)
-               (not xs))
-          (and xs
-               (pair? xs)
-               (>= (length xs) n)))
-      (ok xs)
-      (err message)))
+  (let ([xs (or xs null)])
+    (if (>= (length xs) n)
+        (ok xs)
+        (err message))))
 
 (define ((make-checkboxes options
                           render-proc
                           #:n [n 0]
-                          #:required? [required? #t]
+                          #:message [message #f]
                           #:validators [validators null]
                           #:attributes [attributes null]) meth)
   (match meth
     ['validator
      (apply ensure
             binding/list
-            (cond
-              [(string? required?) (cons (list-longer-than n required?) validators)]
-              [required? (cons (list-longer-than n) validators)]
-              [else validators]))]
+            (if message
+                (cons (list-longer-than n message) validators)
+                (cons (list-longer-than n) validators)))]
 
     ['widget
      (lambda (name value errors)
