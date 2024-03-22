@@ -539,13 +539,13 @@
              ,@((widget-errors) name value errors)))
            elt))]))
 
-(define ((required/list [n 0] [message (lambda (i) (format "You must select ~a or more items." i))]) xs)
+(define ((list-longer-than [n 0] [message (lambda (i) (format "You must select ~a or more items." i))]) xs)
   #;(if (and xs
            (pair? xs)
            (not (null? xs)))
       (ok xs)
       (err message))
-  (eprintf "required/list: xs is ~a" xs)
+  (eprintf "list-longer-than: xs is ~a" xs)
   (eprintf "is xs false? ~a" (equal? #f xs))
   (if (or (and (zero? n)
                (equal? #f xs))
@@ -566,8 +566,8 @@
      (apply ensure
             binding/list
             (cond
-              [(string? required?) (cons (required/list n required?) validators)]
-              [required? (cons (required/list n) validators)]
+              [(string? required?) (cons (list-longer-than n required?) validators)]
+              [required? (cons (list-longer-than n) validators)]
               [else validators]))]
 
     ['widget
