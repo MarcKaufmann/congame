@@ -534,21 +534,14 @@
              ,@((widget-errors) name value errors)))
            elt))]))
 
-(define ((list-longer-than [n 0] [message (lambda (i) (format "You must select ~a or more items." i))]) xs)
-  #;(if (and xs
-           (pair? xs)
-           (not (null? xs)))
-      (ok xs)
-      (err message))
-  (eprintf "list-longer-than: xs is ~a" xs)
-  (eprintf "is xs false? ~a" (equal? #f xs))
+(define ((list-longer-than [n 0] [message (format "You must select ~a or more items." n)]) xs)
   (if (or (and (zero? n)
-               (equal? #f xs))
+               (not xs))
           (and xs
-               (list? xs)
+               (pair? xs)
                (>= (length xs) n)))
       (ok xs)
-      (err (if (string? message) message (message n)))))
+      (err message)))
 
 (define ((make-checkboxes options
                           render-proc
