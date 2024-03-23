@@ -767,10 +767,14 @@ refresh, one that gets generated once and stays constant across refreshes.
 
 @subsection{How to have radio buttons with images}
 
-Suppose that you have two images in the folder @filepath{"img/"} and you upload a study as a zip file. Then the following code will add images next to the radio buttons:
+Suppose that you have two images in the folder @filepath{"img/"} and you upload
+a study as a zip file. Then the following code will add images next to the radio
+buttons:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
+(require racket/match)
+
 (define-static-resource path-to-image-a "img/job-a.png")
 (define-static-resource path-to-image-b "img/job-b.png")
 
@@ -780,7 +784,10 @@ Suppose that you have two images in the folder @filepath{"img/"} and you upload 
            (for/list ([opt options])
              (match-define (list value res job empl years) opt)
              @div{
-                  @img[#:alt (format "an image for option ~a" value)  #:src (resource-uri res)]
+                  @img[
+                    #:alt (format "an image for option ~a" value)
+                    #:src (resource-uri res)
+                  ]
                   @div[#:class "job-description"]{
                     @div{@job}
                     @div{@empl}
@@ -792,14 +799,21 @@ Suppose that you have two images in the folder @filepath{"img/"} and you upload 
       # Radios with Images
 
       @form{
-        @binding[#:radio-with-images (make-radios `((a ,path-to-image-a "Job Title A" "Employer A" "Years experience: A")
-                                                    (b ,path-to-image-b "Job Title B" "Employer B" "Years experience: B")) render-proc)]
+        @binding[
+          #:radio-with-images
+          (make-radios
+            `((a ,path-to-image-a "Job Title A" "Employer A" "Years: A")
+              (b ,path-to-image-b "Job Title B" "Employer B" "Years: B"))
+            render-proc)
+        ]
         @submit-button}})
 }|
 
 @subsection{How to add a Radio Button with a button for an Other option}
 
-The following displays radio buttons for the options "A", "B", and "Other", providing a text-input for "Other". Moreover, if the input for "Other" is filled in, then the radio button for "Other" is automatically selected.
+The following displays radio buttons for the options "A", "B", and "Other",
+providing a text-input for "Other". Moreover, if the input for "Other" is filled
+in, then the radio button for "Other" is automatically selected.
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -812,9 +826,12 @@ The following displays radio buttons for the options "A", "B", and "Other", prov
             @submit-button}})
 }|
 
-@subsection{How to have a select button with a default option that cannot be submitted}
+@subsection{How to have a select button with a default option that cannot be
+submitted}
 
-To have a default option for a select button that cannot be selected, provide it as the first option with value "" and the desired display value, here "--Please choose an option--":
+To have a default option for a select button that cannot be selected, provide it
+as the first option with value "" and the desired display value, here "--Please
+choose an option--":
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript

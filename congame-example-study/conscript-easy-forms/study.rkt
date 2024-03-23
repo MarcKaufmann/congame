@@ -30,7 +30,8 @@
     10. @button[#:to-step-id 'radio-with-images]{Radio with Images}
     11. @button[#:to-step-id 'select-with-default]{Select with Default Value}
 
-    The buttons on this page show that you can jump to different pages by providing a `#:to-step-id` argument to `button`.
+    The buttons on this page show that you can jump to different pages by
+providing a `#:to-step-id` argument to `button`.
     })
 
 (defstep (display-results)
@@ -84,7 +85,9 @@
   @md{
     # An example of a Table
 
-    For this, you need to write the table in HTML, although you can write the whole page in markdown (with `md`) and only write the table in HTML (with `html*`, not `html`).
+    For this, you need to write the table in HTML, although you can write the
+ whole page in markdown (with `md`) and only write the table in HTML (with
+ `html*`, not `html`).
 
     A manual table:
     @table{
@@ -134,7 +137,8 @@
     - The value of `r` is: @(~a r)
     - The value of `r-once` is: @(~a r-once)
 
-    If you refresh the page, the value of `r` will change, while the value of `r-once` will not. You usually don't want it to change based on the refresh.
+    If you refresh the page, the value of `r` will change, while the value of
+ `r-once` will not. You usually don't want it to change based on the refresh.
 
     @button{Back to Choice}
 
@@ -152,9 +156,14 @@
       x^2 + 2 \cdot x + 1 = (x + 1)^2
     \\]
 
-    To add such mathematical snazziness to your page, you need to include the MathJax script, by writing `@"@"(mathjax-script)` (note the parentheses) at the top of your page.
+    To add such mathematical snazziness to your page, you need to include the
+ MathJax script, by writing `@"@"(mathjax-script)` (note the parentheses) at the
+ top of your page.
 
-    To write inline mathematics, you would enclose it in "\\\\(...\\\\)", for an equation all by itself you write "\\\\[...\\\\]" in normal Mathjax, but in conscript, you have to write a double backslash: "\\\\\\\\(...\\\\\\\\)". Don't ask. Just do it.
+    To write inline mathematics, you would enclose it in "\\\\(...\\\\)", for an
+ equation all by itself you write "\\\\[...\\\\]" in normal Mathjax, but in
+ conscript, you have to write a double backslash: "\\\\\\\\(...\\\\\\\\)". Don't
+ ask. Just do it.
 
     @button{Back to Choice}
       })
@@ -190,12 +199,21 @@
 
     # Forming Free-Form Forms
 
-    Here is a form where the labels and input fields are moved around more freely, and the fields have more advanced styles. The next page illustrates how you can reuse these styles so that you don't have to redefine them over and over.
+    Here is a form where the labels and input fields are moved around more
+ freely, and the fields have more advanced styles. The next page illustrates how
+ you can reuse these styles so that you don't have to redefine them over and
+ over.
 
     @form{
       @div[#:class "question-group"]{
-        @div{@span[#:class "red-asterisk"]{*}How many required questions are on this page?}
-        @div{@span[#:class "green-exclamation"]{!}Only positive integer values may be entered in this field.}
+        @div{
+          @span[#:class "red-asterisk"]{*}How many required questions are on
+ this page?
+        }
+        @div{
+          @span[#:class "green-exclamation"]{!}Only positive integer values may
+ be entered in this field.
+        }
         @input-number[#:n-required #:min 0] @~error[#:n-required]}
       @submit-button}
       })
@@ -228,7 +246,12 @@
 
     @h1{Freeing Forming Free-Form Forms}
 
-    Now suppose you have multiple forms on the previous page. (Just to show how to display twice the value you submitted: it is @(~a (* 2 (get 'n-required))).) It becomes quickly tedious to type all that HTML for each question, especially if multiple questions all take the same styling. Therefore we do what every lazy programmer does, and define a function that wraps the label in the HTML with the right classes, and similarly for requirements.
+    Now suppose you have multiple forms on the previous page. (Just to show how
+ to display twice the value you submitted: it is @(~a (* 2 (get 'n-required))).)
+ It becomes quickly tedious to type all that HTML for each question, especially
+ if multiple questions all take the same styling. Therefore we do what every
+ lazy programmer does, and define a function that wraps the label in the HTML
+ with the right classes, and similarly for requirements.
 
     @form{
       @div[#:class "question-group"]{
@@ -280,7 +303,8 @@
 (define (radio-with-error-and-horizontal)
   @md{# Radio with Horizontal Buttons and Error Message
 
-      The correct answer to the next radio button is "Option C", try it out by picking first another option:
+      The correct answer to the next radio button is "Option C", try it out by
+ picking first another option:
 
       @form{
         @div[#:class "radio-horizontal"]{
@@ -340,7 +364,11 @@
            (for/list ([opt options])
              (match-define (list value res job empl years) opt)
              @div{
-                  @img[#:alt (format "an image for option ~a" value)  #:src (resource-uri res)]
+                  @img[
+                    #:alt (format "an image for option ~a" value)
+                    #:src (resource-uri res)
+                  ]
+
                   @div[#:class "job-description"]{
                     @div{@job}
                     @div{@empl}
@@ -352,8 +380,12 @@
       # Radios with Images
 
       @form{
-        @binding[#:radio-with-images (make-radios `((a ,path-to-image-a "Job Title A" "Employer A" "Years experience: A")
-                                                    (b ,path-to-image-b "Job Title B" "Employer B" "Years experience: B")) render-proc)]
+        @binding[
+          #:radio-with-images
+          (make-radios
+           `((a ,path-to-image-a "Job Title A" "Employer A" "Years experience: A")
+             (b ,path-to-image-b "Job Title B" "Employer B" "Years experience: B"))
+           render-proc)]
         @submit-button}})
 
 (defstep (select-with-default)
