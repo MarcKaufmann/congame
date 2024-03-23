@@ -775,6 +775,26 @@ buttons:
 #lang conscript
 (require racket/match)
 
+(define style-img-radio
+  @style{
+    .img-radio {
+      display: inline-block;
+    }
+
+    .img-radio img {
+      display: block;
+    }
+
+    .img-radio label {
+      text-align: center;
+      display: block;
+    }
+
+    .job-description {
+      text-align: center;
+    }
+  })
+
 (define-static-resource path-to-image-a "img/job-a.png")
 (define-static-resource path-to-image-b "img/job-b.png")
 
