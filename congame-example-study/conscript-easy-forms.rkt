@@ -1,6 +1,7 @@
 #lang conscript
 
-(require conscript/survey-tools)
+(require conscript/survey-tools
+         racket/match)
 
 (provide
  easy-forms)
@@ -26,6 +27,7 @@
     7. @button[#:to-step-id 'vertical-whitespace]{More whitespace between paragraphs}
     8. @button[#:to-step-id 'radio-with-error-and-horizontal]{Radio with Horizontal Buttons and Error Message}
     9. @button[#:to-step-id 'diceroll]{Button to roll a dice displaying a number}
+    10. @button[#:to-step-id 'radio-with-images]{Radio with Images}
 
     The buttons on this page show that you can jump to different pages by providing a `#:to-step-id` argument to `button`.
     })
@@ -43,12 +45,16 @@
   (define radios-with-other
     (get 'radios-with-other #f))
 
+  (define radio-with-images
+    (get 'radio-with-images #f))
+
   @md{
     # Results so far
 
     1. Result from `Multiple Checkboxes`: @checkboxes
     2. Twice the result from `Free-Form Forms`: @(~a twice-free-form)
     3. Radios with other: @(~a radios-with-other)
+    4. Radios with images: @(~a radio-with-images)
 
     @button{Go back to choosing Forms}})
 
@@ -300,6 +306,26 @@
       @button{Go Back}
       }})
 
+(defstep (radio-with-images)
+  (define (render-proc options make-radio)
+    (for/list ([opt options])
+      (match-define (cons _name value) opt)
+      (eprintf "_name is: \n" _name)
+      (eprintf "value is: \n" value)
+
+      (make-radio
+        opt
+        (case value
+          [(a) @img[#:alt "some image" #:src "/static/img/play.png"]]
+
+          [(b) @img[#:alt "some other image" #:src "/static/img/play.png" #:class "screenshot"]]))))
+
+  @md{# Radios with Images
+
+      @form{
+        @binding[#:radio-with-images (make-radios '((a . "a") (b . "b")) render-proc)]
+        @submit-button}})
+
 (defstudy easy-forms
   [choose-page --> choose-page]
 
@@ -325,4 +351,6 @@
 
   [vertical-whitespace --> choose-page]
 
-  [diceroll --> choose-page])
+  [diceroll --> choose-page]
+
+  [radio-with-images --> display-results --> choose-page])

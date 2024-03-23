@@ -55,7 +55,7 @@
  = < > <= >= equal? eq?
  sqrt expt exp log random
  regexp-match?
- format ~a number->string string->number symbol->string string->symbol
+ format ~a number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase
 
  ;; Congame Syntax
  --> goto for/study
