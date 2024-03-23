@@ -541,7 +541,11 @@ Example with some custom CSS for the button:
 
 @subsection{How to select a random value from a list of items}
 
-Consider the following study that elicits in steps 1, 2, and 3 how many tasks a participant is willing to do for $2, $3, and $4 and then on the final page we pick one of these choices randomly as the choice to implement and then asks the participant to do those tasks. In addition, let's assume that the completion fee is $1 by default.
+Consider the following study that elicits in steps 1, 2, and 3 how many tasks a
+participant is willing to do for $2, $3, and $4 and then on the final page we
+pick one of these choices randomly as the choice to implement and then asks the
+participant to do those tasks. In addition, let's assume that the completion fee
+is $1 by default.
 
 @codeblock|{
 #lang conscript
@@ -581,8 +585,8 @@ Consider the following study that elicits in steps 1, 2, and 3 how many tasks a 
   @md{# Tasks
 
       @form[#:action on-submit]{
-        @input-number[#:n-tasks #:min 0 #:max 40]{@md*{How many tasks are you willing
-        to do for @(~a payment)?}}
+        @input-number[#:n-tasks #:min 0 #:max 40]{@md*{How many tasks are you
+        willing to do for @(~a payment)?}}
 
         @submit-button}})
 
@@ -697,4 +701,133 @@ Consider the following study that elicits in steps 1, 2, and 3 how many tasks a 
                     'end))]
 
   [end --> end])
+}|
+
+@subsection{How to generate a random number}
+
+A naive way to generate a random number and display it to a user is by
+generating it at the start of the page and displaying it. The problem with this
+approach is that every time the user refreshes the page, a new number is
+generated, which is often not what you want, since then users can refresh until
+they get the number they want.
+
+If we only want to generate the number once, we should generate it only the
+first time and then store it, say, with the key @racket['r-once]. If we do this,
+then every time we visit the page, we check whether the number already was
+stored. If so, then we display this value again; if not, then this is the first
+time the user visits this page, so we generate it randomly.
+
+To do this, we use @code|{(get 'r-once (add1 (random 6)))}|. This attempts to
+get @racket['r-once], but if this is not found, then it returns a new random
+value instead. We then store this value, so that on the next refresh of the
+page, the call to @racket[get] is successful.
+
+The study below generates two random numbers: one that changes upon every
+refresh, one that gets generated once and stays constant across refreshes.
+
+@codeblock|{
+#lang conscript
+
+(require racket/random)
+
+(provide
+  generate-random)
+
+(defstep (generate-random-number)
+  (define r
+    ; (random n) generates a random integer from 0 to n-1, so we need to `add1`
+    ; to get a random draw from 1 to 6 inclusive.
+    (add1 (random 6)))
+  ; This stores the new value in the DB and overwrites the old.
+  (put 'refreshed-random r)
+
+  (define maybe-value
+    (get 'r-once #f))
+
+  (define r-once
+    ; If maybe-value is not #f, then maybe-value is the random number.
+    ; Otherwise, generate a new one.
+    (if maybe-value maybe-value (add1 (random 6))))
+
+  (unless maybe-value
+    (put 'r-once r-once))
+
+  @md{
+    # Generate a Random Number
+
+    - The value of `r` is: @(~a r)
+    - The value of `r-once` is: @(~a r-once)
+
+    If you refresh the page, the value of `r` will change, while the value of
+    `r-once` will not. You usually don't want it to change based on the refresh.
+
+    @button{Back to Choice}
+      })
+}|
+
+@subsection{How to have radio buttons with images}
+
+Suppose that you have two images in the folder @filepath{"img/"} and you upload a study as a zip file. Then the following code will add images next to the radio buttons:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(define-static-resource path-to-image-a "img/job-a.png")
+(define-static-resource path-to-image-b "img/job-b.png")
+
+(defstep (radio-with-images)
+  (define (render-proc options make-radio)
+    (apply div #:class "img-radio"
+           (for/list ([opt options])
+             (match-define (list value res job empl years) opt)
+             @div{
+                  @img[#:alt (format "an image for option ~a" value)  #:src (resource-uri res)]
+                  @div[#:class "job-description"]{
+                    @div{@job}
+                    @div{@empl}
+                    @div{@years}
+                  }
+                  @(make-radio value)})))
+
+  @md{@style-img-radio
+      # Radios with Images
+
+      @form{
+        @binding[#:radio-with-images (make-radios `((a ,path-to-image-a "Job Title A" "Employer A" "Years experience: A")
+                                                    (b ,path-to-image-b "Job Title B" "Employer B" "Years experience: B")) render-proc)]
+        @submit-button}})
+}|
+
+@subsection{How to add a Radio Button with a button for an Other option}
+
+The following displays radio buttons for the options "A", "B", and "Other", providing a text-input for "Other". Moreover, if the input for "Other" is filled in, then the radio button for "Other" is automatically selected.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (radios-with-other-choice)
+  @md{# Radios with "other" choice
+
+      @form{@binding[#:radios-with-other
+                     (make-radios-with-other '((a . "A")
+                                               (b . "B")))]
+            @submit-button}})
+}|
+
+@subsection{How to have a select button with a default option that cannot be submitted}
+
+To have a default option for a select button that cannot be selected, provide it as the first option with value "" and the desired display value, here "--Please choose an option--":
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (sele
+ct-with-default)
+  @md{# Select with Default
+
+      @form{
+        @select[#:select-with-default
+                '((""  . "--Please choose an option--")
+                 ("1" . " 1 ")
+                 ("2" . " 2 ")
+                 ("3" . " 3 "))
+        ]{Please choose an option}
+        @submit-button}})
 }|

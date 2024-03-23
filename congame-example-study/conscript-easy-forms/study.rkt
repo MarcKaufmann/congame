@@ -28,6 +28,7 @@
     8. @button[#:to-step-id 'radio-with-error-and-horizontal]{Radio with Horizontal Buttons and Error Message}
     9. @button[#:to-step-id 'diceroll]{Button to roll a dice displaying a number}
     10. @button[#:to-step-id 'radio-with-images]{Radio with Images}
+    11. @button[#:to-step-id 'select-with-default]{Select with Default Value}
 
     The buttons on this page show that you can jump to different pages by providing a `#:to-step-id` argument to `button`.
     })
@@ -48,6 +49,9 @@
   (define radio-with-images
     (get 'radio-with-images #f))
 
+  (define select-with-default
+    (get 'select-with-default #f))
+
   @md{
     # Results so far
 
@@ -55,6 +59,7 @@
     2. Twice the result from `Free-Form Forms`: @(~a twice-free-form)
     3. Radios with other: @(~a radios-with-other)
     4. Radios with images: @(~a radio-with-images)
+    5. Select with default: @(~a select-with-default)
 
     @button{Go back to choosing Forms}})
 
@@ -353,4 +358,6 @@
 
   [diceroll --> choose-page]
 
-  [radio-with-images --> display-results --> choose-page])
+  [radio-with-images --> display-results --> choose-page]
+
+  [select-with-default --> display-results --> choose-page])
