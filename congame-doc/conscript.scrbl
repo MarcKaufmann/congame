@@ -868,3 +868,45 @@ ct-with-default)
         ]{Please choose an option}
         @submit-button}})
 }|
+
+@subsection{How to add a timer to a page}
+
+We can add a timer to a page by using @racket[timer] from the @racket[conscript/survey-tools] library. Once the timer ends, it automatically clicks the first submit button on the page; or if no submit button is found, it clicks the first next button.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(require conscript/survey-tools)
+
+(defstep (timer-display)
+  @md{# Page with Timer clicking Next
+
+      Time left: @timer[10]
+
+      After 10 seconds, this page will automatically move on.
+
+      @button{Next}})
+
+(defstep (timer-form)
+  @md{# Page with Timer clicking Submit
+
+      Time left: @timer[11]
+
+      After 11 seconds, this page will automatically submit however many sliders have been completed:
+
+      @make-sliders[10]})
+
+(defstep (timer-hidden)
+  @md{@style{
+        #timer {
+          display: none;
+        }
+      }
+
+      # Page with Hidden Timer
+
+      @timer[30]
+
+      After 8 seconds, this page moves on, but you don't see the timer. This is done using CSS, so it's easy.
+
+      @button{Next}})
+}|

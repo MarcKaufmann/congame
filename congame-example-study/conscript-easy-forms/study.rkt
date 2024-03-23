@@ -29,9 +29,10 @@
     9. @button[#:to-step-id 'diceroll]{Button to roll a dice displaying a number}
     10. @button[#:to-step-id 'radio-with-images]{Radio with Images}
     11. @button[#:to-step-id 'select-with-default]{Select with Default Value}
+    12. @button[#:to-step-id 'timer-display]{Timer for a single page}
 
     The buttons on this page show that you can jump to different pages by
-providing a `#:to-step-id` argument to `button`.
+    providing a `#:to-step-id` argument to `button`.
     })
 
 (defstep (display-results)
@@ -86,8 +87,8 @@ providing a `#:to-step-id` argument to `button`.
     # An example of a Table
 
     For this, you need to write the table in HTML, although you can write the
- whole page in markdown (with `md`) and only write the table in HTML (with
- `html*`, not `html`).
+    whole page in markdown (with `md`) and only write the table in HTML (with
+    `html*`, not `html`).
 
     A manual table:
     @table{
@@ -138,7 +139,7 @@ providing a `#:to-step-id` argument to `button`.
     - The value of `r-once` is: @(~a r-once)
 
     If you refresh the page, the value of `r` will change, while the value of
- `r-once` will not. You usually don't want it to change based on the refresh.
+    `r-once` will not. You usually don't want it to change based on the refresh.
 
     @button{Back to Choice}
 
@@ -157,13 +158,13 @@ providing a `#:to-step-id` argument to `button`.
     \\]
 
     To add such mathematical snazziness to your page, you need to include the
- MathJax script, by writing `@"@"(mathjax-script)` (note the parentheses) at the
- top of your page.
+    MathJax script, by writing `@"@"(mathjax-script)` (note the parentheses) at the
+    top of your page.
 
     To write inline mathematics, you would enclose it in "\\\\(...\\\\)", for an
- equation all by itself you write "\\\\[...\\\\]" in normal Mathjax, but in
- conscript, you have to write a double backslash: "\\\\\\\\(...\\\\\\\\)". Don't
- ask. Just do it.
+    equation all by itself you write "\\\\[...\\\\]" in normal Mathjax, but in
+    conscript, you have to write a double backslash: "\\\\\\\\(...\\\\\\\\)". Don't
+    ask. Just do it.
 
     @button{Back to Choice}
       })
@@ -200,19 +201,19 @@ providing a `#:to-step-id` argument to `button`.
     # Forming Free-Form Forms
 
     Here is a form where the labels and input fields are moved around more
- freely, and the fields have more advanced styles. The next page illustrates how
- you can reuse these styles so that you don't have to redefine them over and
+    freely, and the fields have more advanced styles. The next page illustrates how
+    you can reuse these styles so that you don't have to redefine them over and
  over.
 
     @form{
       @div[#:class "question-group"]{
         @div{
           @span[#:class "red-asterisk"]{*}How many required questions are on
- this page?
+          this page?
         }
         @div{
           @span[#:class "green-exclamation"]{!}Only positive integer values may
- be entered in this field.
+          be entered in this field.
         }
         @input-number[#:n-required #:min 0] @~error[#:n-required]}
       @submit-button}
@@ -247,11 +248,11 @@ providing a `#:to-step-id` argument to `button`.
     @h1{Freeing Forming Free-Form Forms}
 
     Now suppose you have multiple forms on the previous page. (Just to show how
- to display twice the value you submitted: it is @(~a (* 2 (get 'n-required))).)
- It becomes quickly tedious to type all that HTML for each question, especially
- if multiple questions all take the same styling. Therefore we do what every
- lazy programmer does, and define a function that wraps the label in the HTML
- with the right classes, and similarly for requirements.
+    to display twice the value you submitted: it is @(~a (* 2 (get 'n-required))).)
+    It becomes quickly tedious to type all that HTML for each question, especially
+    if multiple questions all take the same styling. Therefore we do what every
+    lazy programmer does, and define a function that wraps the label in the HTML
+    with the right classes, and similarly for requirements.
 
     @form{
       @div[#:class "question-group"]{
@@ -304,7 +305,7 @@ providing a `#:to-step-id` argument to `button`.
   @md{# Radio with Horizontal Buttons and Error Message
 
       The correct answer to the next radio button is "Option C", try it out by
- picking first another option:
+      picking first another option:
 
       @form{
         @div[#:class "radio-horizontal"]{
@@ -400,6 +401,39 @@ providing a `#:to-step-id` argument to `button`.
         ]{Please choose an option}
         @submit-button}})
 
+(defstep (timer-display)
+  @md{# Page with Timer
+
+      Time left: @timer[10]
+
+      After 10 seconds, this page will automatically move on.
+
+      @button{Next}})
+
+(defstep (timer-form)
+  @md{# Page with Timer
+
+      Time left: @timer[11]
+
+      After 11 seconds, this page will automatically submit however many sliders have been completed:
+
+      @make-sliders[10]})
+
+(defstep (timer-hidden)
+  @md{@style{
+        #timer {
+          display: none;
+        }
+      }
+
+      # Page with Hidden Timer
+
+      @timer[8]
+
+      After 8 seconds, this page moves on, but you don't see the timer. This is done using CSS, so it's easy.
+
+      @button{Next}})
+
 (defstudy easy-forms
   [choose-page --> choose-page]
 
@@ -429,4 +463,9 @@ providing a `#:to-step-id` argument to `button`.
 
   [radio-with-images --> display-results --> choose-page]
 
-  [select-with-default --> display-results --> choose-page])
+  [select-with-default --> display-results --> choose-page]
+
+  [timer-display --> timer-form
+                 --> timer-hidden
+                 --> display-results
+                 --> choose-page])
