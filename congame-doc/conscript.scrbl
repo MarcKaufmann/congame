@@ -880,7 +880,7 @@ We can add a timer to a page by using @racket[timer] from the @racket[conscript/
 (defstep (timer-display)
   @md{# Page with Timer clicking Next
 
-      Time left: @timer[10]
+      @timer[10]
 
       After 10 seconds, this page will automatically move on.
 
@@ -889,7 +889,7 @@ We can add a timer to a page by using @racket[timer] from the @racket[conscript/
 (defstep (timer-form)
   @md{# Page with Timer clicking Submit
 
-      Time left: @timer[11]
+      @timer[11]
 
       After 11 seconds, this page will automatically submit however many sliders have been completed:
 

@@ -404,7 +404,7 @@
 (defstep (timer-display)
   @md{# Page with Timer
 
-      Time left: @timer[10]
+      @timer[10]
 
       After 10 seconds, this page will automatically move on.
 
@@ -413,7 +413,7 @@
 (defstep (timer-form)
   @md{# Page with Timer
 
-      Time left: @timer[11]
+      @timer[11]
 
       After 11 seconds, this page will automatically submit however many sliders have been completed:
 
