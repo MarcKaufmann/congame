@@ -904,7 +904,7 @@ We can add a timer to a page by using @racket[timer] from the @racket[conscript/
 
       # Page with Hidden Timer
 
-      @timer[30]
+      @timer[8]
 
       After 8 seconds, this page moves on, but you don't see the timer. This is done using CSS, so it's easy.
 
