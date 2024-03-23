@@ -311,24 +311,61 @@
       @button{Go Back}
       }})
 
+(define style-img-radio
+  @style{
+    .img-radio {
+      display: inline-block;
+    }
+
+    .img-radio img {
+      display: block;
+    }
+
+    .img-radio label {
+      text-align: center;
+      display: block;
+    }
+
+    .job-description {
+      text-align: center;
+    }
+  })
+
+(define-static-resource path-to-image-a "img/job-a.png")
+(define-static-resource path-to-image-b "img/job-b.png")
+
 (defstep (radio-with-images)
   (define (render-proc options make-radio)
-    (for/list ([opt options])
-      (match-define (cons _name value) opt)
-      (eprintf "_name is: \n" _name)
-      (eprintf "value is: \n" value)
+    (apply div #:class "img-radio"
+           (for/list ([opt options])
+             (match-define (list value res job empl years) opt)
+             @div{
+                  @img[#:alt (format "an image for option ~a" value)  #:src (resource-uri res)]
+                  @div[#:class "job-description"]{
+                    @div{@job}
+                    @div{@empl}
+                    @div{@years}
+                  }
+                  @(make-radio value)})))
 
-      (make-radio
-        opt
-        (case value
-          [(a) @img[#:alt "some image" #:src "/static/img/play.png"]]
-
-          [(b) @img[#:alt "some other image" #:src "/static/img/play.png" #:class "screenshot"]]))))
-
-  @md{# Radios with Images
+  @md{@style-img-radio
+      # Radios with Images
 
       @form{
-        @binding[#:radio-with-images (make-radios '((a . "a") (b . "b")) render-proc)]
+        @binding[#:radio-with-images (make-radios `((a ,path-to-image-a "Job Title A" "Employer A" "Years experience: A")
+                                                    (b ,path-to-image-b "Job Title B" "Employer B" "Years experience: B")) render-proc)]
+        @submit-button}})
+
+(defstep (select-with-default)
+  @md{# Select with Default
+
+      @form{
+        @select[#:select-with-default
+                '((""  . "--Please choose an option--")
+                 ("1" . " 1 ")
+                 ("2" . " 2 ")
+                 ("3" . " 3 "))
+        ]{Please choose an option}
         @submit-button}})
 
 (defstudy easy-forms
