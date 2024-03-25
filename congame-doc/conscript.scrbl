@@ -871,7 +871,10 @@ ct-with-default)
 
 @subsection{How to add a timer to a page}
 
-We can add a timer to a page by using @racket[timer] from the @racket[conscript/survey-tools] library. Once the timer ends, it automatically clicks the first submit button on the page; or if no submit button is found, it clicks the first next button.
+We can add a timer to a page by using @racket[timer] from the
+@racket[conscript/survey-tools] library. Once the timer ends, it automatically
+clicks the first submit button on the page; or if no submit button is found, it
+clicks the first next button.
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -891,7 +894,8 @@ We can add a timer to a page by using @racket[timer] from the @racket[conscript/
 
       @timer[11]
 
-      After 11 seconds, this page will automatically submit however many sliders have been completed:
+      After 11 seconds, this page will automatically submit however many sliders
+      have been completed:
 
       @make-sliders[10]})
 
@@ -906,14 +910,20 @@ We can add a timer to a page by using @racket[timer] from the @racket[conscript/
 
       @timer[8]
 
-      After 8 seconds, this page moves on, but you don't see the timer. This is done using CSS, so it's easy.
+      After 8 seconds, this page moves on, but you don't see the timer. This is
+      done using CSS, so it's easy.
 
       @button{Next}})
 }|
 
 @subsection{How to add a timer that spans multiple pages}
 
-The following timer will pick up where it left off on the previous page. To do so, we store the end time in the database and at the start of each page with a timer, we compute how many seconds are left until this time and start a new timer with the appropriate remaining seconds left. Note that you have to @racket[require] the @racket[gregor] library for @racket[now/moment] and other time-related functions.
+The following timer will pick up where it left off on the previous page. To do
+so, we store the end time in the database and at the start of each page with a
+timer, we compute how many seconds are left until this time and start a new
+timer with the appropriate remaining seconds left. Note that you have to
+@racket[require] the @racket[gregor] library for @racket[now/moment] and other
+time-related functions.
 
 @codeblock[#:keep-lang-line? #t]|{
 #lang conscript
@@ -928,7 +938,8 @@ The following timer will pick up where it left off on the previous page. To do s
 (defstep (launch-timer)
   @md{# Launch Timer
 
-      Once you click "Next", the timer starts and you have 30 seconds to complete the next 3 pages.
+      Once you click "Next", the timer starts and you have 30 seconds to
+      complete the next 3 pages.
 
       @button[set-timer]{Next}})
 
