@@ -51,10 +51,13 @@
  for for/list in-range in-inclusive-range in-list
  list list? list* null null? cons pair? car cdr map for-each shuffle
  display displayln print println printf eprintf write writeln
- + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling
+
+ + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling truncate
  = < > <= >= equal? eq?
  sqrt expt exp log random
+
  regexp-match?
+
  format ~a number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string=? string>=? string<=? string>? string<?
 
  ;; Congame Syntax
@@ -97,6 +100,7 @@
   ;; racket/system, ffi/unsafe or any system-level functionality.
   (define whitelist
     '(conscript/survey-tools
+      gregor
       racket/format
       racket/list
       racket/match

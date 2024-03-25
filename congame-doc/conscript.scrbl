@@ -910,3 +910,59 @@ We can add a timer to a page by using @racket[timer] from the @racket[conscript/
 
       @button{Next}})
 }|
+
+@subsection{How to add a timer that spans multiple pages}
+
+The following timer will pick up where it left off on the previous page. To do so, we store the end time in the database and at the start of each page with a timer, we compute how many seconds are left until this time and start a new timer with the appropriate remaining seconds left. Note that you have to @racket[require] the @racket[gregor] library for @racket[now/moment] and other time-related functions.
+
+@codeblock[#:keep-lang-line? #t]|{
+#lang conscript
+
+(require gregor)
+
+(define (set-timer)
+  (put
+   'the-timer
+   (+seconds (now/moment) 10)))
+
+(defstep (launch-timer)
+  @md{# Launch Timer
+
+      Once you click "Next", the timer starts and you have 30 seconds to complete the next 3 pages.
+
+      @button[set-timer]{Next}})
+
+(defstep ((timer-page i))
+  (define seconds-left
+    (add1
+     (truncate
+      (seconds-between
+       (now/moment)
+       (get 'the-timer)))))
+
+  ; If there is less than 1 sec left, we might have skipped the earlier
+  ; page so we don't display it anymore. This is to avoid some weird
+  ; effects.
+  (cond [(< seconds-left 1)
+         (skip)]
+
+        [else
+         @md{# Timer Page @(~a i)
+
+             @timer[seconds-left]
+
+             Check the time!
+
+             @button{Next}}]))
+
+(define (final-page)
+  @md{# Final Page
+
+      You made it till the end.})
+
+(defstudy multi-page-timer
+  [launch-timer --> [first-page (timer-page 1)]
+                --> [second-page (timer-page 2)]
+                --> [third-page (timer-page 3)]
+                --> final-page])
+}|

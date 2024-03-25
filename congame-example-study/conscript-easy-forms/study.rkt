@@ -1,6 +1,7 @@
 #lang conscript
 
 (require conscript/survey-tools
+         gregor
          racket/match)
 
 (provide
@@ -30,6 +31,7 @@
     10. @button[#:to-step-id 'radio-with-images]{Radio with Images}
     11. @button[#:to-step-id 'select-with-default]{Select with Default Value}
     12. @button[#:to-step-id 'timer-display]{Timer for a single page}
+    13. @button[#:to-step-id 'multi-page-timer]{Timer across multiple pages}
 
     The buttons on this page show that you can jump to different pages by
     providing a `#:to-step-id` argument to `button`.
@@ -434,6 +436,46 @@
 
       @button{Next}})
 
+(define (set-timer)
+  (put
+   'the-timer
+   (+seconds (now/moment) 10)))
+
+(defstep (launch-timer)
+  @md{# Launch Timer
+
+      Once you click "Next", the timer starts and you have 30 seconds to complete the next 3 pages.
+
+      @button[set-timer]{Next}})
+
+(defstep ((timer-page i))
+  (define seconds-left
+    (add1
+     (truncate
+      (seconds-between
+       (now/moment)
+       (get 'the-timer)))))
+
+  ; NOTE: If there is less than 1 sec left, we might have skipped the earlier
+  ; page so we don't display it just briefly.
+  (cond [(< seconds-left 1)
+         (skip)]
+
+        [else
+         @md{# Timer Page @(~a i)
+
+             @timer[seconds-left]
+
+             Check the time!
+
+             @button{Next}}]))
+
+(defstudy multi-page-timer
+  [launch-timer --> [first-page (timer-page 1)]
+                --> [second-page (timer-page 2)]
+                --> [third-page (timer-page 3)]
+                --> ,(lambda () done)])
+
 (defstudy easy-forms
   [choose-page --> choose-page]
 
@@ -468,4 +510,6 @@
   [timer-display --> timer-form
                  --> timer-hidden
                  --> display-results
-                 --> choose-page])
+                 --> choose-page]
+
+  [multi-page-timer --> display-results --> choose-page])
