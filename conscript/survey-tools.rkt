@@ -127,6 +127,20 @@
      ([:data-timer-n (number->string n)]
       [:src (resource-uri timer.js)])))))
 
+;; Automatic Refresh ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ refresh-every)
+
+(define (refresh-every n-seconds)
+  (haml
+   (:script
+    (format #<<SCRIPT
+setTimeout(function() {
+  document.location.reload();
+}, ~a*1000)
+SCRIPT
+            n-seconds))))
 
 ;; Treatment ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

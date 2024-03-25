@@ -32,6 +32,7 @@
     11. @button[#:to-step-id 'select-with-default]{Select with Default Value}
     12. @button[#:to-step-id 'timer-display]{Timer for a single page}
     13. @button[#:to-step-id 'multi-page-timer]{Timer across multiple pages}
+    14. @button[#:to-step-id 'waiting]{Waiting until time is up}
 
     The buttons on this page show that you can jump to different pages by
     providing a `#:to-step-id` argument to `button`.
@@ -476,6 +477,27 @@
                 --> [third-page (timer-page 3)]
                 --> ,(lambda () done)])
 
+(defstep (waiting)
+  (define wait-until
+    (get 'wait-until (+seconds (now/moment) 10)))
+
+  (put 'wait-until wait-until)
+
+  (cond [(moment>=? (now/moment) wait-until)
+         (skip)]
+
+        [else
+         @md{# Please Wait
+             @refresh-every[5]
+
+             Your patience is appreciated.}]))
+
+
+(defstep (wait-is-over)
+  @md{# The Wait is Over
+
+      @button{Next}})
+
 (defstudy easy-forms
   [choose-page --> choose-page]
 
@@ -512,4 +534,6 @@
                  --> display-results
                  --> choose-page]
 
-  [multi-page-timer --> display-results --> choose-page])
+  [multi-page-timer --> display-results --> choose-page]
+
+  [waiting --> wait-is-over --> choose-page])

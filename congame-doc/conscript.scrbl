@@ -977,3 +977,36 @@ time-related functions.
                 --> [third-page (timer-page 3)]
                 --> final-page])
 }|
+
+@subsection{How to display a waiting page until some condition is met}
+
+Suppose that we want to let a person move on only once some condition is met, such as that the study is open. Here we will use the condition that the participant can move on only 10 seconds after landing on the page for the first time - until then, they simply see a waiting message. We use @racket[refresh-every] from @racket[survey-tools] for this:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(require conscript/survey-tools
+         gregor)
+
+(defstep (waiting)
+  (define wait-until
+    (get 'wait-until (+seconds (now/moment) 10)))
+
+  (put 'wait-until wait-until)
+
+  (cond [(moment>=? (now/moment) wait-until)
+         (skip)]
+
+        [else
+         @md{# Please Wait
+             @refresh-every[5]
+
+             Your patience is appreciated.}]))
+
+(defstep (wait-is-over)
+  @md{# The Wait is Over
+
+      @button{Next}})
+
+(defstudy wait-study
+  [waiting --> wait-is-over])
+}|
