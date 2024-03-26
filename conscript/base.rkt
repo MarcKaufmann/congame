@@ -58,7 +58,7 @@
 
  regexp-match?
 
- format ~a number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string=? string>=? string<=? string>? string<?
+ format ~a number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
 
  ;; Congame Syntax
  --> goto for/study

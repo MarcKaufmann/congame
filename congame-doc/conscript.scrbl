@@ -1069,3 +1069,68 @@ Suppose that we want to let a person move on only once some condition is met, su
                                               [else
                                                'final]))])
 }|
+
+@subsection{How to reuse similar steps with different roles}
+
+@codeblock[#:keep-lang-line? #t]|{
+#lang conscript
+
+(require conscript/survey-tools)
+
+(provide
+ randomized-study)
+
+(define (randomize-treatments)
+  (assigning-treatments
+   (list 'control 'treatment)))
+
+(define (randomize-game-roles)
+  (assigning-treatments
+   (list 'role1 'role2)
+   #:treatments-key 'game-roles
+   #:role-key       'game-role))
+
+(define (assign-roles)
+  (randomize-treatments)
+  (randomize-game-roles)
+  (skip))
+
+(defstep ((same-page i))
+  @md{
+ # Same Page @(~a i)
+
+ Your role is @(~a (get 'game-role)).
+
+ @button{Continue}})
+
+(defstep (final-page)
+  @md{
+ # Final Page
+
+ @button{Continue}})
+
+
+(defstep ((treatment-page i))
+  (define treatment
+    (~a (get 'role)))
+
+  (define role
+    (~a (get 'game-role)))
+
+  @md{
+ # @(string-titlecase treatment) Page @(~a i)
+
+ - Your treatment is: @treatment
+ - Your role is: @role
+
+ @button{Continue}})
+
+(defstudy randomized-study
+  [assign-roles --> [same-page1 (same-page 1)]
+   --> [treatment-page1 (treatment-page 1)]
+   --> [same-page2 (same-page 2)]
+   --> [treatment-page2 (treatment-page 2)]
+   --> final-page]
+
+  [final-page --> final-page])
+}|
