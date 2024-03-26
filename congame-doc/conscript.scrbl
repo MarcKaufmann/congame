@@ -1010,3 +1010,62 @@ Suppose that we want to let a person move on only once some condition is met, su
 (defstudy wait-study
   [waiting --> wait-is-over])
 }|
+
+@subsection{How to repeat a task until a timer runs out}
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(require gregor
+         conscript/survey-tools)
+
+(define ((set-timer n))
+  (put
+   'the-timer
+   (+seconds (now/moment) n)))
+
+(defstep ((launch-timer [n 10]))
+  @md{# Launch Timer
+
+      Once you click "Next", the timer starts and you have @(~a n) seconds.
+
+      @button[(set-timer n)]{Next}})
+
+(defstep (task-step)
+  (define seconds-remaining
+    (seconds-between (now/moment) (get 'the-timer)))
+  (when (<= seconds-remaining 0)
+    (skip))
+
+  (define (on-submit #:slider slider)
+    (define old-answers
+      (get 'sliders '()))
+    (put 'sliders
+         (cons
+          slider
+          old-answers)))
+
+  @md{# Do a Task
+      @slider-js
+
+      @timer[seconds-remaining]
+
+      @form[#:action on-submit]{
+        @div[#:class "slider"]{
+          @input-range[#:slider] @span{Value: @output{}}
+        }
+        @submit-button
+      }})
+
+(defstep (final)
+  @md{# The End})
+
+(defstudy multi-page-timer-with-tasks
+  [[launching (launch-timer 20)] --> task-step
+                                 --> ,(lambda ()
+                                        (define the-timer (get 'the-timer))
+                                        (cond [(moment>=? the-timer (now/moment))
+                                               'task-step]
+
+                                              [else
+                                               'final]))])
+}|

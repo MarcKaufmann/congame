@@ -33,6 +33,7 @@
     12. @button[#:to-step-id 'timer-display]{Timer for a single page}
     13. @button[#:to-step-id 'multi-page-timer]{Timer across multiple pages}
     14. @button[#:to-step-id 'waiting]{Waiting until time is up}
+    15. @button[#:to-step-id 'multi-page-timer-with-tasks]{Repeat tasks until timer runs out}
 
     The buttons on this page show that you can jump to different pages by
     providing a `#:to-step-id` argument to `button`.
@@ -437,17 +438,17 @@
 
       @button{Next}})
 
-(define (set-timer)
+(define ((set-timer n))
   (put
    'the-timer
-   (+seconds (now/moment) 10)))
+   (+seconds (now/moment) n)))
 
-(defstep (launch-timer)
+(defstep ((launch-timer [n 10]))
   @md{# Launch Timer
 
-      Once you click "Next", the timer starts and you have 30 seconds to complete the next 3 pages.
+      Once you click "Next", the timer starts and you have @(~a n) seconds.
 
-      @button[set-timer]{Next}})
+      @button[(set-timer n)]{Next}})
 
 (defstep ((timer-page i))
   (define seconds-left
@@ -472,10 +473,10 @@
              @button{Next}}]))
 
 (defstudy multi-page-timer
-  [launch-timer --> [first-page (timer-page 1)]
-                --> [second-page (timer-page 2)]
-                --> [third-page (timer-page 3)]
-                --> ,(lambda () done)])
+  [[launching (launch-timer)] --> [first-page (timer-page 1)]
+                              --> [second-page (timer-page 2)]
+                              --> [third-page (timer-page 3)]
+                              --> ,(lambda () done)])
 
 (defstep (waiting)
   (define wait-until
@@ -497,6 +498,42 @@
   @md{# The Wait is Over
 
       @button{Next}})
+
+(defstep (task-step)
+  (define seconds-remaining
+    (seconds-between (now/moment) (get 'the-timer)))
+  (when (<= seconds-remaining 0)
+    (skip))
+
+  (define (on-submit #:slider slider)
+    (define old-answers
+      (get 'sliders '()))
+    (put 'sliders
+         (cons
+          slider
+          old-answers)))
+
+  @md{# Do a Task
+      @slider-js
+
+      @timer[seconds-remaining]
+
+      @form[#:action on-submit]{
+        @div[#:class "slider"]{
+          @input-range[#:slider] @span{Value: @output{}}
+        }
+        @submit-button
+      }})
+
+(defstudy multi-page-timer-with-tasks
+  [[launching (launch-timer 20)] --> task-step
+                                 --> ,(lambda ()
+                                        (define the-timer (get 'the-timer))
+                                        (cond [(moment>=? the-timer (now/moment))
+                                               'task-step]
+
+                                              [else
+                                               done]))])
 
 (defstudy easy-forms
   [choose-page --> choose-page]
@@ -536,4 +573,6 @@
 
   [multi-page-timer --> display-results --> choose-page]
 
-  [waiting --> wait-is-over --> choose-page])
+  [waiting --> wait-is-over --> choose-page]
+
+  [multi-page-timer-with-tasks --> display-results --> choose-page])

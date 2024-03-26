@@ -3,10 +3,6 @@
   let n = thisEl.dataset.timerN * 1;
   const targetEl = document.querySelector("#timer-target");
   targetEl.innerText = `${n}`;
-  let submitBtn = document.querySelector("button.next-button[type='submit']");
-  let nextBtn = document.querySelector("a.button.next-button");
-  moveOn(submitBtn);
-  moveOn(nextBtn);
   schedule();
   return;
 
@@ -19,6 +15,11 @@
   }
 
   function schedule() {
+    let submitBtn = document.querySelector("button.next-button[type='submit']");
+    let nextBtn = document.querySelector("a.button.next-button");
+    moveOn(submitBtn);
+    moveOn(nextBtn);
+
     if (n >= 0) {
       targetEl.innerText = `${n--}`;
       setTimeout(schedule, 1000);
