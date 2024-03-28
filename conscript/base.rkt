@@ -52,6 +52,8 @@
  list list? list* null null? cons pair? car cdr map for-each shuffle
  display displayln print println printf eprintf write writeln
 
+ hash hash-ref hash-update
+
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling truncate
  = < > <= >= equal? eq?
  sqrt expt exp log random
