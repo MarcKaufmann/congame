@@ -1229,7 +1229,7 @@ In order to stop once the counter hits 0, we need to change the transitions. Spe
 
 (defstudy countdown
   [description --> show-counter
-               --> @(lambda ()
+               --> ,(lambda ()
                       (if (= (get 'counter) 0)
                          'launch
                          'show-counter))]
