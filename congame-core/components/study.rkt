@@ -778,6 +778,7 @@ QUERY
 ;; study ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ current-step
  current-study-stack
  map-step
  map-study

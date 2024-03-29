@@ -15,6 +15,8 @@
          racket/format
          racket/lazy-require
          racket/list
+         racket/string
+         (only-in web-server/http response/xexpr)
          "form.rkt"
          "html.rkt"
          "markdown.rkt"
@@ -92,6 +94,7 @@
  (all-from-out "resource.rkt")
  defstep
  defstep/study
+ defview
  defstudy
  defvar
  with-bot)
@@ -148,6 +151,15 @@
           #:require-bindings `(require-binder ...)
           #:provide-bindings `(provide-binder ...)
           'id study-expr ...))]))
+
+(define-syntax (defview stx)
+  (syntax-parse stx
+    [(_ (name:id req-name:id) body ...+)
+     #'(define (name req-name)
+         (define responder
+           (let () body ...))
+         (response/xexpr
+          (responder)))]))
 
 (begin-for-syntax
   ;; Extends the regular transition graph syntax with support for
@@ -265,9 +277,20 @@
 
 (provide
  (contract-out
+  [~current-view-uri (-> string?)]
   [~url (->* [string?]
              [#:params (listof (cons/c symbol? string?))]
              string?)]))
+
+(define (~current-view-uri)
+  (format "/study/~a/view/~a"
+          (current-study-instance-slug)
+          (string-join
+           (for/list ([id (in-list (append
+                                    (cdr (current-study-stack))
+                                    (list (step-id (current-step)))))])
+             (symbol->string id))
+           "/")))
 
 (define (~url urlish #:params [params null])
   (define u
