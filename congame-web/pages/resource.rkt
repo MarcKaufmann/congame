@@ -54,7 +54,9 @@
      (define study-dir-path
        (path-only study-path))
      (define entry-path
-       (apply build-path study-dir-path path-elements))
+       (if study-dir-path
+           (apply build-path study-dir-path path-elements)
+           (apply build-path path-elements)))
      (define data #"")
      (unzip-entry
       in dir (path->bytes entry-path)
