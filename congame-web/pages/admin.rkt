@@ -337,11 +337,28 @@
               (:a
                ([:href (embed/url
                         (lambda (_req)
+                          (define uploader (current-uploader))
+                          (define archive-path
+                            (study-meta-dsl-archive-path meta))
+                          (define filename
+                            (if (sql-null? archive-path)
+                                "study.rkt"
+                                "study.zip"))
                           (response/output
                            #:mime-type #"text/plain"
-                           #:headers (list (make-header #"content-disposition" #"attachment; filename=\"study.rkt\""))
+                           #:headers (list
+                                      (make-header
+                                       #"content-disposition"
+                                       (string->bytes/utf-8
+                                        (format "attachment; filename=\"~a\"" filename))))
                            (lambda (out)
-                             (write-string (study-meta-dsl-source meta) out)))))])
+                             (if (sql-null? archive-path)
+                                 (write-string (study-meta-dsl-source meta) out)
+                                 (parameterize ([current-uploader uploader])
+                                   (call-with-uploaded-file
+                                    archive-path
+                                    (lambda (in)
+                                      (copy-port in out)))))))))])
                "Download Conscript Source")))))
          instances-xexpr
          (:br)
