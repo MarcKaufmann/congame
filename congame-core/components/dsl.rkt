@@ -39,8 +39,7 @@
 
 (define (dsl-require* src id)
   (log-dsl-debug "dsl-require: ~a" (~.s #:max-width 1024 src))
-  (unless (or (regexp-match? #rx"^#lang conscript *\n" src)
-              (regexp-match? #rx"^#lang conscript *\r\n" src))
+  (unless (regexp-match? #rx"^#lang conscript *\r?\n" src)
     (error 'dsl-require "only #lang conscript is supported"))
   (define path #f)
   (dynamic-wind
