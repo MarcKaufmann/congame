@@ -1,40 +1,38 @@
-(() => {
-  const thisEl = document.currentScript;
-  let n = thisEl.dataset.timerN * 1;
-  const targetEl = document.querySelector("#timer-target");
-  targetEl.innerText = `${n}`;
-  schedule();
-  return;
+/* global up */
+if (!window.timerTargetCompilerDeclared) {
+  window.timerTargetCompilerDeclared = true;
+  up.compiler(
+    "#timer-target",
+    ((scriptEl) => (targetEl) => {
+      const formEl = document.querySelector("form");
+      const nextBtn = document.querySelector("a.button.next-button");
+      let n = scriptEl.dataset.timerN * 1;
+      targetEl.innerText = format(n);
+      const handle = setInterval(schedule, 1000);
+      return () => {
+        clearInterval(handle);
+      };
 
-  function moveOn(btn) {
-    if ( btn !== null ) {
-      btn.addEventListener('click', event => {
-        n = -10;
-      });
-    }
-  }
-
-  function schedule() {
-    let submitBtn = document.querySelector("button.next-button[type='submit']");
-    let nextBtn = document.querySelector("a.button.next-button");
-    moveOn(submitBtn);
-    moveOn(nextBtn);
-
-    if (n >= 0) {
-      targetEl.innerText = `${n--}`;
-      setTimeout(schedule, 1000);
-    } else if ( n < -5 ) {
-      console.log("Moved on to another page already.");
-    } else {
-      if ( submitBtn !== null ) {
-        submitBtn.click();
-        console.log("bla1");
-      } else if ( nextBtn !== null ) {
-        nextBtn.click();
-        console.log("bla2");
-      } else {
-        console.log("Timer ended, but no submit button or next button found. Doing nothing.");
+      function schedule() {
+        if (n >= 0) {
+          targetEl.innerText = format(n--);
+        } else if (formEl) {
+          formEl.submit();
+        } else if (nextBtn) {
+          nextBtn.click();
+        } else {
+          console.log(
+            "Timer ended, but no submit button or next button found. Doing nothing.",
+          );
+        }
       }
-    }
-  }
-})();
+
+      function format(seconds) {
+        if (seconds > 60) {
+          return `${Math.trunc(seconds / 60)} minutes and ${seconds % 60} seconds`;
+        }
+        return `${seconds} seconds`;
+      }
+    })(document.currentScript),
+  );
+}

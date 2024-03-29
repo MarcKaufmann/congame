@@ -122,7 +122,7 @@
 (define (timer n)
   (haml
    (:div#timer
-    (:div (:span#timer-target) " seconds left")
+    (:div (:span#timer-target) " left")
     (:script
      ([:data-timer-n (number->string n)]
       [:src (resource-uri timer.js)])))))
