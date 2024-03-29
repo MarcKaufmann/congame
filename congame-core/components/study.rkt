@@ -1215,15 +1215,17 @@ QUERY
    [stack (array/f string/f) #:name "study_stack"]
    [id symbol/f #:name "key"]
    [value binary/f]
+   [git-sha string/f]
    [first-put-at datetime-tz/f]
    [last-put-at datetime-tz/f])
   #:methods gen:jsexprable
   [(define/generic ->jsexpr/super ->jsexpr)
    (define (->jsexpr v)
-     (match-define (study-instance-var _meta _ stack id value first-put-at last-put-at) v)
+     (match-define (study-instance-var _meta _ stack id value git-sha first-put-at last-put-at) v)
      (hash 'stack (vector->list stack)
            'id (symbol->string id)
            'value (->jsexpr/super (study-instance-var-value/deserialized v))
+           'git-sha git-sha
            'first-put-at (moment->iso8601 first-put-at)
            'last-put-at (moment->iso8601 last-put-at)))])
 
@@ -1252,17 +1254,19 @@ QUERY
    [group-stack (array/f string/f)]
    [id symbol/f]
    [value binary/f]
+   [git-sha string/f]
    [first-put-at datetime-tz/f]
    [last-put-at datetime-tz/f])
   #:methods gen:jsexprable
   [(define/generic ->jsexpr/super ->jsexpr)
    (define (->jsexpr v)
-     (match-define (study-var _ stack round-stack group-stack id _ first-put-at last-put-at) v)
+     (match-define (study-var _ stack round-stack group-stack id _ git-sha first-put-at last-put-at) v)
      (hash 'stack (vector->list stack)
            'round (vector->list round-stack)
            'group (vector->list group-stack)
            'id (symbol->string id)
            'value (->jsexpr/super (study-var-value/deserialized v))
+           'git-sha git-sha
            'first-put-at (moment->iso8601 first-put-at)
            'last-put-at (moment->iso8601 last-put-at)))])
 
@@ -1599,7 +1603,7 @@ QUERY
   (with-database-connection [conn db]
     (sequence->list
      (in-entities conn (~> (from "study_data" #:as d)
-                           (select d.study-stack d.round-stack d.group-stack d.key d.value d.first-put-at d.last-put-at)
+                           (select d.study-stack d.round-stack d.group-stack d.key d.value d.git-sha d.first-put-at d.last-put-at)
                            (project-onto study-var-schema)
                            (where (= d.participant-id ,participant-id))
                            (order-by ([d.first-put-at #:asc])))))))
