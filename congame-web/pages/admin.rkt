@@ -748,7 +748,7 @@
            (:td (~a (study-instance-var-id v)))
            (:td (~t (study-instance-var-first-put-at v) datetime-format))
            (:td (~t (study-instance-var-last-put-at v) datetime-format))
-           (:td (study-var-details (study-instance-var-value/deserialized v))))))))))
+           (:td (study-var-details v)))))))))
 
 (define (render-participant-list study-id study-instance-id participants)
   (haml
@@ -931,7 +931,7 @@
                  (:td (~a (study-var-id v)))
                  (:td (~t (study-var-first-put-at v) datetime-format))
                  (:td (~t (study-var-last-put-at v) datetime-format))
-                 (:td (study-var-details (study-var-value/deserialized v)))))))))))))))
+                 (:td (study-var-details v))))))))))))))
 
 (define (study-var-details var)
   (haml
@@ -1213,23 +1213,25 @@
     (auth-manager-stop-impersonation! am))
   (redirect-to (reverse-uri 'study-instances-page)))
 
-(define (~study-var-summary deserialized-v)
+(define (~study-var-summary var)
   (format "~.a" (print-study-var
-                 deserialized-v
+                 var
                  (lambda (v)
                    (parameterize ([pretty-print-columns 40]
                                   [pretty-print-depth 0])
                      (pretty-write v))))))
 
-(define (~study-var deserialized-v)
-  (print-study-var deserialized-v))
+(define (~study-var var)
+  (print-study-var var))
 
-(define (print-study-var deserialized-v [do-print pretty-write])
+(define (print-study-var var [do-print pretty-write])
   (with-handlers ([exn:fail? (λ (e) (format "<error: ~.a>" (exn-message e)))])
     (with-output-to-string
       (lambda ()
         (parameterize ([pretty-print-columns 40])
-          (do-print (->jsexpr deserialized-v)))))))
+          (do-print (->jsexpr (if (study-instance-var? var)
+                                  (study-instance-var-value/deserialized var)
+                                  (study-var-value/deserialized var)))))))))
 
 
 ;; tags ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
