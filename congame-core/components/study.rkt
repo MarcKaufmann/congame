@@ -1417,6 +1417,7 @@ QUERY
                                         (and (array-contains? u.roles (array "bot"))
                                              (is u.bot-set-id null)))))))))
 
+;; FIXME
 (define/contract (list-study-instance-total-payments/admin db instance-id)
   (-> database? id/c (listof (list/c id/c string? number?)))
   (with-database-connection [conn db]
@@ -1429,6 +1430,7 @@ QUERY
                                       (where (= p.instance-id ,instance-id))))])
       (list pid username total))))
 
+;; FIXME
 (define/contract (list-study-instance-payments/admin db instance-id)
   (-> database? id/c (listof (list/c number? string? number?)))
   (with-database-connection [conn db]
