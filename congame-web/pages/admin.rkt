@@ -618,44 +618,6 @@
                 (response/jsexpr
                  (study-instance->jsexpr db study-id study-instance-id vars participants))))])
            "Export JSON"))
-         (:h4
-          (:a
-           ([:href
-             (embed/url
-              (lambda (_req)
-                (define total-payments (list-study-instance-total-payments/admin db study-instance-id))
-                (response/output
-                 #:headers (list (make-header #"content-disposition" #"attachment; filename=\"total-payments.csv\""))
-                 (lambda (out)
-                   (for ([p (in-list total-payments)])
-                     (fprintf out
-                              "~a,~a,~a~n"
-                              (first p)
-                              (cond [(prolific-username? (second p))
-                                     (first (string-split (second p) "@"))]
-                                    [else (second p)])
-                              (~r
-                               #:precision '(= 2)
-                               (third p))))))))])
-           "Export Total Payments CSV"))
-         (:h4
-          (:a
-           ([:href
-             (embed/url
-              (lambda (_req)
-                (define individual-payments (list-study-instance-payments/admin db study-instance-id))
-                (response/output
-                 #:headers (list (make-header #"content-disposition" #"attachment; filename=\"individual-payments.csv\""))
-                 (lambda (out)
-                   (for ([p (in-list individual-payments)])
-                     (fprintf out
-                              "~a,~a,~a~n"
-                              (first p)
-                              (second p)
-                              (~r
-                               #:precision '(= 2)
-                               (third p))))))))])
-           "Export Individual Payments CSV"))
          (:h2 "Bot Sets")
          (:h3
           (:a
