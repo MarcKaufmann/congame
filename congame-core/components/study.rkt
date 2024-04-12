@@ -1599,7 +1599,7 @@ QUERY
     (query-exec conn (~> (from "study_data" #:as d)
                          (where (= d.participant-id ,participant-id))
                          (delete)))
-    (query-exec conn (~> (from "payments" #:as p)
+    #;(query-exec conn (~> (from "payments" #:as p)
                          (where (= p.participant_id ,participant-id))
                          (delete)))))
 
