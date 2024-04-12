@@ -584,11 +584,16 @@ QUERY
                     action-widgets)))))))])
     label)))
 
+(define nested-form-guard
+  (make-parameter #f))
+
 (define/widget (form f action render
                      #:id [id ""]
                      #:enctype [enctype "multipart/form-data"]
                      #:combine [combine-proc (λ (_k _v1 v2) v2)]
                      #:defaults [defaults (hash)])
+  (when (nested-form-guard)
+    (error 'form "cannot nest forms"))
   (match (form-run
           #:combine combine-proc
           #:defaults defaults
@@ -610,7 +615,8 @@ QUERY
         [:data-widget-id (when-bot id)]
         [:enctype enctype]
         [:method "POST"])
-       (render rw)))]))
+       (parameterize ([nested-form-guard #t])
+         (render rw))))]))
 
 (define/widget (skip [to-step-id #f])
   (if to-step-id

@@ -126,6 +126,10 @@
      (let loop ([stx #'form]
                 [pairs null])
        (syntax-parse stx
+         #:literals (formular)
+         [(formular . _)
+          (raise-syntax-error 'formular "cannot nest formular forms" stx)]
+
          [(kwd:keyword fld)
           (cons #'(kwd fld "") pairs)]
 
