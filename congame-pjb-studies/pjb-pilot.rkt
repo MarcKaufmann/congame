@@ -6,12 +6,12 @@
          (except-in forms form)
          (for-syntax racket/base) ; Needed to use strings in define-static-resource. Why? Just Cause.
          gregor
-         web-server/http
          koyo/haml
          koyo/job
          koyo/url
          marionette
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          racket/list
          racket/match
          racket/random
@@ -35,6 +35,13 @@
 (provide
  pjb-pilot-study
  relax-test-study)
+
+(define (get-all-payments)
+  (get #:root '*payments* 'all-payments hasheq))
+
+(define (put/payment! k v)
+  (define ps (get-all-payments))
+  (put #:root '*payments* 'all-payments (hash-set ps k v)))
 
 (define relax-test-fee 2.50)
 ; FIXME: Update to correct url once tested that it works
@@ -423,7 +430,7 @@
     the-form
     (λ (survey-response)
       (put 'debrief-survey survey-response)
-      (put-payment! 'participation-fee (get 'participation-fee)))
+      (put/payment! 'participation-fee (get 'participation-fee)))
     (λ (rw)
       `(div
         (div ((class "group"))
@@ -725,7 +732,7 @@
                      (λ ()
                        (cond
                          [(get 'success?)
-                          (put-payment! 'extra-tasks-bonus (get 'extra-bonus))
+                          (put/payment! 'extra-tasks-bonus (get 'extra-bonus))
                           done]
                          [else
                           'fail]))
@@ -856,7 +863,7 @@
                           ; TODO: The fact that I check only once means that, if by chance we jump past this stage
                           ; then the study would simply continue. In general it might be good to have this property
                           ; enforced from a given stage onwards.
-                          (put-payment! 'tutorial-fee (get 'tutorial-fee))
+                          (put/payment! 'tutorial-fee (get 'tutorial-fee))
                           (cond [(not (get 'consent?))
                                  (put 'rest-treatment 'NA:no-consent)
                                  (goto tutorial-completion-enter-code)]
@@ -1021,7 +1028,7 @@
                   [relax-study
                    --> final-browser-OS-survey
                    --> ,(λ ()
-                          (put-payment! 'participation-fee relax-test-fee)
+                          (put/payment! 'participation-fee relax-test-fee)
                           done)]
                   [requirements-failure
                    --> ,(λ () done)])
