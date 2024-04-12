@@ -879,9 +879,9 @@ QUERY
 (define/contract (run-study s
                             [req (current-request)]
                             #:bindings [bindings (hasheq)])
-  (->* (study?)
-       (request?
-        #:bindings (hash/c symbol? any/c))
+  (->* [study?]
+       [request?
+        #:bindings (hash/c symbol? any/c)]
        any)
   (define resume-stack
     (if (unbox (current-resume-done?))
