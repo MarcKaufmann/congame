@@ -455,6 +455,13 @@ QUERY
 (define current-renderer
   (make-parameter 'no-renderer))
 
+(module+ private
+  (provide
+   current-embed/url
+   current-request
+   current-return
+   current-renderer))
+
 ;; The point of this is to wrap rendering in a thunk so that we may
 ;; re-run the rendering part upon form validation error, but not the
 ;; rest of the step (i.e. the stuff before the page).
@@ -776,6 +783,9 @@ QUERY
   (match-define (step-page renderer validator)
     ((step-handler s)))
   (response/render s renderer validator))
+
+(module+ private
+  (provide response/step))
 
 (define-syntax-rule (when-bot e)
   (if (current-user-bot?) (~a e) ""))
@@ -1289,6 +1299,11 @@ QUERY
 
 (struct study-manager ([participant #:mutable] db)
   #:transparent)
+
+(module+ private
+  (provide
+   current-study-manager
+   (struct-out study-manager)))
 
 (define/contract (make-study-manager #:database db
                                      #:participant participant)
