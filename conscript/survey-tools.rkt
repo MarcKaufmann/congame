@@ -122,10 +122,12 @@
 (define (timer n)
   (haml
    (:div#timer
-    (:div (:span#timer-target) " left")
+    (:div
+     (:span#timer-target
+      ([:data-timer-n (number->string n)]))
+     " left")
     (:script
-     ([:data-timer-n (number->string n)]
-      [:src (resource-uri timer.js)])))))
+     ([:src (resource-uri timer.js)])))))
 
 ;; Automatic Refresh ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

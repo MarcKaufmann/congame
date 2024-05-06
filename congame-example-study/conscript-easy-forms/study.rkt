@@ -34,8 +34,8 @@
     7. @button[#:to-step-id 'vertical-whitespace]{More whitespace between paragraphs}
     8. @button[#:to-step-id 'radio-with-error-and-horizontal]{Radio with Horizontal Buttons and Error Message}
     9. @button[#:to-step-id 'diceroll]{Button to roll a dice displaying a number}
-    10. @button[#:to-step-id 'radio-with-images]{Radio with Images}
-    11. @button[#:to-step-id 'select-with-default]{Select with Default Value}
+    10. @button[#:to-step-id 'radio-with-images-step]{Radio with Images}
+    11. @button[#:to-step-id 'select-with-default-step]{Select with Default Value}
     12. @button[#:to-step-id 'timer-display]{Timer for a single page}
     13. @button[#:to-step-id 'multi-page-timer]{Timer across multiple pages}
     14. @button[#:to-step-id 'waiting]{Waiting until time is up}
@@ -127,19 +127,16 @@
   (set! refreshed-random r)
 
   (defvar once-random)
-  (define r-once
-    ; First try to get the value in 'once-random. If this exists, then r-once takes this value. If not, then it takes the value from the `(add1 (random 6))` call - i.e. we set it.
-    (set! once-random  (add1 (random 6))))
-
+  ; First try to get the value in 'once-random. If this exists, then r-once takes this value. If not, then it takes the value from the `(add1 (random 6))` call - i.e. we set it.
   ; Now we store the value in the DB, but only if the value doesn't already exist: i.e. `unless` the call to `(get 'once-random #f)` is true --- which means that the value exists and was found --- then we store it.
   (when (undefined? once-random)
-    (set! once-random r-once))
+    (set! once-random (add1 (random 6))))
 
   @md{
     # Generate a Random Number
 
     - The value of `r` is: @(~a r)
-    - The value of `r-once` is: @(~a r-once)
+    - The value of `r-once` is: @(~a once-random)
 
     If you refresh the page, the value of `r` will change, while the value of
     `r-once` will not. You usually don't want it to change based on the refresh.
@@ -463,6 +460,8 @@
 
         [else
          @md{# Timer Page @(~a i)
+
+             Seconds left: @(~a seconds-left)
 
              @timer[seconds-left]
 
