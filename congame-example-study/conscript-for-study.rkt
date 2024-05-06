@@ -3,7 +3,7 @@
 (provide
  conscript-for-study-example)
 
-(defvar n i-swear-this-is-unique)
+(defvar* n i-swear-this-is-unique)
 
 (defstep (start)
   (define (set-n #:n the-n)

@@ -1,36 +1,39 @@
 #lang conscript
 
-(require racket/list
-         racket/random
-         conscript/survey-tools)
+(require conscript/survey-tools
+         racket/list
+         racket/random)
 
 (provide
  several-payments-random-task)
 
+(defvar payments)
+(defvar answers)
+(defvar slider)
+(defvar score)
+(defvar remaining-tasks)
+(defvar tasks-that-count)
+(defvar payment-that-counts)
+(defvar choice-that-counts)
 (define completion-fee 1.00)
 
 (defstep (welcome)
   (define (initialize)
-    (put 'payments '(2 3 4)))
+    (set! payments '(2 3 4)))
 
   @md{# Welcome
 
       @button[initialize]{Next}})
 
 (defstep (how-many-tasks)
-  (define payments
-    (get 'payments))
   (define payment
     (first payments))
   (define (on-submit #:n-tasks n-tasks)
-    (define old-answers
-      (get 'answers '()))
-    (put 'answers
-         (cons
+    (set! answers
+          (cons
            (list payment n-tasks)
-           old-answers))
-    (put 'payments
-         (rest payments)))
+           (if-undefined answers null)))
+    (set! payments (rest payments)))
 
   @md{# Tasks
 
@@ -41,30 +44,18 @@
         @submit-button}})
 
 (define (initialize-tasks)
-  (put 'remaining-tasks (get 'tasks-that-count)))
+  (set! remaining-tasks tasks-that-count))
 
 (define (display-payment)
-  (define maybe-choice-that-counts
-    (get 'choice-that-counts #f))
+  (define the-choice
+    (if-undefined
+     choice-that-counts
+     (let ([r (random-ref answers)])
+       (begin0 r
+         (set! choice-that-counts r)))))
 
-  (define choice-that-counts
-    (cond [maybe-choice-that-counts
-           maybe-choice-that-counts]
-
-          [else
-           (define r
-             (random-ref (get 'answers)))
-           (put 'choice-that-counts r)
-           r]))
-
-  (define payment-that-counts
-    (first choice-that-counts))
-
-  (define tasks-that-count
-    (second choice-that-counts))
-
-  (put 'payment-that-counts payment-that-counts)
-  (put 'tasks-that-count tasks-that-count)
+  (set! payment-that-counts (first the-choice))
+  (set! tasks-that-count (second the-choice))
 
   @md{# The Chosen Payment
 
@@ -73,26 +64,22 @@
       - Tasks to do: @(~a tasks-that-count)
       - Payment: @(~a payment-that-counts)
 
-      @button[initialize-tasks]{Continue to tasks}
-})
+      @button[initialize-tasks]{Continue to tasks}})
 
 (define (tasks)
-  (define n
-    (get 'tasks-that-count))
-
   ; Starting point for slider
   (define s
     (number->string (random 100)))
 
   @md{@slider-js
-      # Do @n Slider Tasks
+      # Do @tasks-that-count Slider Tasks
 
       @form{
         @div[#:class "slider"]{
           @input-range[
             #:slider
             #:attributes `([value ,s])
-        ] @span{Value: @output{}}
+          ] @span{Value: @output{}}
         }
         @submit-button
       }
@@ -100,33 +87,16 @@
       @button[process-submission]{Next}})
 
 (define (process-submission)
-  (define answer
-     (get 'slider))
-
-  (define old-score
-    (get 'score 0))
-
-  (define new-score
-    (if (= answer 50)
-      (add1 old-score)
-      old-score))
-
-  (put 'score new-score)
-
-  (put 'remaining-tasks
-       (sub1 (get 'remaining-tasks)))
-
+  (when (= slider 50)
+    (set! score (add1 (if-undefined score 0))))
+  (set! remaining-tasks (sub1 remaining-tasks))
   (skip))
 
 (define (end)
-  (define payment
-    (get 'payment-that-counts))
-
   (define total-payment
-    (+ payment completion-fee))
-
-  (define score
-    (get 'score))
+    (+ payment-that-counts completion-fee))
+  (when (undefined? score)
+    (set! score 0))
 
   @md{# The End
 
@@ -137,16 +107,16 @@
 (defstudy several-payments-random-task
   [welcome --> how-many-tasks
            --> ,(lambda ()
-                  (if (null? (get 'payments))
+                  (if (null? payments)
                       'display-payment
                       'how-many-tasks))]
 
   [display-payment --> ,(lambda ()
-                          (if (> (get 'tasks-that-count) 0) 'tasks 'end))]
+                          (if (> tasks-that-count 0) 'tasks 'end))]
 
   [tasks --> process-submission
          --> ,(lambda ()
-                (if (> (get 'remaining-tasks) 0)
+                (if (> remaining-tasks 0)
                     'tasks
                     'end))]
 

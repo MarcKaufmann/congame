@@ -26,7 +26,7 @@
          web-server/servlet-dispatch
          web-server/web-server
          (prefix-in conscript: "base.rkt")
-         (except-in "base.rkt" defvar get get/instance put put/instance form))
+         (except-in "base.rkt" defvar form))
 
 (provide
  (all-from-out "base.rkt"))
@@ -36,6 +36,7 @@
 
 (provide
  preview)
+
 
 (define (preview a-study)
   (define port-or-exn-ch
@@ -70,11 +71,10 @@
     (sync never-evt))
   (stop))
 
-;; FIXME: Need to make defvar work across studies.
 (define (run-study a-study)
   (define paramz (current-parameterization))
-  (parameterize ([current-vars (make-hash)]
-                 [current-instance-vars (make-hash)])
+  (parameterize ([current-vars (or (current-vars) (make-hash))]
+                 [current-data (make-hash)])
     (let loop ([steps (study-steps a-study)])
       (if (null? steps)
           `(continue ,paramz)
@@ -107,14 +107,34 @@
 ;; stubs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- defvar form
- get get/instance
- put put/instance)
+ form
+ defvar
+ defvar*
+ defvar*/instance
+ with-transaction)
 
 (define current-vars (make-parameter #f))
-(define current-instance-vars (make-parameter #f))
+(define current-instance-vars (make-parameter (make-hash)))
+(define current-data (make-parameter #f))
 
 (define-syntax (defvar stx)
+  (syntax-parse stx
+    [(_ id:id)
+     #`(begin
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put 'id v)]
+                [id (identifier? #'id) #'(get 'id)])))))]))
+
+(define (get id)
+  (hash-ref (current-data) id undefined))
+
+(define (put id v)
+  (hash-set! (current-data) id v))
+
+(define-syntax (defvar* stx)
   (syntax-parse stx
     [(_ id:id unique-id:id)
      #`(begin
@@ -122,28 +142,43 @@
            (make-set!-transformer
             (lambda (stx)
               (syntax-case stx (set!)
-                [(set! id v) #'(put #:root 'unique-id 'id v)]
-                [id (identifier? #'id) #'(get #:root 'unique-id 'id)])))))]))
+                [(set! id v) #'(put* 'unique-id 'id v)]
+                [id (identifier? #'id) #'(get* 'unique-id 'id)])))))]))
 
-(define (get id
-             [default (λ () (error 'get "no value found for key ~s" id))]
-             #:root [root '*root*])
+(define (get* uid k)
   (hash-ref
    (current-vars)
-   (cons root id)
-   default))
+   (cons uid k)
+   undefined))
 
-(define (put id v #:root [root '*root*])
+(define (put* uid k v)
   (hash-set!
    (current-vars)
-   (cons root id)
+   (cons uid k)
    v))
 
-(define (get/instance id [default (λ () (error 'get/instance "no value found for key ~s" id))])
-  (hash-ref (current-instance-vars) default))
+(define-syntax (defvar*/instance stx)
+  (syntax-parse stx
+    [(_ id:id unique-id:id)
+     #`(begin
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put*/instance 'unique-id 'id v)]
+                [id (identifier? #'id) #'(get*/instance 'unique-id 'id)])))))]))
 
-(define (put/instance id v)
-  (hash-set! (current-instance-vars) id v))
+(define (get*/instance uid k)
+  (hash-ref
+   (current-instance-vars)
+   (cons uid k)
+   undefined))
+
+(define (put*/instance uid k v)
+  (hash-set!
+   (current-instance-vars)
+   (cons uid k)
+   v))
 
 (define-syntax (form stx)
   (syntax-parse stx
@@ -164,6 +199,9 @@
      (for ([kwd (in-list kws)]
            [arg (in-list kw-args)])
        (put (string->symbol (keyword->string kwd)) arg)))))
+
+(define-syntax-rule (with-transaction body0 body ...)
+  (begin body0 body ...))
 
 (module reader syntax/module-reader
   conscript/local

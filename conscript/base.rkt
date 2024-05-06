@@ -43,9 +43,12 @@
  unquote-splicing
  provide
 
+ begin begin0 let
  if case cond else unless when
  or and
  set!
+
+ with-handlers
 
  ;; Racket Runtime
  lambda λ
@@ -64,6 +67,8 @@
 
  format ~a number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
 
+ exn:fail? exn-message
+
  ;; Congame Syntax
  --> goto for/study
 
@@ -74,13 +79,9 @@
  (rename-out
   [congame:with-study-transaction with-study-transaction]
   [congame:get/linked/instance get/linked/instance]
-  [congame:get/instance get/instance]
-  [congame:get* get*]
-  [congame:put/instance put/instance]
-  [congame:put* put*]
   [congame:skip skip])
  make-step make-step/study
- get put put/identity
+ put/identity
  done
  )
 
@@ -97,7 +98,12 @@
  defview
  defstudy
  defvar
- with-bot)
+ defvar*
+ defvar*/instance
+ with-bot
+ undefined
+ undefined?
+ if-undefined)
 
 (begin-for-syntax
   ;; Be careful what you provide here. Avoid providing access to
@@ -252,7 +258,32 @@
     [else
      (make-step id v)]))
 
+(define undefined
+  (string->uninterned-symbol "undefined"))
+(define (undefined? v)
+  (eq? v undefined))
+(define-syntax-rule (if-undefined val-expr then-expr)
+  (let ([tmp val-expr])
+    (if (undefined? tmp) then-expr tmp)))
+
 (define-syntax (defvar stx)
+  (syntax-parse stx
+    [(_ id:id)
+     #'(begin
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put-var 'id v)]
+                [id (identifier? #'id) #'(get-var 'id)])))))]))
+
+(define (get-var k)
+  (get k undefined))
+
+(define (put-var k v)
+  (put k v))
+
+(define-syntax (defvar* stx)
   (syntax-parse stx
     [(_ id:id unique-id:id)
      #`(begin
@@ -261,16 +292,36 @@
            (make-set!-transformer
             (lambda (stx)
               (syntax-case stx (set!)
-                [(set! id v) #'(put-var 'unique-id 'id v)]
-                [id (identifier? #'id) #'(get-var 'unique-id 'id)])))))]))
+                [(set! id v) #'(put-var* 'unique-id 'id v)]
+                [id (identifier? #'id) #'(get-var* 'unique-id 'id)])))))]))
 
-(define (put-var uid k v)
+(define (put-var* uid k v)
   (parameterize ([current-study-stack null])
     (put #:root (string->symbol (format "*dynamic:~a*" uid)) k v)))
 
-(define (get-var uid k)
+(define (get-var* uid k)
   (parameterize ([current-study-stack null])
-    (get #:root (string->symbol (format "*dynamic:~a*" uid)) k)))
+    (get #:root (string->symbol (format "*dynamic:~a*" uid)) k undefined)))
+
+(define-syntax (defvar*/instance stx)
+  (syntax-parse stx
+    [(_ id:id unique-id:id)
+     #`(begin
+         (ensure-var-id-is-unique! #,(syntax-source stx) 'unique-id)
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put-var*/instance 'unique-id 'id v)]
+                [id (identifier? #'id) #'(get-var*/instance 'unique-id 'id)])))))]))
+
+(define (put-var*/instance uid k v)
+  (parameterize ([current-study-stack null])
+    (put/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k v)))
+
+(define (get-var*/instance uid k)
+  (parameterize ([current-study-stack null])
+    (get/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k undefined)))
 
 
 ;; util ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

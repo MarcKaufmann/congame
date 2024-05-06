@@ -7,6 +7,12 @@
 (provide
  easy-forms)
 
+(defvar multiple-checkboxes-1)
+(defvar n-required)
+(defvar radios-with-other)
+(defvar radio-with-images)
+(defvar select-with-default)
+
 (defstep (choose-page)
   @md{
     @style{
@@ -41,31 +47,22 @@
 
 (defstep (display-results)
   (define checkboxes
-    (~a (get 'multiple-checkboxes-1 '())))
+    (~a (if-undefined multiple-checkboxes-1 null)))
 
   (define free-form
-     (get 'n-required #f))
+     (if-undefined n-required #f))
 
   (define twice-free-form
     (if free-form (* 2 free-form) "no value provided"))
-
-  (define radios-with-other
-    (get 'radios-with-other #f))
-
-  (define radio-with-images
-    (get 'radio-with-images #f))
-
-  (define select-with-default
-    (get 'select-with-default #f))
 
   @md{
     # Results so far
 
     1. Result from `Multiple Checkboxes`: @checkboxes
     2. Twice the result from `Free-Form Forms`: @(~a twice-free-form)
-    3. Radios with other: @(~a radios-with-other)
-    4. Radios with images: @(~a radio-with-images)
-    5. Select with default: @(~a select-with-default)
+    3. Radios with other: @(~a (if-undefined radios-with-other #f))
+    4. Radios with images: @(~a (if-undefined radio-with-images #f))
+    5. Select with default: @(~a (if-undefined select-with-default #f))
 
     @button{Go back to choosing Forms}})
 
@@ -126,15 +123,17 @@
     ; (random n) generates a random integer from 0 to n-1, so we need to `add1` to get a random draw from 1 to 6 inclusive.
     (add1 (random 6)))
   ; This stores the new value in the DB and overwrites the old.
-  (put 'refreshed-random r)
+  (defvar refreshed-random)
+  (set! refreshed-random r)
 
+  (defvar once-random)
   (define r-once
     ; First try to get the value in 'once-random. If this exists, then r-once takes this value. If not, then it takes the value from the `(add1 (random 6))` call - i.e. we set it.
-    (get 'once-random (add1 (random 6))))
+    (set! once-random  (add1 (random 6))))
 
   ; Now we store the value in the DB, but only if the value doesn't already exist: i.e. `unless` the call to `(get 'once-random #f)` is true --- which means that the value exists and was found --- then we store it.
-  (unless (get 'once-random #f)
-    (put 'once-random r-once))
+  (when (undefined? once-random)
+    (set! once-random r-once))
 
   @md{
     # Generate a Random Number
@@ -252,7 +251,7 @@
     @h1{Freeing Forming Free-Form Forms}
 
     Now suppose you have multiple forms on the previous page. (Just to show how
-    to display twice the value you submitted: it is @(~a (* 2 (get 'n-required))).)
+    to display twice the value you submitted: it is @(~a (* 2 n-required)).)
     It becomes quickly tedious to type all that HTML for each question, especially
     if multiple questions all take the same styling. Therefore we do what every
     lazy programmer does, and define a function that wraps the label in the HTML
@@ -363,7 +362,7 @@
 (define-static-resource path-to-image-a "img/job-a.png")
 (define-static-resource path-to-image-b "img/job-b.png")
 
-(defstep (radio-with-images)
+(defstep (radio-with-images-step)
   (define (render-proc options make-radio)
     (apply div #:class "img-radio"
            (for/list ([opt options])
@@ -393,7 +392,7 @@
            render-proc)]
         @submit-button}})
 
-(defstep (select-with-default)
+(defstep (select-with-default-step)
   @md{# Select with Default
 
       @form{
@@ -438,10 +437,9 @@
 
       @button{Next}})
 
+(defvar the-timer)
 (define ((set-timer n))
-  (put
-   'the-timer
-   (+seconds (now/moment) n)))
+  (set! the-timer (+seconds (now/moment) n)))
 
 (defstep ((launch-timer [n 10]))
   @md{# Launch Timer
@@ -456,7 +454,7 @@
      (truncate
       (seconds-between
        (now/moment)
-       (get 'the-timer)))))
+       the-timer))))
 
   ; NOTE: If there is less than 1 sec left, we might have skipped the earlier
   ; page so we don't display it just briefly.
@@ -479,19 +477,18 @@
                               --> ,(lambda () done)])
 
 (defstep (waiting)
-  (define wait-until
-    (get 'wait-until (+seconds (now/moment) 10)))
+  (defvar deadline)
+  (when (undefined? deadline)
+    (set! deadline (+seconds (now/moment) 10)))
+  (cond
+    [(moment>=? (now/moment) deadline)
+     (skip)]
 
-  (put 'wait-until wait-until)
+    [else
+     @md{# Please Wait
+         @refresh-every[5]
 
-  (cond [(moment>=? (now/moment) wait-until)
-         (skip)]
-
-        [else
-         @md{# Please Wait
-             @refresh-every[5]
-
-             Your patience is appreciated.}]))
+         Your patience is appreciated.}]))
 
 
 (defstep (wait-is-over)
@@ -499,19 +496,15 @@
 
       @button{Next}})
 
+(defvar sliders)
 (defstep (task-step)
   (define seconds-remaining
-    (seconds-between (now/moment) (get 'the-timer)))
+    (seconds-between (now/moment) the-timer))
   (when (<= seconds-remaining 0)
     (skip))
 
   (define (on-submit #:slider slider)
-    (define old-answers
-      (get 'sliders '()))
-    (put 'sliders
-         (cons
-          slider
-          old-answers)))
+    (set! sliders (cons slider (if-undefined sliders null))))
 
   @md{# Do a Task
       @slider-js
@@ -528,12 +521,9 @@
 (defstudy multi-page-timer-with-tasks
   [[launching (launch-timer 20)] --> task-step
                                  --> ,(lambda ()
-                                        (define the-timer (get 'the-timer))
-                                        (cond [(moment>=? the-timer (now/moment))
-                                               'task-step]
-
-                                              [else
-                                               done]))])
+                                        (cond
+                                          [(moment>=? the-timer (now/moment)) 'task-step]
+                                          [else done]))])
 
 (defstudy easy-forms
   [choose-page --> choose-page]
@@ -562,9 +552,9 @@
 
   [diceroll --> choose-page]
 
-  [radio-with-images --> display-results --> choose-page]
+  [radio-with-images-step --> display-results --> choose-page]
 
-  [select-with-default --> display-results --> choose-page]
+  [select-with-default-step --> display-results --> choose-page]
 
   [timer-display --> timer-form
                  --> timer-hidden

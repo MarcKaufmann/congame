@@ -1,6 +1,10 @@
 #lang conscript/local
 
-(defvar shared-var unique-id-for-shared-var)
+(defvar* shared-var
+  shared-var-unique-id)
+
+(defvar name)
+(defvar age)
 
 (defstep (hello)
   @md{# Welcome to the study
@@ -25,9 +29,9 @@
 (defstep (end)
   @md{# You're done
 
-      Name: @get['name]
+      Name: @name
 
-      Age: @format["~a" @get['age]]
+      Age: @format["~a" @age]
 
       @button{Continue}})
 

@@ -4,7 +4,7 @@
  consent
  name)
 
-(defvar name 0CxAvPwBJ3tgSUaZhAZeuH)
+(defvar* name 0CxAvPwBJ3tgSUaZhAZeuH)
 
 (defstep (get-consent)
   @html{@h1{Consent}
