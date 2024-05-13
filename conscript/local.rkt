@@ -25,8 +25,8 @@
          racket/async-channel
          racket/match
          web-server/dispatchers/dispatch
-         (only-in web-server/http request-uri)
-         (only-in web-server/servlet send/suspend/dispatch servlet-prompt)
+         (only-in web-server/http request-uri response?)
+         (only-in web-server/servlet send/back send/suspend/dispatch servlet-prompt)
          web-server/servlet-dispatch
          web-server/web-server
          (prefix-in conscript: "base.rkt")
@@ -103,7 +103,9 @@
                (find-step a-study to-step-id))
              (call-with-parameterization paramz
                (lambda ()
-                 (loop next-step)))])))))
+                 (loop next-step)))]
+            [(? response? res)
+             (send/back res)])))))
 
 (define (run-step a-step)
   (define paramz #f)
