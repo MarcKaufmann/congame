@@ -20,12 +20,14 @@
                   step-handler
                   step-transition)
          koyo/continuation
+         koyo/url
+         net/mime-type
          net/sendurl
-         net/url
          racket/async-channel
          racket/match
-         web-server/dispatchers/dispatch
-         (only-in web-server/http request-uri response?)
+         racket/port
+         web-server/dispatch
+         (only-in web-server/http header request-uri response? response/output)
          (only-in web-server/servlet send/back send/suspend/dispatch servlet-prompt)
          web-server/servlet-dispatch
          web-server/web-server
@@ -45,27 +47,45 @@
 (define (preview a-study)
   (define port-or-exn-ch
     (make-async-channel))
+  (define ((wrap-application-url handler) req)
+    (parameterize ([current-application-url-host "127.0.0.1"]
+                   [current-application-url-port port-or-exn])
+      (handler req)))
+  (define-values (app _reverse-uri)
+    (dispatch-rules
+     [("")
+      (lambda (req)
+        (define manager
+          (study-manager
+           (make-study-participant
+            #:id 1
+            #:user-id 1
+            #:instance-id 1)
+           #f))
+        (parameterize ([current-request req]
+                       [current-study-manager manager])
+          (run-study a-study)))]
+     [("dsl-resource" (integer-arg) (string-arg) ...)
+      (lambda (_req _instance-id path-elements)
+        (define path
+          (apply build-path (current-directory) path-elements))
+        (response/output
+         #:mime-type (path-mime-type path)
+         #:headers (list (header #"content-length" (string->bytes/utf-8 (number->string (file-size path)))))
+         (lambda (out)
+           (call-with-input-file path
+             (lambda (in)
+               (copy-port in out)
+               (close-output-port out))))))]))
   (define stop
     (parameterize ([current-continuation-key-cookie-secure? #f])
       (serve
        #:port 0
        #:listen-ip "127.0.0.1"
        #:dispatch (dispatch/servlet
-                   (wrap-protect-continuations
-                    (lambda (req)
-                      (unless (equal? (url-path (request-uri req))
-                                      (list (path/param "" null)))
-                        (next-dispatcher))
-                      (define manager
-                        (study-manager
-                         (make-study-participant
-                          #:id 1
-                          #:user-id 1
-                          #:instance-id 1)
-                         #f))
-                      (parameterize ([current-request req]
-                                     [current-study-manager manager])
-                        (run-study a-study)))))
+                   (wrap-application-url
+                    (wrap-protect-continuations
+                     app)))
        #:confirmation-channel port-or-exn-ch)))
   (define port-or-exn
     (sync port-or-exn-ch))
