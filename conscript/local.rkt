@@ -3,7 +3,9 @@
 (require (for-syntax racket/base
                      syntax/parse/pre)
          (only-in congame/components/study
-                  make-study-participant)
+                  make-study-participant
+                  done?
+                  next?)
          (only-in (submod congame/components/study private)
                   current-embed/url
                   current-request
@@ -14,7 +16,9 @@
                   study-steps
                   step/study?
                   step/study-study
-                  step-handler)
+                  step-id
+                  step-handler
+                  step-transition)
          koyo/continuation
          net/sendurl
          net/url
@@ -75,14 +79,30 @@
   (define paramz (current-parameterization))
   (parameterize ([current-vars (or (current-vars) (make-hash))]
                  [current-data (make-hash)])
-    (let loop ([steps (study-steps a-study)])
-      (if (null? steps)
+    (let loop ([this-step (car (study-steps a-study))])
+      (if (not this-step)
           `(continue ,paramz)
-          (match (run-step (car steps))
+          (match (run-step this-step)
             [`(continue ,paramz)
+             (match ((step-transition this-step))
+               [(? done?)
+                `(continue ,paramz)]
+               [(? next?)
+                (call-with-parameterization paramz
+                  (lambda ()
+                    (loop (find-next-step a-study (step-id this-step)))))]
+               [next-step-id
+                (define next-step
+                  (find-step a-study next-step-id))
+                (call-with-parameterization paramz
+                  (lambda ()
+                    (loop next-step)))])]
+            [`(to-step ,to-step-id ,paramz)
+             (define next-step
+               (find-step a-study to-step-id))
              (call-with-parameterization paramz
                (lambda ()
-                 (loop (cdr steps))))])))))
+                 (loop next-step)))])))))
 
 (define (run-step a-step)
   (define paramz #f)
@@ -102,6 +122,25 @@
               (return (run-study (step/study-study a-step)))
               (response/step a-step))))))
    servlet-prompt))
+
+(define (find-next-step a-study id)
+  (let loop ([steps (study-steps a-study)])
+    (match steps
+      [(? null?) #f]
+      [`(,this-step ,next-step . ,_other-steps)
+       #:when (eq? (step-id this-step) id)
+       next-step]
+      [`(,_this-step . ,other-steps)
+       (loop other-steps)])))
+
+(define (find-step a-study id)
+  (define the-step
+    (for/first ([s (in-list (study-steps a-study))]
+                #:when (eq? (step-id s) id))
+      s))
+  (begin0 the-step
+    (unless the-step
+      (error 'find-step "step ~a not found" id))))
 
 
 ;; stubs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
