@@ -46,26 +46,27 @@
   (define port-or-exn-ch
     (make-async-channel))
   (define stop
-    (serve
-     #:port 0
-     #:listen-ip "127.0.0.1"
-     #:dispatch (dispatch/servlet
-                 (wrap-protect-continuations
-                  (lambda (req)
-                    (unless (equal? (url-path (request-uri req))
-                                    (list (path/param "" null)))
-                      (next-dispatcher))
-                    (define manager
-                      (study-manager
-                       (make-study-participant
-                        #:id 1
-                        #:user-id 1
-                        #:instance-id 1)
-                       #f))
-                    (parameterize ([current-request req]
-                                   [current-study-manager manager])
-                      (run-study a-study)))))
-     #:confirmation-channel port-or-exn-ch))
+    (parameterize ([current-continuation-key-cookie-secure? #f])
+      (serve
+       #:port 0
+       #:listen-ip "127.0.0.1"
+       #:dispatch (dispatch/servlet
+                   (wrap-protect-continuations
+                    (lambda (req)
+                      (unless (equal? (url-path (request-uri req))
+                                      (list (path/param "" null)))
+                        (next-dispatcher))
+                      (define manager
+                        (study-manager
+                         (make-study-participant
+                          #:id 1
+                          #:user-id 1
+                          #:instance-id 1)
+                         #f))
+                      (parameterize ([current-request req]
+                                     [current-study-manager manager])
+                        (run-study a-study)))))
+       #:confirmation-channel port-or-exn-ch)))
   (define port-or-exn
     (sync port-or-exn-ch))
   (when (exn:fail? port-or-exn)
