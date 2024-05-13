@@ -19,10 +19,19 @@
       @button{Go to Step C}})
 
 (defstep (step-c)
+  (define (render-slider _idx name value)
+    `(input
+      ([name ,name]
+       [type "range"]
+       [min "0"]
+       [max "100"]
+       [value ,(or value "50")])))
+
   @md{# Step C
 
       @form{
         @checkbox[#:consent? #:required? #f]{Do you consent to continue?}
+        @binding[#:sliders (make-sliders 5 render-slider)]
         @submit-button}})
 
 (defstep (consented)
@@ -36,10 +45,14 @@
 
       @button{Restart at Step A}})
 
+(defvar sliders)
+
 (defstep (not-consented)
   @md{# Not Consented
 
       Sorry to see you leave.
+
+      @~a[sliders]
 
       @button[#:to-step-id 'step-a]{Restart at Step A}})
 

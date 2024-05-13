@@ -40,6 +40,7 @@
  input-time
  textarea
  make-checkboxes
+ make-sliders
  make-radios
  make-radios-with-other)
 
@@ -579,6 +580,32 @@
        (haml
         (.group
          (render-proc options make-checkbox)
+         ,@((widget-errors) name value errors))))]))
+
+(define ((make-sliders n render-proc
+                       #:message [message #f]
+                       #:validators [validators null]) meth)
+  (match meth
+    ['validator
+     (apply ensure
+            binding/list
+            (λ (vs) (ok (reverse vs)))
+            (if message
+                (cons (list-longer-than n message) validators)
+                (cons (list-longer-than n) validators)))]
+
+    ['widget
+     (lambda (name value errors)
+       (define the-values
+         (make-vector n #f))
+       (when value
+         (for ([(bind idx) (in-indexed (in-list (if (pair? value) value (list value))))])
+           (define this-value (string->number (bytes->string/utf-8 (binding:form-value bind))))
+           (vector-set! the-values idx this-value)))
+       (haml
+        (.group
+         ,@(for/list ([(this-value idx) (in-indexed (in-vector the-values))])
+             (render-proc idx name this-value))
          ,@((widget-errors) name value errors))))]))
 
 (define ((make-radios options
