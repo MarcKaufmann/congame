@@ -173,7 +173,7 @@
  defvar
  defvar*
  defvar*/instance
- with-transaction)
+ with-study-transaction)
 
 (define current-vars (make-parameter #f))
 (define current-instance-vars (make-parameter (make-hash)))
@@ -262,7 +262,7 @@
            [arg (in-list kw-args)])
        (put (string->symbol (keyword->string kwd)) arg)))))
 
-(define-syntax-rule (with-transaction body0 body ...)
+(define-syntax-rule (with-study-transaction body0 body ...)
   (begin body0 body ...))
 
 (module reader syntax/module-reader

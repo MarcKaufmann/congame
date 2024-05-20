@@ -11,7 +11,7 @@
   (when (undefined? counter)
     (set! counter 0))
   (define (do-increment)
-    (with-transaction
+    (with-study-transaction
       (set! counter (+ counter 1))))
   @md{# Press the Button to Increment the Counter
 

@@ -679,6 +679,15 @@
 (define (json-null->string v)
   (if (eq? v (json-null)) "" v))
 
+; FIXME: Marc added - but not sure if/where it is used
+
+(provide
+ is-equal)
+
+(define ((is-equal a #:message [message #f]) v)
+  (if (equal? v a)
+      (ok v)
+      (err (or message (format "Should be equal to ~a" a)))))
 
 ;; help ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

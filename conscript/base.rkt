@@ -112,6 +112,7 @@
   (define whitelist
     '(conscript/survey-tools
       gregor
+      koyo/haml
       racket/format
       racket/list
       racket/match
