@@ -96,15 +96,27 @@
     (sync never-evt))
   (stop))
 
-(define (run-study a-study)
+(define (run-study a-study [req (current-request)])
+  (eprintf "Running study: ~a~n" a-study)
   (define paramz (current-parameterization))
   (parameterize ([current-vars (or (current-vars) (make-hash))]
                  [current-data (make-hash)])
     (let loop ([this-step (car (study-steps a-study))])
+      (eprintf "Loop: this-step is ~a~n" this-step)
       (if (not this-step)
           `(continue ,paramz)
-          (match (run-step this-step)
+          (match (run-step this-step req)
+            [(? response? res)
+             (send/back res)]
+
+            [`(to-step ,to-step-id ,paramz)
+             (define next-step
+               (find-step a-study to-step-id))
+             (call-with-parameterization paramz
+               (lambda ()
+                 (loop next-step)))]
             [`(continue ,paramz)
+             (redirect/get/forget/protect)
              (match ((step-transition this-step))
                [(? done?)
                 `(continue ,paramz)]
@@ -118,28 +130,26 @@
                 (call-with-parameterization paramz
                   (lambda ()
                     (loop next-step)))])]
-            [`(to-step ,to-step-id ,paramz)
-             (define next-step
-               (find-step a-study to-step-id))
-             (call-with-parameterization paramz
-               (lambda ()
-                 (loop next-step)))]
-            [(? response? res)
-             (send/back res)])))))
+            )))))
 
-(define (run-step a-step)
+(define (run-step a-step [req (current-request)])
+  (eprintf "run-step: running step ~a~n" a-step)
   (define paramz #f)
   (call-with-current-continuation
    (lambda (return)
      (send/suspend/dispatch/protect
       (lambda (embed/url)
-        (parameterize ([current-embed/url (lambda (hdl)
-                                            (embed/url (λ (req)
-                                                         (call-with-parameterization paramz
-                                                           (lambda ()
-                                                             (parameterize ([current-request req])
-                                                               (hdl req)))))))]
-                       [current-return return])
+        (parameterize ([current-embed/url
+                        (lambda (hdl)
+                          (embed/url
+                           (λ (req)
+                             (call-with-parameterization
+                              paramz
+                              (lambda ()
+                                (parameterize ([current-request req])
+                                  (hdl req)))))))]
+                       [current-return return]
+                       [current-request req])
           (set! paramz (current-parameterization))
           (if (step/study? a-step)
               (return (run-study (step/study-study a-step)))
