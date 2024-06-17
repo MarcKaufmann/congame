@@ -264,8 +264,8 @@
          #:literals (form)
          [(form . _args)
           (raise-syntax-error 'form "forms cannot be nested" stx inner-stx)]
-         [(rator . rands)
-          (for-each check-loop (cons #'rator (syntax-e #'rands)))]
+         [(rator rand ...)
+          (for-each check-loop (cons #'rator (syntax-e #'(rand ...))))]
          [_ (void)]))
      #'(conscript:form
         {~@ #:action {~? action default-form-action}}
