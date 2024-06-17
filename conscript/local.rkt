@@ -265,8 +265,7 @@
          [(form . _args)
           (raise-syntax-error 'form "forms cannot be nested" stx inner-stx)]
          [(rator . rands)
-          (check-loop #'rator)
-          (for-each check-loop (syntax-e #'rands))]
+          (for-each check-loop (cons #'rator (syntax-e #'rands)))]
          [_ (void)]))
      #'(conscript:form
         {~@ #:action {~? action default-form-action}}
