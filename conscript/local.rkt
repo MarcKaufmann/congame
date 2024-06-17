@@ -142,7 +142,7 @@
         (parameterize ([current-embed/url
                         (lambda (hdl)
                           (embed/url
-                           (λ (req)
+                           (λ (req) ;; noqa
                              (call-with-parameterization
                               paramz
                               (lambda ()
@@ -259,6 +259,15 @@
          {~optional {~seq #:bot bot}}
          {~optional {~seq #:fields fields}}} ...
         body ...+)
+     (let check-loop ([inner-stx #'(body ...)])
+       (syntax-parse inner-stx
+         #:literals (form)
+         [(form . _args)
+          (raise-syntax-error 'form "forms cannot be nested" stx inner-stx)]
+         [(rator . rands)
+          (check-loop #'rator)
+          (for-each check-loop (syntax-e #'rands))]
+         [_ (void)]))
      #'(conscript:form
         {~@ #:action {~? action default-form-action}}
         {~? {~@ #:bot bot}}
