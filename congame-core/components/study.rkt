@@ -13,7 +13,8 @@
          koyo/http
          koyo/random
          (except-in forms form)
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          racket/fasl
          racket/format
          racket/generic
@@ -24,13 +25,10 @@
          racket/serialize
          racket/string
          racket/stxparam
-         sentry
          syntax/parse/define
          threading
          web-server/dispatchers/dispatch
-         web-server/http
          web-server/servlet
-         (only-in xml xexpr?)
          "bot.rkt"
          (prefix-in bot: (submod "bot.rkt" actions))
          "export.rkt"
@@ -339,77 +337,6 @@ QUERY
   (list->pg-array
    (for/list ([id (in-list (current-study-ids))])
      (symbol->string (if (eq? id '*root*) root-id id)))))
-
-
-;; ;; payments ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; (provide
-;;  amount/c
-;;  get-payment
-;;  lookup-payments
-;;  put-payment!
-;;  get-all-payments)
-
-;; ; FIXME: Using exact naturals would be even better, but then we need
-;; ; to ensure that the payments are included in cents, rather than whole
-;; ; dollars. This will almost surely lead to errors of rounding or
-;; ; misunderstanding.
-;; (define amount/c
-;;   (and/c number? (or/c positive? zero?)))
-
-;; ; FIXME: The other schemas are later, but for the contract I need
-;; ; `study-payment?`
-
-;; ;; XXX: This predates put/instance, and seems redundant now.
-;; ;; Eventually, we should rip it out.
-;; (define-schema study-payment
-;;   #:table "payments"
-;;   ([participant-id id/f]
-;;    [(timestamp (now/moment)) datetime-tz/f]
-;;    [payment-name string/f]
-;;    [payment (numeric/f 6 2)]))
-
-;; ;; Since this doesn't have a primary key, the returned study-payment
-;; ;; entity can't be update!d or delete!d.  Inserting the same payment
-;; ;; twice raises a constraint error.
-;; (define/contract (put-payment! k payment)
-;;   (-> symbol? amount/c void?)
-;;   (with-handlers ([exn:fail?
-;;                    (lambda (e)
-;;                      (define pid (current-participant-id))
-;;                      (define user
-;;                        (make-sentry-user
-;;                         #:id (~a pid)
-;;                         #:email (lookup-participant-email pid)))
-;;                      (sentry-capture-exception! e #:user user)
-;;                      (log-study-error "put payment failed~n  exn: ~a" (exn-message e)))])
-;;     (void
-;;      (with-database-connection [conn (current-database)]
-;;        (insert-one! conn (make-study-payment #:participant-id (current-participant-id)
-;;                                              #:payment-name (symbol->string k)
-;;                                              #:payment payment))))))
-
-;; (define (get-payment k)
-;;   (define result
-;;     (with-database-connection [conn (current-database)]
-;;       (lookup conn (~> (from study-payment #:as p)
-;;                        (where (and (= ,(current-participant-id) p.participant-id)
-;;                                    (= ,(symbol->string k) p.payment-name)))))))
-;;   (cond [result => study-payment-payment]
-;;         [else
-;;          (error "no payment ~a found for participant ~a" k (current-participant-id))]))
-
-;; (define/contract (lookup-payments db pid)
-;;   (-> database? id/c (hash/c string? number?))
-;;   (with-database-connection (conn db)
-;;     (for/hash ([(name amount) (in-entities conn
-;;                                            (~> (from study-payment #:as p)
-;;                                                (where (= p.participant-id ,pid))
-;;                                                (select p.payment-name p.payment)))])
-;;       (values name amount))))
-
-;; (define (get-all-payments)
-;;   (lookup-payments (current-database) (current-participant-id)))
 
 
 ;; timings ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
