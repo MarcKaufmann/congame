@@ -20,8 +20,7 @@
          "form.rkt"
          "html.rkt"
          "markdown.rkt"
-         "resource.rkt"
-         "var.rkt")
+         "resource.rkt")
 
 (lazy-require
  [congame-web/components/identity (put/identity)])
