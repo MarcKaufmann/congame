@@ -6,12 +6,10 @@
  conscript-defvar-example)
 
 (defstep (info)
-  (define (on-submit #:name n)
-    (set! name n))
   @html{@h1{Hello!}
         Welcome to the study.
-        @form[#:action on-submit]{
-          @label{Name: @input-text[#:name]}
+        @form{
+          @label{Name: @set![name (input-text)]}
           @submit-button}})
 
 (defstep (done)

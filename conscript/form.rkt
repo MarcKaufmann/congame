@@ -71,10 +71,12 @@
 
   (define-syntax-class form-expr
     #:literal-sets (error-bindings widget-bindings)
-    #:literals (binding form)
+    #:literals (binding form set!)
     {pattern (form . _)
              #:do [(raise-syntax-error 'form "cannot nest forms" this-syntax)]
              #:with form-e this-syntax}
+    {pattern (set! id:id arg)
+             #:with form-e #'(set! id arg)}
     {pattern (binding name:keyword arg)
              #:with form-e #'(name arg)}
     {pattern (id:id name:keyword ...)

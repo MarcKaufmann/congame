@@ -109,6 +109,9 @@
 ;; us to compose smaller formulars into larger ones.  We may want to
 ;; do this eventually if reusability becomes a concern.
 (define-syntax (formular stx)
+  (define (id->keyword stx)
+    (datum->syntax stx (string->keyword (symbol->string (syntax-e stx)))))
+
   (syntax-parse stx
     #:literals (~error ~errors ~all-errors)
     [(_ {~alt
@@ -123,19 +126,23 @@
         {~optional action-e})
      #:with rw (format-id stx "rw")
      #:with tbl (format-id stx "tbl")
-     #:with ((kwd fld def) ...)
+     #:with ((var-id kwd fld def) ...)
      (let loop ([stx #'form]
                 [pairs null])
        (syntax-parse stx
-         #:literals (formular)
+         #:literals (formular set!)
          [(formular . _)
           (raise-syntax-error 'formular "cannot nest formular forms" stx)]
 
+         [(set! id:id fld)
+          #:with kwd (id->keyword #'id)
+          (cons #'(id kwd fld "") pairs)]
+
          [(kwd:keyword fld)
-          (cons #'(kwd fld "") pairs)]
+          (cons #'(#f kwd fld "") pairs)]
 
          [(kwd:keyword fld {#:default def:expr})
-          (cons #'(kwd fld def) pairs)]
+          (cons #'(#f kwd fld def) pairs)]
 
          [(e ...)
           (apply append (map (λ (stx) (loop stx null))
@@ -149,7 +156,7 @@
      #:with patched-form
      (let loop ([stx #'form])
        (syntax-parse stx
-         #:literals (~error ~errors ~all-errors)
+         #:literals (~error ~errors ~all-errors set!)
          [(~error kwd:keyword)
           #'(let ([entry (hash-ref tbl 'kwd)])
               (rw (car entry) (widget-errors)))]
@@ -161,6 +168,12 @@
 
          [(~all-errors)
           #'(rw "input_1" (widget-all-errors))]
+
+         [(set! id:id _)
+          #:with kwd (id->keyword #'id)
+          #'(let ([entry (hash-ref tbl 'kwd)])
+              (let ([widget ((cdr entry) 'widget)])
+                (rw (car entry) widget)))]
 
          [{~or (kwd:keyword _)
                (kwd:keyword _ _)}
@@ -195,6 +208,16 @@
      (for/list ([stx (in-list (syntax-e #'(dynamic-field-id ...)))])
        (datum->syntax stx (string->keyword (symbol->string (syntax-e stx)))))
 
+     #:with default-action
+     (if (ormap values (syntax->datum #'(var-id ...)))
+         (with-syntax ([((kwd tmp) ...)
+                        (for/list ([kwd-stx (in-list (syntax-e #'(kwd ...)))]
+                                   [tmp-stx (in-list (generate-temporaries #'(var-id ...)))])
+                          (list kwd-stx tmp-stx))])
+           #'(lambda ({~@ kwd tmp} ...)
+               (set! var-id tmp) ...))
+         #'put-form)
+
      (define maybe-dupe-kwd
        (for/fold ([counts (hash)]
                   [dupe-stx #f]
@@ -227,7 +250,7 @@
            (unless (memq fld-kwd bot-kwds)
              (raise-syntax-error 'formular (format "bot ~a does not declare field ~a" bot-id fld-kwd) bot-id-stx)))))
 
-     #'(let ([action-fn {~? action-e put-form}]
+     #'(let ([action-fn {~? action-e default-action}]
              [field-id fld] ...
              [dynamic-field-id dynamic-field] ...)
          (let ([tbl (make-hasheq
