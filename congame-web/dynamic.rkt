@@ -11,7 +11,7 @@
          (prefix-in config: congame-web/config)
          congame/components/registry
          congame/components/study
-         conscript/var
+         congame/components/var
          db
          (prefix-in dbg: debugging/server)
          deta/reflect
