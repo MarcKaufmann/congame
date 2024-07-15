@@ -34,6 +34,7 @@
          "export.rkt"
          "registry.rkt"
          "struct.rkt"
+         "var.rkt"
          "xexpr.rkt")
 
 (lazy-require
@@ -337,6 +338,82 @@ QUERY
   (list->pg-array
    (for/list ([id (in-list (current-study-ids))])
      (symbol->string (if (eq? id '*root*) root-id id)))))
+
+
+;; vars ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ defvar
+ defvar*
+ defvar*/instance
+ undefined
+ undefined?
+ if-undefined)
+
+(define undefined
+  (string->uninterned-symbol "undefined"))
+(define (undefined? v)
+  (eq? v undefined))
+(define-syntax-rule (if-undefined val-expr then-expr)
+  (let ([tmp val-expr])
+    (if (undefined? tmp) then-expr tmp)))
+
+(define-syntax (defvar stx)
+  (syntax-parse stx
+    [(_ id:id)
+     #'(begin
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put-var 'id v)]
+                [id (identifier? #'id) #'(get-var 'id)])))))]))
+
+(define (get-var k)
+  (get k undefined))
+
+(define (put-var k v)
+  (put k v))
+
+(define-syntax (defvar* stx)
+  (syntax-parse stx
+    [(_ id:id unique-id:id)
+     #`(begin
+         (ensure-var-id-is-unique! #,(syntax-source stx) 'unique-id)
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put-var* 'unique-id 'id v)]
+                [id (identifier? #'id) #'(get-var* 'unique-id 'id)])))))]))
+
+(define (put-var* uid k v)
+  (parameterize ([current-study-stack null])
+    (put #:root (string->symbol (format "*dynamic:~a*" uid)) k v)))
+
+(define (get-var* uid k)
+  (parameterize ([current-study-stack null])
+    (get #:root (string->symbol (format "*dynamic:~a*" uid)) k undefined)))
+
+(define-syntax (defvar*/instance stx)
+  (syntax-parse stx
+    [(_ id:id unique-id:id)
+     #`(begin
+         (ensure-var-id-is-unique! #,(syntax-source stx) 'unique-id)
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put-var*/instance 'unique-id 'id v)]
+                [id (identifier? #'id) #'(get-var*/instance 'unique-id 'id)])))))]))
+
+(define (put-var*/instance uid k v)
+  (parameterize ([current-study-stack null])
+    (put/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k v)))
+
+(define (get-var*/instance uid k)
+  (parameterize ([current-study-stack null])
+    (get/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k undefined)))
 
 
 ;; timings ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
