@@ -5,6 +5,11 @@
   '("base"
     "at-exp-lib"
     "commonmark-lib"
-    "congame-core"))
+    "congame-core"
+    "forms-lib"
+    "koyo-lib"
+    "mime-type-lib"
+    "net-lib"
+    "web-server-lib"))
 (define build-deps
   '("rackunit-lib"))
