@@ -218,6 +218,10 @@
                (set! var-id tmp) ...))
          #'put-form)
 
+     (when (and (ormap values (syntax->datum #'(var-id ...)))
+                (syntax-e #'{~? action-e #f}))
+       (raise-syntax-error 'formular "forms with set!-based fields cannot have custom actions" stx #'action-e))
+
      (define maybe-dupe-kwd
        (for/fold ([counts (hash)]
                   [dupe-stx #f]
