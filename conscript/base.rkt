@@ -36,6 +36,7 @@
  #%top-interaction
  apply
  define
+ define-values
  quote
  quasiquote
  unquote
@@ -44,19 +45,21 @@
 
  begin begin0 let
  if case cond else unless when
- or and
+ or and not
  set!
+ values
 
  with-handlers
 
  ;; Racket Runtime
  lambda λ
  void sleep
- for for/list in-range in-inclusive-range in-list
- list list? list* null null? cons pair? car cdr map for-each shuffle
+ for for/fold for/list in-range in-inclusive-range in-list
+ list list? list* null null? cons pair? car cdr map member for-each shuffle
  display displayln print println printf eprintf write writeln
 
- hash hash-ref hash-update
+ in-hash
+ hash hash-count hash-ref hash-remove hash-set hash-update hash-values
 
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling truncate
  = < > <= >= equal? eq?
@@ -76,6 +79,8 @@
   congame/components/bot-maker
   (submod congame/components/bot actions))
  (rename-out
+  [congame:current-participant-id current-participant-id]
+  [congame:current-participant-owner? current-participant-owner?]
   [congame:with-study-transaction with-study-transaction]
   [congame:get/linked/instance get/linked/instance]
   [congame:skip skip]
@@ -84,7 +89,9 @@
   [congame:defvar*/instance defvar*/instance]
   [congame:undefined undefined]
   [congame:undefined? undefined?]
-  [congame:if-undefined if-undefined])
+  [congame:if-undefined if-undefined]
+  [congame:get-current-group-name get-current-group-name]
+  [congame:put-current-group-name put-current-group-name])
  make-step make-step/study
  put/identity
  done)
@@ -108,7 +115,8 @@
   ;; things that might allow the user to "escape" #lang conscript, eg.
   ;; racket/system, ffi/unsafe or any system-level functionality.
   (define whitelist
-    '(conscript/survey-tools
+    '(buid
+      conscript/survey-tools
       gregor
       koyo/haml
       racket/format

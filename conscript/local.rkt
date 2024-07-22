@@ -43,7 +43,6 @@
 (provide
  preview)
 
-
 (define (preview a-study)
   (define port-or-exn-ch
     (make-async-channel))
@@ -183,11 +182,15 @@
  defvar
  defvar*
  defvar*/instance
- with-study-transaction)
+ with-study-transaction
+ current-participant-id
+ current-participant-owner?)
 
 (define current-vars (make-parameter #f))
 (define current-instance-vars (make-parameter (make-hash)))
 (define current-data (make-parameter #f))
+(define current-participant-id (λ () 1))
+(define current-participant-owner? (λ () #f))
 
 (define-syntax (defvar stx)
   (syntax-parse stx

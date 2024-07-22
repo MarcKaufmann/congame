@@ -43,6 +43,7 @@
     (congame-example-study/multi-review submit+review-pdf/intro-R)
     (congame-example-study/multi-review submit+review-pdf/intro-R-exercises)
     (congame-example-study/multi-review submit+review-research-ideas)
+    (congame-example-study/prisoners-dilemma prisoners-dilemma)
     (congame-example-study/prolific-redirect prolific-redirect)
     (congame-example-study/quizzes info-econ-quiz1)
     (congame-example-study/quizzes info-econ-quiz2)
