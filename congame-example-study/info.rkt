@@ -3,7 +3,6 @@
 (define collection "congame-example-study")
 (define deps
   '("base"
-    "buid-lib"
     "component-lib"
     "congame-core"
     "congame-web"
