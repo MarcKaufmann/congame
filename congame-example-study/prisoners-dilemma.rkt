@@ -1,15 +1,15 @@
 #lang conscript
 
-(require buid
+(require conscript/matchmaking
          conscript/survey-tools
          racket/match)
 
 (provide
  prisoners-dilemma)
 
-(defvar*/instance pending-group matchmaking:pending-group)
-(defvar*/instance ready-groups matchmaking:known-groups)
-(defvar* current-group matchmaking:current-group)
+;; For next time:
+;; * Multiple participants & current owner in conscript/local
+;; * Add bot support to conscript (default actions on all steps, figure out models)
 
 (defvar*/instance choices dilemma-choices)
 (defvar choice)
@@ -18,34 +18,23 @@
   (with-study-transaction
     (if (undefined? choices)
         (set! choices (hash current-group (hash (current-participant-id) choice)))
-        (set! choices (hash-set
-                       (hash-ref choices current-group)
-                       (current-participant-id) choice)))))
+        (set! choices (hash-update choices current-group (λ (ht) (hash-set ht (current-participant-id) choice)))))))
 
 (defstep (intro)
   @md{# Prisoner's Dilemma
 
       @button{Continue...}})
 
-(defstep (matchmake)
-  (if (member current-group (if-undefined ready-groups null))
-      (skip)
-      (with-study-transaction
-        (cond
-          [(not (undefined? current-group))
-           (void)]
-          [(if-undefined pending-group #f)
-           (set! current-group pending-group)
-           (set! ready-groups (cons pending-group (if-undefined ready-groups null)))
-           (set! pending-group #f)]
-          [else
-           (set! current-group (buid))
-           (set! pending-group current-group)])
-        @md{# Please Wait
+(define matchmake
+  (let ([matchmaker (make-matchmaker 2)])
+    (lambda ()
+      (matchmaker
+       (lambda ()
+         @md{# Please Wait
 
-            Please wait while another participant joins the queue.
+             Please wait while another participant joins the queue.
 
-            @refresh-every[5]})))
+             @refresh-every[5]})))))
 
 (defstep (make-choice)
   (define (cooperate)
@@ -59,13 +48,13 @@
       @button[defect]{Defect}})
 
 (defstep (wait)
-  (if (= (hash-count choices) 1)
-       @md{# Please Wait
+  (if (= (hash-count (hash-ref choices current-group)) 1)
+      @md{# Please Wait
 
-           Please wait for the other participant to make their choice...
+          Please wait for the other participant to make their choice...
 
-           @refresh-every[5]}
-       (skip)))
+          @refresh-every[5]}
+      (skip)))
 
 (defstep (display-result)
   (define-values (my-choice other-choice)
