@@ -9,6 +9,8 @@
 (defstep (hello)
   @md{# Welcome to the study
 
+      You are participant @~a[(current-participant-id)].
+
       @button{Continue}})
 
 (defstep (set-shared-var)
