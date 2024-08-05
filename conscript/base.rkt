@@ -116,6 +116,7 @@
   ;; racket/system, ffi/unsafe or any system-level functionality.
   (define whitelist
     '(buid
+      conscript/matchmaking
       conscript/survey-tools
       gregor
       koyo/haml
