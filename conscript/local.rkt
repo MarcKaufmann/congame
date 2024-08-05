@@ -188,10 +188,15 @@
 ;; stubs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ get*
+ get*/instance
+ put*
+ put*/instance
  form
  defvar
  defvar*
  defvar*/instance
+ call-with-study-transaction
  with-study-transaction
  current-participant-id
  current-participant-owner?)
@@ -293,8 +298,13 @@
            [arg (in-list kw-args)])
        (put (string->symbol (keyword->string kwd)) arg)))))
 
+(define (call-with-study-transaction proc)
+  (proc))
+
 (define-syntax-rule (with-study-transaction body0 body ...)
-  (begin body0 body ...))
+  (call-with-study-transaction
+   (lambda ()
+     body0 body ...)))
 
 (module reader syntax/module-reader
   conscript/local
