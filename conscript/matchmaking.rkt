@@ -22,7 +22,6 @@
           [(if-undefined pending-group #f)
            (match-define (cons pending-group-id remaining)
              pending-group)
-           (eprintf "pending: ~s~n" pending-group)
            (set! current-group pending-group-id)
            (cond
              [(= remaining 1)
