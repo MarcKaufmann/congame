@@ -20,6 +20,7 @@
                   step-handler
                   step-transition)
          koyo/continuation
+         koyo/http
          koyo/url
          net/mime-type
          net/sendurl
@@ -27,7 +28,7 @@
          racket/match
          racket/port
          web-server/dispatch
-         (only-in web-server/http header request-uri response? response/output)
+         (only-in web-server/http header request-bindings/raw request-uri response? response/output)
          (only-in web-server/servlet send/back send/suspend/dispatch servlet-prompt)
          web-server/servlet-dispatch
          web-server/web-server
@@ -44,6 +45,7 @@
  preview)
 
 (define (preview a-study)
+  (define seq (box 0))
   (define port-or-exn-ch
     (make-async-channel))
   (define ((wrap-application-url handler) req)
@@ -54,14 +56,23 @@
     (dispatch-rules
      [("")
       (lambda (req)
+        (define owner?
+          (not (not (bindings-ref (request-bindings/raw req) 'owner))))
+        (define participant-id
+          (let loop ([old (unbox seq)])
+            (if (box-cas! seq old (add1 old))
+                (add1 old)
+                (loop (unbox seq)))))
         (define manager
           (study-manager
            (make-study-participant
-            #:id 1
-            #:user-id 1
-            #:instance-id 1)
+            #:id participant-id
+            #:user-id participant-id
+            #:instance-id participant-id)
            #f))
         (parameterize ([current-request req]
+                       [current-participant-id participant-id]
+                       [current-participant-owner? owner?]
                        [current-study-manager manager])
           (run-study a-study)))]
      [("dsl-resource" (integer-arg) (string-arg) ...)
@@ -128,8 +139,7 @@
                   (find-step a-study next-step-id))
                 (call-with-parameterization paramz
                   (lambda ()
-                    (loop next-step)))])]
-            )))))
+                    (loop next-step)))])])))))
 
 (define (run-step a-step [req (current-request)])
   (eprintf "run-step: running step ~a~n" a-step)
@@ -143,10 +153,10 @@
                           (embed/url
                            (λ (req) ;; noqa
                              (call-with-parameterization
-                              paramz
-                              (lambda ()
-                                (parameterize ([current-request req])
-                                  (hdl req)))))))]
+                               paramz
+                               (lambda ()
+                                 (parameterize ([current-request req])
+                                   (hdl req)))))))]
                        [current-return return]
                        [current-request req])
           (set! paramz (current-parameterization))
@@ -189,8 +199,8 @@
 (define current-vars (make-parameter #f))
 (define current-instance-vars (make-parameter (make-hash)))
 (define current-data (make-parameter #f))
-(define current-participant-id (λ () 1))
-(define current-participant-owner? (λ () #f))
+(define current-participant-id (make-parameter #f))
+(define current-participant-owner? (make-parameter #f))
 
 (define-syntax (defvar stx)
   (syntax-parse stx
