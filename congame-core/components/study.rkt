@@ -60,6 +60,7 @@
 ;; storage ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ call-with-study-transaction
  with-study-transaction
  current-git-sha
  get-current-round-stack
@@ -343,6 +344,12 @@ QUERY
 ;; vars ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ get-var
+ get-var*
+ get-var*/instance
+ put-var
+ put-var*
+ put-var*/instance
  defvar
  defvar*
  defvar*/instance

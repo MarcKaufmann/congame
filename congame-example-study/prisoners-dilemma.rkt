@@ -17,8 +17,8 @@
 (define (make-choice! choice)
   (with-study-transaction
     (if (undefined? choices)
-        (set! choices (hash current-group (hash (current-participant-id) choice)))
-        (set! choices (hash-update choices current-group (λ (ht) (hash-set ht (current-participant-id) choice)))))))
+        (set! choices (hash (get-current-group) (hash (current-participant-id) choice)))
+        (set! choices (hash-update choices (get-current-group) (λ (ht) (hash-set ht (current-participant-id) choice)))))))
 
 (defstep (intro)
   @md{# Prisoner's Dilemma
@@ -48,7 +48,7 @@
       @button[defect]{Defect}})
 
 (defstep (wait)
-  (if (= (hash-count (hash-ref choices current-group)) 1)
+  (if (= (hash-count (hash-ref choices (get-current-group))) 1)
       @md{# Please Wait
 
           Please wait for the other participant to make their choice...
@@ -60,7 +60,7 @@
   (define-values (my-choice other-choice)
     (for/fold ([my-choice #f]
                [other-choice #f])
-              ([(k v) (in-hash (hash-ref choices current-group))])
+              ([(k v) (in-hash (hash-ref choices (get-current-group)))])
       (if (equal? k (current-participant-id))
           (values v other-choice)
           (values my-choice v))))
