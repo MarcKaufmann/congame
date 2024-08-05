@@ -1,35 +1,14 @@
-#lang conscript
+#lang racket/base
 
-(require buid
-         racket/match)
+(require (only-in congame/components/study get-var* get-var*/instance put-var* put-var*/instance)
+         conscript/base
+         racket/unit
+         "matchmaking-sig.rkt"
+         "matchmaking-unit.rkt")
 
 (provide
- make-matchmaker
- ready-groups
- current-group)
+ (all-defined-out))
 
-(defvar*/instance pending-group conscript/matchmaking/pending-group)
-(defvar*/instance ready-groups conscript/matchmaking/ready-groups)
-(defvar* current-group conscript/matchmaking/current-group)
-
-(define ((make-matchmaker group-size) page-proc)
-  (if (member current-group (if-undefined ready-groups null))
-      (skip)
-      (with-study-transaction
-        (cond
-          [(not (undefined? current-group))
-           (void)]
-          [(if-undefined pending-group #f)
-           (match-define (cons pending-group-id remaining)
-             pending-group)
-           (set! current-group pending-group-id)
-           (cond
-             [(= remaining 1)
-              (set! ready-groups (cons pending-group-id (if-undefined ready-groups null)))
-              (set! pending-group #f)]
-             [else
-              (set! pending-group (cons pending-group-id (sub1 remaining)))])]
-          [else
-           (set! current-group (buid))
-           (set! pending-group (cons current-group (sub1 group-size)))])
-        (page-proc))))
+(define-values/invoke-unit matchmaking@
+  (import congame^)
+  (export matchmaking^))

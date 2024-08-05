@@ -81,6 +81,7 @@
  (rename-out
   [congame:current-participant-id current-participant-id]
   [congame:current-participant-owner? current-participant-owner?]
+  [congame:call-with-study-transaction call-with-study-transaction]
   [congame:with-study-transaction with-study-transaction]
   [congame:get/linked/instance get/linked/instance]
   [congame:skip skip]
