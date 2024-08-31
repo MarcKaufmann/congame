@@ -55,7 +55,7 @@
  lambda λ
  void sleep
  for for/fold for/list in-range in-inclusive-range in-list
- list list? list* null null? cons pair? car cdr map member for-each shuffle
+ list list? list* null null? cons pair? car cdr map member for-each shuffle length
  display displayln print println printf eprintf write writeln
 
  in-hash
