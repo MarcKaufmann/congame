@@ -22,6 +22,7 @@
     (congame-example-study/conscript-for-study conscript-for-study-example)
     (congame-example-study/conscript-form conscript-form-example)
     (congame-example-study/conscript-form-inline conscript-form-inline-example)
+    (congame-example-study/conscript-funarch24-illustration illustration)
     (congame-example-study/conscript-markdown conscript-markdown-example)
     (congame-example-study/conscript-reqprovide conscript-reqprovide-example)
     (congame-example-study/deferred deferred-study)
