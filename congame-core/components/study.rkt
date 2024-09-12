@@ -390,7 +390,6 @@ QUERY
   (syntax-parse stx
     [(_ id:id unique-id:id)
      #`(begin
-         (ensure-var-id-is-unique! #,(syntax-source stx) 'unique-id)
          (define-syntax id
            (make-set!-transformer
             (lambda (stx)
@@ -410,7 +409,6 @@ QUERY
   (syntax-parse stx
     [(_ id:id unique-id:id)
      #`(begin
-         (ensure-var-id-is-unique! #,(syntax-source stx) 'unique-id)
          (define-syntax id
            (make-set!-transformer
             (lambda (stx)
