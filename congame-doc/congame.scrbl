@@ -4,13 +4,9 @@
                      racket/contract
                      congame/components/study))
 
-@title{Congame}
-@author[(author+email "Marc Kaufmann" "marc@trichotomy.xyz")]
+@title[#:style 'toc]{Congame}
+@author[(author+email "Marc Kaufmann" "marc@trichotomy.xyz")]s
 
 @table-of-contents[]
-@include-section["introduction.scrbl"]
-@include-section["howtos.scrbl"]
-@include-section["multi-review.scrbl"]
-@include-section["conscript.scrbl"]
-@include-section["tutorial.scrbl"]
-@include-section["reference.scrbl"]
+
+@include-section["_orig-congame.scrbl"]
