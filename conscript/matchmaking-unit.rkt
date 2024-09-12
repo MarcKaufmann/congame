@@ -15,6 +15,7 @@
   (import congame^)
   (export matchmaking^)
 
+  ;; FIXME: Add and change these to defvar/instance to avoid sharing.
   (defvar*/instance pending-group conscript/matchmaking/pending-group)
   (defvar*/instance ready-groups conscript/matchmaking/ready-groups)
   (defvar current-group)
