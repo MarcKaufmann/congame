@@ -29,6 +29,7 @@
 (define (redirect-page target [duration 3])
   (page
    #:subtitle "Redirecting..."
+   #:show-nav? #f
    (haml
     (.container
      (:h1 "You are being redirected...")

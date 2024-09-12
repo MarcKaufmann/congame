@@ -116,7 +116,6 @@
           (match (run-step this-step req)
             [(? response? res)
              (send/back res)]
-
             [`(to-step ,to-step-id ,paramz)
              (define next-step
                (find-step a-study to-step-id))
