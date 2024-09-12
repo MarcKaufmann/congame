@@ -35,10 +35,27 @@ The features that will get implemented will however be determined by the priorit
 
 * You need [Racket] since this is a Racket application.
 * You need [node] and [nvm] to build the assets.
-* You need access to a couple local [Postgres] databases.  One named
-  `congame` and the other `congame_tests`.  The latter is
+* You need access to three local [Postgres] databases: One named
+  `congame`, one named `congame_identity`, and the other `congame_tests`. The latter is
   exercised by unit tests.
-  
+
+```sql
+$ psql postgres
+postgres=# CREATE USER congame WITH PASSWORD 'congame';
+postgres=# ALTER ROLE congame SET client_encoding TO 'utf8';
+postgres=# ALTER ROLE congame SET default_transaction_isolation TO 'read committed';
+postgres=# CREATE USER congame_identity WITH PASSWORD 'congame_identity';
+postgres=# ALTER ROLE congame_identity SET client_encoding TO 'utf8';
+postgres=# ALTER ROLE congame_identity SET default_transaction_isolation TO 'read committed';
+postgres=# CREATE DATABASE congame;
+postgres=# CREATE DATABASE congame_tests;
+postgres=# CREATE DATABASE congame_identity;
+postgres=# GRANT all PRIVILEGES ON DATABASE congame TO congame;
+postgres=# GRANT all PRIVILEGES ON DATABASE congame_tests TO congame;
+postgres=# GRANT all PRIVILEGES ON DATABASE congame_identity TO congame_identity;
+postgres=# \q
+```
+
 ### First-time Setup
 
     $ nvm use && npm install && npm run build
@@ -66,13 +83,43 @@ subprocesses defined in the `Procfile` whenever it is run.
 
 The app expects to be run behind an SSL terminated connection (for
 example, behind an nginx instance using a self-signed cert), even for
-local development .  You can disable this requirement by setting
+local development. You can disable this requirement by setting
 `current-continuation-key-cookie-secure?` parameter to `#f` before the
-application is started.
+application is started (do this in `congame-web/components/app.rkt`).
+
+## Running the app locally
+
+    $ nvm use
+    $ raco chief start
+
+By default the app will run on `localhost:5100`.
+
+## Adding an admin user
+
+While running the app, browse to `http://localhost:5100/secret-signup`, and provide a username and
+password.
+
+In the terminal where you ran the app, look for a line of log output that looks like this:
+
+```
+[...] mail-adapter: templated email added to outbox [...] (action_url . "http://127.0.0.1:5100/verify/1/8b781[...]9475" ...
+```
+
+Copy and paste the value following `action_url` into your browser: this will “verify” your
+username/email, allowing you to log in.
+
+To make this user an admin user (you can do this while the app is running):
+
+    $ psql congame
+    congame=# update users set roles = '{user,admin}';
+
+(Be sure to add a `WHERE` clause if you have more than one user.)
+
+Refresh the app in your browser and you should see an "Admin" link in the header.
 
 ## Installing study packages
 
-* The package's `info.rkt` needs to `(define congame-studies)` like so:
+* The `congame-web` package's `info.rkt` needs to `(define congame-studies)` like so:
 
 ``` racket
 (define congame-studies
@@ -98,11 +145,6 @@ in turn make the new study available in the web app.
 
 Run `./bin/bust-study-caches.sh` after adding studies or bots to
 `info.rkt` files within study packages.
-
-## Running the app locally
-
-    $ nvm use
-    $ raco chief start
 
 ## Re-building the documentation
 
