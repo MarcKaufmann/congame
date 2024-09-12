@@ -34,7 +34,6 @@
          "export.rkt"
          "registry.rkt"
          "struct.rkt"
-         "var.rkt"
          "xexpr.rkt")
 
 (lazy-require
