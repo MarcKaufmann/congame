@@ -3,6 +3,8 @@
 (require conscript/local
          (rename-in
           conscript/local
+          [get get-var]
+          [put put-var]
           [get* get-var*]
           [get*/instance get-var*/instance]
           [put* put-var*]

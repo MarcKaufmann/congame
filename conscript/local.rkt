@@ -188,8 +188,10 @@
 ;; stubs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ get
  get*
  get*/instance
+ put
  put*
  put*/instance
  form

@@ -12,7 +12,19 @@
  matchmaking@)
 
 (define-signature congame^
-  ((define-syntaxes (defvar*)
+  ((define-syntaxes (defvar)
+     (lambda (stx)
+       (syntax-parse stx
+         [(_ id:id)
+          #'(begin
+              (define-syntax id
+                (make-set!-transformer
+                 (lambda (stx)
+                   (syntax-case stx (set!)
+                     [(set! id v) #'(put-var 'id v)]
+                     [id (identifier? #'id) #'(get-var 'id)])))))])))
+   get-var put-var
+   (define-syntaxes (defvar*)
      (lambda (stx)
        (syntax-parse stx
          [(_ id:id unique-id:id)
@@ -44,7 +56,7 @@
 
   (defvar*/instance pending-group conscript/matchmaking/pending-group)
   (defvar*/instance ready-groups conscript/matchmaking/ready-groups)
-  (defvar* current-group conscript/matchmaking/current-group)
+  (defvar current-group)
 
   (define-syntax (if-undefined stx)
     (syntax-parse stx
@@ -59,6 +71,9 @@
 
   (define (get-current-group)
     (if-undefined current-group #f))
+
+  (define (reset-current-group)
+    (set! current-group #f))
 
   (define ((make-matchmaker group-size) page-proc)
     (if (member current-group (if-undefined ready-groups null))

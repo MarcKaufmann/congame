@@ -11,4 +11,5 @@
   ((contracted
     [make-matchmaker (-> exact-positive-integer? procedure?)]
     [get-ready-groups (-> (listof buid/c))]
-    [get-current-group (-> (or/c #f buid/c))])))
+    [get-current-group (-> (or/c #f buid/c))]
+    [reset-current-group (-> void?)])))

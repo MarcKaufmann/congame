@@ -1,6 +1,8 @@
 #lang racket/base
 
-(require (only-in congame/components/study get-var* get-var*/instance put-var* put-var*/instance)
+(require (only-in congame/components/study
+                  get-var get-var* get-var*/instance
+                  put-var put-var* put-var*/instance)
          conscript/base
          racket/unit
          "matchmaking-sig.rkt"
