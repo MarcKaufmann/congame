@@ -4,6 +4,9 @@ app.tmux.conf
 bugs/
 compiled
 congame-doc/doc/
+congame-doc/*.html
+congame-doc/*.js
+congame-doc/*.css
 coverage
 data-tools/*.RDS
 data-tools/*.csv
