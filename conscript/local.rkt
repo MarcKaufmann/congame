@@ -107,12 +107,10 @@
   (stop))
 
 (define (run-study a-study [req (current-request)])
-  (eprintf "Running study: ~a~n" a-study)
   (define paramz (current-parameterization))
   (parameterize ([current-vars (or (current-vars) (make-hash))]
                  [current-data (make-hash)])
     (let loop ([this-step (car (study-steps a-study))])
-      (eprintf "Loop: this-step is ~a~n" this-step)
       (if (not this-step)
           `(continue ,paramz)
           (match (run-step this-step req)
@@ -142,7 +140,6 @@
                     (loop next-step)))])])))))
 
 (define (run-step a-step [req (current-request)])
-  (eprintf "run-step: running step ~a~n" a-step)
   (define paramz #f)
   (call-with-current-continuation
    (lambda (return)
