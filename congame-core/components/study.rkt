@@ -636,6 +636,9 @@ QUERY
        (parameterize ([nested-form-guard #t])
          (render rw))))]))
 
+;; FIXME: Skipping from a nested step fails because skip ends up
+;; returning from an already-expired step somehow. See
+;; skip-after-refresh.
 (define/widget (skip [to-step-id #f])
   (if to-step-id
       (continue to-step-id)
