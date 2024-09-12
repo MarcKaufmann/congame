@@ -18,3 +18,4 @@ node_modules
 static
 study-administration/
 **/*.rkt~
+.DS_Store
