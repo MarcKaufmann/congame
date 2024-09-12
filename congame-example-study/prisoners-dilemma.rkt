@@ -1,6 +1,6 @@
-#lang conscript/local
+#lang conscript
 
-(require conscript/local/matchmaking
+(require conscript/matchmaking
          conscript/survey-tools
          racket/match)
 

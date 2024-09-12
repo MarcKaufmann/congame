@@ -139,7 +139,7 @@
    (:script
     (format #<<SCRIPT
 setTimeout(function() {
-  document.location.reload();
+  document.location.href = document.location.href.replace(/;.+/, '');
 }, ~a*1000)
 SCRIPT
             n-seconds))))
