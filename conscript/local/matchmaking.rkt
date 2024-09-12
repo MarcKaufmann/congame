@@ -10,6 +10,7 @@
           [put* put-var*]
           [put*/instance put-var*/instance])
          racket/unit
+         "../congame-sig.rkt"
          "../matchmaking-sig.rkt"
          "../matchmaking-unit.rkt")
 

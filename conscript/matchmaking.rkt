@@ -5,6 +5,7 @@
                   put-var put-var* put-var*/instance)
          conscript/base
          racket/unit
+         "congame-sig.rkt"
          "matchmaking-sig.rkt"
          "matchmaking-unit.rkt")
 
