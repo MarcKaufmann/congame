@@ -305,7 +305,8 @@
    (cons uid k)
    v))
 
-;; TODO: Extract form-sig and make forms work fully between conscript/local and conscript.
+;; FIXME: Refactor formular to be parameterized over the current put
+;; procedure to avoid duplicating some of these checks.
 (define-syntax (form stx)
   (syntax-parse stx
     [(_ {~alt
@@ -313,6 +314,15 @@
          {~optional {~seq #:bot bot}}
          {~optional {~seq #:fields fields}}} ...
         body ...+)
+     #:attr default-action
+     (if (let uses-set!? ([stx stx])
+           (syntax-parse stx
+             #:literals (set!)
+             [(set! . _args) #t]
+             [(rator rand ...) (ormap uses-set!? (cons #'rator (syntax-e #'(rand ...))))]
+             [_ #f]))
+         #f
+         #'default-form-action)
      (let check-loop ([inner-stx #'(body ...)])
        (syntax-parse inner-stx
          #:literals (form)
@@ -322,7 +332,7 @@
           (for-each check-loop (cons #'rator (syntax-e #'(rand ...))))]
          [_ (void)]))
      #'(conscript:form
-        {~@ #:action {~? action default-form-action}}
+        {~? {~@ #:action {~? action default-action}}}
         {~? {~@ #:bot bot}}
         {~? {~@ #:fields fields}}
         body ...)]))
