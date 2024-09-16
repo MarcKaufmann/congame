@@ -18,7 +18,8 @@
                   step/study-study
                   step-id
                   step-handler
-                  step-transition)
+                  step-transition
+                  study-name)
          koyo/continuation
          koyo/http
          koyo/url
@@ -109,7 +110,10 @@
 (define (run-study a-study [req (current-request)])
   (define paramz (current-parameterization))
   (parameterize ([current-vars (or (current-vars) (make-hash))]
-                 [current-data (make-hash)])
+                 [current-data (make-hash)]
+                 [current-stack (cons
+                                 (study-name a-study)
+                                 (current-stack))])
     (let loop ([this-step (car (study-steps a-study))])
       (if (not this-step)
           `(continue ,paramz)
@@ -202,6 +206,7 @@
  current-participant-id
  current-participant-owner?)
 
+(define current-stack (make-parameter null))
 (define current-vars (make-parameter #f))
 (define current-instance-vars (make-parameter (make-hash)))
 (define current-data (make-parameter #f))
@@ -220,10 +225,16 @@
                 [id (identifier? #'id) #'(get 'id)])))))]))
 
 (define (get id)
-  (hash-ref (current-data) id undefined))
+  (hash-ref
+   (current-data)
+   (list (current-stack) id)
+   undefined))
 
 (define (put id v)
-  (hash-set! (current-data) id v))
+  (hash-set!
+   (current-data)
+   (list (current-stack) id)
+   v))
 
 (define-syntax (defvar/instance stx)
   (syntax-parse stx
@@ -237,10 +248,16 @@
                 [id (identifier? #'id) #'(get/instance 'id)])))))]))
 
 (define (get/instance id)
-  (hash-ref (current-instance-vars) id undefined))
+  (hash-ref
+   (current-instance-vars)
+   (list (current-stack) id)
+   undefined))
 
 (define (put/instance id v)
-  (hash-set! (current-instance-vars) id v))
+  (hash-set!
+   (current-instance-vars)
+   (list (current-stack) id)
+   v))
 
 (define-syntax (defvar* stx)
   (syntax-parse stx
