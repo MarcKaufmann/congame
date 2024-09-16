@@ -343,15 +343,18 @@ QUERY
 ;; vars ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- get-var
- get-var*
- get-var*/instance
- put-var
- put-var*
- put-var*/instance
  defvar
  defvar*
  defvar*/instance
+ defvar/instance
+ get-var
+ get-var*
+ get-var*/instance
+ get-var/instance
+ put-var
+ put-var*
+ put-var*/instance
+ put-var/instance
  undefined
  undefined?
  if-undefined)
@@ -365,9 +368,9 @@ QUERY
     (if (undefined? tmp) then-expr tmp)))
 
 ;; TODO(doc): The reason defvar has no default is because, while we
-;; could give that reasonable semantics at the Racket leve, that default
-;; is not going to be in the database so researchers could end up
-;; relying on data that doesn't make it into the final dataset.
+;; could give that reasonable semantics at the Racket level, that
+;; default is not going to be in the database so researchers could end
+;; up relying on data that doesn't make it into the final dataset.
 (define-syntax (defvar stx)
   (syntax-parse stx
     [(_ id:id)
@@ -384,6 +387,23 @@ QUERY
 
 (define (put-var k v)
   (put k v))
+
+(define-syntax (defvar/instance stx)
+  (syntax-parse stx
+    [(_ id:id)
+     #`(begin
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put-var/instance 'id v)]
+                [id (identifier? #'id) #'(get-var/instance 'id)])))))]))
+
+(define (put-var/instance uid k v)
+  (put/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k v))
+
+(define (get-var/instance uid k)
+  (get/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k undefined))
 
 (define-syntax (defvar* stx)
   (syntax-parse stx

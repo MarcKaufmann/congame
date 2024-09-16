@@ -184,16 +184,19 @@
 ;; stubs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- get
- get*
- get*/instance
- put
- put*
- put*/instance
- form
  defvar
  defvar*
  defvar*/instance
+ defvar/instance
+ form
+ get
+ get*
+ get*/instance
+ get/instance
+ put
+ put*
+ put*/instance
+ put/instance
  call-with-study-transaction
  with-study-transaction
  current-participant-id
@@ -221,6 +224,23 @@
 
 (define (put id v)
   (hash-set! (current-data) id v))
+
+(define-syntax (defvar/instance stx)
+  (syntax-parse stx
+    [(_ id:id)
+     #`(begin
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put/instance 'id v)]
+                [id (identifier? #'id) #'(get/instance 'id)])))))]))
+
+(define (get/instance id)
+  (hash-ref (current-instance-vars) id undefined))
+
+(define (put/instance id v)
+  (hash-set! (current-instance-vars) id v))
 
 (define-syntax (defvar* stx)
   (syntax-parse stx

@@ -20,6 +20,18 @@
                      [(set! id v) #'(put-var 'id v)]
                      [id (identifier? #'id) #'(get-var 'id)])))))])))
    get-var put-var
+   (define-syntaxes (defvar/instance)
+     (lambda (stx)
+       (syntax-parse stx
+         [(_ id:id)
+          #`(begin
+              (define-syntax id
+                (make-set!-transformer
+                 (lambda (stx)
+                   (syntax-case stx (set!)
+                     [(set! id v) #'(put-var/instance 'id v)]
+                     [id (identifier? #'id) #'(get-var/instance 'id)])))))])))
+   get-var/instance put-var/instance
    (define-syntaxes (defvar*)
      (lambda (stx)
        (syntax-parse stx

@@ -5,6 +5,8 @@
           conscript/local
           [get get-var]
           [put put-var]
+          [get/instance get-var/instance]
+          [put/instance put-var/instance]
           [get* get-var*]
           [get*/instance get-var*/instance]
           [put* put-var*]
