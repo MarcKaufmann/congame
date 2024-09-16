@@ -577,7 +577,7 @@ QUERY
                        #:up-transition [up-transition "none"])
   (haml
    (:a.button.next-button
-    ([:up-target up-target]
+    ([:up-follow up-target]
      [:up-transition up-transition]
      [:data-widget-id (when-bot id)]
      [:href
