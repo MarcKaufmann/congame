@@ -11,7 +11,6 @@
          (prefix-in config: congame-web/config)
          congame/components/registry
          congame/components/study
-         congame/components/var
          db
          (prefix-in dbg: debugging/server)
          deta/reflect
@@ -153,8 +152,7 @@
     (delete-directory/files "congame-web/studies/compiled")
     (exit 0))
   (study-registry-allow-conflicts? #t)
-  (schema-registry-allow-conflicts? #t)
-  (clear-known-var-ids!))
+  (schema-registry-allow-conflicts? #t))
 
 (define (get-registered-studies)
   (for*/list ([path (find-relevant-directories '(congame-studies))]

@@ -25,6 +25,7 @@
     (congame-example-study/conscript-funarch24-illustration illustration)
     (congame-example-study/conscript-markdown conscript-markdown-example)
     (congame-example-study/conscript-reqprovide conscript-reqprovide-example)
+    (congame-example-study/conscript-test-skip-after-refresh skip-after-refresh-study)
     (congame-example-study/deferred deferred-study)
     (congame-example-study/deferred wrapped-deferred-study)
     (congame-example-study/edpb-survey briq-study)

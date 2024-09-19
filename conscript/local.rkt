@@ -18,8 +18,10 @@
                   step/study-study
                   step-id
                   step-handler
-                  step-transition)
+                  step-transition
+                  study-name)
          koyo/continuation
+         koyo/http
          koyo/url
          net/mime-type
          net/sendurl
@@ -27,7 +29,7 @@
          racket/match
          racket/port
          web-server/dispatch
-         (only-in web-server/http header request-uri response? response/output)
+         (only-in web-server/http header request-bindings/raw request-uri response? response/output)
          (only-in web-server/servlet send/back send/suspend/dispatch servlet-prompt)
          web-server/servlet-dispatch
          web-server/web-server
@@ -44,6 +46,7 @@
  preview)
 
 (define (preview a-study)
+  (define seq (box 0))
   (define port-or-exn-ch
     (make-async-channel))
   (define ((wrap-application-url handler) req)
@@ -54,14 +57,23 @@
     (dispatch-rules
      [("")
       (lambda (req)
+        (define owner?
+          (not (not (bindings-ref (request-bindings/raw req) 'owner))))
+        (define participant-id
+          (let loop ([old (unbox seq)])
+            (if (box-cas! seq old (add1 old))
+                (add1 old)
+                (loop (unbox seq)))))
         (define manager
           (study-manager
            (make-study-participant
-            #:id 1
-            #:user-id 1
-            #:instance-id 1)
+            #:id participant-id
+            #:user-id participant-id
+            #:instance-id participant-id)
            #f))
         (parameterize ([current-request req]
+                       [current-participant-id participant-id]
+                       [current-participant-owner? owner?]
                        [current-study-manager manager])
           (run-study a-study)))]
      [("dsl-resource" (integer-arg) (string-arg) ...)
@@ -96,18 +108,18 @@
   (stop))
 
 (define (run-study a-study [req (current-request)])
-  (eprintf "Running study: ~a~n" a-study)
   (define paramz (current-parameterization))
   (parameterize ([current-vars (or (current-vars) (make-hash))]
-                 [current-data (make-hash)])
+                 [current-data (make-hash)]
+                 [current-stack (cons
+                                 (study-name a-study)
+                                 (current-stack))])
     (let loop ([this-step (car (study-steps a-study))])
-      (eprintf "Loop: this-step is ~a~n" this-step)
       (if (not this-step)
           `(continue ,paramz)
           (match (run-step this-step req)
             [(? response? res)
              (send/back res)]
-
             [`(to-step ,to-step-id ,paramz)
              (define next-step
                (find-step a-study to-step-id))
@@ -128,11 +140,9 @@
                   (find-step a-study next-step-id))
                 (call-with-parameterization paramz
                   (lambda ()
-                    (loop next-step)))])]
-            )))))
+                    (loop next-step)))])])))))
 
 (define (run-step a-step [req (current-request)])
-  (eprintf "run-step: running step ~a~n" a-step)
   (define paramz #f)
   (call-with-current-continuation
    (lambda (return)
@@ -143,10 +153,10 @@
                           (embed/url
                            (λ (req) ;; noqa
                              (call-with-parameterization
-                              paramz
-                              (lambda ()
-                                (parameterize ([current-request req])
-                                  (hdl req)))))))]
+                               paramz
+                               (lambda ()
+                                 (parameterize ([current-request req])
+                                   (hdl req)))))))]
                        [current-return return]
                        [current-request req])
           (set! paramz (current-parameterization))
@@ -178,19 +188,30 @@
 ;; stubs ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- form
  defvar
  defvar*
  defvar*/instance
+ defvar/instance
+ form
+ get
+ get*
+ get*/instance
+ get/instance
+ put
+ put*
+ put*/instance
+ put/instance
+ call-with-study-transaction
  with-study-transaction
  current-participant-id
  current-participant-owner?)
 
+(define current-stack (make-parameter null))
 (define current-vars (make-parameter #f))
 (define current-instance-vars (make-parameter (make-hash)))
 (define current-data (make-parameter #f))
-(define current-participant-id (λ () 1))
-(define current-participant-owner? (λ () #f))
+(define current-participant-id (make-parameter #f))
+(define current-participant-owner? (make-parameter #f))
 
 (define-syntax (defvar stx)
   (syntax-parse stx
@@ -204,10 +225,39 @@
                 [id (identifier? #'id) #'(get 'id)])))))]))
 
 (define (get id)
-  (hash-ref (current-data) id undefined))
+  (hash-ref
+   (current-data)
+   (list (current-stack) id)
+   undefined))
 
 (define (put id v)
-  (hash-set! (current-data) id v))
+  (hash-set!
+   (current-data)
+   (list (current-stack) id)
+   v))
+
+(define-syntax (defvar/instance stx)
+  (syntax-parse stx
+    [(_ id:id)
+     #`(begin
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put/instance 'id v)]
+                [id (identifier? #'id) #'(get/instance 'id)])))))]))
+
+(define (get/instance id)
+  (hash-ref
+   (current-instance-vars)
+   (list (current-stack) id)
+   undefined))
+
+(define (put/instance id v)
+  (hash-set!
+   (current-instance-vars)
+   (list (current-stack) id)
+   v))
 
 (define-syntax (defvar* stx)
   (syntax-parse stx
@@ -255,6 +305,8 @@
    (cons uid k)
    v))
 
+;; FIXME: Refactor formular to be parameterized over the current put
+;; procedure to avoid duplicating some of these checks.
 (define-syntax (form stx)
   (syntax-parse stx
     [(_ {~alt
@@ -262,6 +314,15 @@
          {~optional {~seq #:bot bot}}
          {~optional {~seq #:fields fields}}} ...
         body ...+)
+     #:attr default-action
+     (if (let uses-set!? ([stx stx])
+           (syntax-parse stx
+             #:literals (set!)
+             [(set! . _args) #t]
+             [(rator rand ...) (ormap uses-set!? (cons #'rator (syntax-e #'(rand ...))))]
+             [_ #f]))
+         #f
+         #'default-form-action)
      (let check-loop ([inner-stx #'(body ...)])
        (syntax-parse inner-stx
          #:literals (form)
@@ -271,7 +332,7 @@
           (for-each check-loop (cons #'rator (syntax-e #'(rand ...))))]
          [_ (void)]))
      #'(conscript:form
-        {~@ #:action {~? action default-form-action}}
+        {~? {~@ #:action {~? action default-action}}}
         {~? {~@ #:bot bot}}
         {~? {~@ #:fields fields}}
         body ...)]))
@@ -283,8 +344,13 @@
            [arg (in-list kw-args)])
        (put (string->symbol (keyword->string kwd)) arg)))))
 
+(define (call-with-study-transaction proc)
+  (proc))
+
 (define-syntax-rule (with-study-transaction body0 body ...)
-  (begin body0 body ...))
+  (call-with-study-transaction
+   (lambda ()
+     body0 body ...)))
 
 (module reader syntax/module-reader
   conscript/local

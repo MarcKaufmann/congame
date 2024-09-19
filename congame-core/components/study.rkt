@@ -34,7 +34,6 @@
          "export.rkt"
          "registry.rkt"
          "struct.rkt"
-         "var.rkt"
          "xexpr.rkt")
 
 (lazy-require
@@ -60,6 +59,7 @@
 ;; storage ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ call-with-study-transaction
  with-study-transaction
  current-git-sha
  get-current-round-stack
@@ -346,6 +346,15 @@ QUERY
  defvar
  defvar*
  defvar*/instance
+ defvar/instance
+ get-var
+ get-var*
+ get-var*/instance
+ get-var/instance
+ put-var
+ put-var*
+ put-var*/instance
+ put-var/instance
  undefined
  undefined?
  if-undefined)
@@ -358,6 +367,10 @@ QUERY
   (let ([tmp val-expr])
     (if (undefined? tmp) then-expr tmp)))
 
+;; TODO(doc): The reason defvar has no default is because, while we
+;; could give that reasonable semantics at the Racket level, that
+;; default is not going to be in the database so researchers could end
+;; up relying on data that doesn't make it into the final dataset.
 (define-syntax (defvar stx)
   (syntax-parse stx
     [(_ id:id)
@@ -375,11 +388,27 @@ QUERY
 (define (put-var k v)
   (put k v))
 
+(define-syntax (defvar/instance stx)
+  (syntax-parse stx
+    [(_ id:id)
+     #`(begin
+         (define-syntax id
+           (make-set!-transformer
+            (lambda (stx)
+              (syntax-case stx (set!)
+                [(set! id v) #'(put-var/instance 'id v)]
+                [id (identifier? #'id) #'(get-var/instance 'id)])))))]))
+
+(define (put-var/instance uid k v)
+  (put/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k v))
+
+(define (get-var/instance uid k)
+  (get/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k undefined))
+
 (define-syntax (defvar* stx)
   (syntax-parse stx
     [(_ id:id unique-id:id)
      #`(begin
-         (ensure-var-id-is-unique! #,(syntax-source stx) 'unique-id)
          (define-syntax id
            (make-set!-transformer
             (lambda (stx)
@@ -399,7 +428,6 @@ QUERY
   (syntax-parse stx
     [(_ id:id unique-id:id)
      #`(begin
-         (ensure-var-id-is-unique! #,(syntax-source stx) 'unique-id)
          (define-syntax id
            (make-set!-transformer
             (lambda (stx)
@@ -549,7 +577,7 @@ QUERY
                        #:up-transition [up-transition "none"])
   (haml
    (:a.button.next-button
-    ([:up-target up-target]
+    ([:up-follow up-target]
      [:up-transition up-transition]
      [:data-widget-id (when-bot id)]
      [:href
@@ -629,6 +657,9 @@ QUERY
        (parameterize ([nested-form-guard #t])
          (render rw))))]))
 
+;; FIXME: Skipping from a nested step fails because skip ends up
+;; returning from an already-expired step somehow. See
+;; skip-after-refresh.
 (define/widget (skip [to-step-id #f])
   (if to-step-id
       (continue to-step-id)
