@@ -13,7 +13,7 @@
 
 @section{Studies}
 
-A @deftech{study} is a series of @tech{steps} and a transition graph
+A @emph{study} is a series of @tech{steps} and a transition graph
 that controls which steps transition to which steps.
 
 @defproc[(study? [v any/c]) boolean?]{
@@ -47,7 +47,7 @@ that controls which steps transition to which steps.
 
 @section{Steps}
 
-A @deftech{step} is any page that can be used to relay information to
+A @emph{step} is any page that can be used to relay information to
 a participant or collect information from them (or both).
 
 @defproc[(step? [v any/c]) boolean?]{
