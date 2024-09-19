@@ -1,22 +1,18 @@
 #lang scribble/manual
 
-@(require (for-label congame/components/study
-                     congame/components/transition-graph
-                     (only-in forms form? widget-renderer/c)
-                     racket/base
+@(require (for-label racket/base
                      racket/contract
-                     web-server/http
-                     xml))
+                     congame/components/study
+                     congame/components/transition-graph))
 
-@title{Reference (Original)}
+@title[#:style 'toc]{Congame Reference}
 
-Moved elsewhere
+Here you can lookup individual Congame functions and macros to thoroughly
+understand their usage.
 
-@;|{
-  section{Studies}
+@section{Studies and Steps}
 
-A @emph{study} is a series of @tech{steps} and a transition graph
-that controls which steps transition to which steps.
+@defmodule[congame/components/study]
 
 @defproc[(study? [v any/c]) boolean?]{
   Returns @racket[#t] when @racket[v] is a study.
@@ -47,10 +43,7 @@ that controls which steps transition to which steps.
   Runs the study @racket[s] under @racket[req] with @racket[bindings].
 }
 
-@section{Steps}
-
-A @emph{step} is any page that can be used to relay information to
-a participant or collect information from them (or both).
+@subsection{Steps}
 
 @defproc[(step? [v any/c]) boolean?]{
   Returns @racket[#t] when @racket[v] is a @tech{step}.
@@ -186,59 +179,7 @@ a participant or collect information from them (or both).
   the study if @racket[to-step-id] is @racket[#f].
 }
 
-@section{Data Storage & Retrieval}
-
-A @deftech{step scope} represents the region of the database where
-data for a study is stored and retrieved from.  Step scope is
-determined by the combination of the current participant, the study
-stack and optional round and group information.  @deftech{Instance
-scope} is shared between participants to a @tech{study instance}.
-
-@defproc[(get [k symbol?]
-              [default (or/c any/c (-> any/c)) (λ () (error 'get "value not found for key ~.s" k))]
-              [#:round round-name string? ""]
-              [#:group group-name string? ""]) any/c]{
-
-  Retrieves the value stored under the symbol @racket[k] for the
-  current @tech{step scope}.  If no such value exists,
-  @racket[default] is called if it is a procedure, or returned if it
-  is a value.
-}
-
-@defproc[(get/instance [k symbol?]
-                       [default (or/c any/c procedure?)]) any/c]{
-
-  Like @racket[get], but retrieves data from @tech{instance scope}.
-}
-
-@defproc[(put [k symbol?]
-              [v any/c]
-              [#:round round-name string? ""]
-              [#:group group-name string? ""]) void?]{
-
-  Stores @racket[v] under the symbol @racket[k] for the current
-  @tech{step scope}.
-}
-
-@defproc[(put/instance [k symbol?]
-                       [v any/c]) void?]{
-
-  Like @racket[put], but stores data in @tech{instance scope}.
-}
-
-@deftogether[(
-  @defproc[(get-current-round-name) string?]
-  @defproc[(put-current-round-name [round-name string?]) void?]
-)]{
-  Controls the current round for participants in a study.
-}
-
-@deftogether[(
-  @defproc[(get-current-group-name) string?]
-  @defproc[(put-current-group-name [group-name string?]) void?]
-)]{
-  Controls the current group for participants in a study.
-}
+@section{Transition Graphs}
 
 @defmodule[congame/components/transition-graph]
 
@@ -280,4 +221,3 @@ scope} is shared between participants to a @tech{study instance}.
       (make-step 'c c)))
   ]
 }
-}|
