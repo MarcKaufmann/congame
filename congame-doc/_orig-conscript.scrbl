@@ -2,18 +2,18 @@
 
 @(require (for-label conscript racket/base))
 
-@title{Conscript}
+@title{Conscript (Original)}
 
 @section{Goals and Philosophy}
 
-@deftech{conscript} aims to provide a simpler and streamlined syntax for
+@tech{conscript} aims to provide a simpler and streamlined syntax for
 writing studies compared to @tech{congame}. There are two dialects of
 @tech{conscript}:
 
 @itemize[
   @item{Plain @tech{conscript}, which cannot require @tech{Racket}
     functions that we are not providing by default.}
-  @item{@deftech{conscript/with-require}, which allows the user to
+  @item{@tech{conscript/with-require}, which allows the user to
     require.}
 ]
 

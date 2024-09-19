@@ -4,7 +4,7 @@
                      racket/contract
                      congame/components/study))
 
-@title[#:style 'toc]{Congame (Original Docs)}
+@title[#:style 'toc]{(Original Docs)}
 @author[(author+email "Marc Kaufmann" "marc@trichotomy.xyz")]
 
 @table-of-contents[]

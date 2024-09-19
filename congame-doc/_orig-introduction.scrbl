@@ -4,7 +4,7 @@
                      racket/contract
                      web-server/http))
 
-@title{Introduction}
+@title{Introduction (Original)}
 
 @deftech{congame} is software to design and build browser-based studies, geared towards economics.
 
