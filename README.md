@@ -31,7 +31,28 @@ The features that will get implemented will however be determined by the priorit
 
 ## Setup
 
-### Requirements
+Congame consists of:
+
+* Server applications and libraries for developing and hosting studies
+* Conscript, a scripting language for authoring studies on your local computer, without having to stand
+  up a complete Congame server environment
+
+You can set up the whole thing, or just Conscript.
+
+## Setting up just Conscript
+
+You need [Racket] since this is a Racket application. 
+
+Clone this repository, then from its main folder, run:
+
+    $ rack pkg install congame-core/ conscript/
+
+This will install only the core libraries needed to run `#lang conscript` programs locally.
+
+If you want to install a local copy of the complete documentation, install these additional packages:
+    $ raco pkg install congame-doc/ congame-example-study/ congame-identity/ congame-smtp-proxy/ congame-web/ congame-tests/ congame-pjb-studies/ congame-price-lists/ studies/
+
+## Setting up a server environment
 
 * You need [Racket] since this is a Racket application.
 * You need [node] and [nvm] to build the assets.
@@ -60,6 +81,7 @@ postgres=# \q
 
     $ nvm use && npm install && npm run build
     $ raco pkg install chief                 # install and build chief to launch web server
+
     $ raco pkg install congame-core/         # install and build the core library and its deps
     $ raco pkg install congame-identity/     # install and build the application and its deps
     $ raco pkg install congame-smtp-proxy    # install and build the smtp-proxy dispatching traffic 
@@ -69,10 +91,12 @@ postgres=# \q
     $ raco pkg install studies/              # install studies used in congame-example-study
     $ raco pkg install congame-example-study # install example studies; needed for congame-doc
     $ raco pkg install congame-doc/          # install and build the docs and their deps
+
     # To install a package or study that tests depend on (e.g. congame-pjb-studies),
     # uncomment the following line and replace by appropriate package.
     # raco pkg install congame-price-lists/  # needed by congame-pjb-studies
     # raco pkg install congame-pjb-studies/
+
     $ raco pkg install congame-tests/  # install and build the tests and their deps
 
 ### Development environment
@@ -87,14 +111,14 @@ local development. You can disable this requirement by setting
 `current-continuation-key-cookie-secure?` parameter to `#f` before the
 application is started (do this in `congame-web/components/app.rkt`).
 
-## Running the app locally
+### Running the app locally
 
     $ nvm use
     $ raco chief start
 
 By default the app will run on `localhost:5100`.
 
-## Adding an admin user
+### Adding an admin user
 
 While running the app, browse to `http://localhost:5100/secret-signup`, and provide a username and
 password.
@@ -117,7 +141,7 @@ To make this user an admin user (you can do this while the app is running):
 
 Refresh the app in your browser and you should see an "Admin" link in the header.
 
-## Installing study packages
+### Installing study packages
 
 * The `congame-web` package's `info.rkt` needs to `(define congame-studies)` like so:
 
@@ -141,7 +165,7 @@ then
 This will cause the "all.rkt" module to be re-compiled, and that will
 in turn make the new study available in the web app.
 
-## Updating study caches
+### Updating study caches
 
 Run `./bin/bust-study-caches.sh` after adding studies or bots to
 `info.rkt` files within study packages.
@@ -161,6 +185,10 @@ Run `./bin/bust-study-caches.sh` after adding studies or bots to
 ## Deployment Recommendation
 
 See `ci/README.md`.
+
+## Removing Congame
+
+    raco pkg remove congame-core congame-doc congame-example-study congame-identity congame-pjb-studies congame-price-lists congame-smtp-proxy congame-tests congame-web conscript studies
 
 ## Acknowledgement
 
