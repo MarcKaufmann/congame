@@ -171,13 +171,13 @@
          [(set! id:id _)
           #:with kwd (id->keyword #'id)
           #'(let ([entry (hash-ref tbl 'kwd)])
-              (let ([widget ((cdr entry) 'widget)])
+              (let ([widget (formular-field-widget (cdr entry))])
                 (rw (car entry) widget)))]
 
          [{~or (kwd:keyword _)
                (kwd:keyword _ _)}
           #'(let ([entry (hash-ref tbl 'kwd)])
-              (let ([widget ((cdr entry) 'widget)])
+              (let ([widget (formular-field-widget (cdr entry))])
                 (rw (car entry) widget)))]
 
          [(e ...)
@@ -188,7 +188,7 @@
                        (syntax->datum #'(dynamic-field-id ...)))
           #:with kwd (datum->syntax #'e (string->keyword (symbol->string (syntax-e #'e))))
           #'(let ([entry (hash-ref tbl 'kwd)])
-              (let ([widget ((cdr entry) 'widget)])
+              (let ([widget (formular-field-widget (cdr entry))])
                 (rw (car entry) widget)))]
 
          [e #'e]))
@@ -266,9 +266,9 @@
                         (if (pair? v1)
                             (cons v2 v1)
                             (list v2 v1)))
-            (form* ([field-id (field-id 'validator)]
+            (form* ([field-id (formular-field-validator field-id)]
                     ...
-                    [dynamic-field-id (dynamic-field-id 'validator)]
+                    [dynamic-field-id (formular-field-validator dynamic-field-id)]
                     ...)
               (cons
                (list 'kwd ... 'dynamic-field-kwd ...)
@@ -348,10 +348,8 @@
   (bot:type-all elts-to-type)
   (m:element-click! (bot:find "button[type=submit]")))
 
-(define ((add-validator input proc) meth)
-  (match meth
-    ['validator (ensure (input 'validator) proc)]
-    [_ (input meth)]))
+(define (add-validator f proc)
+  (struct-copy formular-field f [validator (ensure (formular-field-validator f) proc)]))
 
 (define (cast-result input proc)
   (add-validator input (λ (v) `(ok . ,(proc v)))))
@@ -368,7 +366,7 @@
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define ((widget-all-errors) _name _value errors)
+(define ((widget-all-errors) _name _value errors) ;; noqa
   (list
    (haml
     (:ul.errors
@@ -391,105 +389,112 @@
 
 ;; validators ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(define ((checkbox [label #f]
-                   #:required? [required? #t]
-                   #:attributes [attributes null]) meth)
-  (match meth
-    ['validator
-     (apply ensure binding/boolean (cons/required? required? null))]
+(struct formular-field
+  (validator widget expected-values))
 
-    ['widget
-     (lambda (name value errors)
-       (define elt
-         ((widget-checkbox #:attributes attributes) name value errors))
-       (if label
-           (haml
-            (.group
-             (:label elt label)
-             ,@((widget-errors) name value errors)))
-           elt))]))
+(define (make-formular-field
+         #:validator validator
+         #:widget widget
+         #:expected-values [expected-values 1])
+  (formular-field
+   #;validator validator
+   #;widget widget
+   #;expected-values expected-values))
 
-(define ((radios label
-                 options
-                 #:required? [required? #t]
-                 #:validators [validators null]
-                 #:attributes [attributes null]) meth)
-  (match meth
-    ['validator
-     (apply ensure binding/text (cons/required? required? validators))]
+(define (checkbox [label #f]
+                  #:required? [required? #t]
+                  #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/boolean (cons/required? required? null))
+   #:widget
+   (lambda (name value errors)
+     (define elt
+       ((widget-checkbox #:attributes attributes) name value errors))
+     (if label
+         (haml
+          (.group
+           (:label elt label)
+           ,@((widget-errors) name value errors)))
+         elt))))
 
-    ['widget
-     (lambda (name value errors)
-       (haml
-        (.group
-         (:label.radio-group
-          label
-          ((widget-radio-group options #:attributes attributes) name value errors))
-         ,@((widget-errors) name value errors))))]))
+(define (radios label
+                options
+                #:required? [required? #t]
+                #:validators [validators null]
+                #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/text (cons/required? required? validators))
+   #:widget
+   (lambda (name value errors)
+     (haml
+      (.group
+       (:label.radio-group
+        label
+        ((widget-radio-group options #:attributes attributes) name value errors))
+       ,@((widget-errors) name value errors))))))
 
-(define ((select label
-                 options
-                 #:required? [required? #t]
-                 #:validators [validators null]
-                 #:attributes [attributes null]) meth)
-  (match meth
-    ['validator
-     (apply ensure binding/text (cons/required? required? validators))]
+(define (select label
+                options
+                #:required? [required? #t]
+                #:validators [validators null]
+                #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/text (cons/required? required? validators))
+   #:widget
+   (lambda (name value errors)
+     (haml
+      (.group
+       (:label
+        ((widget-select options #:attributes attributes) name value errors) label)
+       ,@((widget-errors) name value errors))))))
 
-    ['widget
-     (lambda (name value errors)
-       (haml
-        (.group
-         (:label
-          ((widget-select options #:attributes attributes) name value errors) label)
-         ,@((widget-errors) name value errors))))]))
+(define (input-file [label #f]
+                    #:required? [required? #t]
+                    #:validators [validators null]
+                    #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/file (cons/required? required? validators))
+   #:widget
+   (lambda (name value errors)
+     (define elt
+       ((widget-file #:attributes attributes) name value errors))
+     (if label
+         (haml
+          (.group
+           (:label elt label)
+           ,@((widget-errors) name value errors)))
+         elt))))
 
-(define ((input-file [label #f]
-                     #:required? [required? #t]
-                     #:validators [validators null]
-                     #:attributes [attributes null]) meth)
-  (match meth
-    ['validator
-     (apply ensure binding/file (cons/required? required? validators))]
-
-    ['widget
-     (lambda (name value errors)
-       (define elt
-         ((widget-file #:attributes attributes) name value errors))
-       (if label
-           (haml
-            (.group
-             (:label elt label)
-             ,@((widget-errors) name value errors)))
-           elt))]))
-
-(define (make-number-input widget)
-  (define ((proc [label #f]
-                 #:min [min -inf.0]
-                 #:max [max +inf.0]
-                 #:step [step 1]
-                 #:required? [required? #t]
-                 #:validators [validators null]
-                 #:attributes [attributes null]) meth)
-    (match meth
-      ['validator
-       (apply ensure binding/number (cons/required? required? (list* (to-real) (range/inclusive min max) validators)))]
-      ['widget
-       (lambda (name value errors)
-         (define elt
-           ((widget #:attributes (append
-                                  `((min ,(if (= min -inf.0) "" (number->string min)))
-                                    (max ,(if (= max +inf.0) "" (number->string max)))
-                                    (step ,(number->string step)))
-                                  attributes))
-            name value errors))
-         (if label
-             (haml
-              (.group
-               (:label elt label)
-               ,@((widget-errors) name value errors)))
-             elt))]))
-  proc)
+(define ((make-number-input widget)
+         [label #f]
+         #:min [min -inf.0]
+         #:max [max +inf.0]
+         #:step [step 1]
+         #:required? [required? #t]
+         #:validators [validators null]
+         #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/number (cons/required? required? (list* (to-real) (range/inclusive min max) validators)))
+   #:widget
+   (lambda (name value errors)
+     (define elt
+       ((widget #:attributes (append
+                              `((min ,(if (= min -inf.0) "" (number->string min)))
+                                (max ,(if (= max +inf.0) "" (number->string max)))
+                                (step ,(number->string step)))
+                              attributes))
+        name value errors))
+     (if label
+         (haml
+          (.group
+           (:label elt label)
+           ,@((widget-errors) name value errors)))
+         elt))))
 
 (define input-number
   (make-number-input widget-number))
@@ -497,73 +502,73 @@
 (define input-range
   (make-number-input widget-range))
 
-(define ((input-text [label #f]
-                     #:required? [required? #t]
-                     #:validators [validators null]
-                     #:attributes [attributes null]) meth)
-  (match meth
-    ['validator
-     (apply ensure binding/text (cons/required? required? validators))]
-    ['widget
-     (lambda (name value errors)
-       (define elt
-         ((widget-text #:attributes attributes) name value errors))
-       (if label
-           (haml
-            (.group
-             (:label elt label)
-             ,@((widget-errors) name value errors)))
-           elt))]))
+(define (input-text [label #f]
+                    #:required? [required? #t]
+                    #:validators [validators null]
+                    #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/text (cons/required? required? validators))
+   #:widget
+   (lambda (name value errors)
+     (define elt
+       ((widget-text #:attributes attributes) name value errors))
+     (if label
+         (haml
+          (.group
+           (:label elt label)
+           ,@((widget-errors) name value errors)))
+         elt))))
 
-(define ((textarea label
-                   #:required? [required? #t]
-                   #:validators [validators null]
-                   #:attributes [attributes null]) meth)
-  (match meth
-    ['validator
-     (apply ensure binding/text (cons/required? required? validators))]
-    ['widget
-     (lambda (name value errors)
-       (haml
-        (.group
-         (:label label ((widget-textarea #:attributes attributes) name value errors))
-         ,@((widget-errors) name value errors))))]))
+(define (textarea label
+                  #:required? [required? #t]
+                  #:validators [validators null]
+                  #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/text (cons/required? required? validators))
+   #:widget
+   (lambda (name value errors)
+     (haml
+      (.group
+       (:label label ((widget-textarea #:attributes attributes) name value errors))
+       ,@((widget-errors) name value errors))))))
 
-(define ((input-time [label #f]
-                     #:required? [required? #t]
-                     #:validators [validators null]
-                     #:attributes [attributes null]) meth)
-  (match meth
-    ['validator
-     (apply ensure binding/text (cons/required? required? validators))]
-    ['widget
-     (lambda (name value errors)
-       (define elt
-         ((widget-time #:attributes attributes) name value errors))
-       (if label
-           (haml
-            (.group
-             (:label label elt)
-             ,@((widget-errors) name value errors)))
-           elt))]))
+(define (input-time [label #f]
+                    #:required? [required? #t]
+                    #:validators [validators null]
+                    #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/text (cons/required? required? validators))
+   #:widget
+   (lambda (name value errors)
+     (define elt
+       ((widget-time #:attributes attributes) name value errors))
+     (if label
+         (haml
+          (.group
+           (:label label elt)
+           ,@((widget-errors) name value errors)))
+         elt))))
 
-(define ((input-date [label #f]
-                     #:required? [required? #t]
-                     #:validators [validators null]
-                     #:attributes [attributes null]) meth)
-  (match meth
-    ['validator
-     (apply ensure binding/text (cons/required? required? validators))]
-    ['widget
-     (lambda (name value errors)
-       (define elt
-         ((widget-date #:attributes attributes) name value errors))
-       (if label
-           (haml
-            (.group
-             (:label label elt)
-             ,@((widget-errors) name value errors)))
-           elt))]))
+(define (input-date [label #f]
+                    #:required? [required? #t]
+                    #:validators [validators null]
+                    #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/text (cons/required? required? validators))
+   #:widget
+   (lambda (name value errors)
+     (define elt
+       ((widget-date #:attributes attributes) name value errors))
+     (if label
+         (haml
+          (.group
+           (:label label elt)
+           ,@((widget-errors) name value errors)))
+         elt))))
 
 (define ((list-longer-than [n 0] [message (format "You must select ~a or more items." n)]) xs)
   (let ([xs (or xs null)])
@@ -571,136 +576,135 @@
         (ok xs)
         (err message))))
 
-(define ((make-checkboxes options
-                          render-proc
-                          #:n [n 0]
-                          #:message [message #f]
-                          #:validators [validators null]
-                          #:attributes [attributes null]) meth)
-  (match meth
-    ['validator
-     (apply ensure
-            binding/list
-            (if message
-                (cons (list-longer-than n message) validators)
-                (cons (list-longer-than n) validators)))]
-
-    ['widget
-     (lambda (name value errors)
-       (define (make-checkbox option [label ""])
-         (define the-values
-           (and value
-                (for/list ([bind (in-list (if (pair? value) value (list value)))])
-                  (string->symbol (bytes->string/utf-8 (binding:form-value bind))))))
-         (define attributes*
-           (if (and the-values (memq option the-values))
-               (cons '(checked "") attributes)
-               attributes))
-         `(label
-           (input
-            ([name ,name]
-             [type "checkbox"]
-             [value ,(symbol->string option)]
-             ,@attributes*))
-           ,label))
-       (haml
-        (.group
-         (render-proc options make-checkbox)
-         ,@((widget-errors) name value errors))))]))
-
-(define ((make-sliders n render-proc
-                       #:message [message #f]
-                       #:validators [validators null]) meth)
-  (match meth
-    ['validator
-     (apply ensure
-            binding/list
-            (λ (vs) (ok (reverse vs)))
-            (if message
-                (cons (list-longer-than n message) validators)
-                (cons (list-longer-than n) validators)))]
-
-    ['widget
-     (lambda (name value errors)
+(define (make-checkboxes options
+                         render-proc
+                         #:n [n 0]
+                         #:message [message #f]
+                         #:validators [validators null]
+                         #:attributes [attributes null])
+  (make-formular-field
+   #:expected-values n
+   #:validator
+   (apply ensure
+          binding/list
+          (if message
+              (cons (list-longer-than n message) validators)
+              (cons (list-longer-than n) validators)))
+   #:widget
+   (lambda (name value errors)
+     (define (make-checkbox option [label ""])
        (define the-values
-         (make-vector n #f))
-       (when value
-         (for ([(bind idx) (in-indexed (in-list (if (pair? value) value (list value))))])
-           (define this-value (string->number (bytes->string/utf-8 (binding:form-value bind))))
-           (vector-set! the-values idx this-value)))
-       (haml
-        (.group
-         ,@(for/list ([(this-value idx) (in-indexed (in-vector the-values))])
-             (render-proc idx name this-value))
-         ,@((widget-errors) name value errors))))]))
+         (and value
+              (for/list ([bind (in-list (if (pair? value) value (list value)))])
+                (string->symbol (bytes->string/utf-8 (binding:form-value bind))))))
+       (define attributes*
+         (if (and the-values (memq option the-values))
+             (cons '(checked "") attributes)
+             attributes))
+       `(label
+         (input
+          ([name ,name]
+           [type "checkbox"]
+           [value ,(symbol->string option)]
+           ,@attributes*))
+         ,label))
+     (haml
+      (.group
+       (render-proc options make-checkbox)
+       ,@((widget-errors) name value errors))))))
 
-(define ((make-radios options
-                      render-proc
-                      #:required? [required? #t]
-                      #:validators [validators null]
-                      #:attributes [attributes null]) meth)
-  (match meth
-    ['validator
-     (apply ensure binding/text (cons/required? required? validators))]
+(define (make-sliders n render-proc
+                      #:message [message #f]
+                      #:validators [validators null])
+  (make-formular-field
+   #:expected-values n
+   #:validator
+   (apply ensure
+          binding/list
+          (λ (vs) (ok (reverse vs)))
+          (if message
+              (cons (list-longer-than n message) validators)
+              (cons (list-longer-than n) validators)))
+   #:widget
+   (lambda (name value errors)
+     (define the-values
+       (make-vector n #f))
+     (when value
+       (for ([(bind idx) (in-indexed (in-list (if (pair? value) value (list value))))])
+         (define this-value (string->number (bytes->string/utf-8 (binding:form-value bind))))
+         (vector-set! the-values idx this-value)))
+     (haml
+      (.group
+       ,@(for/list ([(this-value idx) (in-indexed (in-vector the-values))])
+           (render-proc idx name this-value))
+       ,@((widget-errors) name value errors))))))
 
-    ['widget
-     (lambda (name value errors)
-       (define (make-radio option [label ""])
-         (define the-value (and value (string->symbol (bytes->string/utf-8 (binding:form-value value)))))
-         (define attributes*
-           (if (eq? the-value option)
-               (cons '(checked "") attributes)
-               attributes))
-         `(label
-           (input
-            ([name ,name]
-             [type "radio"]
-             [value ,(symbol->string option)]
-             ,@attributes*))
-           ,label))
-       (haml
-        (.group
-         (render-proc options make-radio)
-         ,@((widget-errors) name value errors))))]))
+(define (make-radios options
+                     render-proc
+                     #:required? [required? #t]
+                     #:validators [validators null]
+                     #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/text (cons/required? required? validators))
+   #:widget
+   (lambda (name value errors)
+     (define (make-radio option [label ""])
+       (define the-value (and value (string->symbol (bytes->string/utf-8 (binding:form-value value)))))
+       (define attributes*
+         (if (eq? the-value option)
+             (cons '(checked "") attributes)
+             attributes))
+       `(label
+         (input
+          ([name ,name]
+           [type "radio"]
+           [value ,(symbol->string option)]
+           ,@attributes*))
+         ,label))
+     (haml
+      (.group
+       (render-proc options make-radio)
+       ,@((widget-errors) name value errors))))))
 
-(define ((make-radios-with-other options
-                                 #:required? [required? #t]
-                                 #:validators [validators null]) meth)
-  (match meth
-    ['validator
-     (apply ensure
-            binding/text
-            (cons/required?
-             required?
-             (cons
-              (lambda (json-data)
-                (if (not json-data)
-                    (ok #f)
-                    (with-handlers ([exn:fail? (λ (_) (err "failed to parse radio JSON"))])
-                      (define ht (string->jsexpr json-data))
-                      (define radio-value (json-null->string (hash-ref ht 'radioValue (json-null))))
-                      (define other-value (json-null->string (hash-ref ht 'otherValue (json-null))))
-                      (cond
-                        [(and (equal? radio-value "")
-                              (equal? other-value ""))
-                         (err "You must pick a value or write something in the 'Other' field.")]
-                        [(equal? other-value "")
-                         (ok radio-value)]
-                        [else
-                         (ok other-value)]))))
-              validators)))]
-    ['widget
-     (lambda (name value errors)
-       (haml
-        (.group
-         (:cg-radios-with-other
-          ([:name name]
-           [:options (jsexpr->string
-                      (for/list ([opt (in-list options)])
-                        (match-define (cons value label) opt)
-                        (hasheq 'value (symbol->string value) 'label label)))]
-           [:value "{\"radioValue\": null, \"otherValue\": null}"]))
-         ,@((widget-errors) name value errors))))]))
+(define (make-radios-with-other options
+                                #:required? [required? #t]
+                                #:validators [validators null])
+  (make-formular-field
+   #:validator
+   (apply ensure
+          binding/text
+          (cons/required?
+           required?
+           (cons
+            (lambda (json-data)
+              (if (not json-data)
+                  (ok #f)
+                  (with-handlers ([exn:fail? (λ (_) (err "failed to parse radio JSON"))])
+                    (define ht (string->jsexpr json-data))
+                    (define radio-value (json-null->string (hash-ref ht 'radioValue (json-null))))
+                    (define other-value (json-null->string (hash-ref ht 'otherValue (json-null))))
+                    (cond
+                      [(and (equal? radio-value "")
+                            (equal? other-value ""))
+                       (err "You must pick a value or write something in the 'Other' field.")]
+                      [(equal? other-value "")
+                       (ok radio-value)]
+                      [else
+                       (ok other-value)]))))
+            validators)))
+   #:widget
+   (lambda (name value errors)
+     (haml
+      (.group
+       (:cg-radios-with-other
+        ([:name name]
+         [:options (jsexpr->string
+                    (for/list ([opt (in-list options)])
+                      (match-define (cons value label) opt)
+                      (hasheq 'value (symbol->string value) 'label label)))]
+         [:value "{\"radioValue\": null, \"otherValue\": null}"]))
+       ,@((widget-errors) name value errors))))))
 
 (define (json-null->string v)
   (if (eq? v (json-null)) "" v))
@@ -727,11 +731,11 @@
   (require rackunit
            web-server/http)
   (check-equal?
-   (((cast-result (input-text "example") string->symbol) 'validator)
+   ((formular-field-validator (cast-result (input-text "example") string->symbol))
     (binding:form #"input" #"hello"))
    '(ok . hello))
   (check-equal?
-   (((cast-result (input-number "example") (λ (n) (* n n))) 'validator)
+   ((formular-field-validator (cast-result (input-number "example") (λ (n) (* n n))))
     (binding:form #"input" #"42"))
    '(ok . 1764)))
 
