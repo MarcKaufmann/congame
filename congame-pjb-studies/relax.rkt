@@ -121,7 +121,7 @@
                                          (string-append "snip-" track-path))])))))
 
 (define (yn-radios label)
-  (cast-result
+  (map-result
    (radios label '(("yes" . "Yes")
                    ("no"  . "No")))
    (λ (s) (string=? s "yes"))))

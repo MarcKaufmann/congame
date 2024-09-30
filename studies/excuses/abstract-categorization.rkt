@@ -91,7 +91,7 @@
       (abstract #f (car r) (cadr r) (caddr r))))
 
 (define (yn-radios label)
-  (cast-result
+  (map-result
    (radios label '(("yes" . "Yes")
                    ("no"  . "No")))
    (lambda (s) (string=? s "yes"))))

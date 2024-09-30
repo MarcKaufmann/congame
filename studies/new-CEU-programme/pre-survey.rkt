@@ -33,7 +33,7 @@
       f))))
 
 (define (yn-radios label)
-  (cast-result
+  (map-result
    (radios label '(("yes" . "Yes")
                    ("no"  . "No")))
    string->symbol))
