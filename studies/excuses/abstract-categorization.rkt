@@ -123,7 +123,7 @@
     @button[void]{Continue}))))
 
 (define (binding:csv-file->list f)
-  (cast-result*
+  (map-result*
    f
    (compose1 (lambda (f) (csv->list (make-csv-reader f '((separator-chars #\;))))) binding:file/port-in)
    #:exn-predicate exn:fail:csv-reader?
@@ -133,7 +133,7 @@
 (define (input-abstracts label)
   (~> (input-file label)
       binding:csv-file->list
-      (cast-result*
+      (map-result*
        #:exn-predicate exn:fail:->abstract?
        (λ (rows)
          (map ->abstract rows)))))

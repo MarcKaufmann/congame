@@ -26,9 +26,9 @@
  put-form/with
  formular
  formular-autofill
- add-validator
- cast-result
- cast-result*
+ map-validator
+ map-result
+ map-result*
  checkbox
  radios
  select
@@ -349,16 +349,16 @@
   (bot:type-all elts-to-type)
   (m:element-click! (bot:find "button[type=submit]")))
 
-(define (add-validator f proc)
+(define (map-validator f proc)
   (struct-copy formular-field f [validator (ensure (formular-field-validator f) proc)]))
 
-(define (cast-result input proc)
-  (add-validator input (λ (v) `(ok . ,(proc v)))))
+(define (map-result input proc)
+  (map-validator input (λ (v) `(ok . ,(proc v)))))
 
-(define (cast-result* input proc
-                      #:exn-predicate [exn-predicate exn:fail?]
-                      #:exn-handler [exn-handler (λ (e) `(err . ,(exn-message e)))])
-  (add-validator
+(define (map-result* input proc
+                     #:exn-predicate [exn-predicate exn:fail?]
+                     #:exn-handler [exn-handler (λ (e) `(err . ,(exn-message e)))])
+  (map-validator
    input
    (lambda (v)
      (with-handlers ([exn-predicate exn-handler])
@@ -797,11 +797,11 @@
   (require rackunit
            web-server/http)
   (check-equal?
-   ((formular-field-validator (cast-result (input-text "example") string->symbol))
+   ((formular-field-validator (map-result (input-text "example") string->symbol))
     (binding:form #"input" #"hello"))
    '(ok . hello))
   (check-equal?
-   ((formular-field-validator (cast-result (input-number "example") (λ (n) (* n n))))
+   ((formular-field-validator (map-result (input-number "example") (λ (n) (* n n))))
     (binding:form #"input" #"42"))
    '(ok . 1764)))
 
