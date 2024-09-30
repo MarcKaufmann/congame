@@ -41,7 +41,7 @@ jobs:
         architecture: 'x64'
         distribution: 'full'
         variant: 'CS'
-        version: '8.13'
+        version: '8.14'
 
     - name: Install Racket deps
       run: |
@@ -114,7 +114,7 @@ jobs:
         architecture: 'x64'
         distribution: 'full'
         variant: 'CS'
-        version: '8.13'
+        version: '8.14'
 
     - name: Install Racket deps
       run: |
