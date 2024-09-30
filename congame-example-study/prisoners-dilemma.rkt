@@ -18,7 +18,10 @@
   (with-study-transaction
     (if (undefined? choices)
         (set! choices (hash (get-current-group) (hash (current-participant-id) choice)))
-        (set! choices (hash-update choices (get-current-group) (λ (ht) (hash-set ht (current-participant-id) choice)))))))
+        (set! choices (hash-update
+                       choices (get-current-group)
+                       (λ (ht) (hash-set ht (current-participant-id) choice))
+                       hash)))))
 
 (defstep (intro)
   @md{# Prisoner's Dilemma
