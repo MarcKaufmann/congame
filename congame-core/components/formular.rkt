@@ -10,7 +10,7 @@
          racket/list
          racket/match
          racket/port
-         threading
+         racket/string
          (prefix-in bot: (submod "bot.rkt" actions))
          (prefix-in study: "study.rkt")
          web-server/http)
@@ -34,6 +34,7 @@
  select
  input-date
  input-file
+ input-list
  input-number
  input-range
  input-text
@@ -569,6 +570,71 @@
            (:label label elt)
            ,@((widget-errors) name value errors)))
          elt))))
+
+(define (input-list fields)
+  (define n
+    (for/sum ([f (in-list fields)])
+      (formular-field-expected-values f)))
+  (make-formular-field
+   #:expected-values n
+   #:validator
+   (ensure
+    binding/list
+    (list-longer-than n)
+    (λ (vals) (ok (reverse vals)))
+    (lambda (vals)
+      (for/fold ([ress null]
+                 [errs null]
+                 #:result
+                 (if (ormap non-empty-string? errs)
+                     (err (reverse errs))
+                     (ok (reverse ress))))
+                ([f (in-list fields)]
+                 [g (in-list (get-val-groups fields vals))])
+        (define bindings
+          (if (pair? g)
+              (for/list ([val (in-list g)])
+                (binding:form #"" (string->bytes/utf-8 val)))
+              (binding:form #"" (string->bytes/utf-8 g))))
+        (define f-res
+          ((formular-field-validator f) bindings))
+        (if (ok? f-res)
+            (values (cons (cdr f-res) ress) (cons "" errs))
+            (values (cons "" ress) (cons (cdr f-res) errs))))))
+   #:widget
+   (lambda (name maybe-vals errors)
+     (define sym (string->symbol name))
+     (define val-groups
+       (let ([vals (or maybe-vals (make-list n #f))])
+         (get-val-groups fields (reverse vals))))
+     (define these-errors
+       (assq sym errors))
+     (define err-groups
+       (if these-errors
+           (cdr these-errors)
+           (make-list n #f)))
+     (let ([errors (remq these-errors errors)])
+       (haml
+        (.input-list-group
+         ,@(for/list ([f (in-list fields)]
+                      [v (in-list val-groups)]
+                      [e (in-list err-groups)])
+             (let ([errors (if (and e (not (equal? e "")))
+                               (cons (cons sym e) errors)
+                               errors)])
+               ((formular-field-widget f) name v errors)))))))))
+
+(define (get-val-groups fields vals)
+  (for/fold ([vals vals] [groups null] #:result (reverse groups))
+            ([f (in-list fields)])
+    (define n (formular-field-expected-values f)) ;; noqa
+    (define g
+      (if (= n 1)
+          (car vals)
+          (take vals n)))
+    (values
+     (drop vals n)
+     (cons g groups))))
 
 (define ((list-longer-than [n 0] [message (format "You must select ~a or more items." n)]) xs)
   (let ([xs (or xs null)])

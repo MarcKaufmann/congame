@@ -14,6 +14,7 @@
   [congame:formular-autofill bot:autofill]
   [congame:input-date input-date]
   [congame:input-file input-file]
+  [congame:input-list input-list]
   [congame:input-number input-number]
   [congame:input-range input-range]
   [congame:input-text input-text]
@@ -58,6 +59,7 @@
     (congame:checkbox
      congame:input-date
      congame:input-file
+     congame:input-list
      congame:input-number
      congame:input-range
      congame:input-text

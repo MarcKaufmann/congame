@@ -4,16 +4,10 @@
  phd-survey
  research-ideas-study)
 
-(defvar r1)
-(defvar r2)
-(defvar r3)
-(defvar r4)
-(defvar r5)
-
 (defvar* research-ideas research-ideas-id)
 
 (define (input-research-idea i)
-  (input-text (format "Research Idea ~a" i)))
+  (textarea (format "Research Idea ~a" i)))
 
 (defstep (init)
   (when (undefined? research-ideas)
@@ -25,31 +19,24 @@
 
       @form{
             @div{
-                 @set![r1 (textarea "Research Idea 1")]}
-            @div{
-                 @set![r2 (textarea "Research Idea 2")]}
-            @div{
-                 @set![r3 (textarea "Research Idea 3")]}
-            @div{
-                 @set![r4 (textarea "Research Idea 4")]}
-            @div{
-                 @set![r5 (textarea "Research Idea 5")]}
+                 @set![research-ideas
+                       (input-list
+                        (for/list ([i (in-range 5)])
+                          (input-research-idea (add1 i))))]}
+
             @submit-button
        }})
-
-(defstep (collect-ideas)
-  (set! research-ideas (list r1 r2 r3 r4 r5))
-  (skip))
 
 (defstep (the-end)
   @md{# Thank you
 
-      Thanks for participating.})
+      Thanks for participating.
+
+      Your ideas were: @(format "~.s" research-ideas)
+      })
 
 (defstudy research-ideas-study
-  [init --> get-research-ideas
-        --> collect-ideas
-        --> get-research-ideas])
+  [init --> get-research-ideas --> ,(λ () done)])
 
 (defstep (welcome)
   @md{# Welcome
@@ -132,5 +119,5 @@
                       (goto past-work)
                       (goto the-end)))]
 
-  [past-work --> the-end]
+  [past-work --> research-ideas-study --> the-end]
   [the-end --> the-end])
