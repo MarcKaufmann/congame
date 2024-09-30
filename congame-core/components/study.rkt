@@ -399,11 +399,11 @@ QUERY
                 [(set! id v) #'(put-var/instance 'id v)]
                 [id (identifier? #'id) #'(get-var/instance 'id)])))))]))
 
-(define (put-var/instance uid k v)
-  (put/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k v))
+(define (put-var/instance k v)
+  (put/instance k v))
 
-(define (get-var/instance uid k)
-  (get/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k undefined))
+(define (get-var/instance k)
+  (get/instance k undefined))
 
 (define-syntax (defvar* stx)
   (syntax-parse stx
