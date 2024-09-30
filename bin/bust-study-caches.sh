@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(dirname "$0")/.."
 PKGS=$(while IFS= read -r p; do
     basename "$(dirname "$p")"
-done < <(find "$ROOT" -type f -name "info.rkt") | xargs)
+done < <(find "$ROOT" -maxdepth 2 -type f -name "info.rkt") | xargs)
 
-rm -r "$ROOT/congame-web/studies/compiled"
+rm -fr "$ROOT/congame-web/studies/compiled"
 raco setup --pkgs $PKGS
