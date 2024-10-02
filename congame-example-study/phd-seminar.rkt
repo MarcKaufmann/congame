@@ -109,7 +109,7 @@
                    --> research-ideas-study
                    --> ,(lambda ()
                           (set! surveys-answered
-                                    (cons (date->iso8601 next-survey-date) surveys-answered))
+                                    (cons next-survey-date surveys-answered))
                           (put/identity 'surveys-answered surveys-answered)
                           (if (null? remaining-surveys)
                               (goto no-more)
