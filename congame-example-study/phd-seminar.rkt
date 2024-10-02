@@ -21,13 +21,15 @@
 
 (define survey-dates
   (list
-   (date 2024 10 1)
-   (date 2024 10 2)
    (date 2024 10 3)
-   (date 2024 10 6)
    (date 2024 10 10)
    (date 2024 10 17)
-   (date 2024 10 24)))
+   (date 2024 10 24)
+   (date 2024 11 7)
+   (date 2024 11 14)
+   (date 2024 11 21)
+   (date 2024 11 28)
+   (date 2024 12 5)))
 
 (define (~ymd d)
   (~t d "EEEE, MMMM d"))
