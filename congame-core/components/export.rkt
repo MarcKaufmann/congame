@@ -47,6 +47,13 @@
   ; FIXME: Should we use moment->iso8601 instead?
   (moment->iso8601/tzid m))
 
+(define (date->jsexpr d)
+  (date->iso8601 d))
+
+(define (datetime->jsexpr dt)
+  ; FIXME: should we deal with timezones?
+  (datetime->iso8601 dt))
+
 (define-generics jsexprable
   [->jsexpr jsexprable]
   #:fast-defaults
@@ -59,4 +66,6 @@
    [hash?         (define ->jsexpr hash->jsexpr)]
    [bytes?        (define ->jsexpr bytes->string/utf-8)]
    [binding:file? (define ->jsexpr binding:file->jsexpr)]
-   [moment?       (define ->jsexpr moment->jsexpr)]))
+   [moment?       (define ->jsexpr moment->jsexpr)]
+   [date?         (define ->jsexpr date->jsexpr)]
+   [datetime?     (define ->jsexpr datetime->jsexpr)]))
