@@ -15,6 +15,7 @@
          racket/format
          racket/lazy-require
          racket/list
+         racket/random
          racket/string
          (only-in web-server/http response/xexpr)
          "form.rkt"
@@ -63,7 +64,7 @@
 
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling truncate
  = < > <= >= equal? eq?
- sqrt expt exp log random
+ sqrt expt exp log random random-ref
 
  regexp-match?
 
