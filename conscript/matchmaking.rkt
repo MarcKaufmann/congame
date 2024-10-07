@@ -1,9 +1,10 @@
 #lang racket/base
 
 (require (only-in congame/components/study
+                  call-with-study-transaction
                   get-var get-var/instance get-var* get-var*/instance
-                  put-var put-var/instance put-var* put-var*/instance)
-         conscript/base
+                  put-var put-var/instance put-var* put-var*/instance
+                  skip undefined?)
          racket/unit
          "congame-sig.rkt"
          "matchmaking-sig.rkt"

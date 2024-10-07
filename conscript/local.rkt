@@ -28,13 +28,17 @@
          racket/async-channel
          racket/match
          racket/port
+         racket/unit
          web-server/dispatch
          (only-in web-server/http header request-bindings/raw request-uri response? response/output)
          (only-in web-server/servlet send/back send/suspend/dispatch servlet-prompt)
          web-server/servlet-dispatch
          web-server/web-server
          (prefix-in conscript: "base.rkt")
-         (except-in "base.rkt" defvar form))
+         (except-in "base.rkt" defvar form)
+         "congame-sig.rkt"
+         "matchmaking-sig.rkt"
+         "matchmaking-unit.rkt")
 
 (provide
  (all-from-out "base.rkt"))
@@ -193,18 +197,14 @@
  defvar*/instance
  defvar/instance
  form
- get
- get*
- get*/instance
- get/instance
- put
- put*
- put*/instance
- put/instance
  call-with-study-transaction
  with-study-transaction
  current-participant-id
- current-participant-owner?)
+ current-participant-owner?
+ make-matchmaker
+ get-ready-groups
+ get-current-group
+ reset-current-group)
 
 (define current-stack (make-parameter null))
 (define current-vars (make-parameter #f))
@@ -221,16 +221,16 @@
            (make-set!-transformer
             (lambda (stx)
               (syntax-case stx (set!)
-                [(set! id v) #'(put 'id v)]
-                [id (identifier? #'id) #'(get 'id)])))))]))
+                [(set! id v) #'(put-var 'id v)]
+                [id (identifier? #'id) #'(get-var 'id)])))))]))
 
-(define (get id)
+(define (get-var id)
   (hash-ref
    (current-data)
    (list (current-stack) id)
    undefined))
 
-(define (put id v)
+(define (put-var id v)
   (hash-set!
    (current-data)
    (list (current-stack) id)
@@ -244,16 +244,16 @@
            (make-set!-transformer
             (lambda (stx)
               (syntax-case stx (set!)
-                [(set! id v) #'(put/instance 'id v)]
-                [id (identifier? #'id) #'(get/instance 'id)])))))]))
+                [(set! id v) #'(put-var/instance 'id v)]
+                [id (identifier? #'id) #'(get-var/instance 'id)])))))]))
 
-(define (get/instance id)
+(define (get-var/instance id)
   (hash-ref
    (current-instance-vars)
    (list (current-stack) id)
    undefined))
 
-(define (put/instance id v)
+(define (put-var/instance id v)
   (hash-set!
    (current-instance-vars)
    (list (current-stack) id)
@@ -267,16 +267,16 @@
            (make-set!-transformer
             (lambda (stx)
               (syntax-case stx (set!)
-                [(set! id v) #'(put* 'unique-id 'id v)]
-                [id (identifier? #'id) #'(get* 'unique-id 'id)])))))]))
+                [(set! id v) #'(put-var* 'unique-id 'id v)]
+                [id (identifier? #'id) #'(get-var* 'unique-id 'id)])))))]))
 
-(define (get* uid k)
+(define (get-var* uid k)
   (hash-ref
    (current-vars)
    (cons uid k)
    undefined))
 
-(define (put* uid k v)
+(define (put-var* uid k v)
   (hash-set!
    (current-vars)
    (cons uid k)
@@ -290,16 +290,16 @@
            (make-set!-transformer
             (lambda (stx)
               (syntax-case stx (set!)
-                [(set! id v) #'(put*/instance 'unique-id 'id v)]
-                [id (identifier? #'id) #'(get*/instance 'unique-id 'id)])))))]))
+                [(set! id v) #'(put-var*/instance 'unique-id 'id v)]
+                [id (identifier? #'id) #'(get-var*/instance 'unique-id 'id)])))))]))
 
-(define (get*/instance uid k)
+(define (get-var*/instance uid k)
   (hash-ref
    (current-instance-vars)
    (cons uid k)
    undefined))
 
-(define (put*/instance uid k v)
+(define (put-var*/instance uid k v)
   (hash-set!
    (current-instance-vars)
    (cons uid k)
@@ -342,7 +342,7 @@
    (lambda (kws kw-args . _args)
      (for ([kwd (in-list kws)]
            [arg (in-list kw-args)])
-       (put (string->symbol (keyword->string kwd)) arg)))))
+       (put-var (string->symbol (keyword->string kwd)) arg)))))
 
 (define (call-with-study-transaction proc)
   (proc))
@@ -351,6 +351,10 @@
   (call-with-study-transaction
    (lambda ()
      body0 body ...)))
+
+(define-values/invoke-unit matchmaking@
+  (import congame^)
+  (export matchmaking^))
 
 (module reader syntax/module-reader
   conscript/local

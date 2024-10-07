@@ -1,7 +1,6 @@
 #lang conscript
 
-(require conscript/matchmaking
-         conscript/survey-tools
+(require conscript/survey-tools
          racket/match)
 
 (provide

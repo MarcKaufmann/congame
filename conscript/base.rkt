@@ -21,6 +21,7 @@
          "form.rkt"
          "html.rkt"
          "markdown.rkt"
+         "matchmaking.rkt"
          "resource.rkt")
 
 (lazy-require
@@ -96,7 +97,13 @@
   [congame:put-current-group-name put-current-group-name])
  make-step make-step/study
  put/identity
- done)
+ done
+
+ ;; Matchmaking
+ make-matchmaker
+ get-ready-groups
+ get-current-group
+ reset-current-group)
 
 ;; syntax ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
