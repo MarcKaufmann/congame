@@ -2,7 +2,6 @@
 
 (require congame-web/components/auth
          congame-web/components/user
-         congame/components/bot
          congame/components/export
          (only-in congame/components/study
                   current-study-instance-id
@@ -41,9 +40,5 @@
      (unless (= (http:response-status-code res) 201)
        (error 'put/identity "request failed~n  response: ~a" (http:response-body res)))]
 
-    [(current-user-bot?)
-     (put #:root '*identity* key value)]
-
     [else
-     (error 'put/identity "current user is not an identity user~n username: ~s~n key: ~s~n value: ~s"
-            (user-username (current-user)) key value)]))
+     (put #:root '*identity* key value)]))
