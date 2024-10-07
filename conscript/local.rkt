@@ -196,6 +196,7 @@
  defvar*
  defvar*/instance
  defvar/instance
+ put/identity
  form
  call-with-study-transaction
  with-study-transaction
@@ -304,6 +305,9 @@
    (current-instance-vars)
    (cons uid k)
    v))
+
+(define (put/identity k v)
+  (put-var k v))
 
 ;; FIXME: Refactor formular to be parameterized over the current put
 ;; procedure to avoid duplicating some of these checks.
