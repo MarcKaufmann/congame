@@ -417,11 +417,11 @@ QUERY
                 [id (identifier? #'id) #'(get-var* 'unique-id 'id)])))))]))
 
 (define (put-var* uid k v)
-  (parameterize ([current-study-stack null])
+  (parameterize ([current-study-stack '(*root*)])
     (put #:root (string->symbol (format "*dynamic:~a*" uid)) k v)))
 
 (define (get-var* uid k)
-  (parameterize ([current-study-stack null])
+  (parameterize ([current-study-stack '(*root*)])
     (get #:root (string->symbol (format "*dynamic:~a*" uid)) k undefined)))
 
 (define-syntax (defvar*/instance stx)
@@ -436,11 +436,11 @@ QUERY
                 [id (identifier? #'id) #'(get-var*/instance 'unique-id 'id)])))))]))
 
 (define (put-var*/instance uid k v)
-  (parameterize ([current-study-stack null])
+  (parameterize ([current-study-stack '(*root*)])
     (put/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k v)))
 
 (define (get-var*/instance uid k)
-  (parameterize ([current-study-stack null])
+  (parameterize ([current-study-stack '(*root*)])
     (get/instance #:root (string->symbol (format "*dynamic:~a*" uid)) k undefined)))
 
 
@@ -846,6 +846,9 @@ QUERY
 ;; This is actually a stack of step ids where each step represents a [sub]study.
 (define current-study-stack
   (make-parameter null))
+
+(module+ private
+  (provide current-study-stack))
 
 (define current-step
   (make-parameter #f))
