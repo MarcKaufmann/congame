@@ -160,6 +160,8 @@
 
 (define-syntax (defstep stx)
   (syntax-parse stx
+    [(_ name:id body:expr)
+     #'(define name body)]
     [(_ head:function-header . body)
      #'(define head . body)]))
 

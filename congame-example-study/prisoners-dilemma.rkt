@@ -27,16 +27,17 @@
 
       @button{Continue...}})
 
-(define matchmake
+(defstep (waiter)
+  @md{# Please Wait
+
+      Please wait while another participant joins the queue.
+
+      @refresh-every[5]})
+
+(defstep matchmake
   (let ([matchmaker (make-matchmaker 2)])
     (lambda ()
-      (matchmaker
-       (lambda ()
-         @md{# Please Wait
-
-             Please wait while another participant joins the queue.
-
-             @refresh-every[5]})))))
+      (matchmaker waiter))))
 
 (defstep (make-choice)
   (define (cooperate)
