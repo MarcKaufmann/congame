@@ -45,7 +45,7 @@
 (provide
  preview)
 
-(define (preview a-study)
+(define (preview a-study [open-as-owner? #f])
   (define seq (box 0))
   (define port-or-exn-ch
     (make-async-channel))
@@ -102,7 +102,7 @@
     (sync port-or-exn-ch))
   (when (exn:fail? port-or-exn)
     (raise port-or-exn))
-  (send-url (format "http://127.0.0.1:~a" port-or-exn))
+  (send-url (format "http://127.0.0.1:~a~a" port-or-exn (if open-as-owner? "?owner=x" "")))
   (with-handlers ([exn:break? void])
     (sync never-evt))
   (stop))
