@@ -56,4 +56,5 @@
     (congame-example-study/reproducible-bug reproducible-bug-study)))
 (define congame-bots
   '((congame-example-study/memory-leak make-ml-bot #:for memory-leak #:models (ml-bot-model))
-    (congame-example-study/conscript-bot make-conscript-bot #:for conscript-bot-example #:models (conscript-bot-model))))
+    (congame-example-study/conscript-bot make-conscript-bot #:for conscript-bot-example #:models (conscript-bot-model))
+    (congame-example-study/prisoners-dilemma make-prisoners-dilemma-bot #:for prisoners-dilemma #:models (prisoners-dilemma-model))))

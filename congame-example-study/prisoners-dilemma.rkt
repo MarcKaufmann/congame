@@ -4,7 +4,9 @@
          racket/match)
 
 (provide
- prisoners-dilemma)
+ prisoners-dilemma
+ make-prisoners-dilemma-bot
+ prisoners-dilemma-model)
 
 ;; For next time:
 ;; * Multiple participants & current owner in conscript/local
@@ -47,8 +49,8 @@
 
   @md{# Make Your Choice
 
-      @button[cooperate]{Cooperate}
-      @button[defect]{Defect}})
+      @button[#:id "cooperate" cooperate]{Cooperate}
+      @button[#:id "defect" defect]{Defect}})
 
 (defstep (wait)
   (if (= (hash-count (hash-ref choices (get-current-group))) 1)
@@ -81,3 +83,23 @@
 (defstudy prisoners-dilemma
   [intro --> matchmake --> make-choice --> wait --> display-result]
   [display-result --> display-result])
+
+(define make-prisoners-dilemma-bot
+  (bot:study->bot prisoners-dilemma))
+
+(defvar* behavior behavior)
+
+(define (prisoners-dilemma-model k proc)
+  (match k
+    [`(*root* intro)
+     (set! behavior (random-ref '(cooperate defect)))
+     (proc)]
+    [`(*root* matchmake)
+     (sleep 1)]
+    [`(*root* make-choice)
+     (bot:click behavior)]
+    [`(*root* display-result)
+     (bot:completer)]
+    [`(*root* wait)
+     (sleep 1)]
+    [_ (proc)]))

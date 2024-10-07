@@ -1,18 +1,18 @@
 #lang racket/base
 
-(require racket/contract
+(require racket/contract/base
          racket/match
          "bot.rkt"
          (submod "study.rkt" private))
 
 (provide
- study->bot)
+ (contract-out
+  [study->bot (-> study? (-> model/c bot?))]))
 
 (define model/c
   (-> (listof symbol?) procedure? any))
 
-(define/contract ((study->bot s [stack '(*root*)]) model)
-  (-> study? (-> model/c bot?))
+(define ((study->bot s [stack '(*root*)]) model)
   (apply
    make-bot
    (for/list ([st (in-list (study-steps s))])
@@ -22,8 +22,9 @@
 
        [(step id _ handler/bot _ _)
         (make-bot-stepper id (lambda ()
-                               (define id* (reverse (cons id stack)))
-                               (with-handlers ([exn:fail?
-                                                (lambda (e)
-                                                  (raise (struct-copy exn e [message (format "failure for id ~s~n~a" id* (exn-message e))])))])
-                                 (model id* handler/bot))))]))))
+                               (parameterize ([current-study-stack stack])
+                                 (define id* (reverse (cons id stack)))
+                                 (with-handlers ([exn:fail?
+                                                  (lambda (e)
+                                                    (raise (struct-copy exn e [message (format "failure for id ~s~n~a" id* (exn-message e))])))])
+                                   (model id* handler/bot)))))]))))

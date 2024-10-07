@@ -1082,17 +1082,28 @@
                  (call-with-semaphore sema
                    (lambda ()
                      ;; FIXME: Rename study-page to study-instance-page.
-                     (run-bot
-                      #:study-url (apply
-                                   make-application-url
-                                   (string-split
-                                    (reverse-uri 'study-page (study-instance-slug the-instance))
-                                    "/"))
-                      #:username (user-username u)
-                      #:password password
-                      #:headless? headless?
-                      #:port p
-                      (bot model)))))))
+                     (define participant
+                       (with-database-connection [conn db]
+                         (~> (from study-participant #:as p)
+                             (where (and (= p.instance-id ,(study-instance-id the-instance))
+                                         (= p.user-id ,(user-id u))))
+                             (lookup conn _))))
+                     (call-with-study-manager
+                      (make-study-manager
+                       #:database db
+                       #:participant participant)
+                      (lambda ()
+                        (run-bot
+                         #:study-url (apply
+                                      make-application-url
+                                      (string-split
+                                       (reverse-uri 'study-page (study-instance-slug the-instance))
+                                       "/"))
+                         #:username (user-username u)
+                         #:password password
+                         #:headless? headless?
+                         #:port p
+                         (bot model)))))))))
            (channel-put res-ch res))))))
   (for ([ch (in-list chs)])
     (define res (channel-get ch))
