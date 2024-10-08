@@ -70,6 +70,7 @@
  regexp-match?
 
  format ~a number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
+ bytes? bytes->string/utf-8
 
  exn:fail? exn-message
 

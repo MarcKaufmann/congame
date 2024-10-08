@@ -1,13 +1,16 @@
 #lang conscript
 
-(require gregor)
+(require conscript/survey-tools
+         gregor)
 
 (provide
  phd-survey
  research-surveys)
 
 (defvar* research-ideas research-ideas-id)
+(defvar* research-proposals research-proposals-id)
 (defvar* next-survey-date next-survey-date-id)
+(defvar* research-proposal research-proposal-id)
 (defvar remaining-surveys)
 (defvar surveys-answered)
 
@@ -23,7 +26,6 @@
   (list
    (date 2024 10 3)
    (date 2024 10 10)
-   (date 2024 10 17)
    (date 2024 10 24)
    (date 2024 11 7)
    (date 2024 11 14)
@@ -33,6 +35,31 @@
 
 (define (~ymd d)
   (~t d "EEEE, MMMM d"))
+
+; FIXME: I'd much rather pass the date around as a local variable.
+; But an argument to the step has to be available at compile time, right?
+; Here our old way of passing things around was superior, given that now
+; we fill the global namespace with variables like there's no tomorrow.
+(defstep (get-research-proposal)
+  @md{# Research Proposal
+
+      @form{
+            @div{
+                 @set![research-proposal
+                       (map-result
+                        (input-file
+                         "Provide your reseach proposal as a pdf."
+                         #:required? #f
+                         #:validators (list
+                                       (lambda (b)
+                                         (if b
+                                             (valid-pdf? b)
+                                             (cons 'ok b)))))
+                        (lambda (b)
+                          (if b
+                              (upload-file! b)
+                              b)))]}
+            @submit-button}})
 
 (defstep (get-research-ideas)
   @md{# Research Ideas
@@ -52,8 +79,7 @@
                            next-survey-date
                            v)))]}
 
-            @submit-button
-       }})
+            @submit-button}})
 
 (defstep (initialize-surveys)
   (define t (today))
@@ -69,6 +95,45 @@
   (set! next-survey-date (car remaining-surveys))
   (set! remaining-surveys (cdr remaining-surveys))
   (skip))
+
+(defstep (show-research-ideas)
+  @md{# Research Ideas
+
+      @`@(div
+         ,@(for/list ([(k rs) (in-hash research-ideas)])
+             (div
+              (h2 (~ymd k))
+
+              `@(ul
+                 ,@(for/list ([r rs])
+                     (li r))))))
+
+      @button{Back}})
+
+(defstep (show-research-proposals)
+  @md{@style{
+        .button.attachment-button {
+          display: inline;
+          padding: 0.3rem;
+        }
+      }
+
+      # Research Proposals
+
+      @`@(ul
+          ,@(for/list ([(k v) (in-hash research-proposals)])
+              (define fn
+                (let ([fn0 (uploaded-file-filename v)])
+                  (if (bytes? fn0)
+                      (bytes->string/utf-8 fn0)
+                      fn0)))
+              (li
+               (strong (format "~a:" (~ymd k)))
+               (span (file-download/link v fn)))))
+
+      @br{}
+
+      @button{Back}})
 
 (defstep (wait-survey)
   (define t (today))
@@ -92,7 +157,21 @@
         [else
          @md{# The next survey is not yet open
 
-             The next survey only opens on @(~ymd (survey-start next-survey-date)).}]))
+             The next survey only opens on @(~ymd (survey-start next-survey-date)).
+
+             @button[#:to-step-id 'show-research-ideas]{Show Research Ideas}
+             @button[(λ ()
+                       (when (undefined? research-proposals)
+                         (set! research-proposals (hash))))
+                     #:to-step-id 'show-research-proposals]{Show Research Proposals}
+
+             @(button
+               (λ ()
+                 (set! research-proposal #f)
+                 (when (undefined? research-proposals)
+                   (set! research-proposals (hash))))
+               #:to-step-id 'get-research-proposal
+               "Submit Research Proposal")}]))
 
 (defstudy research-ideas-study
   [init --> get-research-ideas --> ,(λ () done)])
@@ -102,12 +181,24 @@
 
       You are done for now.})
 
+(defstep (add-rp-if-submitted)
+  (when research-proposal
+    (set! research-proposals
+          (hash-set
+           research-proposals
+           next-survey-date
+           research-proposal)))
+  (skip))
+
 (defstudy research-surveys
   [initialize-surveys --> ,(lambda ()
                              (if (null? remaining-surveys)
                                  (goto no-more)
                                  (goto set-next-survey)))]
+
   [set-next-survey --> wait-survey
+                   ; FIXME: we should skip when date is past and we resume
+                   ; Use wrap-study for that.
                    --> research-ideas-study
                    --> ,(lambda ()
                           (set! surveys-answered
@@ -117,8 +208,10 @@
                               (goto no-more)
                               (goto set-next-survey)))]
 
-  [no-more --> no-more])
-
+  [get-research-proposal --> add-rp-if-submitted --> wait-survey]
+  [no-more --> no-more]
+  [show-research-ideas --> wait-survey]
+  [show-research-proposals --> wait-survey])
 
 (defstep (the-end)
   @md{# Thank you
