@@ -5,7 +5,7 @@
                      racket/base
                      racket/contract))
 
-@title{How Tos}
+@title{How Tos (Original)}
 @section{How to add a new study}
 
 The simplest case is when you add a new study from a package that is

@@ -1,0 +1,43 @@
+.terminal {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    width: 88%;
+    background: #fafafa;
+    border: solid silver 1px;
+    border-radius: 4px;
+}
+
+.browser {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    width: 88%;
+    background: white;
+    border: solid silver 1px;
+    border-radius: 8px;
+}
+
+.terminal .SIntrapara {
+    margin: 0 0 0 0;
+}
+
+.dr-message {
+    font-family: sans-serif;
+    font-weight: normal;
+    font-size: 0.85em;
+}
+
+kbd {
+    display: inline-block;
+    font-family: sans-serif;
+    padding: 3px 5px;
+    font-size: 0.8em;
+    line-height: 1.2;
+    color: rgba(0, 0, 0, 0.87);
+    vertical-align: middle;
+    background-color: #FAFAFA;
+    border: solid 1px rgba(0, 0, 0, 0.54);
+    border-bottom-color: rgba(0, 0, 0, 0.54);
+    border-bottom-color: rgba(0, 0, 0, 0.54);
+    border-radius: 3px;
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.54);
+}
