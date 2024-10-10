@@ -9,11 +9,22 @@
 
 .browser {
     margin-bottom: 1em;
-    padding: 0.5em;
+    padding: 0 0.5rem;
     width: 88%;
     background: white;
     border: solid silver 1px;
     border-radius: 8px;
+}
+
+.browser:before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxjaXJjbGUgY3g9IjIwIiBjeT0iMTUiIHI9IjYiIGZpbGw9IiNGRjVGNTciIC8+PGNpcmNsZSBjeD0iNDAiIGN5PSIxNSIgcj0iNiIgZmlsbD0iI0ZGQkQyRSIgLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjE1IiByPSI2IiBmaWxsPSIjMjhDOTQwIiAvPjxwb2x5Z29uIHBvaW50cz0iOTAsMTUgMTAwLDEwIDEwMCwyMCIgZmlsbD0iIzRENEQ0RCIgLz48cG9seWdvbiBwb2ludHM9IjEyNSwxNSAxMTUsMTAgMTE1LDIwIiBmaWxsPSIjNEQ0RDREIiAvPjxyZWN0IHg9IjE0MCIgeT0iNyIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxNiIgZmlsbD0id2hpdGUiIHN0cm9rZT0iI0MwQzBDMCIgc3Ryb2tlLXdpZHRoPSIxIiByeD0iOCIgcnk9IjgiIC8+PC9zdmc+');
+    display: block;
+    background: #ececec;
+    border-radius: 6px 6px 0 0;
+    width: calc(100% + 0.5rem);
+    margin-left: -0.5rem;
+    padding: 0.35rem 0 0.35rem 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .terminal .SIntrapara {

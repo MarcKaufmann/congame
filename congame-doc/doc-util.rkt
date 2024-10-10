@@ -1,7 +1,9 @@
 #lang racket/base
 
-(require racket/runtime-path
+(require racket/match
+         racket/runtime-path
          scribble/core
+         scribble/decode
          scribble/html-properties
          scribble/latex-properties
          scribble/manual)
@@ -38,11 +40,8 @@
            elems))
 
 (define (browser . elems)
-  (define elements
-    (for/list ([elem (in-list elems)])
-      (if (equal? elem "\n") (linebreak) elem)))
-  (compound-paragraph 
+  (compound-paragraph
    (style "browser" (list (css-style-addition congame-css)
                           (alt-tag "div")
                           (tex-addition congame-tex)))
-   (list (paragraph (style #f null) elements))))
+   (decode-flow elems)))
