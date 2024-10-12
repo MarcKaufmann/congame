@@ -6,6 +6,25 @@
 
 @title[#:tag "intro"]{Introduction: a quick tour using Conscript}
 
+You can follow the steps in this tour to get a fast, high-level introduction to Congame and
+Conscript:
+
+@itemlist[
+          
+@item{Creating and testing a minimal study}
+
+@item{Creating studies with multiple steps}
+
+@item{Interactively collecting data from participants}
+
+@item{Uploading and running your study on a Congame server.}
+
+]
+
+For now, we’ll focus on @emph{steps of action} that introduce the complete Congame development
+cycle.  When you’re ready, you can start reading the @secref{Conscript} and
+@secref["The_Congame_Server"] sections for detailed explanations of the concepts introduced here.
+
 The best way to learn is by doing, so let’s do!
 
 @section{Creating a new file}
@@ -18,10 +37,9 @@ Assuming you've installed Racket, launch DrRacket. Start a new file. Click into 
 }
 
 The first line of every Conscript @tech{study} program starts with @code{#lang conscript} or
-@code{#lang conscript/local}. The latter allows us to test drive our studies in the 
-web browser, without setting up a server or databases. When you’re ready to start
-using it "for real", you change the first line to @code{#lang conscript} and then
-upload it to a Congame server. 
+@code{#lang conscript/local}. The latter allows us to test drive our studies in the web browser,
+without setting up a server or databases. When you’re ready to start using it "for real", you change
+the first line to @code{#lang conscript} and then upload it to a Congame server. 
 
 @section{Writing the simplest study}
 
@@ -48,15 +66,15 @@ We'll get into the specifics later; but at a high level:
 
 @itemlist[
 
-@item{Conscript @tech{studies} are Racket programs that start @code{#lang conscript} or
-@code{#lang conscript/local}.}
+@item{Conscript @tech{studies} are Racket programs that start @code{#lang conscript} or @code{#lang
+conscript/local}.}
 
 @item{In Conscript, you can use “@"@" notation” to intermingle code and text. This is explained
 further in @secref["Scribble_Syntax"].}
            
-@item{Each @tech{step} is contained in a @racket[defstep] expression. Within this expression
-are more expressions that provide the content and functionality for that step. The step shown
-here uses an @racket[md] expression to denote text that will be formatted using Markdown.}
+@item{Each @tech{step} is contained in a @racket[defstep] expression. Within this expression are
+more expressions that provide the content and functionality for that step. The step shown here uses
+an @racket[md] expression to denote text that will be formatted using Markdown.}
 
 @item{The steps are tied together into a transition graph using a @racket[defstudy] expression.}
 
@@ -66,7 +84,7 @@ here uses an @racket[md] expression to denote text that will be formatted using 
 
 To try out this study, click DrRacket's @onscreen{Run} button.
 
-You should see some text like the below in the bottom pane of DrRacket's main window (called the 
+You should see some text like the below in the bottom pane of DrRacket's main window (called the
 "interactions" window):
 
 @terminal{
@@ -86,8 +104,8 @@ looks like this:
 @:>{(preview tutorial)}
 }
 
-Then press your @kbd{ENTER} key. You should see your web browser open with a page that looks
-roughly like this:
+Then press your @kbd{ENTER} key. You should see your web browser open with a page that looks roughly
+like this:
 
 @browser{
     @bold{@larger{The Beginning is the End}}
@@ -97,13 +115,14 @@ roughly like this:
 
 The browser is showing you the first and only step of the study: a page with some formatted text.
 
-@section{Getting input}
+@section{The next level: addings steps and getting input}
 
-Of course, to be at all useful, a study must collect information. To do that, we need to
-give participants a way to interact with our study.
+Of course, to be at all useful, a study must collect information. To do that, we need to give
+participants a way to interact with our study.
 
-Create a new file in DrRacket (click @onscreen{File} → @onscreen{New}, or @onscreen{File} → @onscreen{New Tab}
-according to your preference). Add these lines at the top of your new, empty file:
+Create a new file in DrRacket (click @onscreen{File} → @onscreen{New}, or @onscreen{File} →
+@onscreen{New Tab} according to your preference). Add these lines at the top of your new, empty
+file:
 
 @codeblock{
 #lang conscript/local
@@ -115,9 +134,9 @@ according to your preference). Add these lines at the top of your new, empty fil
 Here, we’ve introduced two @racket[defvar] expressions. Each one defines a new variable bound to an
 identifier, in this case @racket[_first-name] and @racket[_age].
 
-The @racket[defvar] expression looks similar to “declare a variable” expressions in Python, JavaScript,
-and other languages. Using @racket[defvar] tells Conscript that this variable is a key piece of
-information we want to record from each participant.
+The @racket[defvar] expression looks similar to “declare a variable” expressions in Python,
+JavaScript, and other languages. Using @racket[defvar] tells Conscript that this variable is a key
+piece of information we want to record from each participant.
 
 Now let’s add steps to our new study. First, we’ll explain to participants what to expect:
 
@@ -137,9 +156,9 @@ Now let’s add steps to our new study. First, we’ll explain to participants w
   })
 }|
 
-This looks similar to the step in our first example study --- some simple Markdown-formatted text ---
-but contained inside the @racket[md] expression is a new @racket[button] expression. This is the first
-bit of interactivity: giving the participant a way to proceed to the next step. By default,
+This looks similar to the step in our first example study --- some simple Markdown-formatted text
+--- but contained inside the @racket[md] expression is a new @racket[button] expression. This is the
+first bit of interactivity: giving the participant a way to proceed to the next step. By default,
 @racket[button] generates a button that, when clicked, navigates to the next step in the study,
 whatever that is.
 
@@ -161,25 +180,27 @@ Speaking of which, let’s write the next step! Add these lines to the end of yo
   }})
 }|
 
-Once again, we’re introducing new expressions inside the @racket[md] expression to provide functionality
-as well as explanatory text.
+Once again, we’re introducing new expressions inside the @racket[md] expression to provide
+functionality as well as explanatory text.
 
 Working from the inside out:
 
 @itemlist[#:style 'ordered
 
 @item{The @racket[(input-text)] and @racket[(input-number)] expressions (at the end of the fifth and
-seventh lines in the code above) generate input boxes where
-the participant can enter data. There are other expressions that can be used to insert the various
-other form elements like checkboxes and dropdown lists.}
+seventh lines in the code above) generate input boxes where the participant can enter data. There
+are other expressions that can be used to insert the various other form elements like checkboxes and
+dropdown lists.}
           
-@item{The @racket[(set! first-name (input-text))] expression tells Conscript, “when this form is submitted, set the value in
-the @racket[_first-name] variable to the whatever the user has entered in @racket[(input-text)]. }
+@item{The @racket[(set! first-name (input-text))] expression tells Conscript, “when this form is
+submitted, set the value in the @racket[_first-name] variable to the whatever the user has entered
+in @racket[(input-text)]. }
 
 @item{The @racket[submit-button] expression inserts the button the user can click to submit all the
 information they have entered into the form elements.}
 
-@item{All the interactive form elements are wrapped in a @racket[form] expression to keep them grouped together.}
+@item{All the interactive form elements are wrapped in a @racket[form] expression to keep them
+grouped together.}
 
 ]
 
@@ -192,19 +213,20 @@ Next, write the final step by adding these lines to the end of your file:
   @md{
     # Good job, @first-name
 
-    Thank you for participating in our survey despite being @number->string[age] years old.
+    Thank you for participating in our survey despite
+    being @number->string[age] years old.
   })
 }|
 
 We’re doing something else interesting here: we’re inserting our variables directly into the text in
 the @racket[md] expression! We’ve told Conscript to record @racket[_first-name] and @racket[_age] in
-the previous step of the study, but in addition to storing those values for later analysis, we can make
-use of those values while the user is still participating. There are many ways we might want to do this;
-in this case, we’re simply displaying the values back to the user.
+the previous step of the study, but in addition to storing those values for later analysis, we can
+make use of those values while the user is still participating. There are many ways we might want to
+do this; in this case, we’re simply displaying the values back to the user.
 
-@margin-note{Note that since we used @racket[input-number] to assign a value to @racket[_age], we must use
-@racket[number->string] to convert that numeric value to text if we want to display it within
-@racket[md].}
+@margin-note{Note that since we used @racket[input-number] to assign a value to @racket[_age], we
+must use @racket[number->string] to convert that numeric value to text if we want to display it
+within @racket[md].}
 
 Finally, we’ll define the study as a whole by tying all the steps together in a transition graph:
 
@@ -218,26 +240,87 @@ Finally, we’ll define the study as a whole by tying all the steps together in 
 
 We’ve now told Conscript that our study is named @racket[_simple-survey], and that it consists of
 three steps @racket[_description], @racket[_age-name-survey] and @racket[_thank-you] in that order.
-Because every step must have a transition, even the last one, we add @racket[[thank-you --> thank-you]]
-to tell Conscript that that step simply transitions to itself.
+Because every step must have a transition, even the last one, we add @racket[[thank-you -->
+thank-you]] to tell Conscript that that step simply transitions to itself.
 
-To try out this study, same steps as before: click DrRacket's @onscreen{Run} button, then
-click near the @litchar{>} prompt on the lower pane and type @code{(preview simple-survey)} (note
-the new name of the survey used in the @racket[defstudy] expression).
+To try out this study, same steps as before: click DrRacket's @onscreen{Run} button, then click near
+the @litchar{>} prompt on the lower pane and type @code{(preview simple-survey)} (note the new name
+of the survey used in the @racket[defstudy] expression).
 
-Then press your @kbd{ENTER} key. You should see your web browser open with a page that looks
-roughly like this:
+Then press your @kbd{ENTER} key. You should see your web browser open with a page that looks roughly
+like this:
 
 @browser{
-    @bold{@larger{The study}}
+  @bold{@larger{The study}}
 
-    Welcome to our study. In this study, we will ask for
+  Welcome to our study. In this study, we will ask for
 
-    @itemlist[
-     @item{Your first name}
-     @item{Your age}
-    ]
+  @itemlist[
+   @item{Your first name}
+   @item{Your age}
+  ]
 
-    @kbd{Start Survey}
-    
+  @kbd{Start Survey}
 }
+
+Click the @onscreen{Start Survey} link/button to proceed to the next step in the survey:
+
+@browser{
+  @bold{@larger{Survey}}
+
+  What is your first name? @mock-textbox[]
+                       
+  What is your age in years?  @mock-textbox[]
+
+  @kbd{Submit}
+}
+
+Enter some values in the textboxes and click “Submit”.
+
+@margin-note{For fun, try entering a non-numeric value in the “age” text box. What happens when you
+click @onscreen{Submit}?}
+
+This will bring you to the final step in the study:
+
+@browser{
+  @bold{@larger{Good Job, Joel}}
+ 
+  Thank you for participating in our survey despite being 11 years old.
+}
+
+That’s it! You can see that the values you entered in the previous step have carried over and are
+being used in the text displayed in this step.
+
+@margin-note{When you upload and run the study on the Congame server, values collected and stored in
+variables created with @racket[defvar] and similar forms get recorded in the server’s database and
+comprise the results of the study.}
+
+You’ve now observed a few more basic concepts first-hand:
+
+@itemlist[
+
+@item{You use @racket[defvar] to define the discrete pieces of information you want to collect from
+study participants.}
+
+@item{You can create multiple @tech{steps} for your study through repeated use of @racket[defstep].}
+
+@item{Within steps, you can insert input controls like @racket[input-text] inside a @racket[form] to
+collect info from participants, and save that info into your @racket[defvar] variables.}
+
+@item{You use the @racket[defstudy] form to define your study as a whole. Within that form, you use
+@racketid[-->] to tell Congame how the steps connect to each other in sequences.}
+
+]
+
+It’s possible to create much more advanced studies than those we have built so far: studies with
+conditional branching, a variety of form controls, timers, randomizing assignments, etc. But what
+you have seen so far gives you the basic framework.
+
+@section{Uploading and running your study}
+
+When you have finished designing your study, it's time to go live and start collecting responses
+from participants.
+
+In order to do this, you need a researcher account on a Congame server.
+@seclink["congame-setup"]{Setting up a Congame server} is a complicated process. For this exercise,
+we'll assume you already have such an account and show you how things work in that environment.
