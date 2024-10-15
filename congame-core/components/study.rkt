@@ -1213,6 +1213,7 @@ QUERY
  lookup-participant-email
  lookup-participant-identity-url
  current-participant-owner?
+ current-participant-identity-user?
  current-study-instance-id
  current-study-instance-name
  current-study-instance-slug
@@ -1384,6 +1385,9 @@ QUERY
 
 (define (current-participant-owner?)
   (equal? (current-participant-user-id) (current-study-instance-owner-id)))
+
+(define (current-participant-identity-user?)
+  (lookup-participant-identity-url (current-participant-user-id)))
 
 (define/contract (list-studies db #:owner [owner-id #f])
   (->* (database?)
@@ -1626,12 +1630,14 @@ QUERY
 (define/contract (lookup-participant-identity-url pid)
   (-> id/c (or/c #f string?))
   (with-database-connection [conn (study-manager-db (current-study-manager))]
-    (query-value
+    (define r
+      (query-value
      conn
      (~> (from "users" #:as u)
          (join "study_participants" #:as p #:on (= u.id p.user-id))
          (where (= p.id ,pid))
-         (select u.identity-service-url)))))
+         (select u.identity-service-url))))
+    (if (sql-null? r) #f r)))
 
 (define/contract (lookup-study-vars db participant-id)
   (-> database? id/c (listof study-var?))
