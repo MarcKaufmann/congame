@@ -190,7 +190,7 @@
            research-proposal)))
   (skip))
 
-(defstudy research-surveys
+(defstudy research-surveys-base
   [initialize-surveys --> ,(lambda ()
                              (if (null? remaining-surveys)
                                  (goto no-more)
@@ -212,6 +212,20 @@
   [no-more --> no-more]
   [show-research-ideas --> wait-survey]
   [show-research-proposals --> wait-survey])
+
+(define ((check-not-identity-user s))
+  (cond [#t
+         (s)]
+
+        [else
+         @md{# You are logged in on the wrong server
+
+             Please log in on the identity server. You cannot continue with this account.}]))
+
+(define research-surveys
+  (map-study
+   research-surveys-base
+   check-not-identity-user))
 
 (defstep (the-end)
   @md{# Thank you
