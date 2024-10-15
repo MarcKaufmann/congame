@@ -84,6 +84,7 @@
  (rename-out
   [congame:current-participant-id current-participant-id]
   [congame:current-participant-owner? current-participant-owner?]
+  [congame:current-participant-identity-user? current-participant-identity-user?]
   [congame:call-with-study-transaction call-with-study-transaction]
   [congame:with-study-transaction with-study-transaction]
   [congame:get/linked/instance get/linked/instance]
@@ -95,7 +96,9 @@
   [congame:undefined? undefined?]
   [congame:if-undefined if-undefined]
   [congame:get-current-group-name get-current-group-name]
-  [congame:put-current-group-name put-current-group-name])
+  [congame:put-current-group-name put-current-group-name]
+  [congame:map-step map-step]
+  [congame:map-study map-study])
  make-step make-step/study
  put/identity
  done
