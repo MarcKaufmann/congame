@@ -67,3 +67,6 @@ mark {
     border-radius: 3px;
 }
 
+.figure {
+    border: solid silver 1px;
+}

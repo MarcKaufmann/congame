@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/match
+(require (for-syntax racket/base)
+         racket/match
          racket/runtime-path
          scribble/core
          scribble/decode
@@ -60,3 +61,15 @@
   (element (style "mock-textbox" (list (css-style-addition congame-css)
                                        (alt-tag "span")))
            " "))
+
+;; Insert a screenshot, using a runtime path, centered and scaled down
+(define-syntax (screenshot stx)
+  (syntax-case stx ()
+    [(_ name-path-str xs ...)
+     (with-syntax ([name-id (datum->syntax stx (string->symbol (syntax-e #'name-path-str)))])
+       #'(begin
+           (define-runtime-path name-id (quote name-path-str))
+           (centered
+            (image-element (style "figure" (list (css-style-addition congame-css)))
+                           '() name-id '() 0.4))))]))
+
