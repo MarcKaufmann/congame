@@ -17,11 +17,13 @@ A @deftech{step} is a point within a @tech{study} at which we provide informatio
 a participant, and/or collect a response from them. Steps in Congame correspond to
 individual web pages.
 
-A @deftech{study instance} is a discrete running of a @tech{study} on a particular server,
-and between specific start and end dates/times.
+A @deftech{study instance} is a discrete time when a @tech{study} is run on a particular
+server. A study instance has a beginning and an end date/time. Congame keeps separate sets of
+results for each study instance.
 
-A @deftech{replication} is a duplicate of a @tech{study instance}, create specifically to test
-whether a study instance's results can be replicated.
+A @deftech{replication} is a duplicate of a @tech{study instance}, created specifically to test
+whether a study instance's results can be replicated — or, to run the study with new participants,
+or simply to keep a copy of the data.
 
 @section{Building Studies}
 
