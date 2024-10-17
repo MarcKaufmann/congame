@@ -45,7 +45,7 @@ You need [Racket] since this is a Racket application.
 
 Clone this repository, then from its main folder, run:
 
-    $ rack pkg install congame-core/ conscript/
+    $ raco pkg install congame-core/ conscript/
 
 This will install only the core libraries needed to run `#lang conscript` programs locally.
 
