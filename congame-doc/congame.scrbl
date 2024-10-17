@@ -16,14 +16,15 @@ collects the responses and provides the data to each study author for further an
 
 Congame includes:
 
-@itemlist[
-    @item{Server applications and libraries for hosting @tech{studies} (the main @racketmodname[congame]
-    collection)}
+@itemlist[ 
 
-    @item{@tech{Conscript}, a scripting environment for prototyping studies.
-    Using Conscript, you can develop studies rapidly on your local computer, without having to stand
-    up a complete Congame server environment. When ready, a Conscript study can be uploaded to a Congame
-    server.}
+@item{Server applications and libraries for hosting @tech{studies} (@secref["The_Congame_Server"])}
+
+@item{@secref["Conscript"], a simplified scripting environment for writing studies.  Using
+Conscript, you can develop studies rapidly on your local computer, without having to stand up a
+complete Congame server environment. When ready, a Conscript study can be uploaded to a Congame
+server.} 
+
 ]
 
 @table-of-contents[]

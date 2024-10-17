@@ -10,6 +10,8 @@
 Here you can lookup individual Congame functions and macros to thoroughly
 understand their usage.
 
+@table-of-contents[]
+
 @section{Studies and Steps}
 
 @defmodule[congame/components/study]

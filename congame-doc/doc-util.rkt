@@ -14,6 +14,9 @@
 (define-runtime-path congame-css "aux.css")
 (define-runtime-path congame-tex "aux.tex")
 
+(define at "@")
+(define _at (litchar "@"))
+
 ;; Mark text as worthy of review for possible Congame improvements
 (define (mark . elems)
   (element (style "review" (list (css-style-addition congame-css)
