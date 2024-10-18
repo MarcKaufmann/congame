@@ -27,9 +27,11 @@ cycle. When you’re ready, you can start reading the @secref{Conscript} and
 
 @;===============================================
 
+@section{First example: the simplest study}
+
 The best way to learn is by doing, so let’s do!
 
-@;===============================================
+@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @subsection{Creating a new file}
 
