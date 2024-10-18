@@ -30,6 +30,9 @@ Here are some great resources for someone new to Racket:
 
 @item{@other-doc['(lib "scribblings/quick/quick.scrbl")]}
 
+@item{For a deep dive that will give you a really solid foundation, see 
+@link["https://htdp.org/2024-8-20/Book/index.html"]{@italic{How to Design Programs}, 2nd ed.}}
+
 ]
 
 If you are already even a little handy with other programming languages, you may want to bookmark
@@ -40,15 +43,14 @@ Racket Reference}, to build up your vocabulary of the most common functions.
 @section{Basic Congame Concepts}
 
 A @deftech{step} is a point within a @tech{study} at which we provide information to
-a participant, and/or collect a response from them. Steps in Congame correspond to
-individual web pages.
+a participant, and/or collect a response from them. In the simplest (and most common) 
+case, “steps” in Congame correspond to individual web pages.
 
 A @deftech{study} is a series of @tech{steps} and a transition graph that controls how
 study participants proceed through those steps.
 
 A @deftech{study instance} is a discrete time when a @tech{study} is run on a particular
-server. A study instance has a beginning and an end date/time. Congame keeps separate sets of
-results for each study instance.
+server. Congame keeps separate sets of results for each study instance.
 
 A @deftech{replication} is a duplicate of a @tech{study instance}, created specifically to test
 whether a study instance's results can be replicated — or, to run the study with new participants,

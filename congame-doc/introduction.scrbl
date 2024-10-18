@@ -25,11 +25,13 @@ For now, we’ll focus on @emph{steps of action} that introduce the complete Con
 cycle. When you’re ready, you can start reading the @secref{Conscript} and
 @secref["The_Congame_Server"] sections for detailed explanations of the concepts introduced here.
 
+@;===============================================
+
 The best way to learn is by doing, so let’s do!
 
 @;===============================================
 
-@section{Creating a new file}
+@subsection{Creating a new file}
 
 Assuming you've  @seclink["Installing_Conscript_and_Racket"]{installed Racket and Conscript}, launch
 the DrRacket application. Start a new file. Click into the top/main area (the "definitions" window)
@@ -44,9 +46,9 @@ The first line of every Conscript @tech{study} program starts with @code{#lang c
 without setting up a server or databases. When you’re ready to start using it "for real", you change
 the first line to @code{#lang conscript} and then upload it to a Congame server.
 
-@;===============================================
+@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@section{Writing the simplest study}
+@subsection{Writing the simplest study code}
 
 Add some lines to your new program, so it looks like this:
 
@@ -85,9 +87,9 @@ an @racket[md] expression to denote text that will be formatted using Markdown.}
 
 ]
 
-@;===============================================
+@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@section{Previewing the study}
+@subsection{Previewing the study}
 
 To try out this study, click DrRacket's @onscreen{Run} button.
 
@@ -122,7 +124,9 @@ like this:
 
 The browser is showing you the first and only step of the study: a page with some formatted text.
 
-@section{The next level: addings steps and getting input}
+@;===============================================
+
+@section{Second example: addings steps and getting input}
 
 Of course, to be at all useful, a study must collect information. To do that, we need to give
 participants a way to interact with our study.
@@ -243,9 +247,6 @@ Finally, we’ll define the study as a whole by tying all the steps together in 
 (defstudy simple-survey
   [description --> age-name-survey --> thank-you]
   [thank-you --> thank-you])
-
-(provide simple-survey)
-
 }|
 
 We’ve now told Conscript that our study is named @racket[simple-survey], and that it consists of
@@ -253,14 +254,31 @@ three steps @racket[description], @racket[age-name-survey] and @racket[thank-you
 Because every step must have a transition, even the last one, we add @racket[[thank-you -->
 thank-you]] to tell Conscript that that step simply transitions to itself.
 
-The last line is not technically required at @emph{this} point, but it will be needed later when we
-upload our study to a Congame server. Without it, the server will not be able to access the study
-bound to the @racket[simple-study] identifier. 
+@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@margin-note{It’s a good practice to add @racket[(provide _studyname)] following every
-@racket[defstudy] expression in your study program. Alternatively, you could simply add a single
-@racket[(provide (all-defined-out))] expression, which will cover all the studies defined in the
-file with a single line of code.}
+@subsection{Being a good provider}
+
+There’s one more thing you need to do: Add a statement at the top of your file, just below the 
+@code{#lang conscript} line, to @racket[provide] the study you just defined:
+
+@codeblock{
+#lang conscript/local
+
+(provide simple-survey)
+
+(defvar first-name) ; ...
+}
+
+This line will be needed later when we upload our study to a Congame server. Without it, the server
+will not be able to access the study bound to the @racket[simple-study] identifier. 
+
+@margin-note{It’s a good practice to add @racket[(provide _studyname ...)] at the top of your file,
+where you include each @racket[_studyname] defined in a @racket[defstudy] expression in your
+program.}
+
+@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@subsection{Review: the code so far}
 
 Combining all these snippets, the code should look like the below example. Go ahead and save it as
 @filepath{age-survey.rkt}.
@@ -269,20 +287,22 @@ Combining all these snippets, the code should look like the below example. Go ah
 @codeblock|{
 #lang conscript/local
 
+(provide simple-survey)
+
 (defvar first-name)
 (defvar age)
 
 (defstep (description)
   @md{
- # The study
+    # The study
 
- Welcome to our study. In this study, we will ask for
+    Welcome to our study. In this study, we will ask for
 
- * Your first name
- * Your age
+    * Your first name
+    * Your age
     
- @button{Start Survey}
- })
+    @button{Start Survey}
+  })
 
 (defstep (age-name-survey)
   @md{
@@ -298,16 +318,15 @@ Combining all these snippets, the code should look like the below example. Go ah
 
 (defstep (thank-you)
   @md{
- # Good job, @first-name
+    # Good job, @first-name
 
- Thank you for participating in our survey despite being 
- @number->string[age] years old.})
+    Thank you for participating in our survey despite being 
+    @number->string[age] years old.
+  })
 
 (defstudy simple-survey
   [description --> age-name-survey --> thank-you]
   [thank-you --> thank-you])
-
-(provide simple-survey)
 }|}
 
 @;===============================================
@@ -409,7 +428,7 @@ In order to do this, you need access to a Congame server. For the steps that fol
 studies.} 
 
 
-@; ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+@;{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @subsection{Preparing the study: from @racketmodname[conscript/local] to @racketmodname[conscript]}
 
@@ -432,6 +451,7 @@ the file, removing @racketvalfont{/local} from the @hash-lang[] line so that it 
 you’ll get an error.}
 
 Make sure you save the file!
+}
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -509,7 +529,7 @@ allowing them to complete the study as well.}
 Once you’re done with the study, @mark{navigate back to the dashboard somehow}. Then click on the
 @onscreen{Admin} → @onscreen{Instance 1} link.
 
-@mark{All the way at the bottom}, you’ll see a section titled @bold{Participants} — and you’ll be
+All the way at the bottom, you’ll see a section titled @bold{Participants} — and you’ll be
 the first one:
 
 @screenshot["intro-participant.png"]
