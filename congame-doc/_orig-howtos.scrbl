@@ -98,26 +98,7 @@ perform its duties and then remove the @tech{nonce}.  Otherwise, it
 should do nothing.
 
 
-@section{Conscript Style Guide}
+@section{Conscript Style Guide (Original)}
 
-@compare0[
-  @codeblock0[#:keep-lang-line? #f]|{
-    #lang scribble/manual
-    @; don't indent top-level forms
-    (defstep (my-step)
-      @; within a form, ident using two spaces
-      @html{
-        @h1{Hello World}
-      })
-  }|
-  @codeblock0[#:keep-lang-line? #f]|{
-    #lang scribble/manual
+Moved to @secref["Conscript_Style_Guide"].
 
-      (defstep (my-step)
-
-      @html{
-      @h1{Hello World}
-      }
-      )
-  }|
-]
