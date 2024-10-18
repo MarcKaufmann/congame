@@ -1,49 +1,44 @@
 #lang scribble/manual
 
 @(require (for-label racket/contract
-                     conscript/base))
+                     conscript/base)
+          "doc-util.rkt")
 
 @title[#:style 'toc]{Conscript Reference}
 
 Here you can lookup individual Conscript functions and macros to thoroughly
 understand their usage.
 
+@table-of-contents[]
+
 @section{Core}
 
 @defmodule[conscript/base]
 
 @defform[(defstep ...)]{
-    Defines a step
+    @tktk{Defines a step.}
 }
 
 @defform[(defstep/study ...)]{
-    ...
+    @tktk{...}
 }
 
 @deftogether[(
 @defform[(defvar ...)]
 @defform[(defvar* ...)])]{
-    Define a variable with some extra magic behind it
+    @tktk{Define a variable with some extra magic behind it}
 }
 
 @defform[(defview ...)]{
-    ...
+    @tktk{...}
 }
 
 @defform[(defstudy ...)]{
-    ...
-}
-
-@defform[(--> ...)]{
-    Mysterious arrow
-}
-
-@defform[(goto ...)]{
-    Considered harmful
+    @tktk{...}
 }
 
 @defform[(for/study ...)]{
-    See loops, definition of
+    @tktk{See loops, definition of}
 }
 
 @defform[(with-bot)]{
@@ -56,7 +51,7 @@ understand their usage.
 
 @defproc[(preview [study study?]) void?]{
 
-Run @racket[_study] in your browser.
+@tktk{Run @racket[_study] in your browser.}
 
 }
 
@@ -68,7 +63,7 @@ Run @racket[_study] in your browser.
 
 @defform[(md ...)]{
 
-Parses its contents as Markdown and produces equivalent HTML content.
+@tktk{Parses its contents as Markdown and produces equivalent HTML content.}
 
 }
 
@@ -76,11 +71,16 @@ Parses its contents as Markdown and produces equivalent HTML content.
 
 @defmodule[conscript/html]
 
+@tktk{...}
+
 @subsection{Forms}
 
 @defmodule[conscript/form]
+
+@tktk{...}
 
 @subsection{Resources}
 
 @defmodule[conscript/resource]
 
+@tktk{...}

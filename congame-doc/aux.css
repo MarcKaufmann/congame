@@ -69,6 +69,30 @@ mark {
     border-radius: 3px;
 }
 
+.tktk {
+    color: #7d8694;
+    font-style: italic;
+}
+
+.tktk:before {
+    content: "[";
+}
+
+.tktk:after {
+    content: "]";
+}
+
+abbr.margin-icon {
+    border-bottom: dotted orange 1px;
+    padding: 2px;
+    float: left;
+    margin: 0 0.25rem 0 -1.75rem;
+}
+
+abbr.margin-icon:hover {
+    background: #fe9;
+}
+
 .figure {
     border: solid silver 1px;
 }

@@ -58,11 +58,12 @@ or simply to keep a copy of the data.
 
 @section{Building Studies}
 
-Two ways to author studies, depending on whether you're running your own Congame server.
+@tktk{Two ways to author studies, depending on whether you're running your own Congame server.}
 
 @section{Web Pages}
 
-Study steps eventually become web pages, so you may need to know a little about HTML and Markdown.
+@tktk{Study steps eventually become web pages, so you may need to know a little about HTML and
+Markdown.}
 
 @section[#:tag "scribble-in-conscript"]{“Scribble Syntax” in Conscript}
 
