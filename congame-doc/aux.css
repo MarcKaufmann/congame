@@ -1,0 +1,98 @@
+/* This file provides styles for the Scribble markup added in doc-util.rkt. */
+
+.terminal {
+    margin-bottom: 1em;
+    padding: 0.5em;
+    width: 88%;
+    background: #fafafa;
+    border: solid silver 1px;
+    border-radius: 4px;
+}
+
+.browser {
+    margin-bottom: 1em;
+    padding: 0 0.5rem;
+    width: 88%;
+    background: white;
+    border: solid silver 1px;
+    border-radius: 8px;
+}
+
+.browser:before {
+    content: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxjaXJjbGUgY3g9IjIwIiBjeT0iMTUiIHI9IjYiIGZpbGw9IiNGRjVGNTciIC8+PGNpcmNsZSBjeD0iNDAiIGN5PSIxNSIgcj0iNiIgZmlsbD0iI0ZGQkQyRSIgLz48Y2lyY2xlIGN4PSI2MCIgY3k9IjE1IiByPSI2IiBmaWxsPSIjMjhDOTQwIiAvPjxwb2x5Z29uIHBvaW50cz0iOTAsMTUgMTAwLDEwIDEwMCwyMCIgZmlsbD0iIzRENEQ0RCIgLz48cG9seWdvbiBwb2ludHM9IjEyNSwxNSAxMTUsMTAgMTE1LDIwIiBmaWxsPSIjNEQ0RDREIiAvPjxyZWN0IHg9IjE0MCIgeT0iNyIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxNiIgZmlsbD0id2hpdGUiIHN0cm9rZT0iI0MwQzBDMCIgc3Ryb2tlLXdpZHRoPSIxIiByeD0iOCIgcnk9IjgiIC8+PC9zdmc+');
+    display: block;
+    background: #ececec;
+    border-radius: 6px 6px 0 0;
+    width: calc(100% + 0.5rem);
+    margin-left: -0.5rem;
+    padding: 0.35rem 0 0.35rem 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.terminal .SIntrapara {
+    margin: 0 0 0 0;
+}
+
+.dr-message {
+    font-family: sans-serif;
+    font-weight: normal;
+    font-size: 0.85em;
+}
+
+kbd {
+    display: inline-block;
+    font-family: sans-serif;
+    padding: 3px 5px;
+    font-size: 0.8em;
+    line-height: 1.2;
+    color: rgba(0, 0, 0, 0.87);
+    vertical-align: middle;
+    background-color: #FAFAFA;
+    border: solid 1px rgba(0, 0, 0, 0.54);
+    border-bottom-color: rgba(0, 0, 0, 0.54);
+    border-bottom-color: rgba(0, 0, 0, 0.54);
+    border-radius: 3px;
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.54);
+}
+
+.mock-textbox {
+    display: inline-block;
+    border: solid black 1px;
+    border-radius: 1px;
+    width: 7rem;
+    height: 1.1em;
+    vertical-align: middle;
+}
+
+mark {
+    background: #ed0;
+    border-radius: 3px;
+}
+
+.tktk {
+    color: #7d8694;
+    font-style: italic;
+}
+
+.tktk:before {
+    content: "[";
+}
+
+.tktk:after {
+    content: "]";
+}
+
+abbr.margin-icon {
+    border-bottom: dotted orange 1px;
+    padding: 2px;
+    float: left;
+    margin: 0 0.25rem 0 -1.75rem;
+}
+
+abbr.margin-icon:hover {
+    background: #fe9;
+}
+
+.figure {
+    border: solid silver 1px;
+}
