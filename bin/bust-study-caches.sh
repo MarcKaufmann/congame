@@ -8,4 +8,6 @@ PKGS=$(while IFS= read -r p; do
 done < <(find "$ROOT" -maxdepth 2 -type f -name "info.rkt") | xargs)
 
 rm -fr "$ROOT/congame-web/studies/compiled"
-raco setup --pkgs $PKGS
+for pkg in $PKGS; do
+    raco setup -D --pkgs "$pkg" || true
+done
