@@ -1,3 +1,5 @@
+/* This file provides styles for the Scribble markup added in doc-util.rkt. */
+
 .terminal {
     margin-bottom: 1em;
     padding: 0.5em;

@@ -143,7 +143,7 @@ Refresh the app in your browser and you should see an "Admin" link in the header
 
 ### Installing study packages
 
-* The `congame-web` package's `info.rkt` needs to `(define congame-studies)` like so:
+The study package's `info.rkt` needs to `(define congame-studies …)` like so:
 
 ``` racket
 (define congame-studies
@@ -151,6 +151,8 @@ Refresh the app in your browser and you should see an "Admin" link in the header
   '((congame-example-study/example consent-study)
     (congame-example-study/example simple-study)))
 ```
+
+Be sure to install the study package:
 
     $ raco pkg install congame-example-study/  # install and build the study package and its deps
 
