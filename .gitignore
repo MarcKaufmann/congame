@@ -20,3 +20,4 @@ static
 study-administration/
 **/*.rkt~
 .DS_Store
+*.swp
