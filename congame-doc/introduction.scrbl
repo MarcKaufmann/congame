@@ -77,7 +77,7 @@ We'll get into the specifics later; but at a high level:
 conscript/local}.}
 
 @item{In Conscript, you can use “@"@" notation” to intermingle code and text. This is explained
-further in @secref["Scribble_Syntax"].}
+further in @secref["scribble-in-conscript"].}
            
 @item{Each @tech{step} is contained in a @racket[defstep] expression. Within this expression are
 more expressions that provide the content and functionality for that step. The step shown here uses
