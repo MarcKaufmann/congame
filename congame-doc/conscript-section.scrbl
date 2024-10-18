@@ -10,5 +10,6 @@ for writing and testing @tech{studies}.
 @table-of-contents[]
 @include-section["conscript-install.scrbl"]
 @include-section["conscript-tutorial.scrbl"]
+@include-section["conscript-styleguide.scrbl"]
 @;include-section["conscript-cookbook.scrbl"]
 @include-section["conscript-reference.scrbl"]
