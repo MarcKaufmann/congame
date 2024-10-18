@@ -23,6 +23,17 @@
                                  (alt-tag "mark")))
            elems))
 
+;; Mark filler content as placeholders for the real thing to be added later
+(define (tktk . elems)
+  (element (style "tktk" (list (css-style-addition congame-css)
+                               (alt-tag "span")))
+           `(,(icon "Content to be added later" "⏳") ,@elems)))
+
+(define (icon tooltip str)
+  (element (style "margin-icon" (list (attributes `([title ,@tooltip]))
+                                      (alt-tag "abbr")))
+           (list str)))
+
 ;; Style for sample terminal output 
 (define (terminal . args)
   (compound-paragraph (style "terminal" (list (color-property (list #x66 #x33 #x99))
@@ -60,6 +71,7 @@
                           (tex-addition congame-tex)))
    (decode-flow elems)))
 
+;; For use inside `browser`
 (define (mock-textbox)
   (element (style "mock-textbox" (list (css-style-addition congame-css)
                                        (alt-tag "span")))
