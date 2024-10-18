@@ -64,7 +64,7 @@ Two ways to author studies, depending on whether you're running your own Congame
 
 Study steps eventually become web pages, so you may need to know a little about HTML and Markdown.
 
-@section{“Scribble Syntax” in Conscript}
+@section[#:tag "scribble-in-conscript"]{“Scribble Syntax” in Conscript}
 
 The @emph{default} Racket syntax is based on parenthetical
 @link["https://en.wikipedia.org/wiki/S-expression"]{S-expressions} and prefix notation: so instead
