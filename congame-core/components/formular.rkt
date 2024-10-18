@@ -155,11 +155,20 @@
        (format-id kwd "input_~a" idx))
      #:with patched-form
      (let loop ([stx #'form])
+       ;; FIXME: Detect uses of (~errors foo) where foo is not actually known.
        (syntax-parse stx
          #:literals (~error ~errors ~all-errors set!)
+         [(~error id:id)
+          #:with kwd (id->keyword #'id)
+          (loop #'(~error kwd))]
+
          [(~error kwd:keyword)
           #'(let ([entry (hash-ref tbl 'kwd)])
               (rw (car entry) (widget-errors)))]
+
+         [(~errors id:id ...+)
+          #:with (kwd ...) (map id->keyword (syntax-e #(id ...)))
+          (loop #'(~errors kwd ...))]
 
          [(~errors kwd:keyword ...+)
           #:with (entry-id ...) (generate-temporaries #'(kwd ...))
