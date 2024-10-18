@@ -7,7 +7,12 @@
 Below are step-by-step instructions for installing Conscript.
 
 Conscript is not a distinct application. Rather, it’s a software library that runs on top of the
-Racket programming language environment.
+Racket programming language environment. It includes two languages/environments: @code{#lang
+conscript/local}, which provides syntax checks, and allows you to run and test studies in a web
+browser on your local computer without setting up a complete server environment; and @code{#lang
+conscript} which does not provide local testing in a web browser, but does provide syntax checks.
+Neither flavor by itself enables you to create @tech{study instances} in which other people can
+participate --- for that you need to upload your Conscript studies to a Congame server.
 
 @margin-note{These instructions do not cover everything you’ll need to do to set
 up a complete local Congame development server. For that, see @secref{congame-setup}.}
