@@ -1,5 +1,8 @@
 #lang racket/base
 
+;; XXX: DO NOT USE THIS MODULE ANYMORE. Use
+;; congame-web/components/uploaded-file instead.
+
 (require congame/components/export
          congame/components/study
          (prefix-in upload: congame-web/components/upload)

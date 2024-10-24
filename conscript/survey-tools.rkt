@@ -204,6 +204,8 @@ SCRIPT
       [:src "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"])))))
 
 ;;;;; File Tools
+;;;;; DO NOT USE
+;;;;; Use congame-web/components/uploaded-file instead
 
 (require congame/components/export
          congame/components/study
