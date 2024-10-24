@@ -55,4 +55,4 @@ RUN /opt/racket/bin/raco pkg install --auto congame-core/ congame-web/ conscript
 RUN npm install
 RUN npm run-script build
 
-CMD ["dumb-init", "/opt/racket/bin/racket", "congame-web/dynamic.rkt"]
+CMD ["dumb-init", "/opt/racket/bin/racket", "congame-web/dynamic.rkt", "--mode", "local"]

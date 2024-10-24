@@ -163,7 +163,20 @@
   (get-registered-studies))
 
 (module+ main
+  (require racket/cmdline
+           racket/lazy-require)
+  (lazy-require
+   ("local.rkt" [(setup local:setup)]))
+  (define mode 'standard)
+  (command-line
+   #:once-each
+   [("--mode" "-m")
+    MODE "the mode the server is run in"
+    (set! mode (string->symbol MODE))])
   (define stop (start))
+  (case mode
+    [(local) (local:setup)]
+    [else (void)])
   (with-handlers ([exn:break? void])
     (sync/enable-break never-evt))
   (stop))
