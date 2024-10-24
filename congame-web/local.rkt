@@ -5,7 +5,7 @@
    sets (current-system) to prod-system. |#
 
 (require component
-         "components/user.rkt")
+         congame-web/components/user)
 
 (provide
  setup)
