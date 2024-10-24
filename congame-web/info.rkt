@@ -11,6 +11,7 @@
                "deta-lib"
                "forms-lib"
                "gregor-lib"
+               "hash-view-lib"
                "http-easy"
                ["koyo-lib" #:version "0.23.1"]
                "koyo-north"
