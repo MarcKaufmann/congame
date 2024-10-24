@@ -10,6 +10,7 @@
          koyo/profiler
          koyo/url
          racket/format
+         threading
          web-server/http
          xml)
 
@@ -46,6 +47,10 @@
 (define (page/xexpr #:subtitle [subtitle #f]
                     #:show-nav? [show-nav? #f]
                     . content)
+  (define current-user-researcher?
+    (and~>
+     (current-user)
+     (user-admin-like?)))
   (haml
    (:html
     (:head
@@ -79,8 +84,8 @@ SCRIPT
          (:a
           ([:href (reverse-uri 'admin:stop-impersonation-page)])
           "Stop impersonating user."))))
-     (when show-nav?
-       (cond [(and (current-user) (user-admin-like? (current-user)))
+     (when (or show-nav? current-user-researcher?)
+       (cond [current-user-researcher?
               (nav
                (nav-item (reverse-uri 'study-instances-page) (translate 'nav-dashboard))
                (nav-item (reverse-uri 'logout-page) (translate 'nav-log-out))
