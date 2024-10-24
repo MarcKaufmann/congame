@@ -9,6 +9,8 @@ services:
       CONGAME_WEB_DEBUG: "x"
       CONGAME_WEB_HTTP_HOST: "0.0.0.0"
       CONGAME_WEB_HTTP_PORT: "5100"
+      CONGAME_WEB_URL_HOST: "127.0.0.1"
+      CONGAME_WEB_URL_PORT: "5100"
       CONGAME_WEB_LOG_LEVEL: "debug"
       CONGAME_WEB_PROFILE: "x"
       DATABASE_URL: "postgres://congame:congame@postgres/congame"
