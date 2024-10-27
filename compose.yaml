@@ -6,7 +6,7 @@ services:
     ports:
       - "5100:5100"
     environment:
-      CONGAME_WEB_DEBUG: "x"
+      CONGAME_DEBUG: "x"
       CONGAME_WEB_HTTP_HOST: "0.0.0.0"
       CONGAME_WEB_HTTP_PORT: "5100"
       CONGAME_WEB_URL_HOST: "127.0.0.1"
