@@ -109,9 +109,10 @@ HELP
           (~>
            (http:post
             #:auth (make-auth key)
-            #:data (http:multipart-payload
-                    (http:field-part "study-id" study-id)
-                    (http:file-part "study-source" in "study.zip" "application/zip"))
+            #:data (http:buffered-payload
+                    (http:multipart-payload
+                     (http:field-part "study-id" study-id)
+                     (http:file-part "study-source" in "study.zip" "application/zip")))
             (format "~a/api/v1/cli-studies" server))
            (check-response _ 202)))))
     (lambda ()
