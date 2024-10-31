@@ -1,19 +1,36 @@
 #lang racket/base
 
-(require koyo/http
+(require file/zip
+         koyo/http
+         (prefix-in http: net/http-easy)
          net/sendurl
          net/url
          racket/async-channel
          racket/cmdline
          racket/file
          racket/match
+         racket/path
          raco/command-name
+         threading
          web-server/http
          web-server/servlet-dispatch
          web-server/web-server)
 
 (define current-program-name
   (make-parameter (short-program+command-name)))
+
+(define (get-key)
+  (get-preference
+   'congame-cli:key
+   (lambda ()
+     (eprintf #<<MESSAGE
+~a: not logged in
+
+Use the "raco congame login" command to log in first.
+
+MESSAGE
+              (current-program-name))
+     (exit 1))))
 
 (define (handle-help)
   (display #<<HELP
@@ -39,7 +56,7 @@ HELP
      (define congame-key (bindings-ref binds 'key))
      (put-preferences
       '(congame-cli:key)
-      (list congame-key))
+      (list (cons server congame-key)))
      (response/output
       #:mime-type #"text/plain"
       (lambda (out)
@@ -60,6 +77,56 @@ HELP
        (sync/enable-break done-sema)
        (sync (system-idle-evt))
        (void)))))
+
+(define (handle-upload)
+  (define-values (study-id study-path)
+    (command-line
+     #:program (current-program-name)
+     #:args [study-id path]
+     (values study-id path)))
+  (unless (file-exists? study-path)
+    (eprintf "error: <study-path> is not a file")
+    (exit 1))
+  (match-define (cons server key)
+    (get-key))
+  (define study-directory (path-only study-path))
+  (define tmp-dir (make-temporary-directory))
+  (delete-directory tmp-dir)
+  (define tmp-path (make-temporary-file))
+  (delete-file tmp-path)
+  (dynamic-wind
+    (lambda ()
+      (copy-directory/files study-directory tmp-dir)
+      (unless (file-exists? (build-path tmp-dir "study.rkt"))
+        (rename-file-or-directory
+         (build-path tmp-dir (file-name-from-path study-path))
+         (build-path tmp-dir "study.rkt")))
+      (parameterize ([current-directory (path-only tmp-dir)])
+        (zip tmp-path (file-name-from-path tmp-dir))))
+    (lambda ()
+      (call-with-input-file tmp-path
+        (lambda (in)
+          (~>
+           (http:post
+            #:auth (make-auth key)
+            #:data (http:multipart-payload
+                    (http:field-part "study-id" study-id)
+                    (http:file-part "study-source" in "study.zip" "application/zip"))
+            (format "~a/api/v1/cli-studies" server))
+           (check-response _ 202)))))
+    (lambda ()
+      (delete-file tmp-path)
+      (delete-directory/files tmp-dir))))
+
+(define ((make-auth k) _ headers params)
+  (values (hash-set headers 'authorization k) params))
+
+(define (check-response resp [ok 200])
+  (begin0 resp
+    (unless (= (http:response-status-code resp) ok)
+      (error 'check-response "unexpected response~n  code: ~s~n  body: ~.s"
+             (http:response-status-code resp)
+             (http:response-body resp)))))
 
 (define (call-with-web-server start proc)
   (define ch (make-async-channel))
@@ -82,7 +149,8 @@ HELP
   (define commands
     (hasheq
      'help handle-help
-     'login handle-login))
+     'login handle-login
+     'upload handle-upload))
 
   (define-values (command handler args)
     (match (current-command-line-arguments)

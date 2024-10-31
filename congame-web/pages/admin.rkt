@@ -51,7 +51,8 @@
  view-study-instance-bot-set-page
  bulk-archive-instances-page
  stop-impersonation-page
- create-replication-page)
+ create-replication-page
+ upsert-cli-study-page)
 
 (define datetime-format
   "YYYY-MM-dd HH:mm:ss")
@@ -1355,3 +1356,19 @@
                (:button
                 ([:type "submit"])
                 "Create Replication"))))))])))))
+
+;; cli ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define ((upsert-cli-study-page db) req)
+  (match (form-run cli-study-form req)
+    [`(passed (,study-id ,study-source) ,_)
+     (eprintf "study id: ~s~n" study-id)
+     (eprintf "study source: ~s~n" study-source)
+     (response/empty #:code 202)]
+    [`(,_ ,_ ,_)
+     (response/empty)]))
+
+(define cli-study-form
+  (form* ([study-id (ensure binding/symbol)]
+          [study-source (ensure binding/file)])
+    (list study-id (binding:file->dsl-source study-source study-id))))

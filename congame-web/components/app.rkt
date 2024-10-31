@@ -157,6 +157,11 @@
      [("admin" "stop-impersonation")
       (admin:stop-impersonation-page auth)]
 
+     [("api" "v1" "cli-studies")
+      #:roles (api admin)
+      #:method "post"
+      (admin:upsert-cli-study-page db)]
+
      [("api" "v1" "studies.json")
       #:roles (api)
       (api:studies db)]
