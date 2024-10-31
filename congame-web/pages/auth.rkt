@@ -335,3 +335,28 @@
     (:button.button.button--primary
      ([:type "submit"])
      (translate 'action-reset-password)))))
+
+;; cli ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ cli-login-page)
+
+(define (cli-login-page req)
+  (define binds (request-bindings/raw req))
+  (define return (bindings-ref binds 'return))
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (define return-url
+       (url->string
+        (struct-copy
+         url (string->url return)
+         [query `((key . ,(user-api-key (current-user))))])))
+     (page
+      (haml
+       (.container
+        (:a
+         ([:href (embed/url
+                  (lambda (_req)
+                    (redirect/get/forget/protect)
+                    (redirect-to return-url)))])
+         "Click here to finish logging into the CLI.")))))))

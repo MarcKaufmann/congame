@@ -192,6 +192,10 @@
      [("_anon-login" (string-arg))
       (anon-login-page auth db users)]
 
+     [("_cli-login")
+      #:roles (user)
+      cli-login-page]
+
      [("_token-login" (string-arg))
       (token-login-page auth db)]
 
