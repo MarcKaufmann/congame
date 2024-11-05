@@ -1,7 +1,8 @@
 #lang scribble/manual
 
 @(require [for-label racket/contract
-                     conscript/base]
+                     conscript/base
+                     conscript/markdown]
           "doc-util.rkt")
 
 @title[#:style 'toc]{Conscript Reference}
@@ -138,3 +139,19 @@ Any number of steps may be joined by transitions using @defidform/inline[-->].
 @defmodule[conscript/resource]
 
 @tktk{...}
+
+@; ==============================================
+
+@section{Survey Tools}
+
+@defmodule[conscript/survey-tools]
+
+@deftogether[(@defproc[(~$ [n rational?]) string?]
+              @defproc[(~euro [n rational?]) string?]
+              @defproc[(~pound [n rational?]) string?])]{
+
+Functions
+
+}
+
+
