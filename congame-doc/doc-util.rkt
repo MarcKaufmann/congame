@@ -1,7 +1,6 @@
 #lang racket/base
 
 (require (for-syntax racket/base)
-         racket/match
          racket/runtime-path
          scribble/core
          scribble/decode
