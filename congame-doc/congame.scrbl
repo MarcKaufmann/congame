@@ -27,6 +27,10 @@ server.}
 
 ]
 
+@bold{Getting help}: If you have questions about Congame or about this documentation, create a post
+in @link["https://github.com/MarcKaufmann/congame/discussions"]{the Discussions area of Congame’s
+GitHub repository}, and the authors will respond.
+
 @table-of-contents[]
 
 @include-section["introduction.scrbl"]

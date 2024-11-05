@@ -1,6 +1,8 @@
 #lang scribble/manual
 
-@(require [for-label racket/base]
+@(require [for-label conscript/markdown
+                     racket/base]
+          "atexp-example.rkt"
           "doc-util.rkt"
           scribble/bnf)
 
@@ -10,7 +12,15 @@ What follows is a high-level overview of Congame's systems and how they all work
 just finished the @seclink["intro"]{introductory tour} then this will give you some more context for
 what you saw.
 
-@section{Programming in Racket}
+@;===============================================
+
+@section{Help and Support}
+
+If you have questions about Congame or about this documentation, create a post in 
+@link["https://github.com/MarcKaufmann/congame/discussions"]{the Discussions area of Congame’s
+GitHub repository}, and the authors will respond.
+
+@section[#:tag "congame-racket"]{Programming in Racket}
 
 The Congame system is built entirely on the Racket programming language, and the Congame studies 
 you will create are essentially Racket programs.
@@ -39,6 +49,7 @@ If you are already even a little handy with other programming languages, you may
 the @secref["data" #:doc '(lib "scribblings/reference/reference.scrbl")] chapter of @italic{The
 Racket Reference}, to build up your vocabulary of the most common functions.
 
+@; ==============================================
 
 @section{Basic Congame Concepts}
 
@@ -56,29 +67,124 @@ A @deftech{replication} is a duplicate of a @tech{study instance}, created speci
 whether a study instance's results can be replicated — or, to run the study with new participants,
 or simply to keep a copy of the data.
 
+@; ==============================================
+
 @section{Building Studies}
 
 @tktk{Two ways to author studies, depending on whether you're running your own Congame server.}
 
+@; ==============================================
+
 @section{Web Pages}
 
-@tktk{Study steps eventually become web pages, so you may need to know a little about HTML and
-Markdown.}
+@tech{Studies} and study @tech{steps} eventually become web pages, so it helps to know a little
+about HTML and Markdown. This section provides a short introduction to each.
+
+@deftech{HTML} (Hypertext Markup Language) is the standard markup language used to create web pages.
+It provides the structure and content that the web browser renders to display a website. HTML
+consists of @deftech{elements} which are represented by @deftech{tags} (keywords enclosed in
+@litchar{<} and @litchar{>}) which surround the content of each element.
+
+Below is a fragment from an HTML document:
+
+@filebox["example.html"]{
+@verbatim{
+    <h1>Gary Benchley, Rock Star</h1>
+
+    <p>Before I moved to <a href="https://en.wikipedia.org/wiki/New_York_City">New York</a>
+    from Albany, I wrote a careful, step-by-step plan:</p>
+
+    <ol>
+      <li>Rock out.</li>
+      <li>No more data entry.</li>
+    </ol>
+}}
+
+The @tt{h1} (level 1 heading), @tt{p} (paragraph), @tt{ol} (ordered list) and @tt{li} (list item)
+elements are standard HTML elements. When your web browser loads this file, it applies appropriate
+styling to each element:
+
+@browser{
+    @bold{@larger{Gary Benchley, Rock Star}}
+
+    Before I moved to @link["https://en.wikipedia.org/wiki/New_York_City"]{New York}
+    from Albany, I wrote out a careful, step-by-step plan:
+
+    @itemlist[#:style 'ordered
+
+    @item{Rock out.}
+
+    @item{No more data entry.}
+
+    ]
+}
+
+@deftech{Markdown} is a simple text format for producing @tech{HTML}-formatted text.
+
+Here’s how we’d write the above fragment using Markdown:
+
+@filebox["example.md"]{
+@verbatim{
+# Gary Benchley, Rock Star
+
+Before I moved to [New York][1] from Albany, I wrote out a careful, 
+step-by-step plan:
+
+1. Rock out.
+2. No more data entry.
+
+[1]: https://en.wikipedia.org/wiki/New_York_City
+}}
+
+A Markdown processor would convert this directly into the same HTML shown in the first example
+above. As you can see, this is much quicker to type than the HTML version, and it is very readable.
+
+Conscript provides functions for generating specific HTML elements, as well as functions that
+accept Markdown-formatted text and convert it to HTML for you.
+
+Here are some good resources for learning more:
+
+@itemlist[
+
+@item{The @link["https://developer.mozilla.org/en-US/docs/Web/HTML"]{HTML documentation on MDN}
+provides good tutorials and reference material for HTML.}
+
+@item{The Commonmark site has a handy @link["https://commonmark.org/help/"]{intro and quick
+reference sheet} which also links to a 10-minute tutorial.}
+
+]
+
+@; ==============================================
 
 @section[#:tag "scribble-in-conscript"]{“Scribble Syntax” in Conscript}
 
-The @emph{default} Racket syntax is based on parenthetical
-@link["https://en.wikipedia.org/wiki/S-expression"]{S-expressions} and prefix notation: so instead
-of, for example, @tt{2 + 2}, in Racket you would write @racket[(+ 2 2)]. But there are other types
-of syntax available.
-
 @margin-note{Racket’s advanced documentation system is called Scribble. The document you’re reading
-now was written as a Scribble program, using the syntax described here.}
+now was written as a Scribble program, using the syntax described here. See
+@secref["The_Scribble_Syntax_at_a_Glance" #:doc '(lib "scribblings/scribble/scribble.scrbl")] for
+more information on this syntax. }
 
-The @secref["Conscript"] environment in particular allows use of an alternative Racket syntax known
-as @italic{Scribble syntax} (or @at syntax). This is an alternative way to write expressions in
-situations where most of the code consists of strings of text, or where you want to intermingle code
-with text (such as in documentation).
+The @secref["Conscript"] environment allows use of an alternative Racket syntax known as
+@italic{Scribble syntax} (or @secref["reader" #:doc '(lib "scribblings/scribble/scribble.scrbl")]).
+
+Expressions in Scribble syntax are normal Racket expressions in disguise. They keep you from having
+to use double quotes @litchar{"} around all your strings. This makes them handy in situations where
+most of the code consists of strings of text, or where you want to intermingle code with text (such
+as in documentation).
+
+Here are some examples of expressions written in Scribble syntax, and their equivalent forms in
+normal Racket:
+
+@scribble-examples|==={
+  @foo{blah blah blah}
+  @foo{blah "blah"}
+  @foo{blah @hum[8] blah}
+  @foo[1 2]{3 4}
+  @foo[1 2 3 4]
+  @foo{blah blah
+       yada yada}
+}===|
+
+Scribble-style expressions have this form:
 
 @racketblock[
  @#,BNF-seq[@litchar[@at] @nonterm{command name} @litchar{[} @nonterm{Racket arguments ...} @litchar{]} @litchar["{"] @nonterm{text body ...} @litchar["}"]]
@@ -116,4 +222,44 @@ line!)}
 
 ]
 
+@; ==============================================
 
+@section{Markdown in Scribble syntax in Racket}
+
+If you’re not already familiar with Racket/Scribble, HTML, or Markdown, then your head might be
+spinning a little right now.
+
+To try and tie it all together, let's look at some example Conscript code from @secref["intro"]:
+
+@codeblock|{
+#lang conscript/local
+
+(defstep (start)
+  @md{
+    # The Beginning is the End
+
+    This is all there is.
+  })
+
+(defstudy tutorial
+  [start --> start])
+}|
+
+Armed with the concepts explained in this chapter, you should be able to understand:
+
+@itemlist[
+
+@item{All of this is Racket code. (@secref["congame-racket"])}
+
+@item{This code defines a @tech{step} called @racketidfont{start}, and then a @tech{study} that uses
+that step. (@secref["Basic_Congame_Concepts"]).}
+
+@item{The @racketidfont{start} step uses the @racket[md] function to define some content using
+@tech{Markdown} formatting. This Markdown gets converted to @tech{HTML}, which is displayed in your
+web browser when you run the study. (@secref["Web_Pages"])}
+
+@item{The call to @racket[md] is written using Scribble-style syntax, purely for convenience, so
+that the string content can be written without quote marks and newline escapes (@litchar{"} and
+@litchar{\n}).}
+
+]
