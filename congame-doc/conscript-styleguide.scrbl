@@ -37,8 +37,8 @@ will not be able to access your study when you upload it.
 Placing @racket[provide] statements at the top makes it clear, when reading the source code, exactly
 what the file makes available to other modules.
 
-@margin-note{For more about why @racket[provide] should go at the top, see @secref["Provide" #:doc
-'(lib "scribblings/style/style.scrbl")].}
+@margin-note{For more about why @racket[provide] should go at the top of the file, see
+@secref["Provide" #:doc '(lib "scribblings/style/style.scrbl")] in the Racket style guide.}
 
 @;===============================================
 
@@ -46,7 +46,7 @@ what the file makes available to other modules.
 
 @compare0[
   @codeblock0[#:keep-lang-line? #f]|{
-    #lang scribble/manual
+    #lang conscript
     @; don't indent top-level forms
     (defstep (my-step)
       @; within a form, ident using two spaces
@@ -55,7 +55,7 @@ what the file makes available to other modules.
       })
   }|
   @codeblock0[#:keep-lang-line? #f]|{
-    #lang scribble/manual
+    #lang conscript
 
       (defstep (my-step)
 
