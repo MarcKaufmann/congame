@@ -1,6 +1,7 @@
 #lang scribble/manual
 
-@(require [for-label conscript/base
+@(require [for-label (only-in racket/base require)
+                     (except-in conscript/base require)
                      (except-in conscript/survey-tools make-sliders)
                      racket/contract]
           "doc-util.rkt")
