@@ -3,6 +3,7 @@
 @(require [for-label racket/contract
                      conscript/base
                      conscript/markdown]
+          scribble/examples
           "doc-util.rkt")
 
 @title[#:style 'toc]{Conscript Reference}
@@ -11,6 +12,9 @@ Here you can lookup individual Conscript functions and macros to thoroughly
 understand their usage.
 
 @table-of-contents[]
+
+@(define e (make-base-eval #:lang 'racket/base))
+@(e '(require conscript/survey-tools))
 
 @;===============================================
 
@@ -150,7 +154,15 @@ Any number of steps may be joined by transitions using @defidform/inline[-->].
               @defproc[(~euro [n rational?]) string?]
               @defproc[(~pound [n rational?]) string?])]{
 
-Functions
+Returns a string representing @racket[_n] to two decimal places and prefixed with a currency symbol.
+
+@examples[#:eval e
+
+(define price 1.045)
+(~$ price)
+(~euro price)
+(~pound price)
+]
 
 }
 

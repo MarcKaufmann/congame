@@ -1,7 +1,7 @@
 #lang scribble/manual
 
-@(require [for-label conscript/markdown
-                     racket/base]
+@(require [for-label conscript/base
+                     conscript/markdown]
           "atexp-example.rkt"
           "doc-util.rkt"
           scribble/bnf)
@@ -146,10 +146,10 @@ Here are some good resources for learning more:
 
 @itemlist[
 
-@item{The @link["https://developer.mozilla.org/en-US/docs/Web/HTML"]{HTML documentation on MDN}
+@item{HTML: The @link["https://developer.mozilla.org/en-US/docs/Web/HTML"]{HTML documentation on MDN}
 provides good tutorials and reference material for HTML.}
 
-@item{The Commonmark site has a handy @link["https://commonmark.org/help/"]{intro and quick
+@item{Markdown: The Commonmark site has a handy @link["https://commonmark.org/help/"]{intro and quick
 reference sheet} which also links to a 10-minute tutorial.}
 
 ]
