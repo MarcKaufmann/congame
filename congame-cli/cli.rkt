@@ -16,6 +16,9 @@
          web-server/servlet-dispatch
          web-server/web-server)
 
+(provide
+ upload-study)
+
 (define current-program-name
   (make-parameter (short-program+command-name)))
 
@@ -87,9 +90,12 @@ HELP
   (unless (file-exists? study-path)
     (eprintf "error: <study-path> is not a file")
     (exit 1))
+  (upload-study study-id study-path))
+
+(define (upload-study id path)
   (match-define (cons server key)
     (get-key))
-  (define study-directory (path-only study-path))
+  (define study-directory (path-only path))
   (define tmp-dir (make-temporary-directory))
   (delete-directory tmp-dir)
   (define tmp-path (make-temporary-file))
@@ -99,7 +105,7 @@ HELP
       (copy-directory/files study-directory tmp-dir)
       (unless (file-exists? (build-path tmp-dir "study.rkt"))
         (rename-file-or-directory
-         (build-path tmp-dir (file-name-from-path study-path))
+         (build-path tmp-dir (file-name-from-path path))
          (build-path tmp-dir "study.rkt")))
       (parameterize ([current-directory (path-only tmp-dir)])
         (zip tmp-path (file-name-from-path tmp-dir))))
@@ -111,7 +117,7 @@ HELP
             #:auth (make-auth key)
             #:data (http:buffered-payload
                     (http:multipart-payload
-                     (http:field-part "study-id" study-id)
+                     (http:field-part "study-id" id)
                      (http:file-part "study-source" in "study.zip" "application/zip")))
             (format "~a/api/v1/cli-studies" server))
            (check-response _ 200)
