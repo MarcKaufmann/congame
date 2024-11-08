@@ -130,7 +130,6 @@
   (define whitelist
     '(buid
       congame-web/components/uploaded-file
-      conscript/local/matchmaking
       conscript/matchmaking
       conscript/survey-tools
       gregor

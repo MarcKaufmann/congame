@@ -9,7 +9,6 @@
  prisoners-dilemma-model)
 
 ;; For next time:
-;; * Multiple participants & current owner in conscript/local
 ;; * Add bot support to conscript (default actions on all steps, figure out models)
 
 (defvar*/instance choices dilemma-choices)

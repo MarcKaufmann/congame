@@ -1,4 +1,4 @@
-#lang conscript/local
+#lang conscript
 
 (provide
  hya54)

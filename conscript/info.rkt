@@ -11,6 +11,7 @@
     "koyo-lib"
     "mime-type-lib"
     "net-lib"
+    "threading-lib"
     "web-server-lib"))
 (define build-deps
   '("rackunit-lib"))
