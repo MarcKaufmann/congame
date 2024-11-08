@@ -1362,11 +1362,29 @@
 (define ((upsert-cli-study-page db) req)
   (match (form-run cli-study-form req)
     [`(passed (,study-id ,study-source) ,_)
-     (eprintf "study id: ~s~n" study-id)
-     (eprintf "study source: ~s~n" study-source)
-     (response/empty #:code 202)]
+     (match-define `(archive ,path) study-source)
+     (define slug (format "cli-~a" study-id))
+     (define meta
+       (with-database-transaction [conn db]
+         (~> (cond
+               [(lookup-study-meta/by-slug db slug)]
+               [else
+                (~> (make-study-meta
+                     #:owner-id (user-id (current-user))
+                     #:name (symbol->string study-id)
+                     #:slug slug
+                     #:type 'dsl
+                     #:racket-id study-id
+                     #:dsl-source ""
+                     #:dsl-archive-path path)
+                    (insert-one! conn _))])
+             (set-study-meta-dsl-archive-path path)
+             (update-one! conn _))))
+     (response/jsexpr
+      (hasheq
+       'link (make-application-url "admin" "studies" (number->string (study-meta-id meta)))))]
     [`(,_ ,_ ,_)
-     (response/empty)]))
+     (response/empty #:code 400)]))
 
 (define cli-study-form
   (form* ([study-id (ensure binding/symbol)]
