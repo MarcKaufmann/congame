@@ -17,6 +17,7 @@
          web-server/web-server)
 
 (provide
+ handle-login
  upload-study)
 
 (define current-program-name
@@ -47,7 +48,7 @@ HELP
           )
   (exit 0))
 
-(define (handle-login)
+(define (handle-login [wait-until-idle? #t])
   (display "Congame server: [http://127.0.0.1:5100] ")
   (define server (read-line))
   (when (equal? server "")
@@ -78,7 +79,8 @@ HELP
           [query `((return . ,address))])))
        (displayln "Waiting for login...")
        (sync/enable-break done-sema)
-       (sync (system-idle-evt))
+       (when wait-until-idle?
+         (sync (system-idle-evt)))
        (void)))))
 
 (define (handle-upload)
