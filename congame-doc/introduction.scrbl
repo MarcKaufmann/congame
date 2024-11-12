@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@(require "doc-util.rkt" 
+@(require "doc-util.rkt"
         [for-label conscript/base
                    conscript/markdown])
 
@@ -10,7 +10,7 @@ You can follow the steps in this tour to get a fast, high-level introduction to 
 Conscript:
 
 @itemlist[
-          
+
 @item{Creating and testing a minimal study}
 
 @item{Creating studies with multiple steps}
@@ -40,13 +40,10 @@ the DrRacket application. Start a new file. Click into the top/main area (the "d
 and change the top line to:
 
 @codeblock{
-#lang conscript/local
+#lang conscript
 }
 
-The first line of every Conscript @tech{study} program starts with @code{#lang conscript} or
-@code{#lang conscript/local}. The latter allows us to test drive our studies in the web browser,
-without setting up a server or databases. When you’re ready to start using it "for real", you change
-the first line to @code{#lang conscript} and then upload it to a Congame server.
+The first line of every Conscript @tech{study} program starts with @code{#lang conscript}.
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -55,7 +52,7 @@ the first line to @code{#lang conscript} and then upload it to a Congame server.
 Add some lines to your new program, so it looks like this:
 
 @codeblock|{
-#lang conscript/local
+#lang conscript
 
 (defstep (start)
   @md{
@@ -75,12 +72,11 @@ We'll get into the specifics later; but at a high level:
 
 @itemlist[
 
-@item{Conscript @tech{studies} are Racket programs that start @code{#lang conscript} or @code{#lang
-conscript/local}.}
+@item{Conscript @tech{studies} are Racket programs that start @code{#lang conscript}.}
 
 @item{In Conscript, you can use “@"@" notation” to intermingle code and text. This is explained
 further in @secref["scribble-in-conscript"].}
-           
+
 @item{Each @tech{step} is contained in a @racket[defstep] expression. Within this expression are
 more expressions that provide the content and functionality for that step. The step shown here uses
 an @racket[md] expression to denote text that will be formatted using Markdown.}
@@ -91,40 +87,40 @@ an @racket[md] expression to denote text that will be formatted using Markdown.}
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@subsection{Previewing the study}
+@; @subsection{Previewing the study}
 
-To try out this study, click DrRacket's @onscreen{Run} button.
+@; To try out this study, click DrRacket's @onscreen{Run} button.
 
-You should see some text like the below in the bottom pane of DrRacket's main window (called the
-"interactions" window):
+@; You should see some text like the below in the bottom pane of DrRacket's main window (called the
+@; "interactions" window):
 
-@terminal{
-@dr-message{@banner[]}
-@dr-message{Language: conscript/local, with debugging; memory limit: 512 MB.}
-@:>{ }
-}
+@; @terminal{
+@; @dr-message{@banner[]}
+@; @dr-message{Language: conscript/local, with debugging; memory limit: 512 MB.}
+@; @:>{ }
+@; }
 
-This is where you can enter code one line at a time to interact with your program.
+@; This is where you can enter code one line at a time to interact with your program.
 
-Click on this pane and type @code{(preview tutorial)} at the prompt, so that the interactions window
-looks like this:
+@; Click on this pane and type @code{(preview tutorial)} at the prompt, so that the interactions window
+@; looks like this:
 
-@terminal{
-@dr-message{@banner[]}
-@dr-message{Language: conscript/local, with debugging; memory limit: 512 MB.}
-@:>{(preview tutorial)}
-}
+@; @terminal{
+@; @dr-message{@banner[]}
+@; @dr-message{Language: conscript/local, with debugging; memory limit: 512 MB.}
+@; @:>{(preview tutorial)}
+@; }
 
-Then press your @kbd{ENTER} key. You should see your web browser open with a page that looks roughly
-like this:
+@; Then press your @kbd{ENTER} key. You should see your web browser open with a page that looks roughly
+@; like this:
 
-@browser{
-    @bold{@larger{The Beginning is the End}}
+@; @browser{
+@;     @bold{@larger{The Beginning is the End}}
 
-    This is all there is.
-}
+@;     This is all there is.
+@; }
 
-The browser is showing you the first and only step of the study: a page with some formatted text.
+@; The browser is showing you the first and only step of the study: a page with some formatted text.
 
 @;===============================================
 
@@ -138,7 +134,7 @@ Create a new file in DrRacket (click @onscreen{File} → @onscreen{New}, or @ons
 file:
 
 @codeblock{
-#lang conscript/local
+#lang conscript
 
 (defvar first-name)
 (defvar age)
@@ -154,7 +150,7 @@ piece of information we want to record from each participant.
 Now let’s add steps to our new study. First, we’ll explain to participants what to expect:
 
 @codeblock[#:keep-lang-line? #f]|{
-#lang conscript/local
+#lang conscript
 
 (defstep (description)
   @md{
@@ -164,7 +160,7 @@ Now let’s add steps to our new study. First, we’ll explain to participants w
 
     * Your first name
     * Your age
-    
+
     @button{Start Survey}
   })
 }|
@@ -178,17 +174,17 @@ whatever that is.
 Speaking of which, let’s write the next step! Add these lines to the end of your source file:
 
 @codeblock[#:keep-lang-line? #f]|{
-#lang conscript/local
+#lang conscript
 
 (defstep (age-name-survey)
   @md{
     # Survey
-   
+
     @form{
       What is your first name? @(set! first-name (input-text))
-                               
+
       What is your age in years? @(set! age (input-number))
-      
+
       @submit-button
   }})
 }|
@@ -204,7 +200,7 @@ Working from the inside out:
 seventh lines in the code above) generate input boxes where the participant can enter data. There
 are other expressions that can be used to insert the various other form elements like checkboxes and
 dropdown lists.}
-          
+
 @item{The @racket[(set! first-name (input-text))] expression tells Conscript, “when this form is
 submitted, set the value in the @racket[_first-name] variable to the whatever the user has entered
 in @racket[(input-text)]. }
@@ -220,7 +216,7 @@ grouped together.}
 Next, write the final step by adding these lines to the end of your file:
 
 @codeblock[#:keep-lang-line? #f]|{
-#lang conscript/local
+#lang conscript
 
 (defstep (thank-you)
   @md{
@@ -244,7 +240,7 @@ within @racket[md].}
 Finally, we’ll define the study as a whole by tying all the steps together in a transition graph:
 
 @codeblock[#:keep-lang-line? #f]|{
-#lang conscript/local
+#lang conscript
 
 (defstudy simple-survey
   [description --> age-name-survey --> thank-you]
@@ -260,11 +256,11 @@ thank-you]] to tell Conscript that that step simply transitions to itself.
 
 @subsection{Being a good provider}
 
-There’s one more thing you need to do: Add a statement at the top of your file, just below the 
+There’s one more thing you need to do: Add a statement at the top of your file, just below the
 @code{#lang conscript} line, to @racket[provide] the study you just defined:
 
 @codeblock{
-#lang conscript/local
+#lang conscript
 
 (provide simple-survey)
 
@@ -272,7 +268,7 @@ There’s one more thing you need to do: Add a statement at the top of your file
 }
 
 This line will be needed later when we upload our study to a Congame server. Without it, the server
-will not be able to access the study bound to the @racket[simple-study] identifier. 
+will not be able to access the study bound to the @racket[simple-study] identifier.
 
 @margin-note{It’s a good practice to add @racket[(provide _studyname ...)] at the top of your file,
 where you include each @racket[_studyname] defined in a @racket[defstudy] expression in your
@@ -287,7 +283,7 @@ Combining all these snippets, the code should look like the below example. Go ah
 
 @filebox["age-survey.rkt"]{
 @codeblock|{
-#lang conscript/local
+#lang conscript
 
 (provide simple-survey)
 
@@ -302,19 +298,19 @@ Combining all these snippets, the code should look like the below example. Go ah
 
     * Your first name
     * Your age
-    
+
     @button{Start Survey}
   })
 
 (defstep (age-name-survey)
   @md{
     # Survey
-   
+
     @form{
       What is your first name? @(set! first-name (input-text))
-                               
+
       What is your age in years? @(set! age (input-number))
-      
+
       @submit-button
   }})
 
@@ -322,7 +318,7 @@ Combining all these snippets, the code should look like the below example. Go ah
   @md{
     # Good job, @first-name
 
-    Thank you for participating in our survey despite being 
+    Thank you for participating in our survey despite being
     @number->string[age] years old.
   })
 
@@ -361,7 +357,7 @@ Click the @onscreen{Start Survey} link/button to proceed to the next step in the
   @bold{@larger{Survey}}
 
   What is your first name? @mock-textbox[]
-                       
+
   What is your age in years?  @mock-textbox[]
 
   @kbd{Submit}
@@ -376,7 +372,7 @@ This will bring you to the final step in the study:
 
 @browser{
   @bold{@larger{Good Job, Joel}}
- 
+
   Thank you for participating in our survey despite being 11 years old.
 }
 
@@ -427,33 +423,33 @@ In order to do this, you need access to a Congame server. For the steps that fol
 ]
 
 @margin-note{See @seclink["congame-setup"] if you need to know how to prepare a server for use with
-studies.} 
+studies.}
 
 
 @;{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@subsection{Preparing the study: from @racketmodname[conscript/local] to @racketmodname[conscript]}
+@; @subsection{Preparing the study: from @racketmodname[conscript/local] to @racketmodname[conscript]}
 
-@bold{Important:} before uploading the study to a Congame server, we need to change it to use 
-@code{#lang conscript} instead of @code{#lang conscript/local}.
+@; @bold{Important:} before uploading the study to a Congame server, we need to change it to use
+@; @code{#lang conscript} instead of @code{#lang conscript/local}.
 
-The @racketmodname[conscript/local] environment is only useful for local testing; it’s quick to use,
-but it doesn’t permanently record any of the data collected, and cannot differentiate between
-participants. Using @racketmodname[conscript] @mark{unlocks access to the full server’s participant
-and responses database.}
+@; The @racketmodname[conscript/local] environment is only useful for local testing; it’s quick to use,
+@; but it doesn’t permanently record any of the data collected, and cannot differentiate between
+@; participants. Using @racketmodname[conscript] @mark{unlocks access to the full server’s participant
+@; and responses database.}
 
-Open the @filepath{age-survey.rkt} study created in the previous section, and edit the first line in
-the file, removing @racketvalfont{/local} from the @hash-lang[] line so that it reads like this:
+@; Open the @filepath{age-survey.rkt} study created in the previous section, and edit the first line in
+@; the file, removing @racketvalfont{/local} from the @hash-lang[] line so that it reads like this:
 
-@codeblock{
-    #lang conscript
-}
+@; @codeblock{
+@;     #lang conscript
+@; }
 
-@margin-note{If you forget this step and attempt to upload a study that uses @code{conscript/local},
-you’ll get an error.}
+@; @margin-note{If you forget this step and attempt to upload a study that uses @code{conscript/local},
+@; you’ll get an error.}
 
-Make sure you save the file!
-}
+@; Make sure you save the file!
+@; }
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -474,7 +470,7 @@ follows:
 
 @item{@bold{Type}: Set to @racketresultfont{Conscript}.}
 
-@item{@bold{Study ID}: Enter @racketvalfont{simple-survey}. This is the identifier we used in the 
+@item{@bold{Study ID}: Enter @racketvalfont{simple-survey}. This is the identifier we used in the
 @racket[defstudy] and @racket[provide] expressions in our @filepath{age-survey.rkt} file.}
 
 @item{@bold{Study Source}: Click the @kbd{Browse} button and locate/select the
@@ -518,7 +514,7 @@ list.
 @subsection{Trying it out}
 
 Now that you’ve published your study and created an instance for it, you can go click on the
-@onscreen{Dashboard} link and see the new instance listed there. 
+@onscreen{Dashboard} link and see the new instance listed there.
 
 You’ll also see a link titled @onscreen{Enroll} — click it! You will be taken through the study
 exactly as you were when you tried it out on your computer earlier. Go ahead and complete all the

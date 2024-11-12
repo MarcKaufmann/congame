@@ -26,11 +26,11 @@ understand their usage.
 }
 
 @deftogether[(
-              
+
 @defform[(defvar ...)]
- 
+
 @defform[(defvar* ...)])]{
-                          
+
 @tktk{Define a variable with some extra magic behind it. @racket[defvar] and @racket[defvar*]are both
 particiant scope; @racket[defvar*] scope across parent/child studies. ...}
 
@@ -47,7 +47,7 @@ off. Since these unique ids have to be provided statically, we have to develop s
 debugging tools, but also just document this anti-feature. }
 
 @defform[(defview ...)]{
-                        
+
 @tktk{...}
 
 }
@@ -65,7 +65,7 @@ debugging tools, but also just document this anti-feature. }
          ]
          #:contracts
          ([value-id-sym symbol?]
-          [step step?])]{ 
+          [step step?])]{
 
 @tktk{More to come...}
 
@@ -91,13 +91,13 @@ Any number of steps may be joined by transitions using @defidform/inline[-->].
 
 @subsection{Local Testing}
 
-@defmodulelang[conscript/local]
+@; @defmodulelang[conscript/local]
 
-@defproc[(preview [study study?]) void?]{
+@; @defproc[(preview [study study?]) void?]{
 
-@tktk{Run @racket[_study] in your browser.}
+@; @tktk{Run @racket[_study] in your browser.}
 
-}
+@; }
 
 @;===============================================
 

@@ -7,7 +7,7 @@
 Below are step-by-step instructions for installing Conscript.
 
 Conscript is not a distinct application. Rather, it’s a software library that runs on top of the
-Racket programming language environment. It includes two languages/environments: @code{#lang
+Racket programming language environment. It includes two languages/environments: @tt{#lang
 conscript/local}, which provides syntax checks, and allows you to run and test studies in a web
 browser on your local computer without setting up a complete server environment; and @code{#lang
 conscript} which does not provide local testing in a web browser, but does provide syntax checks.
@@ -99,11 +99,9 @@ To check if Racket’s set up properly on the command line, open a terminal and 
     @banner[]
 }
 
-You should see the output as shown above. If so, @tt{cd} into the main @filepath{congame} folder and 
+You should see the output as shown above. If so, @tt{cd} into the main @filepath{congame} folder and
 run this command:
 
 @terminal{
     @:>{raco pkg install congame-core/ conscript/}
 }
-
-

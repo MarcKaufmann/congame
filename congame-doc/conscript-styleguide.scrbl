@@ -14,10 +14,10 @@ consistent and readable.
 @section{Study @racket[provide]s}
 
 Each @tech{study} defined with @racket[defstudy] should have a corresponding @racket[provide]
-statement at the top of the file, before any other definitions. 
+statement at the top of the file, before any other definitions.
 
 @codeblock|{
-#lang conscript/local
+#lang conscript
 
 (provide my-study)
 
