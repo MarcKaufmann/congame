@@ -4,9 +4,6 @@
 (define deps '("base"
                "scribble-lib"))
 (define build-deps '("congame-core"
-                     "congame-example-study"
-                     "congame-identity"
-                     "congame-smtp-proxy"
                      "congame-web"
                      "conscript"
                      "forms-doc"
