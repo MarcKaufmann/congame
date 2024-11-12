@@ -3,6 +3,7 @@
 (define collection "congame")
 (define deps
   '("base"
+    "conscript"
     "drracket-plugin-lib"
     "gui-lib"
     "gui-easy-lib"

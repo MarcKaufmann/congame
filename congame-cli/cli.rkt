@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require file/zip
+(require (submod conscript/resource private)
+         file/zip
          koyo/http
          (prefix-in http: net/http-easy)
          net/sendurl
@@ -109,16 +110,20 @@ HELP
     (get-key))
   (define study-directory (path-only path))
   (define tmp-dir (make-temporary-directory))
-  (delete-directory tmp-dir)
   (define tmp-path (make-temporary-file))
   (delete-file tmp-path)
   (dynamic-wind
     (lambda ()
-      (copy-directory/files study-directory tmp-dir)
-      (unless (file-exists? (build-path tmp-dir "study.rkt"))
-        (rename-file-or-directory
-         (build-path tmp-dir (file-name-from-path path))
-         (build-path tmp-dir "study.rkt")))
+      (let ([path (if (string? path)
+                      (path->complete-path (string->path path))
+                      path)])
+        (copy-file path (build-path tmp-dir "study.rkt"))
+        (for ([dep (in-list (get-module-dependencies path (string->symbol id)))])
+          (define dep-path (build-path study-directory dep))
+          (define dst-path (build-path tmp-dir dep))
+          (if (directory-exists? dep-path)
+              (copy-directory/files dep-path dst-path)
+              (copy-file dep-path dst-path))))
       (parameterize ([current-directory (path-only tmp-dir)])
         (zip tmp-path (file-name-from-path tmp-dir))))
     (lambda ()
@@ -179,6 +184,19 @@ HELP
       (proc (format "http://127.0.0.1:~a" exn-or-port)))
     (lambda ()
       (stop))))
+
+;; XXX: Conscript studies can't import relative modules at the moment,
+;; so this only needs to list any resources declared after the module is
+;; loaded.
+(define (get-module-dependencies path id)
+  (define mp (make-resolved-module-path path))
+  (with-handlers ([(lambda (e)
+                     (regexp-match? #rx"name is not provided" (exn-message e)))
+                   (lambda (_)
+                     (error 'get-module-dependencies "this study does not provide \"~s\"" id))])
+    (parameterize ([current-track-resources? #t])
+      (dynamic-require mp id)))
+  (hash-keys registry))
 
 (module+ main
   (define commands
