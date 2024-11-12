@@ -232,7 +232,9 @@ spinning a little right now.
 To try and tie it all together, let's look at some example Conscript code from @secref["intro"]:
 
 @codeblock|{
-#lang conscript/local
+#lang conscript
+
+(provide tutorial)
 
 (defstep (start)
   @md{

@@ -96,7 +96,7 @@ an @racket[md] expression to denote text that will be formatted using Markdown.}
 
 @; @terminal{
 @; @dr-message{@banner[]}
-@; @dr-message{Language: conscript/local, with debugging; memory limit: 512 MB.}
+@; @dr-message{Language: conscript, with debugging; memory limit: 512 MB.}
 @; @:>{ }
 @; }
 
@@ -107,7 +107,7 @@ an @racket[md] expression to denote text that will be formatted using Markdown.}
 
 @; @terminal{
 @; @dr-message{@banner[]}
-@; @dr-message{Language: conscript/local, with debugging; memory limit: 512 MB.}
+@; @dr-message{Language: conscript, with debugging; memory limit: 512 MB.}
 @; @:>{(preview tutorial)}
 @; }
 
