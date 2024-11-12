@@ -17,8 +17,13 @@
          web-server/web-server)
 
 (provide
+ (struct-out exn:fail:api)
+ (struct-out exn:fail:api:not-authorized)
  handle-login
  upload-study)
+
+(struct exn:fail:api exn:fail (response))
+(struct exn:fail:api:not-authorized exn:fail:api ())
 
 (define current-program-name
   (make-parameter (short-program+command-name)))
@@ -92,7 +97,12 @@ HELP
   (unless (file-exists? study-path)
     (eprintf "error: <study-path> is not a file")
     (exit 1))
-  (upload-study study-id study-path))
+  (let loop ()
+    (with-handlers* ([exn:fail:api:not-authorized?
+                      (lambda (_e)
+                        (handle-login)
+                        (loop))])
+      (upload-study study-id study-path))))
 
 (define (upload-study id path)
   (match-define (cons server key)
@@ -114,18 +124,27 @@ HELP
     (lambda ()
       (call-with-input-file tmp-path
         (lambda (in)
-          (~>
-           (http:post
-            #:auth (make-auth key)
-            #:data (http:buffered-payload
-                    (http:multipart-payload
-                     (http:field-part "study-id" id)
-                     (http:file-part "study-source" in "study.zip" "application/zip")))
-            (format "~a/api/v1/cli-studies" server))
-           (check-response _ 200)
-           (http:response-json)
-           (hash-ref 'link)
-           (send-url)))))
+          (with-handlers ([exn:fail:api?
+                           (lambda (e)
+                             (match (exn:fail:api-response e)
+                               [(http:response #:status-code 401)
+                                (raise (exn:fail:api:not-authorized
+                                        (exn-message e)
+                                        (current-continuation-marks)
+                                        (exn:fail:api-response e)))]
+                               [_
+                                (raise e)]))])
+            (~> (http:post
+                 #:auth (make-auth key)
+                 #:data (http:buffered-payload
+                         (http:multipart-payload
+                          (http:field-part "study-id" id)
+                          (http:file-part "study-source" in "study.zip" "application/zip")))
+                 (format "~a/api/v1/cli-studies" server))
+                (check-response _ 200)
+                (http:response-json)
+                (hash-ref 'link)
+                (send-url))))))
     (lambda ()
       (delete-file tmp-path)
       (delete-directory/files tmp-dir))))
@@ -136,9 +155,13 @@ HELP
 (define (check-response resp [ok 200])
   (begin0 resp
     (unless (= (http:response-status-code resp) ok)
-      (error 'check-response "unexpected response~n  code: ~s~n  body: ~.s"
-             (http:response-status-code resp)
-             (http:response-body resp)))))
+      (raise
+       (exn:fail:api
+        (format "unexpected response~n  code: ~s~n  body: ~.s"
+                (http:response-status-code resp)
+                (http:response-body resp))
+        (current-continuation-marks)
+        resp)))))
 
 (define (call-with-web-server start proc)
   (define ch (make-async-channel))

@@ -4,7 +4,6 @@
          mrlib/switchable-button
          racket/gui
          racket/gui/easy
-         racket/gui/easy/operator
          "asset.rkt"
          "cli.rkt"
          "tool-easy.rkt")
@@ -35,43 +34,47 @@
                        (cond
                          [(send defs get-filename)
                           => (lambda (filename)
-                               (let/ec esc
-                                 (unless (get-preference 'congame-cli:key)
-                                   (define logged-in? #f)
-                                   (define r
-                                     (embed
-                                      (send (get-current-tab) get-frame)
-                                      (login-dialog
-                                       #:on-login (λ () (set! logged-in? #t)))))
-                                   (send (renderer-root r) show #t)
-                                   (unless logged-in?
-                                     (message-box
-                                      #;title "Congame"
-                                      #;message "You are not logged in."
-                                      #;parent #f
-                                      #;style '(ok caution))
-                                     (esc)))
-                                 (define study-id
-                                   (hash-ref!
-                                    #;ht cache
-                                    #;key filename
-                                    #;failure-proc
-                                    (lambda ()
-                                      (define res #f)
-                                      (define r
-                                        (embed
-                                         (send (get-current-tab) get-frame)
-                                         (ask-for-study-id-dialog
-                                          #:on-cancel void
-                                          #:on-upload (λ (id) (set! res id)))))
-                                      (send (renderer-root r) show #t)
-                                      res)))
-                                 (when study-id
-                                   (with-handlers ([exn:fail?
-                                                    (lambda (e)
-                                                      (hash-remove! cache filename)
-                                                      (raise e))])
-                                     (upload-study study-id filename)))))]
+                               (let loop ([force-login? #f])
+                                 (let/ec esc
+                                   (unless (if force-login? #f (get-preference 'congame-cli:key))
+                                     (define logged-in? #f)
+                                     (define r
+                                       (embed
+                                        (send (get-current-tab) get-frame)
+                                        (login-dialog
+                                         #:on-login (λ () (set! logged-in? #t)))))
+                                     (send (renderer-root r) show #t)
+                                     (unless logged-in?
+                                       (message-box
+                                        #;title "Congame"
+                                        #;message "You are not logged in."
+                                        #;parent #f
+                                        #;style '(ok caution))
+                                       (esc)))
+                                   (define study-id
+                                     (hash-ref!
+                                      #;ht cache
+                                      #;key filename
+                                      #;failure-proc
+                                      (lambda ()
+                                        (define res #f)
+                                        (define r
+                                          (embed
+                                           (send (get-current-tab) get-frame)
+                                           (ask-for-study-id-dialog
+                                            #:on-cancel void
+                                            #:on-upload (λ (id) (set! res id)))))
+                                        (send (renderer-root r) show #t)
+                                        res)))
+                                   (when study-id
+                                     (with-handlers* ([exn:fail:api:not-authorized?
+                                                       (lambda (_e)
+                                                         (loop #t))]
+                                                      [exn:fail?
+                                                       (lambda (e)
+                                                         (hash-remove! cache filename)
+                                                         (raise e))])
+                                       (upload-study study-id filename))))))]
                          [else
                           (message-box
                            #;title "Congame"
