@@ -16,6 +16,7 @@
     "koyo-lib"
     "koyo-north"
     "marionette-lib"
+    "monocle-lib"
     "threading-lib"
     "rackunit-lib"))
 (define update-implies
