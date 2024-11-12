@@ -2,7 +2,8 @@
 
 (define collection "conscript")
 (define deps
-  '("base"
+  '("congame-web"
+    "base"
     "at-exp-lib"
     "buid-lib"
     "commonmark-lib"
