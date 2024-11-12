@@ -53,6 +53,8 @@
 
   #:pre-persist-hook
   (lambda (u)
+    ;; We don't use a default here because we want to use the username
+    ;; in the key generation itself to make collisions less likely.
     (define user-with-key
       (cond
         [(and (user-api-key u) (not (sql-null? (user-api-key u)))) u]
