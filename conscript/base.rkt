@@ -51,6 +51,7 @@
  set!
  values
 
+ parameterize
  with-handlers
 
  ;; Racket Runtime
@@ -132,6 +133,7 @@
       congame-web/components/uploaded-file
       conscript/matchmaking
       conscript/survey-tools
+      data/monocle
       gregor
       koyo/haml
       racket/format

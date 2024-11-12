@@ -1,6 +1,7 @@
 #lang conscript
 
 (require conscript/survey-tools
+         data/monocle
          racket/match)
 
 (provide
@@ -14,14 +15,15 @@
 (defvar*/instance choices dilemma-choices)
 (defvar choice)
 
+(define (&my-choice)
+  (parameterize ([current-hash-maker hash])
+    (&opt-hash-ref*
+     (get-current-group)
+     (current-participant-id))))
+
 (define (make-choice! choice)
   (with-study-transaction
-    (if (undefined? choices)
-        (set! choices (hash (get-current-group) (hash (current-participant-id) choice)))
-        (set! choices (hash-update
-                       choices (get-current-group)
-                       (λ (ht) (hash-set ht (current-participant-id) choice))
-                       hash)))))
+    (set! choices ((&my-choice) (if-undefined choices (hash)) choice))))
 
 (defstep (intro)
   @md{# Prisoner's Dilemma

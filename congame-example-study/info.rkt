@@ -10,6 +10,7 @@
     "gregor-lib"
     "forms-lib"
     "koyo-lib"
+    ["monocle-lib" #:version "0.3"]
     "sentry-lib"
     "threading-lib"
     "web-server-lib"))
