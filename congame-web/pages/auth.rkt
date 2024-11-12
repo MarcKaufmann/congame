@@ -8,6 +8,7 @@
          congame-web/components/user
          congame-web/pages/forms
          (prefix-in core: congame/components/study)
+         deta
          forms
          koyo/continuation
          koyo/database
@@ -16,9 +17,11 @@
          koyo/http
          koyo/l10n
          koyo/url
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          racket/match
          racket/string
+         racket/vector
          threading
          web-server/dispatchers/dispatch
          web-server/servlet)
@@ -341,7 +344,7 @@
 (provide
  cli-login-page)
 
-(define (cli-login-page req)
+(define ((cli-login-page db) req)
   (define binds (request-bindings/raw req))
   (define return (bindings-ref binds 'return))
   (send/suspend/dispatch/protect
@@ -357,6 +360,11 @@
         (:a
          ([:href (embed/url
                   (lambda (_req)
+                    (define u (current-user))
+                    (unless (user-has-role? u 'api)
+                      (with-database-connection [conn db]
+                        (~> (set-user-roles u (vector-append (user-roles u) #(api)))
+                            (update-one! conn _))))
                     (redirect/get/forget/protect)
                     (redirect-to return-url)))])
          "Click here to finish logging into the CLI.")))))))

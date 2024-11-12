@@ -199,7 +199,7 @@
 
      [("_cli-login")
       #:roles (user)
-      cli-login-page]
+      (cli-login-page db)]
 
      [("_token-login" (string-arg))
       (token-login-page auth db)]
