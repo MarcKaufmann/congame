@@ -69,12 +69,6 @@ or simply to keep a copy of the data.
 
 @; ==============================================
 
-@section{Building Studies}
-
-@tktk{Two ways to author studies, depending on whether you're running your own Congame server.}
-
-@; ==============================================
-
 @section{Web Pages}
 
 @tech{Studies} and study @tech{steps} eventually become web pages, so it helps to know a little
