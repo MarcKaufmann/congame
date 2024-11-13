@@ -34,25 +34,38 @@ The features that will get implemented will however be determined by the priorit
 Congame consists of:
 
 * Server applications and libraries for developing and hosting studies
-* Conscript, a scripting language for authoring studies on your local computer, without having to stand
-  up a complete Congame server environment
+* Conscript, a scripting language for authoring studies on your local computer
 
-You can set up the whole thing, or just Conscript.
-
-## Setting up just Conscript
+## Setting up Conscript with local dev server
 
 You need [Racket] since this is a Racket application. 
 
 Clone this repository, then from its main folder, run:
 
-    $ raco pkg install congame-core/ conscript/
+    $ raco pkg install congame-core/ congame-web/ congame-cli/ congame-doc/ conscript/
 
 This will install only the core libraries needed to run `#lang conscript` programs locally.
 
-If you want to install a local copy of the complete documentation, install these additional packages:
-    $ raco pkg install congame-doc/ congame-example-study/ congame-identity/ congame-smtp-proxy/ congame-web/ congame-tests/ congame-pjb-studies/ congame-price-lists/ studies/
+To spin up a local Congame server (needed for testing studies):
+
+1. Install the Docker desktop app for your OS and start it up.
+
+2. In the terminal, go to the root of the repository, and run the command `docker compose up` (make
+   sure you are on a fast and stable internet connection before you do this).
+
+3. Wait perhaps 10–15 minutes while lots of things are being downloaded and installed.
+
+4. If all goes well, then you have a server running on <http://localhost:5100>, so go to that url in
+   your browser.
+
+5. You can log in to the local dev server with email address `admin@congame.local` and password
+   `admin`.
+
+You can read the full documentation by running `raco docs congame`.
 
 ## Setting up a server environment
+
+Below are rough instructions for setting up a Congame server outside of Docker.
 
 * You need [Racket] since this is a Racket application.
 * You need [node] and [nvm] to build the assets.
