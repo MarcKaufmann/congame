@@ -21,9 +21,10 @@ Conscript:
 
 ]
 
-For now, we’ll focus on @emph{steps of action} that introduce the complete Congame development
-cycle. When you’re ready, you can start reading the @secref{Conscript} and
-@secref["The_Congame_Server"] sections for detailed explanations of the concepts introduced here.
+This will give you a taste of how the system works. You’ll get a sequence of @emph{steps to take} to
+try everything out, but not (yet) the reasoning behind them.  When you’re ready, you can start
+reading the @secref{Conscript} and @secref["The_Congame_Server"] sections for detailed explanations
+of the concepts introduced here.
 
 @;===============================================
 
@@ -55,6 +56,8 @@ Add some lines to your new program, so it looks like this:
 
 @codeblock|{
 #lang conscript
+
+(provide tutorial)
 
 (defstep (start)
   @md{
@@ -89,40 +92,77 @@ an @racket[md] expression to denote text that will be formatted using Markdown.}
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@; @subsection{Previewing the study}
+@subsection{Test-driving the simplest study}
 
-@; To try out this study, click DrRacket's @onscreen{Run} button.
+To try out your study, you’ll need to upload it to a Congame server and enroll in an @tech{instance}
+of the study. The Docker container you set up during the initial
+@seclink["install-congame"]{installation process} provides the Congame server for use in testing.
 
-@; You should see some text like the below in the bottom pane of DrRacket's main window (called the
-@; "interactions" window):
+Open the Docker desktop app and press the play ▶️  button for the @tt{congame} container.
 
-@; @terminal{
-@; @dr-message{@banner[]}
-@; @dr-message{Language: conscript, with debugging; memory limit: 512 MB.}
-@; @:>{ }
-@; }
+In DrRacket, save the study you created above as @filepath{simple.rkt}.
 
-@; This is where you can enter code one line at a time to interact with your program.
+Then click the @onscreen{Upload Study} button:
 
-@; Click on this pane and type @code{(preview tutorial)} at the prompt, so that the interactions window
-@; looks like this:
+@screenshot{intro-drr-upload-btn.png}
 
-@; @terminal{
-@; @dr-message{@banner[]}
-@; @dr-message{Language: conscript, with debugging; memory limit: 512 MB.}
-@; @:>{(preview tutorial)}
-@; }
+@subsubsection{Aside: one-time connection setup}
 
-@; Then press your @kbd{ENTER} key. You should see your web browser open with a page that looks roughly
-@; like this:
+The very first time you upload a Conscript study from DrRacket, DrRacket will ask you the address of
+the Congame server to connect to, and then prompt you to log in on that server.
 
-@; @browser{
-@;     @bold{@larger{The Beginning is the End}}
+DrRacket assumes the server you want is at @tt{http://localhost:5100} --- that is, is the one
+running on the Docker container on your computer. No need to change it, so click the @onscreen{Log
+in} button. Log in using the built-in user @tt{admin@"@"congame.local} with password @tt{admin}.
 
-@;     This is all there is.
-@; }
+@margin-note{@mark{If you later want DrRacket to send uploads to a different server, too bad.}}
 
-@; The browser is showing you the first and only step of the study: a page with some formatted text.
+Once the login is complete, DrRacket will ask you the name of your study: 
+
+@margin-note{DrRacket keeps a cache matching your @filepath{.rkt} filenames to study names. You
+won’t have to re-enter the study name more than once for each file you upload --- until you close
+and reopen DrRacket.}
+
+@screenshot{intro-drr-studyname.png}
+
+Enter @racketvalfont{tutorial} as shown, since that’s the name we gave our study in the
+@racket[defstudy] expression.
+
+At this point, DrRacket will upload your study. Next time you edit and upload this study, you’ll
+skip past all these steps and the upload will happen as soon as you click the @onscreen{Upload
+Study} button.
+
+Aside over!
+
+@subsubsection{Make an instance and enroll}
+
+Once your study is uploaded, you should see your web browser open to a page titled
+@onscreen{Instances of tutorial}.
+
+Click on the @onscreen{New Instance} button. For now, just fill in a value like
+@racketvalfont{Instance 1} in the @italic{Name} field, and leave the rest of the fields at their
+default values:
+
+@screenshot["intro-new-instance.png"]
+
+Click @kbd{Create} to create an instance of the study.
+
+You’ll be taken back to the study’s instance list, and this time the new instance will appear in the
+list.
+
+Go back to the @onscreen{Dashboard} (link at top) and you’ll see the new instance listed there.
+
+You’ll also see an @onscreen{Enroll} link --- click it, and you’ll be taken through the study as a
+participant:
+
+@browser{
+     @bold{@larger{The Beginning is the End}}
+
+     This is all there is.
+}
+
+That right there is your first study! The browser is showing you the first and only step of the
+study: a page with some formatted text.
 
 @;===============================================
 
@@ -153,7 +193,6 @@ Now let’s add steps to our new study. First, we’ll explain to participants w
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
-
 (defstep (description)
   @md{
     # The study
@@ -177,7 +216,6 @@ Speaking of which, let’s write the next step! Add these lines to the end of yo
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
-
 (defstep (age-name-survey)
   @md{
     # Survey
@@ -198,8 +236,8 @@ Working from the inside out:
 
 @itemlist[#:style 'ordered
 
-@item{The @racket[(input-text)] and @racket[(input-number)] expressions (at the end of the fifth and
-seventh lines in the code above) generate input boxes where the participant can enter data. There
+@item{The @racket[(input-text)] and @racket[(input-number)] expressions (at the end of the sixth and
+eighth lines in the code above) generate input boxes where the participant can enter data. There
 are other expressions that can be used to insert the various other form elements like checkboxes and
 dropdown lists.}
 
@@ -208,7 +246,7 @@ submitted, set the value in the @racket[_first-name] variable to the whatever th
 in @racket[(input-text)]. }
 
 @item{The @racket[submit-button] expression inserts the button the user can click to submit all the
-information they have entered into the form elements.}
+information they have entered into the form.}
 
 @item{All the interactive form elements are wrapped in a @racket[form] expression to keep them
 grouped together.}
@@ -219,7 +257,6 @@ Next, write the final step by adding these lines to the end of your file:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
-
 (defstep (thank-you)
   @md{
     # Good job, @first-name
@@ -229,11 +266,11 @@ Next, write the final step by adding these lines to the end of your file:
   })
 }|
 
-We’re doing something else interesting here: we’re inserting our variables directly into the text in
-the @racket[md] expression! We’ve told Conscript to record @racket[_first-name] and @racket[_age] in
-the previous step of the study, but in addition to storing those values for later analysis, we can
-make use of those values while the user is still participating. There are many ways we might want to
-do this; in this case, we’re simply displaying the values back to the user.
+We’re doing something else interesting here: we’re inserting our variables directly into the text!
+We’ve told Conscript to record @racket[_first-name] and @racket[_age] in the previous step of the
+study; in addition to storing those values for later analysis, we can make use of those values while
+the user is still participating. There are many ways we might want to do this: in this case, we’re
+simply displaying the values back to the user.
 
 @margin-note{Note that since we used @racket[input-number] to assign a value to @racket[_age], we
 must use @racket[number->string] to convert that numeric value to text if we want to display it
@@ -243,7 +280,6 @@ Finally, we’ll define the study as a whole by tying all the steps together in 
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
-
 (defstudy simple-survey
   [description --> age-name-survey --> thank-you]
   [thank-you --> thank-you])
@@ -269,12 +305,11 @@ There’s one more thing you need to do: Add a statement at the top of your file
 (defvar first-name) ; ...
 }
 
+@margin-note{It’s a good practice to add @racket[(provide _studyname ...)] at the top of your file,
+where @racket[_studyname] is the identifier used in your @racket[defstudy] expression.}
+
 This line will be needed later when we upload our study to a Congame server. Without it, the server
 will not be able to access the study bound to the @racket[simple-study] identifier.
-
-@margin-note{It’s a good practice to add @racket[(provide _studyname ...)] at the top of your file,
-where you include each @racket[_studyname] defined in a @racket[defstudy] expression in your
-program.}
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -329,16 +364,31 @@ Combining all these snippets, the code should look like the below example. Go ah
   [thank-you --> thank-you])
 }|}
 
-@;===============================================
+@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@subsection{Previewing the second study}
+@subsection{Test-driving the age study}
 
-To try out this study, same steps as before: click DrRacket's @onscreen{Run} button, then click near
-the @litchar{>} prompt on the lower pane and type @code{(preview simple-survey)} (note the new name
-of the survey used in the @racket[defstudy] expression).
+Once again, click the @onscreen{Upload Study} button in DrRacket, and (if prompted for the study
+name) enter the name of this new study, @racketvalfont{simple-survey}.
 
-Then press your @kbd{ENTER} key. You should see your web browser open with a page that looks roughly
-like this:
+@margin-note{If you receive errors at this point, double check that the contents of
+@filepath{age-survey.rkt} exactly match the contents of the example file shown above. In particular,
+check that the top line says @code{#lang conscript} and that the @racket[(provide simple-survey)]
+expression is present in the file.}
+
+If all goes well, you’ll be taken to a page titled @onscreen{Instances of simple-survey}:
+
+@screenshot{intro-empty-instancelist.png}
+
+As before, click on @onscreen{New Instance} and enter a name for the survey instance --- say,
+@racketvalfont{Age Instance 1}. 
+
+Now that you’ve published your study and created an instance for it, you can click on the
+@onscreen{Dashboard} link and see the new instance listed there.
+
+You’ll also see a link titled @onscreen{Enroll} — click it! 
+
+You should see your web browser open with a page that looks roughly like this:
 
 @browser{
   @bold{@larger{The study}}
@@ -398,7 +448,7 @@ study participants.}
 collect info from participants, and save that info into your @racket[defvar] variables.}
 
 @item{You use the @racket[defstudy] form to define your study as a whole. Within that form, you use
-@racketid[-->] to tell Congame how the steps connect to each other in sequences.}
+@racket[-->] to tell Congame how the steps connect to each other in sequences.}
 
 ]
 
@@ -406,128 +456,18 @@ It’s possible to create much more advanced studies than those we have built so
 conditional branching, a variety of form controls, timers, randomizing assignments, etc. But what
 you have seen so far gives you the basic framework.
 
-@;===============================================
-
-@section{Uploading and running your study}
-
-When you have finished designing your study, it's time to go live and start collecting responses
-from participants. We’re going to do that now with the @filepath{age-survey.rkt} study we just
-created.
-
-In order to do this, you need access to a Congame server. For the steps that follow, we'll assume:
-
-@itemlist[#:style 'ordered
-
-@item{You have a link/address to a running Congame server.}
-
-@item{You already have a researcher or an administrator account on that server.}
-
-]
-
-@margin-note{See @seclink["congame-setup"] if you need to know how to prepare a server for use with
-studies.}
-
-
-@;{ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-@; @subsection{Preparing the study: from @racketmodname[conscript/local] to @racketmodname[conscript]}
-
-@; @bold{Important:} before uploading the study to a Congame server, we need to change it to use
-@; @code{#lang conscript} instead of @code{#lang conscript/local}.
-
-@; The @racketmodname[conscript/local] environment is only useful for local testing; it’s quick to use,
-@; but it doesn’t permanently record any of the data collected, and cannot differentiate between
-@; participants. Using @racketmodname[conscript] @mark{unlocks access to the full server’s participant
-@; and responses database.}
-
-@; Open the @filepath{age-survey.rkt} study created in the previous section, and edit the first line in
-@; the file, removing @racketvalfont{/local} from the @hash-lang[] line so that it reads like this:
-
-@; @codeblock{
-@;     #lang conscript
-@; }
-
-@; @margin-note{If you forget this step and attempt to upload a study that uses @code{conscript/local},
-@; you’ll get an error.}
-
-@; Make sure you save the file!
-@; }
-
-@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-@subsection{Upload the study}
-
-Navigate to the Congame server in your web browser and log in with your username and password.
-
-Click on the @onscreen{Admin} tab. (If you don’t see this, contact your server admin.)
-
-Under the @italic{Studies} section, click @onscreen{New Study}, and fill out the upload form as
-follows:
-
-@itemlist[
-
-@item{@bold{Name}: Enter @racketvalfont{Age Survey} (any human-friendly title will do).}
-
-@item{@bold{Slug}: Leave this blank.}
-
-@item{@bold{Type}: Set to @racketresultfont{Conscript}.}
-
-@item{@bold{Study ID}: Enter @racketvalfont{simple-survey}. This is the identifier we used in the
-@racket[defstudy] and @racket[provide] expressions in our @filepath{age-survey.rkt} file.}
-
-@item{@bold{Study Source}: Click the @kbd{Browse} button and locate/select the
-@filepath{age-survey.rkt} file.}
-
-]
-
-@screenshot["intro-upload.png"]
-
-When ready, click @kbd{Create} to upload and create the study.
-
-@margin-note{If you receive errors at this point, double check that the contents of
-@filepath{age-survey.rkt} exactly match the contents of the example file shown above. In particular,
-check that the top line says @code{#lang conscript} and that the @racket[(provide simple-survey)]
-expression is present in the file.}
-
-Alternatively, if too much time has passed since you clicked the @onscreen{New Study} link, you may
-receive a “session expired” error — simply fill out the form and try again more quickly this time.}
-
-@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-@subsection{Creating a study instance}
-
-As soon as the upload is complete, you’ll be taken to a screen listing all the @tech{study
-instances} for the newly-created study:
-
-@screenshot["intro-empty-instancelist.png"]
-
-Click on @onscreen{New Instance}. For now, just fill in a value like @racketvalfont{Instance 1}
-in the @italic{Name} field, and leave the rest of the fields at their default values:
-
-@screenshot["intro-new-instance.png"]
-
-Click @kbd{Create} to create an instance of the study.
-
-You’ll be taken back to the study’s instance list, and this time the new instance will appear in the
-list.
-
-@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-@subsection{Trying it out}
-
-Now that you’ve published your study and created an instance for it, you can go click on the
-@onscreen{Dashboard} link and see the new instance listed there.
-
-You’ll also see a link titled @onscreen{Enroll} — click it! You will be taken through the study
-exactly as you were when you tried it out on your computer earlier. Go ahead and complete all the
-steps.
-
 @margin-note{As long as the study instance is in “active” status, other people who log into this same study as
 participants will see this same study instance and the @onscreen{Enroll} link on their dashboard,
 allowing them to complete the study as well.}
 
-Once you’re done with the study, @mark{navigate back to the dashboard somehow}. Then click on the
-@onscreen{Admin} → @onscreen{Instance 1} link.
+@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@subsection{Reviewing collected responses}
+
+Finally, let’s take a look at what happens to the responses submitted by study participants.
+
+Once you’re done with the study, navigate back to the dashboard. Then click on the @onscreen{Admin}
+→ @onscreen{simple-survey} (in the list of studies), then on the @onscreen{Age Instance 1} link.
 
 All the way at the bottom, you’ll see a section titled @bold{Participants} — and you’ll be
 the first one:
@@ -544,7 +484,7 @@ a detailed listing of your responses to the study:
 @section{Wrapping it up}
 
 At this point, you’ve seen all of the essential features of creating studies in Conscript, testing
-them locally, and running them on a Congame server.
+them on a Congame server, and collecting some sample responses.
 
 From here, you should check out the @secref["Overview"], and then, when you’re ready, dive into the
 more detailed @secref["Conscript"] guide.
