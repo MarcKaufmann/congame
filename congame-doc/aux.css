@@ -3,10 +3,10 @@
 .terminal {
     margin-bottom: 1em;
     padding: 0.5em;
-    width: 88%;
     background: #fafafa;
     border: solid silver 1px;
     border-radius: 4px;
+    overflow-x: auto;
 }
 
 .browser {
