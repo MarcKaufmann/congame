@@ -31,11 +31,13 @@ cycle. When you’re ready, you can start reading the @secref{Conscript} and
 
 The best way to learn is by doing, so let’s do!
 
+To follow along on your computer, first follow the instructions in @secref["install-congame"].
+
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @subsection{Creating a new file}
 
-Assuming you've  @seclink["Installing_Conscript_and_Racket"]{installed Racket and Conscript}, launch
+Assuming you've  @seclink["install-congame"]{installed Racket and Conscript}, launch
 the DrRacket application. Start a new file. Click into the top/main area (the "definitions" window)
 and change the top line to:
 

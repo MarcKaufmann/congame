@@ -20,12 +20,14 @@ Congame includes:
 
 @item{Server applications and libraries for hosting @tech{studies} (@secref["The_Congame_Server"])}
 
-@item{@secref["Conscript"], a simplified scripting environment for writing studies.  Using
+@item{@secref["Conscript"], a simplified scripting environment for writing studies. Using
 Conscript, you can develop studies rapidly on your local computer, without having to stand up a
 complete Congame server environment. When ready, a Conscript study can be uploaded to a Congame
 server.} 
 
 ]
+
+@bold{Installation}: See @secref["install-congame"].
 
 @bold{Getting help}: If you have questions about Congame or about this documentation, create a post
 in @link["https://github.com/MarcKaufmann/congame/discussions"]{the Discussions area of Congame’s

@@ -2,7 +2,7 @@
 
 @(require "doc-util.rkt")
 
-@title{Installing Congame and Conscript}
+@title[#:tag "install-congame"]{Installing Congame and Conscript}
 
 Below are step-by-step instructions for installing Congame and Conscript on your personal computer.
 
@@ -140,7 +140,7 @@ it by typing @kbd{CTRL}@kbd{C} in the same terminal window, or by pressing the s
 @section{Normal use: starting, stopping, and logging in}
 
 From this point, when you need to test your studies locally, simply open the Docker desktop app and
-press the play button for the @tt{congame} container. This will start the Congame server, at which
+press the play ▶️  button for the @tt{congame} container. This will start the Congame server, at which
 point you should be able to browse to @url{http://localhost:5100} in your browser to see the Congame
 home page.
 
