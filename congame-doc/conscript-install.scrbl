@@ -179,16 +179,14 @@ it with the extracted contents of the new ZIP file.}}
 
 @item{Do @exec{raco setup congame conscript} to compile the new versions of the packages.}
 
-@item{@mark{Rebuild the Docker container}: start the Docker app on your computer. Then in the
-terminal, run these commands:
+@item{Update the Docker container: with the Docker desktop app running on your computer, run these
+commands in the terminal:
 
 @terminal{
     @:>{docker compose pull}
-    @:>{docker compose up --force-recreate --build}
+    @:>{docker compose build}
 }
 
-Like the original installation, this will take a while and leave Congame in a running state.
-Optionally run @exec{docker image prune -f} as well to clear out images no longer used by the
-container.}
+Unlike the initial setup, this will take only a couple of minutes.}
 
 ]
