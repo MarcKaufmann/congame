@@ -192,7 +192,7 @@ A @deftech{step scope} represents the region of the database where
 data for a study is stored and retrieved from.  Step scope is
 determined by the combination of the current participant, the study
 stack and optional round and group information.  @deftech{Instance
-scope} is shared between participants to a @tech{study instance}.
+scope} is shared between participants to a study @tech{instance}.
 
 @defproc[(get [k symbol?]
               [default (or/c any/c (-> any/c)) (λ () (error 'get "value not found for key ~.s" k))]
