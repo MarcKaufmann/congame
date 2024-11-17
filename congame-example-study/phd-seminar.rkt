@@ -1,8 +1,8 @@
 #lang conscript
 
-(require conscript/survey-tools
+(require #;conscript/survey-tools
          gregor
-         #;congame-web/components/uploaded-file
+         congame-web/components/uploaded-file
          )
 
 (provide
@@ -65,8 +65,8 @@
             @submit-button}})
 
 (defstep (get-research-ideas)
-  ;(set! research-proposals (update-rps))
-  (set! new-research-proposals (get-new-rps))
+  (set! research-proposals (update-rps))
+  ;(set! new-research-proposals (get-new-rps))
   @md{# Research Ideas
 
       Deadline: @(~ymd next-survey-date)
@@ -135,8 +135,8 @@
                       fn0)))
               (li
                (strong (format "~a:" (~ymd k)))
-               (span (file-download/link v fn))
-               #;(span (uploaded-file-attachment v fn)))))
+               #;(span (file-download/link v fn))
+               (span (uploaded-file-attachment v fn)))))
 
       @br{}
 
@@ -163,8 +163,8 @@
     (values k (update-one v))))
 
 (defstep (wait-survey)
-  (set! new-research-proposals (get-new-rps))
-  ;(set! research-proposals (update-rps))
+  ;(set! new-research-proposals (get-new-rps))
+  (set! research-proposals (update-rps))
   (define t (today))
   (define (survey-start d)
     (-days d 6))
