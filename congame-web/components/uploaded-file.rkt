@@ -53,7 +53,10 @@
   (attachment
    label
    #:filename filename
-   #:content-type content-type
+   ; FIXME: We should not (?) have to convert to a string, the content type should be a string by default.
+   #:content-type (if (bytes? content-type)
+                      (bytes->string/utf-8 content-type)
+                      content-type)
    (lambda (out)
      (parameterize ([upload:current-uploader uploader])
        (upload:call-with-uploaded-file

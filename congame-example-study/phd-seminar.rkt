@@ -1,7 +1,9 @@
 #lang conscript
 
 (require conscript/survey-tools
-         gregor)
+         gregor
+         #;congame-web/components/uploaded-file
+         )
 
 (provide
  phd-survey
@@ -11,6 +13,7 @@
 (defvar* research-proposals research-proposals-id)
 (defvar* next-survey-date next-survey-date-id)
 (defvar* research-proposal research-proposal-id)
+(defvar* new-research-proposals new-research-proposals-id)
 (defvar remaining-surveys)
 (defvar surveys-answered)
 
@@ -110,13 +113,14 @@
 
       @button{Back}})
 
+
 (defstep (show-research-proposals)
   @md{@style{
-        .button.attachment-button {
-          display: inline;
-          padding: 0.3rem;
-        }
-      }
+             .button.attachment-button {
+                                        display: inline;
+                                        padding: 0.3rem;
+                                        }
+             }
 
       # Research Proposals
 
@@ -129,13 +133,36 @@
                       fn0)))
               (li
                (strong (format "~a:" (~ymd k)))
-               (span (file-download/link v fn)))))
+               (span (file-download/link v fn))
+               #;(span (uploaded-file-attachment v fn)))))
 
       @br{}
 
       @button{Back}})
 
+(define (get-new-rps)
+  (define (update-one rp)
+    (if (uploaded-file? rp)
+        (hash
+         'key (uploaded-file-key rp)
+         'filename (uploaded-file-filename rp)
+         'content-type (uploaded-file-content-type rp))
+        rp))
+  (for/hash ([(k v) (in-hash research-proposals)])
+    (values k (update-one v))))
+
+(define (update-rps)
+  (define (update-one rp)
+    (uploaded-file
+     (hash-ref rp 'key)
+     (hash-ref rp 'filename)
+     (hash-ref rp 'content-type)))
+  (for/hash ([(k v) (in-hash new-research-proposals)])
+    (values k (update-one v))))
+
 (defstep (wait-survey)
+  (set! new-research-proposals (get-new-rps))
+  ;(set! research-proposals (update-rps))
   (define t (today))
   (define (survey-start d)
     (-days d 6))
@@ -143,35 +170,35 @@
     (and (date<=? (survey-start d) t)
          (date<=? t d)))
 
-  (define (survey-is-over? d)
-    (date>? t d))
+(define (survey-is-over? d)
+  (date>? t d))
 
-  (cond [(survey-open? next-survey-date)
-         (skip)]
+(cond [(survey-open? next-survey-date)
+       (skip)]
 
-        [(survey-is-over? next-survey-date)
-         (if (null? remaining-surveys)
-             (skip 'no-more)
-             (skip 'set-next-survey))]
+      [(survey-is-over? next-survey-date)
+       (if (null? remaining-surveys)
+           (skip 'no-more)
+           (skip 'set-next-survey))]
 
-        [else
-         @md{# The next survey is not yet open
+      [else
+       @md{# The next survey is not yet open
 
-             The next survey only opens on @(~ymd (survey-start next-survey-date)).
+           The next survey only opens on @(~ymd (survey-start next-survey-date)).
 
-             @button[#:to-step-id 'show-research-ideas]{Show Research Ideas}
-             @button[(λ ()
-                       (when (undefined? research-proposals)
-                         (set! research-proposals (hash))))
-                     #:to-step-id 'show-research-proposals]{Show Research Proposals}
+           @button[#:to-step-id 'show-research-ideas]{Show Research Ideas}
+           @button[(λ ()
+                     (when (undefined? research-proposals)
+                       (set! research-proposals (hash))))
+                   #:to-step-id 'show-research-proposals]{Show Research Proposals}
 
-             @(button
-               (λ ()
-                 (set! research-proposal #f)
-                 (when (undefined? research-proposals)
-                   (set! research-proposals (hash))))
-               #:to-step-id 'get-research-proposal
-               "Submit Research Proposal")}]))
+           @(button
+             (λ ()
+               (set! research-proposal #f)
+               (when (undefined? research-proposals)
+                 (set! research-proposals (hash))))
+             #:to-step-id 'get-research-proposal
+             "Submit Research Proposal")}]))
 
 (defstudy research-ideas-study
   [init --> get-research-ideas --> ,(λ () done)])
@@ -214,7 +241,7 @@
   [show-research-proposals --> wait-survey])
 
 (define ((check-not-identity-user s))
-  (cond [(current-participant-identity-user?)
+  (cond [#t ;(current-participant-identity-user?)
          (s)]
 
         [else
