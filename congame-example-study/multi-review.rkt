@@ -6,6 +6,7 @@
          congame/components/formular
          congame/components/study
          congame-web/components/identity
+         congame-web/components/uploaded-file
          (prefix-in upload: congame-web/components/upload)
          gregor
          koyo/haml
@@ -19,7 +20,7 @@
          sentry
          threading
          "mail.rkt"
-         "tools.rkt")
+         )
 
 ;; FIXME: refactor submit+review-study once we have used it some -- there is
 ;; quite some duplication of code across the main and the admin studies,
@@ -704,7 +705,7 @@
    (haml
     (.container
      (:h1 (format "Review this PDF ~a (of ~a) for this submitter" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
-     (:p.submission (file-download/link submission-upload "Download"))
+     (:p.submission (uploaded-file-attachment submission-upload "Download"))
      (:div
       (:h3 "Rubric for PDF")
       (formular
@@ -727,7 +728,7 @@
    (haml
     (.container
      (:h1 "Review this PDF")
-     (:p.submission (file-download/link submission-upload "Download submission"))
+     (:p.submission (uploaded-file-attachment submission-upload "Download submission"))
      (:div
       (:h3 "Rubric for PDF")
       (formular
@@ -957,7 +958,7 @@
       (:h3 "Original Submission and Review")
       (:p (:strong "submitter id: ") (~a submitter-id))
       (:p (:strong "Submission: ")
-          (file-download/link submission-upload "Download File")))
+          (uploaded-file-attachment submission-upload "Download File")))
 
      (formular
       (haml
@@ -1001,7 +1002,7 @@
      (:h1 "Review this Review")
      (.submission
       (:h3 "Submission")
-      (:p (file-download/link (hash-ref r 'submission) "Submitted file")))
+      (:p (uploaded-file-attachment (hash-ref r 'submission) "Submitted file")))
 
      (:h3 "Review")
      (display-review r)
@@ -1070,7 +1071,7 @@
    (haml
     (.container
      (:h1 "Review this PDF")
-     (:p.submission (file-download/link submission-upload "Download submission"))
+     (:p.submission (uploaded-file-attachment submission-upload "Download submission"))
      (:div
       (display-rubric/description)
 
@@ -1459,7 +1460,7 @@
    (haml
     (.container
      (:h1 "Review this PDF")
-     (:p.submission (file-download/link submission-upload "Download submission"))
+     (:p.submission (uploaded-file-attachment submission-upload "Download submission"))
      (:div
       (:h3 "Rubric for PDF")
       (:p "Each exercise should be scored from 0 to 5 and thus counts the same as every other exercise. At the end, the sum of scores gets rescaled to however much the current assignment is worth (15 or 25). The meaning of scores is as follows:")

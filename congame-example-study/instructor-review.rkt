@@ -3,11 +3,11 @@
 (require congame/components/formular
          congame/components/study
          congame-web/components/identity
+         congame-web/components/uploaded-file
          koyo/haml
          racket/format
          threading
-         web-server/http
-         "tools.rkt")
+         web-server/http)
 
 (provide
  instructor-review/study)
@@ -43,7 +43,7 @@
    (haml
     (.container
      (:h3 "Instructions")
-     (file-download/link instructions-upload "Instructions")
+     (uploaded-file-attachment  instructions-upload "Instructions")
 
      (:h3 "Submit your pdf")
      (formular
@@ -73,14 +73,14 @@
    (haml
     (.container
      (:h1 "Submission Completed")
-     (:p "We have have received " (file-download/link f "your submission."))
+     (:p "We have have received " (uploaded-file-attachment f "your submission."))
      (:h3 "Score and Grading")
      (cond [(and score graded-pdf)
             (haml
              (:div
               (:ul
                (:li "Score: " (~a score))
-               (:li (file-download/link graded-pdf "Comments/Marking")))))]
+               (:li (uploaded-file-attachment graded-pdf "Comments/Marking")))))]
            [else
             (haml
              (:div
@@ -135,10 +135,10 @@
           (haml
            (:tr
             (:td (~a pid))
-            (:td (file-download/link s "Download File"))
+            (:td (uploaded-file-attachment s "Download File"))
             (:td (~a (hash-ref scores pid "No score yet")))
             (:td (if graded-pdf
-                     (file-download/link graded-pdf "Graded PDF")
+                     (uploaded-file-attachment graded-pdf "Graded PDF")
                      "Not yet graded"))
             (:td (button
                   (λ ()
@@ -170,7 +170,7 @@
    (haml
     (.container
      (:h1 "Submit Score")
-     (:p (:strong "Note: ") "You are scoring " (file-download/link file-to-grade "this submission") ".")
+     (:p (:strong "Note: ") "You are scoring " (uploaded-file-attachment file-to-grade "this submission") ".")
      (formular
       (haml
        (:div
@@ -191,7 +191,7 @@
    (haml
     (.container
      (:h1 "Provide Graded PDF")
-     (:p (:strong "Note: ") "You are providing the graded pdf for " (file-download/link file-to-grade "this submission") ".")
+     (:p (:strong "Note: ") "You are providing the graded pdf for " (uploaded-file-attachment file-to-grade "this submission") ".")
      (formular
       (haml
        (:div
