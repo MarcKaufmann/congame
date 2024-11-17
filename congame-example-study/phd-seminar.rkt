@@ -214,7 +214,7 @@
   [show-research-proposals --> wait-survey])
 
 (define ((check-not-identity-user s))
-  (cond [#t
+  (cond [(current-participant-identity-user?)
          (s)]
 
         [else
