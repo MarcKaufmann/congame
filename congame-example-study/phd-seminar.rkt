@@ -65,6 +65,8 @@
             @submit-button}})
 
 (defstep (get-research-ideas)
+  ;(set! research-proposals (update-rps))
+  (set! new-research-proposals (get-new-rps))
   @md{# Research Ideas
 
       Deadline: @(~ymd next-survey-date)
