@@ -1,9 +1,7 @@
 #lang conscript
 
-(require #;conscript/survey-tools
-         gregor
-         congame-web/components/uploaded-file
-         )
+(require gregor
+         congame-web/components/uploaded-file)
 
 (provide
  phd-survey
@@ -65,7 +63,7 @@
             @submit-button}})
 
 (defstep (get-research-ideas)
-  (set! research-proposals (update-rps))
+  ;(set! research-proposals (update-rps))
   ;(set! new-research-proposals (get-new-rps))
   @md{# Research Ideas
 
@@ -135,14 +133,13 @@
                       fn0)))
               (li
                (strong (format "~a:" (~ymd k)))
-               #;(span (file-download/link v fn))
                (span (uploaded-file-attachment v fn)))))
 
       @br{}
 
       @button{Back}})
 
-(define (get-new-rps)
+#;(define (get-new-rps)
   (define (update-one rp)
     (if (uploaded-file? rp)
         (hash
@@ -153,7 +150,7 @@
   (for/hash ([(k v) (in-hash research-proposals)])
     (values k (update-one v))))
 
-(define (update-rps)
+#;(define (update-rps)
   (define (update-one rp)
     (uploaded-file
      (hash-ref rp 'key)
@@ -164,7 +161,7 @@
 
 (defstep (wait-survey)
   ;(set! new-research-proposals (get-new-rps))
-  (set! research-proposals (update-rps))
+  ;(set! research-proposals (update-rps))
   (define t (today))
   (define (survey-start d)
     (-days d 6))
