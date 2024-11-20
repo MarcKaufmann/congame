@@ -10,8 +10,8 @@
 
 (provide (all-defined-out))
 
-(define-runtime-path congame-css "aux.css")
-(define-runtime-path congame-tex "aux.tex")
+(define-runtime-path congame-css "scrbl-aux.css")
+(define-runtime-path congame-tex "scrbl-aux.tex")
 
 (define at "@")
 (define _at (litchar "@"))
@@ -33,7 +33,7 @@
                                       (alt-tag "abbr")))
            (list str)))
 
-;; Style for sample terminal output 
+;; Style for sample terminal output
 (define (terminal . args)
   (compound-paragraph (style "terminal" (list (color-property (list #x66 #x33 #x99))
                                               (css-style-addition congame-css)
@@ -86,4 +86,3 @@
            (centered
             (image-element (style "figure" (list (css-style-addition congame-css)))
                            '() name-id '() 0.4))))]))
-
