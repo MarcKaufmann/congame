@@ -345,8 +345,8 @@ QUERY
 (provide
  defvar
  defvar*
- defvar*/instance
  defvar/instance
+ defvar*/instance
  get-var
  get-var*
  get-var*/instance

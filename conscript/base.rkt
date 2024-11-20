@@ -94,6 +94,7 @@
   [congame:skip skip]
   [congame:defvar defvar]
   [congame:defvar* defvar*]
+  [congame:defvar/instance defvar/instance]
   [congame:defvar*/instance defvar*/instance]
   [congame:undefined undefined]
   [congame:undefined? undefined?]
