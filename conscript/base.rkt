@@ -117,6 +117,8 @@
 
 (provide
  (rename-out [conscript-require require])
+ only-in prefix-in rename-in
+
  (all-from-out "form.rkt")
  (all-from-out "html.rkt")
  (all-from-out "markdown.rkt")
@@ -151,10 +153,17 @@
       (raise-syntax-error 'require "required module not whitelisted" mod-stx))))
 
 (define-syntax (conscript-require stx)
+  (define-syntax-class mod
+    #:literals (only-in prefix-in rename-in)
+    (pattern id:id)
+    (pattern (only-in id:id bind ...))
+    (pattern (prefix-in p:id id:id))
+    (pattern (rename-in id:id bind ...)))
+
   (syntax-parse stx
-    [(_ mod:id ...+)
-     (for-each check-module-whitelisted (syntax-e #'(mod ...)))
-     #'(require mod ...)]))
+    [(_ m:mod ...+)
+     (for-each check-module-whitelisted (syntax-e #'(m.id ...)))
+     #'(require m ...)]))
 
 (begin-for-syntax
   (define-splicing-syntax-class function-arg
