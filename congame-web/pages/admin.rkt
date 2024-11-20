@@ -22,6 +22,7 @@
          gregor
          koyo
          (except-in forms form)
+         net/url
          racket/contract
          racket/file
          racket/format
@@ -825,8 +826,11 @@
                 ([:type "submit"])
                 "Create Link"))))))])))))
 
+(define impersonator-return-key
+  'impersonator:return-url)
+
 ;; TODO: Stop showing e-mail and show participant ID instead.
-(define/contract ((view-study-participant-page auth db) _req study-id study-instance-id participant-id)
+(define/contract ((view-study-participant-page auth db) req study-id study-instance-id participant-id)
   (-> auth-manager? database? (-> request? id/c id/c id/c response?))
   (define the-study
     (lookup-study-meta db study-id))
@@ -882,6 +886,7 @@
               ([:href
                 (embed/url
                  (lambda (_req)
+                   (session-set! impersonator-return-key (url->string (request-uri req)))
                    (auth-manager-impersonate! auth (study-participant/admin-user-id the-participant))
                    (redirect/get/forget/protect)
                    (redirect-to (reverse-uri 'study-page (study-instance-slug the-instance)))))])
@@ -1197,7 +1202,10 @@
   (-> auth-manager? (-> request? response?))
   (when (impostor?)
     (auth-manager-stop-impersonation! am))
-  (redirect-to (reverse-uri 'study-instances-page)))
+  (define return-url
+    (or (session-ref impersonator-return-key #f)
+        (reverse-uri 'study-instances-page)))
+  (redirect-to return-url))
 
 (define (~study-var-summary var)
   (format "~.a" (print-study-var
