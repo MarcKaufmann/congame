@@ -66,15 +66,16 @@
                                             #:on-upload (λ (id) (set! res id)))))
                                         (send (renderer-root r) show #t)
                                         res)))
-                                   (when study-id
-                                     (with-handlers* ([exn:fail:api:not-authorized?
-                                                       (lambda (_e)
-                                                         (loop #t))]
-                                                      [exn:fail?
-                                                       (lambda (e)
-                                                         (hash-remove! cache filename)
-                                                         (raise e))])
-                                       (upload-study study-id filename))))))]
+                                   (if study-id
+                                       (with-handlers* ([exn:fail:api:not-authorized?
+                                                         (lambda (_e)
+                                                           (loop #t))]
+                                                        [exn:fail?
+                                                         (lambda (e)
+                                                           (hash-remove! cache filename)
+                                                           (raise e))])
+                                         (upload-study study-id filename))
+                                       (hash-remove! cache filename)))))]
                          [else
                           (message-box
                            #;title "Congame"
