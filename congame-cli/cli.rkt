@@ -21,6 +21,7 @@
  (struct-out exn:fail:api)
  (struct-out exn:fail:api:not-authorized)
  handle-login
+ handle-logout
  upload-study)
 
 (struct exn:fail:api exn:fail (response))
@@ -30,17 +31,16 @@
   (make-parameter (short-program+command-name)))
 
 (define (get-key)
-  (get-preference
-   'congame-cli:key
-   (lambda ()
-     (eprintf #<<MESSAGE
+  (define (fail)
+    (eprintf #<<MESSAGE
 ~a: not logged in
 
 Use the "raco congame login" command to log in first.
 
 MESSAGE
-              (current-program-name))
-     (exit 1))))
+             (current-program-name))
+    (exit 1))
+  (or (get-preference 'congame-cli:key fail) (fail)))
 
 (define (handle-help)
   (display #<<HELP
@@ -49,6 +49,8 @@ usage: raco congame <command> <option> ... <arg> ...
 available commands:
   help   display this help message
   login  log into a congame server
+  logout log out of a congame server
+  upload upload a study to the server
 
 HELP
           )
@@ -88,6 +90,11 @@ HELP
        (when wait-until-idle?
          (sync (system-idle-evt)))
        (void)))))
+
+(define (handle-logout)
+  (put-preferences
+   '(congame-cli:key)
+   (list #f)))
 
 (define (handle-upload)
   (define-values (study-id study-path)
@@ -203,6 +210,7 @@ HELP
     (hasheq
      'help handle-help
      'login handle-login
+     'logout handle-logout
      'upload handle-upload))
 
   (define-values (command handler args)
