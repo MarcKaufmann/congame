@@ -26,6 +26,7 @@
  put-form/with
  formular
  formular-autofill
+ formular-field?
  map-validator
  map-result
  map-result*
