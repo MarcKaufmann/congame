@@ -1207,6 +1207,8 @@ QUERY
  list-active-study-instances/by-owner
  list-study-instance-participants/admin
  list-study-instance-vars
+ clear-study-instance-data!
+ clear-study-instance-data-for-user!
  clear-study-instance-vars!
  bulk-archive-study-instances!
  current-participant-id
@@ -1477,12 +1479,45 @@ QUERY
                                         (and (array-contains? u.roles (array "bot"))
                                              (is u.bot-set-id null)))))))))
 
+(define/contract (clear-study-instance-data! db instance-id)
+  (-> database? id/c void?)
+  (with-database-transaction [conn db]
+    (clear-study-instance-vars! db instance-id)
+    (~> (from "study_data" #:as d)
+        (where (in d.participant-id (subquery
+                                     (~> (from "study_participants" #:as p)
+                                         (where (= p.instance-id ,instance-id))
+                                         (select p.id)))))
+        (delete)
+        (query-exec conn _))
+    (~> (from "study_participants" #:as p)
+        (where (= p.instance-id ,instance-id))
+        (delete)
+        (query-exec conn _))))
+
+(define/contract (clear-study-instance-data-for-user! db instance-id user-id)
+  (-> database? id/c id/c void?)
+  (with-database-transaction [conn db]
+    (~> (from "study_data" #:as d)
+        (where (= d.participant-id (subquery
+                                    (~> (from "study_participants" #:as p)
+                                        (where (and (= p.instance-id ,instance-id)
+                                                    (= p.user-id ,user-id)))
+                                        (select p.id)))))
+        (delete)
+        (query-exec conn _))
+    (~> (from "study_participants" #:as p)
+        (where (= p.instance-id ,instance-id))
+        (delete)
+        (query-exec conn _))))
+
 (define/contract (clear-study-instance-vars! db instance-id)
   (-> database? id/c void?)
   (with-database-connection [conn db]
-    (query-exec conn (~> (from study-instance-var #:as v)
-                         (where (= v.instance-id ,instance-id))
-                         (delete)))))
+    (~> (from study-instance-var #:as v)
+        (where (= v.instance-id ,instance-id))
+        (delete)
+        (query-exec conn _))))
 
 (define/contract (bulk-archive-study-instances! db owner-id instance-ids)
   (-> database? id/c (listof id/c) void?)

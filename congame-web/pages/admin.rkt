@@ -4,7 +4,6 @@
          (submod congame/components/bot actions)
          congame-web/components/auth
          congame-web/components/bot-set
-         congame-web/components/prolific
          congame-web/components/replication
          congame-web/components/tag
          (prefix-in tpl: congame-web/components/template)
@@ -26,7 +25,6 @@
          racket/contract
          racket/file
          racket/format
-         (except-in racket/list group-by)
          racket/match
          racket/port
          racket/pretty
@@ -35,7 +33,8 @@
          sentry
          threading
          web-server/dispatchers/dispatch
-         web-server/http)
+         web-server/http
+         (prefix-in config: "../config.rkt"))
 
 (provide
  studies-page
@@ -267,57 +266,81 @@
 
 (define/contract ((view-study-page db) _req study-id)
   (-> database? (-> request? id/c response?))
-  (define meta
-    (lookup-study-meta db study-id))
-  (unless meta
-    (next-dispatcher))
+  (define meta (lookup-study-meta db study-id))
+  (unless meta (next-dispatcher))
   (define u (current-user))
-  (define instances-xexpr
-    (cond
-      [(user-researcher? u)
-       (haml
-        (:table.study-list
-         (:tr
-          (:th "Instance Name")
-          (:th "Created"))
-         ,@(for/list ([s (in-list (list-study-instances-for-owner db study-id (user-id u)))])
-             (haml
-              (:tr
-               (:td
-                (:a
-                 ([:href (reverse-uri 'admin:view-study-instance-page study-id (study-instance-id s))])
-                 (study-instance-name s)))
-               (:td
-                (~t (study-instance-created-at s) "yyyy-MM-dd, HH:mm")))))))]
-      [else
-       (define instances-by-researcher
-         (for/fold ([insts (hash)])
-                   ([r (in-list (list-study-instances-by-researcher db study-id))])
-           (hash-update insts
-                        (researcher&instance-researcher-username r)
-                        (λ (lst) (cons r lst))
-                        null)))
-       (haml
-        (:div.researcher-list
-         ,@(for/list ([(username instances) (in-hash instances-by-researcher)])
-             (haml
-              (:div
-               (:p (:strong (~a username)))
-               (:table.study-list
-                (:tr
-                 (:th "Instance Name")
-                 (:th "Created"))
-                ,@(for/list ([in (in-list instances)])
-                    (haml
-                     (:tr
-                      (:td
-                       (:a
-                        ([:href (reverse-uri 'admin:view-study-instance-page study-id (researcher&instance-instance-id in))])
-                        (researcher&instance-instance-name in)))
-                      (:td
-                       (~t (researcher&instance-created-at in) "yyyy-MM-dd, HH:mm")))))))))))]))
   (send/suspend/dispatch/protect
    (lambda (embed/url)
+     (define (make-actions instance-id)
+       (if config:debug
+           (haml
+            (:td
+             (:a
+              ([:href (embed/url
+                       (lambda (_req)
+                         (clear-study-instance-data! db instance-id)
+                         (redirect/get/forget/protect)
+                         (redirect-to (reverse-uri 'admin:view-study-page study-id))))]
+               [:onclick "return confirm('Are you sure?')"])
+              "Clear All Data")
+             " "
+             (:a
+              ([:href (embed/url
+                       (lambda (_req)
+                         (clear-study-instance-data-for-user! db instance-id (user-id (current-user)))
+                         (redirect/get/forget/protect)
+                         (redirect-to (reverse-uri 'admin:view-study-page study-id))))]
+               [:onclick "return confirm('Are you sure?')"])
+              "Clear My Data")))
+           (haml (:td))))
+     (define instances-xexpr
+       (cond
+         [(user-researcher? u)
+          (haml
+           (:table.study-list
+            (:tr
+             (:th "Instance Name")
+             (:th "Created")
+             (:th "Actions"))
+            ,@(for/list ([s (in-list (list-study-instances-for-owner db study-id (user-id u)))])
+                (haml
+                 (:tr
+                  (:td
+                   (:a
+                    ([:href (reverse-uri 'admin:view-study-instance-page study-id (study-instance-id s))])
+                    (study-instance-name s)))
+                  (:td
+                   (~t (study-instance-created-at s) "yyyy-MM-dd, HH:mm"))
+                  (make-actions (study-instance-id s)))))))]
+         [else
+          (define instances-by-researcher
+            (for/fold ([insts (hash)])
+                      ([r (in-list (list-study-instances-by-researcher db study-id))])
+              (hash-update insts
+                           (researcher&instance-researcher-username r)
+                           (λ (lst) (cons r lst))
+                           null)))
+          (haml
+           (:div.researcher-list
+            ,@(for/list ([(username instances) (in-hash instances-by-researcher)])
+                (haml
+                 (:div
+                  (:p "Researcher: " (:strong (~a username)))
+                  (:table.study-list
+                   (:tr
+                    (:th "Instance Name")
+                    (:th "Created")
+                    (:th "Actions"))
+                   ,@(for/list ([in (in-list instances)])
+                       (haml
+                        (:tr
+                         (:td
+                          (:a
+                           ([:href (reverse-uri 'admin:view-study-instance-page study-id (researcher&instance-instance-id in))])
+                           (researcher&instance-instance-name in)))
+                         (:td
+                          (~t (researcher&instance-created-at in) "yyyy-MM-dd, HH:mm"))
+                         (make-actions (researcher&instance-instance-id in)))))))))))]))
      (tpl:page
       (tpl:container
        (haml
