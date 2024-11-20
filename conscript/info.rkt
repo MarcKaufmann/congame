@@ -8,6 +8,7 @@
     "commonmark-lib"
     "congame-core"
     "forms-lib"
+    "hash-view"
     "koyo-lib"
     "threading-lib"
     "web-server-lib"))

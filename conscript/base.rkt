@@ -64,7 +64,7 @@
  display displayln print println printf eprintf write writeln
 
  in-hash
- hash hash-count hash-ref hash-remove hash-set hash-update hash-values
+ hash hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys
 
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling truncate
  = < > <= >= equal? eq?
@@ -72,8 +72,10 @@
 
  regexp-match?
 
- format ~a number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
- bytes? bytes->string/utf-8
+ format ~a string number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
+ string-join
+ bytes? bytes->string/utf-8 char?
+
 
  exn:fail? exn-message
 
@@ -140,6 +142,7 @@
       conscript/survey-tools
       data/monocle
       gregor
+      hash-view
       koyo/haml
       racket/format
       racket/list
