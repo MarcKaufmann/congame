@@ -12,7 +12,7 @@
 ;; For next time:
 ;; * Add bot support to conscript (default actions on all steps, figure out models)
 
-(defvar/instance choices dilemma-choices)
+(defvar/instance choices)
 (defvar choice)
 
 (define (&my-choice)
