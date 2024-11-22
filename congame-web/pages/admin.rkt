@@ -296,7 +296,7 @@
            (haml (:td))))
      (define instances-xexpr
        (cond
-         [(user-researcher? u)
+         [(user-admin-like? u)
           (haml
            (:table.study-list
             (:tr
