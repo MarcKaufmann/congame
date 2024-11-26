@@ -86,3 +86,16 @@
            (centered
             (image-element (style "figure" (list (css-style-addition congame-css)))
                            '() name-id '() 0.4))))]))
+
+(define-syntax (browser-screenshot stx)
+  (syntax-case stx ()
+    [(_ name-path-str xs ...)
+     (with-syntax ([name-id (datum->syntax stx (string->symbol (syntax-e #'name-path-str)))])
+       #'(begin
+           (define-runtime-path name-id (quote name-path-str))
+           (paragraph
+             (style "browser" (list (css-style-addition congame-css)
+                                    (alt-tag "div")
+                                    (tex-addition congame-tex)))
+             (image-element plain '() name-id '() 0.4))))]))
+
