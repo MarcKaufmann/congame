@@ -2,7 +2,9 @@
 
 @(require [for-label racket/contract
                      conscript/base
-                     conscript/markdown]
+                     conscript/markdown
+                     (only-in racket/base string?)
+                     xml]
           scribble/examples
           "doc-util.rkt")
 
@@ -14,13 +16,15 @@ understand their usage.
 @table-of-contents[]
 
 @(define e (make-base-eval #:lang 'racket/base))
-@(e '(require conscript/survey-tools))
+@(e '(require conscript/base conscript/survey-tools))
 
 @;===============================================
 
 @section{Core}
 
 @defmodule[conscript/base]
+
+The bindings provided by this module are also provided by @code{#lang conscript}.
 
 @defform[(defstep ...)]{
     @tktk{Defines a step.}
@@ -36,8 +40,19 @@ understand their usage.
 
 @defform[(defvar* ...)])]{
 
-@tktk{Define a variable with some extra magic behind it. @racket[defvar] and @racket[defvar*]are both
+@tktk{Define a variable with some extra magic behind it. @racket[defvar] and @racket[defvar*] are both
 particiant scope; @racket[defvar*] scope across parent/child studies. ...}
+
+}
+
+@deftogether[(
+
+@defform[(defvar/instance ...)]
+
+@defform[(defvar*/instance ...)])]{
+
+@tktk{Like @racket[defvar] and @racket[defvar*], but scoped to the current study @tech{instance} ---
+that is, the stored value is shared by all participants in the study instance.}
 
 }
 
@@ -80,6 +95,24 @@ Any number of steps may be joined by transitions using @defidform/inline[-->].
 
 }
 
+@defproc[(button [action (-> any/c) void]
+                 [label string?]
+                 [#:id id string? ""]
+                 [#:to-step-id to-step-id (or/c identifier? #f) #f]
+                 [#:up-target up-target string? ".step"]
+                 [#:up-transition up-transition string? "none"]) xexpr?])]{
+
+Returns a representation of an HTML @html-tag{a} element styled as a button. The @tt{href} attribute
+is dynamically set to the URL of a continuation that first calls @racket[action] with no arguments,
+then returns the page provided by @racket[to-step-id] (or that provided by the next step in the
+study if @racket[to-step-id] is @racket[#f]).
+
+If @racket[#:id] is provided, it sets the value of the @tt{data-widget-id} attribute for the
+element.
+
+}
+                     
+
 @defform[(for/study ...)]{
 
 @tktk{See loops, definition of}
@@ -108,15 +141,47 @@ Any number of steps may be joined by transitions using @defidform/inline[-->].
 
 @section{Page Content}
 
+@defmodule[conscript/struct]
+
+@defstruct[study-page ([renderer (-> xexpr?)]
+                       [xexpr-validator (-> any/c xexpr?)]) #:omit-constructor]{
+
+A study @deftech{page} is a special structure representing a complete page of HTML content. When used
+as a function, the study page's @racket[_renderer] is called, producing the page’s HTML as
+an X-expression.
+
+Any definition of a study @tech{step} must be a function that produces a @racket[study-page]. (or
+another study, but we won’t go into that here). But you should never need to create these values
+directly; rather, you’ll typically use helper functions like @racket[md] and @racket[html] that do
+this for you.
+
+@examples[#:eval e
+  (define x (md "# Heading"))
+  x
+  (x)]
+
+}
+
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @subsection{Markdown}
 
 @defmodule[conscript/markdown]
 
-@defform[(md ...)]{
+The bindings provided by this module are also provided by @racketmodname[conscript/base].
 
-@tktk{Parses its contents as Markdown and produces equivalent HTML content.}
+@deftogether[(
+
+@defform[(md content-str ...) #:contracts ([content-str string?])]
+@defform[(md* content-str ...) #:contracts ([content-str string?])])]{
+
+Parses its contents as Markdown and produces a representation of a complete @tech{page}
+containing the resulting HTML content (@racket[md]) or of a fragment of HTML suitable for use
+within another page (@racket[md*]).
+
+@examples[#:eval e 
+  (md "# Heading")
+  (md* "# Heading")]
 
 }
 
@@ -126,13 +191,84 @@ Any number of steps may be joined by transitions using @defidform/inline[-->].
 
 @defmodule[conscript/html]
 
-@tktk{...}
+The bindings in this module are also provided by @racketmodname[conscript/base].
+
+@deftogether[(
+
+@defform[(html element ...) #:contracts ([element xexpr?])]
+@defform[(html* element ...) #:contracts ([element xexpr?])])]{
+
+Returns a complete @tech{page} of HTML content (@racket[html]) or a representation of a fragment of
+HTML suitable for use within another page (@racket[html*]).
+
+@examples[#:eval e
+  (html (div "content..."))
+  (html* (div "content..."))] 
+
+}
+
+@deftogether[(
+
+@defform[(a #:href href content ...)]
+@defform[(aside content ...)]
+@defform[(audio #:src src content ...)]
+@defform[(blockquote content ...)]
+@defform[(br)]
+@defform[(dd content ...)]
+@defform[(div content ...)]
+@defform[(dt content ...)]
+@defform[(em content ...)]
+@defform[(h1 content ...)]
+@defform[(h2 content ...)]
+@defform[(h3 content ...)]
+@defform[(h4 content ...)]
+@defform[(h5 content ...)]
+@defform[(h6 content ...)]
+@defform[(img #:alt alt #:src src content ...)]
+@defform[(label content ...)]
+@defform[(li content ...)]
+@defform[(ol content ...)]
+@defform[(output content ...)]
+@defform[(p content ...)]
+@defform[(pre content ...)]
+@defform[(script content ...)]
+@defform[(section content ...)]
+@defform[(span content ...)]
+@defform[(strong content ...)]
+@defform[(style content ...)]
+@defform[(table content ...)]
+@defform[(tbody content ...)]
+@defform[(td content ...)]
+@defform[(th content ...)]
+@defform[(thead content ...)]
+@defform[(tr content ...)]
+@defform[(u content ...)]
+@defform[(ul content ...)]
+@defform[(video #:src src content ...) #:contracts ([content xexpr?])]
+)]{
+
+Return representations (X-expressions) of HTML tags of the same names.
+
+Any keyword arguments supplied are converted attribute names/values in the resulting HTML
+representation. Keyword arguments specifically noted above are required for their respective
+forms.
+
+@examples[#:eval e
+  (a #:href "/" "a link")
+  (eval:error (a "/" "a link"))
+  (a #:class "my-style" #:href "/" "styled link")]
+
+}
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @subsection{Forms}
 
 @defmodule[conscript/form]
+
+The bindings in this module are also provided by @racketmodname[conscript/base].
+
+
 
 @tktk{...}
 
