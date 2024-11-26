@@ -81,16 +81,15 @@ mark {
     font-style: italic;
 }
 
-.tktk:before {
+.tktk .SIntrapara:before {
     content: "[";
 }
 
-.tktk:after {
+.tktk .SIntrapara:after {
     content: "]";
 }
 
 abbr.margin-icon {
-    border-bottom: dotted orange 1px;
     padding: 2px;
     float: left;
     font-style: normal;

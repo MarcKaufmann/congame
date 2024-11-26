@@ -24,9 +24,9 @@
 
 ;; Mark filler content as placeholders for the real thing to be added later
 (define (tktk . elems)
-  (element (style "tktk" (list (css-style-addition congame-css)
-                               (alt-tag "span")))
-           `(,(icon "Content to be added later" "⏳") ,@elems)))
+  (compound-paragraph
+    (style "tktk" (list (css-style-addition congame-css) (alt-tag "div")))
+    (decode-flow (cons (icon "Content to be added later" "⏳") elems))))
 
 (define (icon tooltip str)
   (element (style "margin-icon" (list (attributes `([title ,@tooltip]))
@@ -49,6 +49,9 @@
 ;; Simulate a bash-style comment
 (define (rem . args)
   (apply racketcommentfont (cons "# " args)))
+
+(define (html-tag tag-name-str)
+  (racketvalfont (format "<~a>" tag-name-str)))
 
 ;; Style text as a keyboard key or a button
 (define (kbd . elems)
