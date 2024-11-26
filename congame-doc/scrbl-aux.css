@@ -10,12 +10,13 @@
 }
 
 .browser {
+    font-family: system-ui, sans-serif;
     margin-bottom: 1em;
     padding: 0 0.5rem;
-    width: 88%;
-    background: white;
+    background: #f5f7fa;
     border: solid silver 1px;
     border-radius: 8px;
+    overflow-x: auto;
 }
 
 .browser:before {
@@ -27,6 +28,11 @@
     margin-left: -0.5rem;
     padding: 0.35rem 0 0.35rem 0.5rem;
     margin-bottom: 0.5rem;
+}
+
+.browser>img {
+    margin-top: -0.5rem;
+    margin-left: -0.5rem
 }
 
 .terminal .SIntrapara {
@@ -62,6 +68,7 @@ kbd {
     width: 7rem;
     height: 1.1em;
     vertical-align: middle;
+    background: #fff;
 }
 
 mark {
