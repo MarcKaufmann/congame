@@ -138,6 +138,7 @@
   ;; racket/system, ffi/unsafe or any system-level functionality.
   (define whitelist
     '(buid
+      congame-web/components/study-bot
       congame-web/components/uploaded-file
       conscript/matchmaking
       conscript/survey-tools

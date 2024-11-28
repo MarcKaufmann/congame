@@ -135,6 +135,7 @@
  user-manager-create!
  user-manager-create-from-identity!
  user-manager-create-anon!
+ user-manager-create-bot!
  user-manager-create-reset-token!
  user-manager-login
  user-manager-verify!
@@ -184,13 +185,12 @@
                                         (where (= u.username ,username)))))])
       (insert-one! conn the-user))))
 
-(define/contract (user-manager-create-anon! um [bot? #f])
-  (->* [user-manager?] [boolean?] user?)
+(define/contract (user-manager-create-anon! um)
+  (-> user-manager? user?)
   (define username
     (format "~a@anon.congame" (generate-random-string)))
   (define the-user
     (~> (make-user #:username username)
-        (set-user-roles (if bot? #(bot) #(user)))
         (set-user-verified? #t)
         (set-user-password (user-manager-hasher um)
                            (generate-random-string))))
@@ -199,6 +199,23 @@
                      (lambda (_e)
                        (user-manager-create-anon! um))])
       (insert-one! conn the-user))))
+
+(define/contract (user-manager-create-bot! um)
+  (-> user-manager? (values user? string?))
+  (define username (format "~a@bots.congame" (generate-random-string)))
+  (define password (generate-random-string))
+  (define the-user
+    (~> (make-user #:username username)
+        (set-user-verified? #t)
+        (set-user-roles #(bot))
+        (set-user-password
+         (user-manager-hasher um)
+         password)))
+  (with-database-connection [conn (user-manager-db um)]
+    (with-handlers ([exn:fail:sql:constraint-violation?
+                     (lambda (_)
+                       (user-manager-create-bot! um))])
+      (values (insert-one! conn the-user) password))))
 
 (define/contract (user-manager-create-reset-token! um
                                                    #:username username

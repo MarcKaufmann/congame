@@ -6,6 +6,7 @@
          congame-web/components/prolific
          congame-web/components/replication
          congame-web/components/sentry
+         congame-web/components/study-bot
          (prefix-in tpl: congame-web/components/template)
          congame-web/components/upload
          congame-web/components/user
@@ -77,8 +78,8 @@
                            (- (current-inexact-monotonic-milliseconds) start-ms)))))])
     (disp conn req)))
 
-(define/contract (make-app auth broker broker-admin db flashes mailer _migrator _params reps sessions uploads users)
-  (-> auth-manager? broker? broker-admin? database? flash-manager? mailer? migrator? void? replication-manager? session-manager? uploader? user-manager? app?)
+(define/contract (make-app auth bot-manager broker broker-admin db flashes mailer _migrator _params reps sessions uploads users)
+  (-> auth-manager? bot-manager? broker? broker-admin? database? flash-manager? mailer? migrator? void? replication-manager? session-manager? uploader? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
@@ -238,6 +239,7 @@
   (define (stack handler)
     (~> handler
         (wrap-protect-continuations)
+        ((wrap-bot-manager bot-manager))
         ((wrap-uploads uploads))
         (wrap-current-sentry-user)
         ((wrap-auth-required auth req-roles))

@@ -6,6 +6,7 @@
          congame-web/components/auth
          congame-web/components/mail
          congame-web/components/replication
+         congame-web/components/study-bot
          congame-web/components/upload
          congame-web/components/user
          (prefix-in config: congame-web/config)
@@ -43,8 +44,9 @@
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth broker broker-admin db flashes mailer migrator params replications sessions uploader users) make-app]
+  [app (auth bot-manager broker broker-admin db flashes mailer migrator params replications sessions uploader users) make-app]
   [auth (sessions users) make-auth-manager]
+  [bot-manager (db users) make-bot-manager]
   ;; TODO: Check this still holds.
   ;; Some of our jobs depend on the mailer so we need the explicit
   ;; dep. here to avoid running into issues like:

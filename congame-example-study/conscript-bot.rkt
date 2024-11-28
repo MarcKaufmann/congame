@@ -1,5 +1,7 @@
 #lang conscript
 
+(require congame-web/components/study-bot)
+
 (provide
  conscript-bot-example
  conscript-bot-model
@@ -18,6 +20,8 @@
 
 (defstep (the-form)
   (define (on-submit #:name n #:text t)
+    (when (equal? t "spawn")
+      (spawn-bot (make-conscript-bot conscript-bot-model)))
     (eprintf "name: ~s text: ~s~n" n t))
 
   @html{@h1{The Form}
