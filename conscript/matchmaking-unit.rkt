@@ -15,6 +15,10 @@
   (import congame^)
   (export matchmaking^)
 
+  ;; These are study-scoped in order for the parent and the child to be
+  ;; able to do their own matchmaking. If a parent wants to share the
+  ;; current group with a child, it needs to store it in a separate var*
+  ;; and share that with the child and vice-versa.
   (defvar/instance pending-group)
   (defvar/instance ready-groups)
   (defvar current-group)
