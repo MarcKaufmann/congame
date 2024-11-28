@@ -184,12 +184,13 @@
                                         (where (= u.username ,username)))))])
       (insert-one! conn the-user))))
 
-(define/contract (user-manager-create-anon! um)
-  (-> user-manager? user?)
+(define/contract (user-manager-create-anon! um [bot? #f])
+  (->* [user-manager?] [boolean?] user?)
   (define username
     (format "~a@anon.congame" (generate-random-string)))
   (define the-user
     (~> (make-user #:username username)
+        (set-user-roles (if bot? #(bot) #(user)))
         (set-user-verified? #t)
         (set-user-password (user-manager-hasher um)
                            (generate-random-string))))
