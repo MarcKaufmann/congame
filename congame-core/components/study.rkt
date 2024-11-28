@@ -23,6 +23,7 @@
          racket/port
          racket/sequence
          racket/serialize
+         racket/splicing
          racket/string
          racket/stxparam
          syntax/parse/define
@@ -343,6 +344,7 @@ QUERY
 ;; vars ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ with-namespace
  defvar
  defvar*
  defvar/instance
@@ -358,6 +360,14 @@ QUERY
  undefined
  undefined?
  if-undefined)
+
+(define-syntax-parameter current-var-namespace #f)
+
+(define-syntax (with-namespace stx)
+  (syntax-parse stx
+    [(_ namespace:id body ...+)
+     #'(splicing-syntax-parameterize ([current-var-namespace 'namespace])
+         body ...)]))
 
 (define undefined
   (string->uninterned-symbol "undefined"))
@@ -414,7 +424,13 @@ QUERY
             (lambda (stx)
               (syntax-case stx (set!)
                 [(set! id v) #'(put-var* 'unique-id 'id v)]
-                [id (identifier? #'id) #'(get-var* 'unique-id 'id)])))))]))
+                [id (identifier? #'id) #'(get-var* 'unique-id 'id)])))))]
+    [(_ id:id)
+     #:with namespace (syntax-parameter-value #'current-var-namespace)
+     #:fail-unless (syntax->datum #'namespace)
+     "arity 1 defvar* must be used inside a with-namespace block"
+     #:with unique-id (format-id #'id "~a:~a" #'namespace #'id)
+     #'(defvar* id unique-id)]))
 
 (define (put-var* uid k v)
   (parameterize ([current-study-stack '(*root*)])
@@ -433,7 +449,13 @@ QUERY
             (lambda (stx)
               (syntax-case stx (set!)
                 [(set! id v) #'(put-var*/instance 'unique-id 'id v)]
-                [id (identifier? #'id) #'(get-var*/instance 'unique-id 'id)])))))]))
+                [id (identifier? #'id) #'(get-var*/instance 'unique-id 'id)])))))]
+    [(_ id:id)
+     #:with namespace (syntax-parameter-value #'current-var-namespace)
+     #:fail-unless (syntax->datum #'namespace)
+     "arity 1 defvar*/instance must be used inside a with-namespace block"
+     #:with unique-id (format-id #'id "~a:~a" #'namespace #'id)
+     #'(defvar*/instance id unique-id)]))
 
 (define (put-var*/instance uid k v)
   (parameterize ([current-study-stack '(*root*)])
