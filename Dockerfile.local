@@ -40,19 +40,28 @@ RUN (cd /tmp && tar -xzf racket.tar.gz) \
     && rm /tmp/racket.tar.gz
 
 RUN mkdir /opt/congame
+WORKDIR /opt/congame
+
 ADD build.mjs /opt/congame/build.mjs
-ADD congame-core /opt/congame/congame-core
-ADD congame-web /opt/congame/congame-web
-ADD congame-web-migrations /opt/congame/congame-web-migrations
-ADD conscript /opt/congame/conscript
 ADD package-lock.json /opt/congame/package-lock.json
 ADD package.json /opt/congame/package.json
 ADD resources /opt/congame/resources
 ADD tsconfig.json /opt/congame/tsconfig.json
-ADD uploads /opt/congame/uploads
-WORKDIR /opt/congame
-RUN /opt/racket/bin/raco pkg install --auto congame-core/ congame-web/ conscript/
+RUN mkdir -p uploads
 RUN npm install
 RUN npm run-script build
+
+ADD ci/setup-catalogs.sh /opt/congame/ci/setup-catalogs.sh
+RUN PATH="$PATH:/opt/racket/bin" ci/setup-catalogs.sh
+
+ADD congame-core /opt/congame/congame-core
+RUN /opt/racket/bin/raco pkg install --auto -D congame-core/
+
+ADD conscript /opt/congame/conscript
+RUN /opt/racket/bin/raco pkg install --auto -D conscript/
+
+ADD congame-web /opt/congame/congame-web
+ADD congame-web-migrations /opt/congame/congame-web-migrations
+RUN /opt/racket/bin/raco pkg install --auto -D congame-web/
 
 CMD ["dumb-init", "/opt/racket/bin/racket", "congame-web/dynamic.rkt", "--mode", "local"]

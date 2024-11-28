@@ -94,6 +94,7 @@
   [congame:with-study-transaction with-study-transaction]
   [congame:get/linked/instance get/linked/instance]
   [congame:skip skip]
+  [congame:with-namespace with-namespace]
   [congame:defvar defvar]
   [congame:defvar* defvar*]
   [congame:defvar/instance defvar/instance]

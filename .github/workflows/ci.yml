@@ -208,7 +208,7 @@ jobs:
         POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
         SENTRY_DSN : ${{ secrets.SENTRY_DSN }}
       if: >-
-        startsWith(github.ref, 'refs/heads/master')
+        startsWith(github.ref, 'refs/heads/main')
 
     - name: Deploy production
       run: ./ci/deploy.sh PRODUCTION
