@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base
                      syntax/parse/pre)
+         (prefix-in bot: congame/components/bot)
          (prefix-in bot: congame/components/bot-maker)
          (prefix-in bot: (submod congame/components/bot actions))
          (prefix-in congame: congame/components/struct)
@@ -62,6 +63,7 @@
  list list? list* null null? cons pair? car cdr map member for-each shuffle length findf filter rest
  first second third fourth fifth sixth seventh eighth ninth tenth
  display displayln print println printf eprintf write writeln
+ current-seconds
 
  in-hash
  hash hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys
@@ -87,6 +89,7 @@
   congame/components/bot-maker
   (submod congame/components/bot actions))
  (rename-out
+  [bot:current-user-bot? current-user-bot?]
   [congame:current-participant-id current-participant-id]
   [congame:current-participant-owner? current-participant-owner?]
   [congame:current-participant-identity-user? current-participant-identity-user?]

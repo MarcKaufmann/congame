@@ -1,6 +1,7 @@
 #lang conscript
 
-(require conscript/survey-tools
+(require congame-web/components/study-bot
+         conscript/survey-tools
          data/monocle
          racket/match)
 
@@ -8,9 +9,6 @@
  prisoners-dilemma
  make-prisoners-dilemma-bot
  prisoners-dilemma-model)
-
-;; For next time:
-;; * Add bot support to conscript (default actions on all steps, figure out models)
 
 (defvar/instance choices)
 (defvar choice)
@@ -30,15 +28,49 @@
 
       @button{Continue...}})
 
+(with-namespace xyz.trichotomy.congame.prisoners-dilemma
+  (defvar* bot-behavior)
+  (defvar* bot-group-id))
+(defvar bot-spawned?)
+(defvar bot-spawn-deadline)
+
 (defstep (waiter)
+  (unless (if-undefined bot-spawn-deadline #f)
+    (set! bot-spawn-deadline (+ (current-seconds) 10)))
+  (unless (or
+           (current-user-bot?)
+           (if-undefined bot-spawned? #f)
+           (< (current-seconds) bot-spawn-deadline))
+    (spawn-bot
+     (make-prisoners-dilemma-bot
+      (make-prisoners-dilemma-spawn-model
+       (get-current-group))))
+    (set! bot-spawned? #t))
+
   @md{# Please Wait
 
       Please wait while another participant joins the queue.
 
       @refresh-every[5]})
 
+(define (bot-group-ok? group-id)
+  ;; humans always paired with bots:
+  #;
+  (and
+   (current-user-bot?)
+   (equal? bot-group-id group-id))
+  ;; humans raced against humans paired with bots if bot already spawned:
+  #;
+  (if (current-user-bot?)
+      (equal? bot-group-id group-id)
+      (not bot-spawned?))
+  ;; humans raced against humans paired with humans even if bot spawned:
+  (or
+   (not (current-user-bot?))
+   (equal? bot-group-id group-id)))
+
 (defstep matchmake
-  (let ([matchmaker (make-matchmaker 2)])
+  (let ([matchmaker (make-matchmaker 2 bot-group-ok?)])
     (lambda ()
       (matchmaker waiter))))
 
@@ -88,19 +120,25 @@
 (define make-prisoners-dilemma-bot
   (bot:study->bot prisoners-dilemma))
 
-(defvar* behavior behavior)
-
 (define (prisoners-dilemma-model k proc)
   (match k
     [`(*root* intro)
-     (set! behavior (random-ref '(cooperate defect)))
+     (set! bot-behavior (random-ref '(cooperate defect)))
      (proc)]
     [`(*root* matchmake)
      (sleep 1)]
     [`(*root* make-choice)
-     (bot:click behavior)]
+     (bot:click bot-behavior)]
     [`(*root* display-result)
      (bot:completer)]
     [`(*root* wait)
      (sleep 1)]
     [_ (proc)]))
+
+(define ((make-prisoners-dilemma-spawn-model group-to-join) k proc)
+  (match k
+    [`(*root* intro)
+     (set! bot-group-id group-to-join)
+     (prisoners-dilemma-model k proc)]
+    [_
+     (prisoners-dilemma-model k proc)]))
