@@ -1,6 +1,7 @@
 #lang conscript
 
-(require conscript/survey-tools
+(require congame-web/components/study-bot
+         conscript/survey-tools
          data/monocle
          racket/match)
 
@@ -31,6 +32,12 @@
       @button{Continue...}})
 
 (defstep (waiter)
+  (unless (current-user-bot?)
+    (spawn-bot
+     (make-prisoners-dilemma-bot
+      (make-prisoners-dilemma-spawn-model
+       (get-current-group)))))
+
   @md{# Please Wait
 
       Please wait while another participant joins the queue.
@@ -104,3 +111,11 @@
     [`(*root* wait)
      (sleep 1)]
     [_ (proc)]))
+
+(define ((make-prisoners-dilemma-spawn-model group-to-join) k proc)
+  (match k
+    [`(*root* matchmake)
+     (set!-current-group group-to-join)
+     (sleep 1)]
+    [_
+     (prisoners-dilemma-model k proc)]))

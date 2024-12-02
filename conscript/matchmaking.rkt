@@ -10,6 +10,7 @@
   [make-matchmaker (-> exact-positive-integer? procedure?)]
   [get-ready-groups (-> (listof buid/c))]
   [get-current-group (-> (or/c #f buid/c))]
+  [set!-current-group (-> buid/c void?)]
   [reset-current-group (-> void?)]))
 
 ;; These are study-scoped in order for the parent and the child to be
@@ -25,6 +26,9 @@
 
 (define (get-current-group)
   (if-undefined current-group #f))
+
+(define (set!-current-group g)
+  (set! current-group g))
 
 (define (reset-current-group)
   (set! current-group #f))
