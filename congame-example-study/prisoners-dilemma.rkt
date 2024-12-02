@@ -31,12 +31,17 @@
 
       @button{Continue...}})
 
+(with-namespace xyz.trichotomy.congame.prisoners-dilemma
+  (defvar* bot-group-id))
+(defvar bot-spawned?)
+
 (defstep (waiter)
-  (unless (current-user-bot?)
+  (unless (or (current-user-bot?) (if-undefined bot-spawned? #f))
     (spawn-bot
      (make-prisoners-dilemma-bot
       (make-prisoners-dilemma-spawn-model
-       (get-current-group)))))
+       (get-current-group))))
+    (set! bot-spawned? #t))
 
   @md{# Please Wait
 
@@ -44,8 +49,13 @@
 
       @refresh-every[5]})
 
+(define (bot-group-ok? group-id)
+  (and
+   (current-user-bot?)
+   (equal? bot-group-id group-id)))
+
 (defstep matchmake
-  (let ([matchmaker (make-matchmaker 2)])
+  (let ([matchmaker (make-matchmaker 2 bot-group-ok?)])
     (lambda ()
       (matchmaker waiter))))
 
@@ -114,8 +124,8 @@
 
 (define ((make-prisoners-dilemma-spawn-model group-to-join) k proc)
   (match k
-    [`(*root* matchmake)
-     (set!-current-group group-to-join)
-     (sleep 1)]
+    [`(*root* intro)
+     (set! bot-group-id group-to-join)
+     (prisoners-dilemma-model k proc)]
     [_
      (prisoners-dilemma-model k proc)]))

@@ -116,7 +116,6 @@
  make-matchmaker
  get-ready-groups
  get-current-group
- set!-current-group
  reset-current-group)
 
 ;; syntax ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
