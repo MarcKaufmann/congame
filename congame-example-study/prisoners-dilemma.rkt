@@ -10,9 +10,6 @@
  make-prisoners-dilemma-bot
  prisoners-dilemma-model)
 
-;; For next time:
-;; * Add bot support to conscript (default actions on all steps, figure out models)
-
 (defvar/instance choices)
 (defvar choice)
 
@@ -32,6 +29,7 @@
       @button{Continue...}})
 
 (with-namespace xyz.trichotomy.congame.prisoners-dilemma
+  (defvar* bot-behavior)
   (defvar* bot-group-id))
 (defvar bot-spawned?)
 (defvar bot-spawn-deadline)
@@ -56,6 +54,17 @@
       @refresh-every[5]})
 
 (define (bot-group-ok? group-id)
+  ;; humans always paired with bots:
+  #;
+  (and
+   (current-user-bot?)
+   (equal? bot-group-id group-id))
+  ;; humans raced against humans paired with bots if bot already spawned:
+  #;
+  (if (current-user-bot?)
+      (equal? bot-group-id group-id)
+      (not bot-spawned?))
+  ;; humans raced against humans paired with humans even if bot spawned:
   (or
    (not (current-user-bot?))
    (equal? bot-group-id group-id)))
@@ -111,17 +120,15 @@
 (define make-prisoners-dilemma-bot
   (bot:study->bot prisoners-dilemma))
 
-(defvar* behavior behavior)
-
 (define (prisoners-dilemma-model k proc)
   (match k
     [`(*root* intro)
-     (set! behavior (random-ref '(cooperate defect)))
+     (set! bot-behavior (random-ref '(cooperate defect)))
      (proc)]
     [`(*root* matchmake)
      (sleep 1)]
     [`(*root* make-choice)
-     (bot:click behavior)]
+     (bot:click bot-behavior)]
     [`(*root* display-result)
      (bot:completer)]
     [`(*root* wait)
