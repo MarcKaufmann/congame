@@ -63,6 +63,7 @@
  list list? list* null null? cons pair? car cdr map member for-each shuffle length findf filter rest
  first second third fourth fifth sixth seventh eighth ninth tenth
  display displayln print println printf eprintf write writeln
+ current-seconds
 
  in-hash
  hash hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys

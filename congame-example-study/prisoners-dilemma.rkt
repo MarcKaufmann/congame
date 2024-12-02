@@ -34,9 +34,15 @@
 (with-namespace xyz.trichotomy.congame.prisoners-dilemma
   (defvar* bot-group-id))
 (defvar bot-spawned?)
+(defvar bot-spawn-deadline)
 
 (defstep (waiter)
-  (unless (or (current-user-bot?) (if-undefined bot-spawned? #f))
+  (unless (if-undefined bot-spawn-deadline #f)
+    (set! bot-spawn-deadline (+ (current-seconds) 10)))
+  (unless (or
+           (current-user-bot?)
+           (if-undefined bot-spawned? #f)
+           (< (current-seconds) bot-spawn-deadline))
     (spawn-bot
      (make-prisoners-dilemma-bot
       (make-prisoners-dilemma-spawn-model
@@ -50,8 +56,8 @@
       @refresh-every[5]})
 
 (define (bot-group-ok? group-id)
-  (and
-   (current-user-bot?)
+  (or
+   (not (current-user-bot?))
    (equal? bot-group-id group-id)))
 
 (defstep matchmake
