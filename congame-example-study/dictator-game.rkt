@@ -11,11 +11,13 @@
 (defvar/instance group-vars)
 (defvar/instance roles)
 (defvar choice)
+(defvar/instance choices)
 (defvar other-id)
 
 (defstep (init)
   (set! group-vars (hash))
   (set! groups (hash))
+  (set! choices (hash))
   (skip))
 
 (defstep (waiter)
@@ -84,21 +86,34 @@
 (defstep (dictator)
   @md{# Dictator
 
-      Make your choice.
+      @form{
+            @(set! choice (input-number #:min 0 #:max 10 "How much do you take for yourself?"))
+            @submit-button}})
 
-      @button{Next}})
+(defstep (store-choice)
+  (set! choices
+        (hash-set choices (get-current-group) choice))
+  (skip))
 
-(defstep (receiver)
-  @md{# Receiver
-
-      Wait until The Dictator made their choice.
-
-      @button{Next}})
-
-(defstep (the-end)
+(defstep (the-dictator-end)
   @md{# The end
 
+      You chose to take @(~euro choice).
+
       The end.})
+
+(defstep (receiver)
+  (define taken-amount
+    (hash-ref choices (get-current-group) #f))
+
+  (cond [taken-amount
+         @md{# The end
+
+             You receiveed @(~euro (- 10 taken-amount)).}]
+        [else
+         @md{# The choice was not yet made
+
+             Please wait.}]))
 
 (defstep (wait-for-other-id)
   (if (= 2 (length (hash-ref groups (get-current-group) '())))
@@ -117,6 +132,5 @@
         --> display-role
         --> ,(lambda ()
                role)]
-  [dictator --> the-end]
-  [receiver --> the-end]
-  [the-end --> the-end])
+  [dictator --> store-choice --> the-dictator-end --> the-dictator-end]
+  [receiver --> receiver])
