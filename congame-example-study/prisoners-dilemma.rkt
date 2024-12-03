@@ -34,7 +34,7 @@
 (defvar bot-spawned?)
 (defvar bot-spawn-deadline)
 
-(defstep (waiter)
+(defstep (waiter-for-bot)
   (unless (if-undefined bot-spawn-deadline #f)
     (set! bot-spawn-deadline (+ (current-seconds) 10)))
   (unless (or
@@ -47,6 +47,13 @@
        (get-current-group))))
     (set! bot-spawned? #t))
 
+  @md{# Please Wait
+
+      Please wait while another participant joins the queue.
+
+      @refresh-every[5]})
+
+(defstep (waiter)
   @md{# Please Wait
 
       Please wait while another participant joins the queue.
@@ -70,7 +77,11 @@
    (equal? bot-group-id group-id)))
 
 (defstep matchmake
-  (let ([matchmaker (make-matchmaker 2 bot-group-ok?)])
+  ;; match with bots based on bots-group-ok?
+  #;(let ([matchmaker (make-matchmaker 2 bot-group-ok?)])
+    (lambda ()
+      (matchmaker waiter)))
+  (let ([matchmaker (make-matchmaker 2)])
     (lambda ()
       (matchmaker waiter))))
 
@@ -94,6 +105,9 @@
           @refresh-every[5]}
       (skip)))
 
+(defvar result)
+(defvar current-round)
+
 (defstep (display-result)
   (define-values (my-choice other-choice)
     (for/fold ([my-choice #f]
@@ -102,20 +116,68 @@
       (if (equal? k (current-participant-id))
           (values v other-choice)
           (values my-choice v))))
-  (set! choice
+  (set! result
         (match* (my-choice other-choice)
           [('cooperate 'cooperate) 1]
           [('cooperate 'defect) 20]
           [('defect 'defect) 5]
           [('defect 'cooperate) 0]))
+  ;; NOTE: `current-round` is for repeated version of PD
+  (set! current-round
+        (hash 'self my-choice
+              'other other-choice
+              'result result))
 
   @md{# Result
 
-      You get @~a[choice] years of prison.})
+      You get @~a[result] years of prison.
+
+      @button{Continue}})
 
 (defstudy prisoners-dilemma
   [intro --> matchmake --> make-choice --> wait --> display-result]
   [display-result --> display-result])
+
+;;;; REPEATED PRISONER'S DILEMMA
+
+(defvar round)
+(defvar answers)
+
+(defstep (store-round)
+  (set! answers
+        (cons current-round (if-undefined answers '())))
+  (reset-current-group)
+  (skip))
+
+(defstep (the-end)
+  @md{# The End
+
+      The results:
+
+      @`@(ol
+          ,@(for/list ([a (reverse answers)])
+              (li (format "(~a, ~a): you got ~a years"
+                          (hash-ref a 'self)
+                          (hash-ref a 'other)
+                          (hash-ref a 'result)))))
+      })
+
+(provide
+ repeated-prisoners-dilemma)
+
+(defstudy repeated-prisoners-dilemma
+  [intro --> matchmake
+         --> make-choice
+         --> wait
+         --> display-result
+         --> store-round
+         --> ,(lambda ()
+                (define n 3)
+                (set! round (add1 (if-undefined round 0)))
+                (if (< round n)
+                    'matchmake
+                    'the-end))]
+  [the-end --> the-end])
 
 (define make-prisoners-dilemma-bot
   (bot:study->bot prisoners-dilemma))
