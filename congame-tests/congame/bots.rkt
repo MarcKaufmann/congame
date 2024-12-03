@@ -212,7 +212,7 @@
 
       ;; Test that defvar* puts the value under a custom root. Somewhat
       ;; of a flimsy test since it could fail if we change the "unique
-      ;; id" for the "behavior" binding in prisoners-dilemma.
+      ;; id" for the "bot-behavior" binding in prisoners-dilemma.
       (parameterize ([current-study-manager bot-1-manager])
         (check-not-false
          (parameterize ([current-study-stack '(*root*)])
