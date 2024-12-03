@@ -60,7 +60,7 @@
  void sleep
  for for/fold for/hash for/list in-range in-inclusive-range in-list
  for/and for/or for/sum for/product
- list list? list* null null? cons pair? car cdr map member for-each shuffle length findf filter rest
+ list list? list* null null? cons pair? car cdr map member for-each shuffle length findf filter rest reverse
  first second third fourth fifth sixth seventh eighth ninth tenth
  display displayln print println printf eprintf write writeln
  current-seconds
