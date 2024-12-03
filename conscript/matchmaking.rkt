@@ -38,7 +38,7 @@
       (call-with-study-transaction
        (lambda ()
          (cond
-           [(not (undefined? current-group))
+           [(not (or (undefined? current-group) (equal? #f current-group)))
             (void)]
            [(get-pending-group group-ok?)
             => (lambda (pending-group)
