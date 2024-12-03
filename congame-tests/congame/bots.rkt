@@ -216,7 +216,7 @@
       (parameterize ([current-study-manager bot-1-manager])
         (check-not-false
          (parameterize ([current-study-stack '(*root*)])
-           (get #:root '*dynamic:behavior* 'behavior #f))))))))
+           (get #:root '*dynamic:xyz.trichotomy.congame.prisoners-dilemma:behavior* 'behavior #f))))))))
 
 (module+ test
   (require rackunit/text-ui)
