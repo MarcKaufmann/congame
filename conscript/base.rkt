@@ -56,7 +56,7 @@
  with-handlers
 
  ;; Racket Runtime
- lambda λ
+ lambda λ case-lambda
  void sleep
  for for/fold for/hash for/list in-range in-inclusive-range in-list
  for/and for/or for/sum for/product
