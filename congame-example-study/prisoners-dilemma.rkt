@@ -154,7 +154,7 @@
 
       The results:
 
-      @`@(ol
+      @`(ol
           ,@(for/list ([a (reverse answers)])
               (li (format "(~a, ~a): you got ~a years"
                           (hash-ref a 'self)
@@ -178,6 +178,42 @@
                     'matchmake
                     'the-end))]
   [the-end --> the-end])
+
+;;; PD with Admin
+
+(provide
+ prisoners-dilemma/admin)
+
+(define ((take-owner-to step-id))
+  (if (current-participant-owner?)
+      (skip step-id)
+      (skip)))
+
+(defstep (admin)
+  (define outcomes
+    (for/list ([(_ v) (in-hash choices)])
+      (hash-values v)))
+  (define results
+    (for/fold ([rs (hash)])
+              ([o outcomes])
+      (hash-update rs o add1 0)))
+
+  @md{# Admin
+
+      ## Results
+
+      @`(ul
+         ,@(for/list ([(k v) results])
+             (li (format "Outcome ~a occurred ~a times" k v))))})
+
+(defstudy prisoners-dilemma/admin
+  ; Notation (some-name some-handler) inside transitions creates a step called
+  ; 'some-name using some-handler for that step.
+  [(check-admin (take-owner-to 'admin)) --> intro --> matchmake --> make-choice --> wait --> display-result]
+  [display-result --> display-result]
+  [admin --> admin])
+
+;;; BOTS
 
 (define make-prisoners-dilemma-bot
   (bot:study->bot prisoners-dilemma))
