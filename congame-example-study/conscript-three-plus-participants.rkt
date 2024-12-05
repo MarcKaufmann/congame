@@ -140,13 +140,13 @@
 (defstep (branch-for-b)
   (define group-choices-a
     (hash-ref choices-a (get-current-group) #f))
-  (cond [group-choices-a
+  (cond [(= 2 (length group-choices-a))
          (skip)]
 
         [else
          @md{# Entered Branch B
 
-             Wait until player A has made their choice.
+             Wait until all player A's have made their choice.
 
              @refresh-every[2]}]))
 
