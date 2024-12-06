@@ -27,6 +27,20 @@
 (define ~pound (~currency "£"))
 (define ~euro (~currency "€"))
 
+;; Toggle some content's visibility via clicking on some link
+
+(provide
+ toggleable-xexpr)
+
+(define (toggleable-xexpr message xexpr #:hidden? [hidden? #t])
+  (haml
+   (:div
+    ([:class (if hidden?
+                 "toggleable toggleable--hidden"
+                 "toggleable")])
+    (:button.toggleable__toggle message)
+    (.toggleable__content xexpr))))
+
 ;; Dice Roll
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

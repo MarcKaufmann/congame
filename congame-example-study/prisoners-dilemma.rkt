@@ -23,8 +23,15 @@
   (with-study-transaction
     (set! choices ((&my-choice) (if-undefined choices (hash)) choice))))
 
+(define instructions
+  @md*{## Instructions
+
+       These are the instructions for PD.})
+
 (defstep (intro)
   @md{# Prisoner's Dilemma
+
+      @toggleable-xexpr["Show/Hide Instructions" instructions]
 
       @button{Continue...}})
 
