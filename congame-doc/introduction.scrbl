@@ -143,7 +143,7 @@ Click on the @onscreen{New Instance} button. For now, just fill in a value like
 @racketvalfont{Instance 1} in the @italic{Name} field, and leave the rest of the fields at their
 default values:
 
-@screenshot["intro-new-instance.png"]
+@browser-screenshot["intro-new-instance.png"]
 
 Click @kbd{Create} to create an instance of the study.
 
@@ -378,7 +378,7 @@ expression is present in the file.}
 
 If all goes well, you’ll be taken to a page titled @onscreen{Instances of simple-survey}:
 
-@screenshot{intro-empty-instancelist.png}
+@browser-screenshot{intro-empty-instancelist.png}
 
 As before, click on @onscreen{New Instance} and enter a name for the survey instance --- say,
 @racketvalfont{Age Instance 1}. 
@@ -472,12 +472,12 @@ Once you’re done with the study, navigate back to the dashboard. Then click on
 All the way at the bottom, you’ll see a section titled @bold{Participants} — and you’ll be
 the first one:
 
-@screenshot["intro-participant.png"]
+@browser-screenshot["intro-participant.png"]
 
 The number under the @emph{Participant ID} column is a link — go ahead and click on it. You’ll see
 a detailed listing of your responses to the study:
 
-@screenshot["intro-participant-responses.png"]
+@browser-screenshot["intro-participant-responses.png"]
 
 @;===============================================
 

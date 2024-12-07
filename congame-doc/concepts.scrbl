@@ -16,6 +16,14 @@ what you saw.
 
 @section{Help and Support}
 
+This documentation makes heavy use of links, both in the writing and in the code. You can click on
+any function used in a code example to view detailed documentation on that function and how it’s
+used.
+
+Links to common Racket functions and concepts will take you outside these Congame docs and into
+documentation written for Racket in general, or for other Racket packages. If you get lost, just use
+your browser’s @onscreen{Back} button to get back here.
+
 If you have questions about Congame or about this documentation, create a post in 
 @link["https://github.com/MarcKaufmann/congame/discussions"]{the Discussions area of Congame’s
 GitHub repository}, and the authors will respond.
