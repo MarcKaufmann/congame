@@ -1,6 +1,7 @@
 #lang scribble/manual
 
-@(require [for-label racket/contract
+@(require [for-label buid
+                     racket/contract
                      conscript/base
                      conscript/markdown
                      (only-in racket/base string?)
@@ -95,20 +96,27 @@ Any number of steps may be joined by transitions using @defidform/inline[-->].
 
 }
 
-@defproc[(button [action (-> any/c) void]
+@defproc[(button [action-proc (-> any/c) void]
                  [label string?]
                  [#:id id string? ""]
                  [#:to-step-id to-step-id (or/c identifier? #f) #f]
                  [#:up-target up-target string? ".step"]
-                 [#:up-transition up-transition string? "none"]) xexpr?])]{
+                 [#:up-transition up-transition string? "none"]) xexpr?]{
 
-Returns a representation of an HTML @html-tag{a} element styled as a button. The @tt{href} attribute
-is dynamically set to the URL of a continuation that first calls @racket[action] with no arguments,
-then returns the page provided by @racket[to-step-id] (or that provided by the next step in the
+Returns a representation of an HTML @html-tag{a} element styled as a button that navigates to the
+next step in the study when clicked.
+
+If @racket[_action-proc] is provided, it will be called when the button is clicked, just before the
+next step in the study is loaded.
+
+The @tt{href} attribute
+is dynamically set to the URL of a continuation that first calls @racket[_action] with no arguments,
+then returns the page provided by @racket[_to-step-id] (or that provided by the next step in the
 study if @racket[to-step-id] is @racket[#f]).
 
 If @racket[#:id] is provided, it sets the value of the @tt{data-widget-id} attribute for the
 element.
+
 
 }
                      
@@ -286,6 +294,15 @@ The bindings in this module are also provided by @racketmodname[conscript/base].
 
 @defmodule[conscript/survey-tools]
 
+The bindings in this module are also provided by @racketmodname[conscript/base].
+
+@defproc[(refresh-every [n-seconds exact-positive-integer?]) xexpr?]{
+
+Returns a representation of an @tech{HTML} @html-tag{script} element that causes the browser to
+reload the current page every @racket[_n-seconds].
+
+}
+
 @deftogether[(@defproc[(~$ [n rational?]) string?]
               @defproc[(~euro [n rational?]) string?]
               @defproc[(~pound [n rational?]) string?])]{
@@ -302,4 +319,27 @@ Returns a string representing @racket[_n] to two decimal places and prefixed wit
 
 }
 
+@;===============================================
+
+@section{Matchmaking}
+
+@defmodule[conscript/matchmaking]
+
+The bindings in this module are also provided by @racketmodname[conscript/base].
+
+@defproc[(make-matchmaker [group-size exact-positive-integer]) (-> (-> study-page?) any/c)]{
+
+Returns a function that accepts one argument (a study step function) and which adds the current
+participant to the current pending group (creating a new group if all other groups are full
+already), and then either skips to the next step in the study (if the current group has
+@racket[_group-size] members) or loads the step @tech{page} provided by the argument. 
+
+}
+
+@defproc[(get-current-group) (or/c buid/c #f)]{
+
+Returns the @seclink["Spec" #:doc '(lib "buid/buid.scrbl")]{BUID} of the group the current
+participant is assigned to, or @racket[#f] if not currently assigned to any group.
+
+}
 

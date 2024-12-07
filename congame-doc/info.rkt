@@ -1,9 +1,15 @@
 #lang info
 
 (define collection "congame")
-(define deps '("base"
+(define deps '("at-exp-lib"
+               "base"
                "scribble-lib"))
-(define build-deps '("congame-core"
+(define build-deps '("buid"
+                     "buid-lib"
+                     "drracket"
+                     "scribble-doc"
+                     "slideshow-doc"
+                     "congame-core"
                      "congame-web"
                      "conscript"
                      "forms-doc"
