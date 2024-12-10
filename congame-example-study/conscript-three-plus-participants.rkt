@@ -16,15 +16,8 @@
 (defvar/instance choices-a)
 (defvar role)
 
-(define group-roles-box
-  (case-lambda
-     [() group-roles]
-     [(v) (set! group-roles v)]))
-
-(define group-participants-box
-  (case-lambda
-     [() group-participants]
-     [(v) (set! group-participants v)]))
+(define-var-box group-roles-box group-roles)
+(define-var-box group-participants-box group-participants)
 
 ; TODO: Name doesn't reflect that this is meant for instance level only.
 (define (set!/if-undefined l-box v)

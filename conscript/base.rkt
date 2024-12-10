@@ -23,7 +23,8 @@
          "html.rkt"
          "markdown.rkt"
          "matchmaking.rkt"
-         "resource.rkt")
+         "resource.rkt"
+         "var-box.rkt")
 
 (lazy-require
  [congame-web/components/identity (put/identity)])
@@ -112,6 +113,9 @@
  make-step make-step/study
  put/identity
  done
+
+ ;; Conscript Syntax
+ define-var-box
 
  ;; Matchmaking
  make-matchmaker
