@@ -6,6 +6,7 @@
          (submod "study.rkt" private))
 
 (provide
+ model/c
  (contract-out
   [study->bot (-> study? (-> model/c bot?))]))
 

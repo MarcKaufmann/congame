@@ -2,6 +2,9 @@
 
 @(require (for-label racket/base
                      racket/contract
+                     congame-web/components/study-bot
+                     congame/components/bot
+                     congame/components/bot-maker
                      congame/components/study
                      congame/components/transition-graph))
 
@@ -222,4 +225,74 @@ understand their usage.
       (make-step 'b b)
       (make-step 'c c)))
   ]
+}
+
+@section{Bots}
+@defmodule[congame/components/bot]
+
+@deftech{Bots} are scriptable automatons that traverse a study according
+to a @deftech{bot model}. A bot is made up of one or more @tech{bot
+steppers} and a @tech{bot model} is a mapping from locations in a study
+to bot behaviors. A @deftech{bot stepper} is an arbitrary procedure
+associated with a step that determines what the bot does when it reaches
+that step.
+
+@defproc[(bot? [v any/c]) boolean?]{
+  Returns @racket[#t] when @racket[v] is a @tech{bot}.
+}
+
+@defproc[(make-bot [step (or/c bot? bot-stepper?)] ...+) bot?]{
+  Returns a @tech{bot} with the given steppers.
+
+  This is a primitive procedure used to implement @racket[study->bot].
+  You should use @racket[study->bot] unless you really know what you're
+  doing.
+}
+
+@defproc[(bot-stepper? [v any/c]) boolean?]{
+  Returns @racket[#t] when @racket[v] is a @tech{bot stepper}.
+}
+
+@defproc[(make-bot-stepper [step-id symbol?]
+                           [action (-> any/c)]) bot-stepper?]{
+
+  Returns a @tech{bot stepper} for the given @racket[step-id] and
+  @racket[action] combination.
+
+  As with @racket[make-bot], you shouldn't normally need this
+  procedure.
+}
+
+@subsection{Making Bots}
+@defmodule[congame/components/bot-maker]
+
+@defthing[model/c (-> (listof symbol?) procedure? any)]{
+  The contract for @tech{bot models}.
+}
+
+@defproc[(study->bot [s study?]) (-> model/c bot?)]{
+  Returns a procedure that generates a bot suitable for running
+  against @racket[s]. The returned procedure takes a @tech{bot model}
+  as input.
+
+  The model is called every time the bot lands on a step with the path
+  to that step, represented as a list of symbols, and the default bot
+  action for that step. The model can then decide whether to call the
+  bot action or perform its own actions, or both.
+
+  At every step, the model can access instance and participant data
+  through any study variables that it has access to. Within the dynamic
+  extent of a model invocation, the current participant is the bot
+  currently running the model.
+}
+
+@subsection{Running Bots From Studies}
+@defmodule[congame-web/components/study-bot]
+
+@defproc[(spawn-bot [b bot?]) void?]{
+  Creates a new user, adds it to the current study instance as a
+  participant and launches the @tech{bot} @racket[b] in the background.
+  Does not wait for the bot to finish before returning.
+
+  Raises an exception if called outside of a step.
 }
