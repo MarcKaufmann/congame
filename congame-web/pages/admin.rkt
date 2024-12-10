@@ -1392,7 +1392,12 @@
      (define meta
        (with-database-transaction [conn db]
          (~> (cond
-               [(lookup-study-meta/by-slug db slug)]
+               [(lookup-study-meta/by-slug db slug)
+                => (lambda (s)
+                     (begin0 s
+                       (unless (eqv? (study-meta-owner-id s)
+                                     (user-id (current-user)))
+                         (error 'upsert-cli-study-page "the requested study does not belong to the current user"))))]
                [else
                 (~> (make-study-meta
                      #:owner-id (user-id (current-user))
