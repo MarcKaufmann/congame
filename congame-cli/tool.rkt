@@ -87,6 +87,24 @@
     (register-toolbar-button btn)
     (send (get-button-panel) change-children (λ (btns) (cons btn (remq btn btns))))))
 
+(define reset-menu-item-mixin
+  (mixin (drracket:unit:frame<%>) ()
+    (super-new)
+    (inherit get-definitions-text
+             get-language-menu)
+
+    (define menu
+      (get-language-menu))
+    (new separator-menu-item%
+         [parent menu])
+    (new menu-item%
+         [parent menu]
+         [label "Conscript: Reset Study"]
+         [callback (lambda (_self _event)
+                     (define defs (get-definitions-text))
+                     (define filename (send defs get-filename))
+                     (when filename (hash-remove! cache filename)))])))
+
 (define btn-bitmap
   (call-with-input-file upload.png
     (lambda (in)
@@ -95,3 +113,4 @@
        in 'png/alpha))))
 
 (drracket:get/extend:extend-unit-frame upload-button-mixin)
+(drracket:get/extend:extend-unit-frame reset-menu-item-mixin)
