@@ -27,7 +27,8 @@
                           (define total (apply + loa))
                           (if (= total 100)
                               `(ok loa)
-                              `(err "Your answers must sum to 100."))))]}
+                              `(err ,@(for/list ([_ (in-list loa)])
+                                        "Your answers must sum to 100.")))))]}
             @submit-button}})
 
 
