@@ -1397,7 +1397,9 @@
                      (begin0 s
                        (unless (eqv? (study-meta-owner-id s)
                                      (user-id (current-user)))
-                         (error 'upsert-cli-study-page "the requested study does not belong to the current user"))))]
+                         (error 'upsert-cli-study-page "the requested study does not belong to the current user"))
+                       (unless (eq? (study-meta-type s) 'dsl)
+                         (error 'upsert-cli-study-page "the requested study is not a DSL study"))))]
                [else
                 (~> (make-study-meta
                      #:owner-id (user-id (current-user))
