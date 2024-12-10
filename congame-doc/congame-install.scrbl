@@ -20,9 +20,8 @@ subprocesses defined in the @filepath{Procfile} whenever it is run.
 
 The app expects to be run behind an SSL terminated connection (for
 example, behind an nginx instance using a self-signed cert), even for
-local development. You can disable this requirement by setting
-@racket[current-continuation-key-cookie-secure?] parameter to @racket[#f] before the
-application is started (do this in @filepath{congame-web/components/app.rkt}).
+local development. You can disable this requirement by setting the
+@tt{CONGAME_DEBUG} environment variable to @tt{x}.
 
 @section{Starting the server}
 
@@ -31,7 +30,7 @@ application is started (do this in @filepath{congame-web/components/app.rkt}).
     @:>{raco chief start}
 }
 
-By default the app will listen on @tt{localhost:5100}. 
+By default the app will listen on @tt{localhost:5100}.
 
 @section{Adding an admin user}
 

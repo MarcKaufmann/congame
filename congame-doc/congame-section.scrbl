@@ -2,9 +2,9 @@
 
 @title[#:style 'toc]{The Congame Server}
 
-In order to 
+In order to
 
-Conscript provides a simpler syntax and a more streamlined development environment 
+Conscript provides a simpler syntax and a more streamlined development environment
 for writing and testing @tech{studies}.
 
 @table-of-contents[]
