@@ -65,6 +65,7 @@
  list list? list* null null? cons pair? car cdr map member for-each shuffle length findf filter rest reverse
  first second third fourth fifth sixth seventh eighth ninth tenth
  display displayln print println printf eprintf write writeln
+ take drop
  current-seconds
 
  in-hash
@@ -74,12 +75,16 @@
  = < > <= >= equal? eq?
  sqrt expt exp log random random-ref
 
+ procedure?
+
  regexp-match?
 
+ string? symbol?
  format ~a string number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
  string-join
  bytes? bytes->string/utf-8 char?
 
+ box? box set-box! unbox
 
  exn:fail? exn-message
 
@@ -110,7 +115,8 @@
   [congame:get-current-group-name get-current-group-name]
   [congame:put-current-group-name put-current-group-name]
   [congame:map-step map-step]
-  [congame:map-study map-study])
+  [congame:map-study map-study]
+  [congame:study? study?])
  make-step make-step/study
  put/identity
  done
@@ -148,12 +154,14 @@
     '(buid
       congame-web/components/study-bot
       congame-web/components/uploaded-file
+      conscript/admin
       conscript/matchmaking
       conscript/survey-tools
       data/monocle
       gregor
       hash-view
       koyo/haml
+      racket/contract/base
       racket/format
       racket/list
       racket/match
