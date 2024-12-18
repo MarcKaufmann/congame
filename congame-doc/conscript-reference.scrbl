@@ -2,6 +2,7 @@
 
 @(require [for-label buid
                      racket/contract
+                     congame/components/bot-maker
                      conscript/base
                      conscript/markdown
                      (only-in racket/base string?)
@@ -119,7 +120,7 @@ element.
 
 
 }
-                     
+
 
 @defform[(for/study ...)]{
 
@@ -127,10 +128,16 @@ element.
 
 }
 
-@defform[(with-bot)]{
+@defform[(with-bot step-expr bot-expr)]{
+  Wraps @racket[step-expr] so that its default bot is @racket[bot-expr].
 
-@tktk{Johnny No. 5}
-
+  @examples[
+    (require conscript/base)
+    (defstep (hello)
+      (button "Continue..."))
+    (defstudy s
+      [[hello (with-bot hello bot:continuer)] --> ,(lambda () done)])
+  ]
 }
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -187,7 +194,7 @@ Parses its contents as Markdown and produces a representation of a complete @tec
 containing the resulting HTML content (@racket[md]) or of a fragment of HTML suitable for use
 within another page (@racket[md*]).
 
-@examples[#:eval e 
+@examples[#:eval e
   (md "# Heading")
   (md* "# Heading")]
 
@@ -211,7 +218,7 @@ HTML suitable for use within another page (@racket[html*]).
 
 @examples[#:eval e
   (html (div "content..."))
-  (html* (div "content..."))] 
+  (html* (div "content..."))]
 
 }
 
@@ -332,7 +339,7 @@ The bindings in this module are also provided by @racketmodname[conscript/base].
 Returns a function that accepts one argument (a study step function) and which adds the current
 participant to the current pending group (creating a new group if all other groups are full
 already), and then either skips to the next step in the study (if the current group has
-@racket[_group-size] members) or loads the step @tech{page} provided by the argument. 
+@racket[_group-size] members) or loads the step @tech{page} provided by the argument.
 
 }
 
@@ -343,3 +350,21 @@ participant is assigned to, or @racket[#f] if not currently assigned to any grou
 
 }
 
+
+@;===============================================
+@section{Admin}
+
+@defmodule[conscript/admin]
+
+This module provides a combinator for wrapping a study in an admin
+section. The resulting study displays an admin area to the study owner
+and the passed-in study to other participants.
+
+@defproc[(make-admin-study [s study?]
+                           [#:models models (listof (cons/c symbol? model/c))]) study?]{
+
+  Returns a new study by wrapping @racket[s] with admin functionality.
+
+  The @racket[#:models] argument represents a list of bot models that
+  can be run from the admin area.
+}
