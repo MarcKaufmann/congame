@@ -1,9 +1,11 @@
 #lang scribble/manual
 
-@(require (for-label racket/base
+@(require (for-label marionette
+                     racket/base
                      racket/contract
                      congame-web/components/study-bot
                      congame/components/bot
+                     (submod congame/components/bot actions)
                      congame/components/bot-maker
                      congame/components/study
                      congame/components/transition-graph))
@@ -284,6 +286,75 @@ that step.
   through any study variables that it has access to. Within the dynamic
   extent of a model invocation, the current participant is the bot
   currently running the model.
+}
+
+@subsection{Bot Actions}
+@defmodule[(submod congame/components/bot actions)]
+
+@defproc[(run-bot [b bot?]
+                  [#:study-url url string?]
+                  [#:username username string?]
+                  [#:password password string?]
+                  [#:delay delay real? 0]
+                  [#:browser browser (or/c #f browser?) #f]
+                  [#:headless? headless? boolean? #t]
+                  [#:port port (or/c #f (integer-in 0 65535)) #f]) void?]{
+
+  Runs bot @racket[b] against the study at @racket[url] with the given
+  @racket[username] and @racket[password].
+}
+
+@defparam[current-page page (or/c #f page?)]{
+  Within a bot action, this represents the current page.
+}
+
+@defproc[(completer) void?]{
+  A bot action that stops the bot when run.
+}
+
+@defproc[(continuer) void?]{
+  A bot action that continues to the next step when run.
+}
+
+@defproc[(click [id symbol?]) void?]{
+  A bot action that clicks on the widget @racket[id] when run.
+}
+
+@defproc[(click-all [elts (listof element?)]) void?]{
+  Clicks every element in @racket[elts].
+}
+
+@defproc[(type-all [elts&text (hash/c element? string?)]) void?]{
+  Types into every element key of @racket[elts&text] the associated string.
+}
+
+@defproc[(wait-for [selector string?]) void?]{
+  Waits until an element with the given @racket[selector] appears on the page.
+}
+
+@defproc[(show [selector string?]) void?]{
+  Sets the @tt{display} style of the first element that matches
+  @racket[selector] to @tt{block}.
+}
+
+@defproc[(find [selector string?]) (or/c #f element?)]{
+  Returns the first element that matches @racket[selector].
+}
+
+@defproc[(find-all [selector string?]) (listof element?)]{
+  Returns all the elements that match @racket[selector].
+}
+
+@defproc[(element-find [elt element?]
+                       [selector string?]) (or/c #f element?)]{
+
+  Returns the first child of @racket[elt] that matches @racket[selector].
+}
+
+@defproc[(element-find-all [elt element?]
+                           [selector string?]) (listof element?)]{
+
+  Returns all the children of @racket[elt] that match @racket[selector].
 }
 
 @subsection{Running Bots From Studies}

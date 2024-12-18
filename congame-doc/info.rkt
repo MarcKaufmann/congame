@@ -16,6 +16,8 @@
                      "forms-lib"
                      "koyo-doc"
                      "koyo-lib"
+                     "marionette-doc"
+                     "marionette-lib"
                      "racket-doc"
                      "scribble-lib"
                      "web-server-lib"

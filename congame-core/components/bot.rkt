@@ -1,7 +1,8 @@
 #lang racket/base
 
 (require net/url
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          racket/list)
 
 (provide
@@ -102,14 +103,14 @@
                             #:browser [browser #f]
                             #:headless? [headless? #t]
                             #:port [port #f])
-    (->* (bot?
+    (->* [bot?
           #:study-url string?
           #:username string?
-          #:password string?)
-         (#:delay real?
+          #:password string?]
+         [#:delay real?
           #:browser (or/c browser? #f)
           #:headless? boolean?
-          #:port (or/c #f (integer-in 0 65535)))
+          #:port (or/c #f (integer-in 0 65535))]
          void?)
     (define (do-run-bot p)
       (parameterize ([current-page p]
