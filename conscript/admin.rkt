@@ -1,9 +1,12 @@
-#lang conscript
+#lang conscript/with-require
 
-(require congame-web/components/study-bot
-         koyo/haml
+(require koyo/haml
          racket/contract/base
+         racket/lazy-require
          racket/match)
+
+(lazy-require
+ [congame-web/components/study-bot (spawn-bot)])
 
 (provide
  (contract-out
