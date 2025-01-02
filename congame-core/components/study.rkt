@@ -592,14 +592,19 @@ QUERY
        (with-widget-parameterization
          body ...))])
 
+; FIXME: we should not call the bot id #:id, but #:bot-id, and use #:id for html ids.
 (define/widget (button action label
+                       #:class [class ""]
                        #:id [id ""]
                        #:to-step-id [to-step-id #f]
                        #:up-target [up-target ".step"]
                        #:up-transition [up-transition "none"])
   (haml
-   (:a.button.next-button
-    ([:up-follow up-target]
+   (:a
+    ([:class
+      (string-join
+       (list "button" "next-button" class))]
+     [:up-follow up-target]
      [:up-transition up-transition]
      [:data-widget-id (when-bot id)]
      [:href
