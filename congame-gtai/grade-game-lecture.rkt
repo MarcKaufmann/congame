@@ -7,7 +7,7 @@
          "grade-game.rkt")
 
 (provide
- grade-game/lecture)
+ grade-game-lecture)
 
 ; Variables
 ; In addition, grade-game provides
@@ -28,6 +28,8 @@
 (defstep (initialize-lecture)
   (when (undefined? choices)
     (set! choices (hash)))
+  (when (undefined? results)
+    (set! results (hash)))
   (skip))
 
 ; TODO: update for lecture (not game) instructions.
@@ -135,12 +137,7 @@
 
 ; TODO: Should this be made visible at the transition level?
 (defstep (wait-for-next-phase-or-end)
-  (cond [(undefined? remaining-phases)
-         @md{# Wait until game starts
-
-             @refresh-every[5]}]
-
-        [(null? remaining-phases)
+  (cond [(null? remaining-phases)
          (skip 'lecture-end)]
 
         [(not (member phase completed-phases))
@@ -150,7 +147,7 @@
 
         [else
          (set! phase (car remaining-phases))
-         (skip 'phase)]))
+         (skip phase)]))
 
 (define (reset-group-and-done)
   (reset-current-group)
@@ -209,7 +206,7 @@
 
     ## Outcome Matrix
 
-    (outcome-matrix grade-game-form)})
+    @(outcome-matrix grade-game-form)})
 
 (defstep (make-choice/selfish)
   @md{
@@ -217,7 +214,7 @@
 
     ## Payoff Matrix
 
-    (payoff-matrix grade-game-form selfish-utility)})
+    @(payoff-matrix grade-game-form selfish-utility)})
 
 (defstep (make-choice/angels)
   @md{
@@ -225,7 +222,7 @@
 
     ## Payoff Matrix
 
-    (payoff-matrix grade-game-form angels-utility)})
+    @(payoff-matrix grade-game-form angels-utility)})
 
 (defstep (wait-for-other-player)
   (if (= (hash-count ((&hash-ref* (get-current-group)) choices)) 1)
@@ -241,29 +238,34 @@
   (with-study-transaction
     (parameterize ([current-hash-maker hash])
       (set! results
-            ((&opt-hash-ref* results)
-             phase
-             (get-current-group)
+            ((&opt-hash-ref*
+              phase
+              (get-current-group))
+             results
              v)))))
 
 (defstep ((display-result [utility #f]))
+  (eprintf "Got to 0.")
   (define actions (chosen-action-profile))
+  (eprintf "Got past 1")
 
   (define outcome
     (outcomes grade-game-form actions))
 
+  (eprintf "Got past 2")
   (store-results!
    (hash 'self (car actions)
          'other (cdr actions)
          'outcome outcome
-         'payoff (and utility (utility outcome))))
+         'payoff (and utility (utility actions))))
 
+  (eprintf "Got past 3")
   @md{# Result
 
       The outcome is @~a[outcome].
 
       @(if utility
-        @md*{Your payoff from this is @utility[outcome].}
+        @md*{Your payoff from this is @(~a (utility actions)).}
         @div{})
 
       @button{Continue}})
@@ -284,7 +286,9 @@
 
       This can be represented by the following payoff matrix:
 
-      @(payoff-matrix grade-game-form selfish-utility)})
+      @(payoff-matrix grade-game-form selfish-utility)
+
+      @button{Continue}})
 
 (defstep (intro/angels)
   @md{# Indignant Angels
@@ -298,7 +302,9 @@
 
       This can be represented by the following payoff matrix:
 
-      @(payoff-matrix grade-game-form selfish-utility)})
+      @(payoff-matrix grade-game-form angels-utility)
+
+      @button{Continue}})
 
 (defstudy grade-game/selfish
   [intro/selfish
@@ -316,10 +322,22 @@
    --> [display-result/angels (display-result angels-utility)]
    --> ,reset-group-and-done])
 
-(defstudy grade-game/lecture
+(define (wait-for-start)
+  (cond [(undefined? remaining-phases)
+         @md{# Wait until game starts
+
+             @refresh-every[5]}]
+        [else
+         (set! phase (car remaining-phases))
+         (skip phase)]))
+
+(defstudy grade-game-lecture
   [initialize-lecture
    --> (check-admin (take-owner-to 'admin/lecture))
-   --> wait-for-next-phase-or-end]
+   --> wait-for-start
+   --> wait-for-start]
+
+  [wait-for-start --> wait-for-start]
 
   [(basic grade-game/basic) --> ask-why]
 

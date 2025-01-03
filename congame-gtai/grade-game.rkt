@@ -86,10 +86,10 @@
   (define new-game-form
     (~> (for*/hash ([a1 actions]
                     [a2 actions])
-          (define ap (cons a1 a2))
           (values
-           ap
-           (utility (hash-ref game-form ap))))
+           (cons a1 a2)
+           (cons (utility (cons a1 a2))
+                 (utility (cons a2 a1)))))
         (hash-set _ 'actions actions)))
   (outcome-matrix new-game-form))
 
