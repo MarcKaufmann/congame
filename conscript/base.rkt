@@ -14,10 +14,12 @@
          net/url
          racket/contract/base
          racket/format
+         racket/function
          racket/lazy-require
          racket/list
          racket/random
          racket/string
+         threading
          (only-in web-server/http response/xexpr)
          "form.rkt"
          "html.rkt"
@@ -57,7 +59,7 @@
  with-handlers
 
  ;; Racket Runtime
- lambda λ case-lambda
+ lambda λ case-lambda identity
  void sleep
  for for/fold for/hash for/list in-range in-inclusive-range in-list
  for* for*/fold for*/hash for*/list
@@ -89,6 +91,7 @@
  box? box set-box! unbox
 
  exn:fail? exn-message
+
 
  ;; Congame Syntax
  --> goto for/study
@@ -170,7 +173,8 @@
       racket/math
       racket/random
       racket/string
-      racket/vector))
+      racket/vector
+      threading))
   (define (check-module-whitelisted mod-stx)
     (unless (memq (syntax->datum mod-stx) whitelist)
       (raise-syntax-error 'require "required module not whitelisted" mod-stx))))
