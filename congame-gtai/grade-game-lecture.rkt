@@ -19,7 +19,8 @@
   (defvar*/instance choice-explanations)
   (defvar*/instance remaining-phases)
   (defvar*/instance results)
-  (defvar* phase))
+  (defvar* phase)
+  (defvar* score))
 (defvar why)
 
 (define phases
@@ -30,6 +31,8 @@
     (set! choices (hash)))
   (when (undefined? results)
     (set! results (hash)))
+  (when (undefined? score)
+    (set! score 0))
   (skip))
 
 ; TODO: update for lecture (not game) instructions.
@@ -245,21 +248,19 @@
              v)))))
 
 (defstep ((display-result [utility #f]))
-  (eprintf "Got to 0.")
   (define actions (chosen-action-profile))
-  (eprintf "Got past 1")
-
+  (define (update-score!)
+    (if utility
+        (set! score (+ score (utility actions)))
+        (set! score (add1 score))))
   (define outcome
     (outcomes grade-game-form actions))
-
-  (eprintf "Got past 2")
   (store-results!
    (hash 'self (car actions)
          'other (cdr actions)
          'outcome outcome
          'payoff (and utility (utility actions))))
 
-  (eprintf "Got past 3")
   @md{# Result
 
       The outcome is @~a[outcome].
@@ -268,7 +269,7 @@
         @md*{Your payoff from this is @(~a (utility actions)).}
         @div{})
 
-      @button{Continue}})
+      @button[update-score!]{Continue}})
 
 (defstudy grade-game/basic
   [matchmake
@@ -327,12 +328,21 @@
          @md{# Wait until game starts
 
              @refresh-every[5]}]
-        [else
+
+        [(not (null? remaining-phases))
          (set! phase (car remaining-phases))
-         (skip phase)]))
+         (skip phase)]
+
+        [else
+         (skip 'lecture-end)]))
+
+(defstep (store-identity)
+  (put/identity 'grade-game-lecture score)
+  (skip))
 
 (defstudy grade-game-lecture
   [initialize-lecture
+   --> instructions
    --> (check-admin (take-owner-to 'admin/lecture))
    --> wait-for-start
    --> wait-for-start]
@@ -345,9 +355,9 @@
 
   [(angels grade-game/angels) --> ask-why]
 
-  [ask-why --> wait-for-next-phase-or-end --> lecture-end]
+  [ask-why --> wait-for-next-phase-or-end --> store-identity]
 
-  [lecture-end --> lecture-end]
+  [store-identity --> lecture-end --> lecture-end]
 
   [admin/lecture --> admin/lecture])
 
@@ -397,19 +407,37 @@
 
 
 (define make-grade-game-bot
-  (bot:study->bot grade-game/basic))
+  (bot:study->bot grade-game-lecture))
 
 (define (grade-game-model k proc)
   (match k
-    [`(*root* intro)
+    [`(*root* instructions)
      (set! bot-behavior (random-ref '(α β)))
      (proc)]
+    [`(*root* ask-why)
+     (void)]
+    [`(*root* lecture-end)
+     (bot:completer)]
+    [(list '*root* (or 'basic 'selfish 'angels) r)
+     ; FIXME: fill in bot behavior
+     (case r
+       [(make-choice/basic)
+        'basic]
+       [(make-choice/selfish)
+        'selfish]
+       [(make-choice/angels)
+        'angels]
+       [(matchmake wait-for-other-player)
+        (sleep 1)])]
+    [`(*root*
+       ,(or 'wait-for-start
+            'wait-for-next-phase-or-end))
+     (sleep 1)]
+
     [`(*root* matchmake)
      (sleep 1)]
     [`(*root* make-choice)
      (bot:click bot-behavior)]
-    [`(*root* display-result)
-     (bot:completer)]
     [`(*root* wait)
      (sleep 1)]
     [_ (proc)]))
