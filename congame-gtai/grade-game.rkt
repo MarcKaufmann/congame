@@ -64,7 +64,7 @@
 
       ## Instructions
 
-      You will be paired with a random person from this class, and neither of you will find out with whom you were paired.
+      You will first play multiple instances of the Grade Game. Each time, you will be paired with a random person from this class, and neither of you will find out with whom you were paired.
 
       Both of you can take an action by choosing either @(~a (first actions)) or @(~a (second actions)), which determine the outcomes as follows:
 
@@ -107,24 +107,6 @@
           @set![why (input-text "Why did you choose the way that you did?")]}
         @submit-button}})
 
-#;(define (make-grade-games)
-  (for/study ([p '(basic selfish)])
-    (defvar phase)
-
-    (defstep (init)
-      (set! phase p)
-      (skip))
-
-    (defstep (show-phase)
-      @md{# Current Phase: @(~a phase)
-
-          @button{Continue}})
-
-    (defstudy grade-game/phase
-      [init --> show-phase --> ,(lambda () done)])
-
-    grade-game/phase))
-
 (defstep (admin/lecture)
   (define (finish-current-phase)
     (with-study-transaction
@@ -139,7 +121,51 @@
     (when (undefined? completed-phases)
       (set! completed-phases '())))
 
+  ; (hash 'angel '(b b) 3 ...)
+  ; (hash '(b b) 'angel 3 ...)
+  (define res-by-game
+    (for/hash ([p '(basic selfish angels)])
+      (define n
+        (for/fold ([res (hash)])
+                ([(_ v) (in-hash (hash-ref results p (hash)))])
+        (define ap
+          (cons (hash-ref v 'self) (hash-ref v 'other)))
+        (hash-update res ap add1 0)))
+      (values p n)))
+
+  (define res-total
+    (for/fold ([r (hash)])
+              ([(_ h) (in-hash res-by-game)])
+      (for/fold ([r0 r])
+                ([(k v) (in-hash h)])
+        (hash-update
+         r0
+         k
+         (lambda (x)
+           (+ x v)) 0))))
+
+  (define (display-chosen-action-profiles gf h)
+    (define actions
+      (hash-ref gf 'actions))
+    @`(ul
+       ,@(for*/list ([a1 actions]
+                     [a2 actions])
+           (define ap (cons a1 a2))
+           @li{@(format "~a, ~a" a1 a2): @(~a (hash-ref h ap 0))})))
+
   @md{# Admin
+
+      ## Results
+
+      @(display-chosen-action-profiles grade-game-form res-total)
+
+      @`(div
+         ,@(for/list ([g '(basic selfish angels)])
+
+             @(div
+               (h3 (string-titlecase (~a g)))
+
+               (display-chosen-action-profiles grade-game-form (hash-ref res-by-game g (hash))))))
 
       ## Phase
 
@@ -158,10 +184,10 @@
 
                 @button[finish-current-phase]{Finish Current Phase}}])})
 
-; TODO: Should this be made visible at the transition level?
+; NOTE: Should this be made visible at the transition level?
 (defstep (wait-for-next-phase-or-end)
   (cond [(null? remaining-phases)
-         (skip 'lecture-end)]
+         (skip)]
 
         [(not (member phase completed-phases))
          @md{# Wait until the next phase starts
@@ -360,6 +386,28 @@
   (put/identity 'grade-game-lecture score)
   (skip))
 
+(defvar selfish-vs-angel)
+(defvar angel-vs-selfish)
+
+(defstep (mixed-game-questions)
+  @md{# Games with mixed players
+
+      @form{
+            Suppose that you play in a mixed game.
+
+            @set![selfish-vs-angel @radios[
+                    '(("α" . "α")
+                      ("β" . "β"))
+            ]{You are a selfish player and your pair is an indignant angel. What do you choose?}]
+
+            @set![angel-vs-selfish @radios[
+                    '(("α" . "α")
+                      ("β" . "β"))
+            ]{You are a selfish player and your pair is an indignant angel. What do you choose?}]
+
+            @submit-button
+            }})
+
 (defstudy grade-game-lecture/no-admin
   [initialize-lecture
    --> instructions
@@ -374,9 +422,13 @@
 
   [(angels grade-game/angels) --> ,(lambda () 'ask-why)]
 
-  [{ask-why (with-bot ask-why autofill-ask-why)} --> wait-for-next-phase-or-end --> store-identity]
+  [{ask-why (with-bot ask-why autofill-ask-why)}
+   --> wait-for-next-phase-or-end
+   --> mixed-game-questions
+   --> store-identity
+   --> lecture-end]
 
-  [store-identity --> lecture-end --> lecture-end]
+  [lecture-end --> lecture-end]
 )
 
 ;;; BOTS
