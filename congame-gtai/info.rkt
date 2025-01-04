@@ -16,6 +16,6 @@
     "web-server-lib"))
 (define build-deps '())
 (define congame-studies
-  '((congame-gtai/grade-game-lecture grade-game-lecture)))
+  '((congame-gtai/grade-game grade-game-lecture)))
 (define congame-bots
-  '((congame-gtai/grade-game-lecture make-grade-game-bot #:for grade-game-lecture #:models (grade-game-model))))
+  '((congame-gtai/grade-game make-grade-game-bot #:for grade-game-lecture #:models (grade-game-model))))

@@ -12,16 +12,21 @@
  (contract-out
   [make-admin-study
    (->* [study?]
-        [#:models (listof (cons/c symbol? any/c))]
+        [#:models (listof (cons/c symbol? any/c))
+         ; FIXME: For some reason `step?` throws an error, even after adding to conscript/base.rkt.
+         #:admin any/c]
         study?)]))
 
-(defstep (admin)
+(defstep (check-admin)
   (if (current-participant-owner?)
-      @md{# Admin
-
-          @button[#:to-step-id 'bots]{Manage Bots}
-          @button{Participate in Study}}
+      (skip 'admin)
       (skip)))
+
+(defstep (admin)
+  @md{# Admin
+
+      @button[#:to-step-id 'bots]{Manage Bots}
+      @button[#:to-step-id 'substudy]{Participate in Study}})
 
 ;; '(intro substudy *root*) -> '(intro *root*)
 (define (rebase k)
@@ -60,10 +65,12 @@
 
 (define (make-admin-study
          #:models [models null]
+         #:admin [admin admin]
          s)
   (define make-bot-box (box #f))
   (defstudy admin-study
-    [admin --> [substudy s] --> ,(λ () done)]
+    [check-admin --> [substudy s] --> ,(λ () done)]
+    [admin --> admin]
     [[bots (make-bot-step make-bot-box models)] --> admin])
   (set-box! make-bot-box (bot:study->bot admin-study))
   admin-study)

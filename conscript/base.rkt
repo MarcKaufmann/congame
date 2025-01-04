@@ -121,7 +121,8 @@
   [congame:put-current-group-name put-current-group-name]
   [congame:map-step map-step]
   [congame:map-study map-study]
-  [congame:study? study?])
+  [congame:study? study?]
+  [congame:step? step?])
  make-step make-step/study
  put/identity
  done
@@ -160,6 +161,7 @@
       congame-web/components/study-bot
       congame-web/components/uploaded-file
       conscript/admin
+      conscript/game-theory
       conscript/matchmaking
       conscript/survey-tools
       data/monocle
