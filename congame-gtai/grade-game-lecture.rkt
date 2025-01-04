@@ -74,10 +74,13 @@
     (lambda ()
       (matchmaker match-waiter))))
 
+(define (autofill-ask-why)
+  (bot:autofill 'test))
+
 (defstep (ask-why)
   @md{# Choice Explanation
 
-      @form{
+      @form[#:bot ([test (#:why "Bot does what bot told")])]{
         @div{
           @set![why (input-text "Why did you choose the way that you did?")]}
         @submit-button}})
@@ -342,20 +345,20 @@
 
 (defstudy grade-game-lecture
   [initialize-lecture
-   --> instructions
    --> (check-admin (take-owner-to 'admin/lecture))
+   --> instructions
    --> wait-for-start
    --> wait-for-start]
 
   [wait-for-start --> wait-for-start]
 
-  [(basic grade-game/basic) --> ask-why]
+  [(basic grade-game/basic) --> ,(lambda () 'ask-why)]
 
-  [(selfish grade-game/selfish) --> ask-why]
+  [(selfish grade-game/selfish) --> ,(lambda () 'ask-why)]
 
-  [(angels grade-game/angels) --> ask-why]
+  [(angels grade-game/angels) --> ,(lambda () 'ask-why)]
 
-  [ask-why --> wait-for-next-phase-or-end --> store-identity]
+  [{ask-why (with-bot ask-why autofill-ask-why)} --> wait-for-next-phase-or-end --> store-identity]
 
   [store-identity --> lecture-end --> lecture-end]
 
@@ -363,6 +366,10 @@
 
 ;;; BOTS
 ;;; TODO: Should be for general 2x2 games
+
+(provide
+ make-grade-game-bot
+ grade-game-model)
 
 (with-namespace xyz.trichotomy.congame.grade-game
   (defvar* bot-behavior)
@@ -415,20 +422,21 @@
      (set! bot-behavior (random-ref '(α β)))
      (proc)]
     [`(*root* ask-why)
-     (void)]
+     (proc)]
     [`(*root* lecture-end)
      (bot:completer)]
     [(list '*root* (or 'basic 'selfish 'angels) r)
-     ; FIXME: fill in bot behavior
      (case r
        [(make-choice/basic)
-        'basic]
+        (bot:click bot-behavior)]
        [(make-choice/selfish)
-        'selfish]
+        (bot:click bot-behavior)]
        [(make-choice/angels)
-        'angels]
+        (bot:click bot-behavior)]
        [(matchmake wait-for-other-player)
-        (sleep 1)])]
+        (sleep 1)]
+       [else
+        (proc)])]
     [`(*root*
        ,(or 'wait-for-start
             'wait-for-next-phase-or-end))

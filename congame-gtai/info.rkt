@@ -18,4 +18,4 @@
 (define congame-studies
   '((congame-gtai/grade-game-lecture grade-game-lecture)))
 (define congame-bots
-  '())
+  '((congame-gtai/grade-game-lecture make-grade-game-bot #:for grade-game-lecture #:models (grade-game-model))))
