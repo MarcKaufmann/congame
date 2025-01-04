@@ -6,30 +6,11 @@
          conscript/survey-tools
          data/monocle
          racket/match
+         threading
          )
 
 (provide
  grade-game-lecture)
-
-;;; Admin Helpers to display choices
-;;; TODO: Refactor into general 2x2 symmetric game functionality
-
-(defstep (admin)
-  (define outcomes
-    (for/list ([(_ v) (in-hash choices)])
-      (hash-values v)))
-  (define results
-    (for/fold ([rs (hash)])
-              ([o outcomes])
-      (hash-update rs o add1 0)))
-
-  @md{# Admin
-
-      ## Results
-
-      @`(ul
-         ,@(for/list ([(k v) results])
-             (li (format "Outcome ~a occurred ~a times" k v))))})
 
 ; Variables
 ; In addition, grade-game provides
@@ -41,6 +22,8 @@
   (defvar*/instance choice-explanations)
   (defvar*/instance remaining-phases)
   (defvar*/instance results)
+  (defvar*/instance answers)
+  (defvar*/instance n-answers)
   (defvar* phase)
   (defvar* score))
 (defvar why)
@@ -55,6 +38,10 @@
     (set! results (hash)))
   (when (undefined? score)
     (set! score 0))
+  (when (undefined? answers)
+    (set! answers (hash)))
+  (when (undefined? n-answers)
+    (set! n-answers (hash)))
   (skip))
 
 ; TODO: update for lecture (not game) instructions.
@@ -80,7 +67,9 @@
 (defstep (lecture-end)
   @md{# The End
 
-      Thanks for participating today.})
+      Thanks for participating today.
+
+      Your total score is: @(~a score)})
 
 ; The Variations of the Grade Game
 
@@ -155,18 +144,6 @@
 
   @md{# Admin
 
-      ## Results
-
-      @(display-chosen-action-profiles grade-game-form res-total)
-
-      @`(div
-         ,@(for/list ([g '(basic selfish angels)])
-
-             @(div
-               (h3 (string-titlecase (~a g)))
-
-               (display-chosen-action-profiles grade-game-form (hash-ref res-by-game g (hash))))))
-
       ## Phase
 
       @(cond [(undefined? remaining-phases)
@@ -182,7 +159,32 @@
               @md*{
                 The current phase is @(~a (car remaining-phases)).
 
-                @button[finish-current-phase]{Finish Current Phase}}])})
+                @button[finish-current-phase]{Finish Current Phase}}])
+
+      ## Results
+
+      @(display-chosen-action-profiles grade-game-form res-total)
+
+      @`(div
+         ,@(for/list ([g '(basic selfish angels)])
+
+             @(div
+               (h3 (string-titlecase (~a g)))
+
+               (display-chosen-action-profiles grade-game-form (hash-ref res-by-game g (hash))))))
+
+      ## Answers
+
+      @`(div
+         ,@(for/list ([(k1 v1) (in-hash n-answers)])
+             @div{
+                  @h4{@(~a k1)}
+
+                  @`(ul
+                     ,@(for/list ([(k2 v2) (in-hash v1)])
+                         @(li (format "~a: ~a times" k2 v2))))}))
+
+      })
 
 ; NOTE: Should this be made visible at the transition level?
 (defstep (wait-for-next-phase-or-end)
@@ -408,9 +410,41 @@
             @submit-button
             }})
 
+(defstep (store-answers!)
+  (define pid
+    (current-participant-id))
+  (eprintf "Got here....BLA. selfish-vs-angel: ~a; angel-vs-undefined: ~a~n~n~n "
+           selfish-vs-angel angel-vs-selfish)
+  (with-study-transaction
+    (parameterize ([current-hash-maker hash])
+      (eprintf "answers before: ~a~n~n" answers)
+      (set! answers
+            (~> answers
+                ((&opt-hash-ref* 'selfish-vs-angel pid) _ selfish-vs-angel)
+                ((&opt-hash-ref* 'angel-vs-selfish pid) _ angel-vs-selfish)))
+      (eprintf "answers after: ~a~n~n" answers)
+      (eprintf "n-answers before: ~a~n~n" n-answers)
+      (define add1-or-1
+        (lambda (x)
+          (if x (add1 x) 1)))
+      (set! n-answers
+            (~> n-answers
+                (lens-update
+                 (&opt-hash-ref* 'selfish-vs-angel selfish-vs-angel)
+                 _ add1-or-1)
+                (lens-update
+                 (&opt-hash-ref* 'angel-vs-selfish angel-vs-selfish)
+                 _ add1-or-1)))
+      (eprintf "n-answers after: ~a~n~n" n-answers)
+      ))
+  (skip))
+
 (defstudy grade-game-lecture/no-admin
+
   [initialize-lecture
-   --> instructions
+   --> mixed-game-questions --> store-answers!]
+
+  [instructions
    --> wait-for-start
    --> wait-for-start]
 
@@ -425,6 +459,7 @@
   [{ask-why (with-bot ask-why autofill-ask-why)}
    --> wait-for-next-phase-or-end
    --> mixed-game-questions
+   --> store-answers!
    --> store-identity
    --> lecture-end]
 
