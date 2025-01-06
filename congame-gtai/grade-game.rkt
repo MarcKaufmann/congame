@@ -13,9 +13,9 @@
  grade-game-lecture)
 
 ; Variables
-; In addition, grade-game provides
+; In addition, conscript/game-theory provides
 ; - `choices` as a global instance var.
-; - `grade-game-form`: the actions + outcome matrix for grade game.
+; - `make-choice!` which stores the choice correctly there
 
 (with-namespace xyz.trichotomy.congame.grade-game
   (defvar*/instance completed-phases)
@@ -379,7 +379,7 @@
 
         [(not (null? remaining-phases))
          (set! phase (car remaining-phases))
-         (skip phase)]
+         (skip instructions)]
 
         [else
          (skip 'lecture-end)]))
@@ -442,13 +442,10 @@
 (defstudy grade-game-lecture/no-admin
 
   [initialize-lecture
-   --> mixed-game-questions --> store-answers!]
-
-  [instructions
    --> wait-for-start
-   --> wait-for-start]
-
-  [wait-for-start --> wait-for-start]
+   --> instructions
+   --> ,(lambda ()
+          phase)]
 
   [(basic grade-game/basic) --> ,(lambda () 'ask-why)]
 
