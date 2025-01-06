@@ -167,6 +167,7 @@ jobs:
           -t build/web \
           ++lang conscript \
           ++lib conscript/admin \
+          ++lib conscript/game-theory \
           ++lib conscript/survey-tools \
           ++lang north \
           congame-web/dynamic.rkt
