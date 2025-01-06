@@ -166,6 +166,7 @@ jobs:
         raco koyo dist \
           -t build/web \
           ++lang conscript \
+          ++lib conscript/admin \
           ++lib conscript/survey-tools \
           ++lang north \
           congame-web/dynamic.rkt
