@@ -8,7 +8,6 @@
          )
 
 (provide
- median-voter-lecture
  median-voter-lecture/admin
  )
 
@@ -191,7 +190,7 @@
 
       ## Results
 
-      @`(ol
+      @`(ul
          ,@(for/list ([i (range 1 5)])
              (li (format "~a occurs ~a times"
                          i (hash-ref action-count i 0)))))
