@@ -161,6 +161,16 @@
 
                 @button[finish-current-phase]{Finish Current Phase}}])
 
+      ## Payoff Matrices
+
+      ### Selfish
+
+      @(payoff-matrix grade-game-form selfish-utility)
+
+      ### Indignant Angels
+
+      @(payoff-matrix grade-game-form angels-utility)
+
       ## Results
 
       @(display-chosen-action-profiles grade-game-form res-total)
@@ -239,7 +249,7 @@
   (define (β)
     (make-choice! 'β))
 
-  @md*{# Make Your Choice
+  @md*{## Make Your Choice
 
        @style{
          .choice-button {
@@ -260,20 +270,26 @@
     @(outcome-matrix grade-game-form)})
 
 (defstep (make-choice/selfish)
-  @md{
-    @(make-choice)
+  @md{# Selfish Choice
 
-    ## Payoff Matrix
+      **Remember:** Both you and your pair are selfish.
 
-    @(payoff-matrix grade-game-form selfish-utility)})
+      @(make-choice)
+
+      ## Payoff Matrix
+
+      @(payoff-matrix grade-game-form selfish-utility)})
 
 (defstep (make-choice/angels)
-  @md{
-    @(make-choice)
+  @md{# Indignant Angel Choice
 
-    ## Payoff Matrix
+      **Remember:** Both you and your pair are indignant angels.
 
-    @(payoff-matrix grade-game-form angels-utility)})
+      @(make-choice)
+
+      ## Payoff Matrix
+
+      @(payoff-matrix grade-game-form angels-utility)})
 
 (defstep (wait-for-other-player)
   (if (= (hash-count ((&hash-ref* (get-current-group)) choices)) 1)
@@ -329,7 +345,7 @@
 (defstep (intro/selfish)
   @md{# Selfish Players
 
-      Now suppose both players - you and the other - have selfish preferences, so that each cares only about their own grade and wants to get the highest grade.
+      Now suppose both players - you and the other - have selfish preferences, so that each cares only about their own grade and wants to get the highest grade - and you both know this.
 
       ## Payoff matrix
 
@@ -379,7 +395,7 @@
 
         [(not (null? remaining-phases))
          (set! phase (car remaining-phases))
-         (skip instructions)]
+         (skip 'instructions)]
 
         [else
          (skip 'lecture-end)]))
@@ -394,6 +410,18 @@
 (defstep (mixed-game-questions)
   @md{# Games with mixed players
 
+      ## Reminder
+
+      The payoff matrix for selfish players:
+
+      @(payoff-matrix grade-game-form selfish-utility)
+
+      The payoff matrix for indignant angels:
+
+      @(payoff-matrix grade-game-form angels-utility)
+
+      ## Questions
+
       @form{
             Suppose that you play in a mixed game.
 
@@ -405,7 +433,7 @@
             @set![angel-vs-selfish @radios[
                     '(("α" . "α")
                       ("β" . "β"))
-            ]{You are a selfish player and your pair is an indignant angel. What do you choose?}]
+            ]{You are an indignant angel and your pair is selfish. What do you choose?}]
 
             @submit-button
             }})
