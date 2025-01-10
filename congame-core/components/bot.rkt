@@ -83,7 +83,7 @@
    element-find
    element-find-all)
 
-  (define INFINITE-LOOP-THRESHOLD 42)
+  (define INFINITE-LOOP-THRESHOLD 100)
 
   ;; runner ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -144,6 +144,11 @@
         "  see also: https://github.com/MarcKaufmann/congame/issues/92")
        (car previous-paths)))
     (with-handlers ([exn:bot:done? void])
+      (page-wait-for!
+       #:timeout 10
+       #:visible? #f
+       (current-page)
+       "[data-study-stack]")
       (define study-stack-str (find-attribute "data-study-stack"))
       (unless study-stack-str
         (raise-bot-error "failed to get study stack at ~a" (url->string (page-url (current-page)))))
