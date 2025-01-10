@@ -519,6 +519,12 @@ QUERY
 ;; The point of this is to wrap rendering in a thunk so that we may
 ;; re-run the rendering part upon form validation error, but not the
 ;; rest of the step (i.e. the stuff before the page).
+;;
+;; See https://github.com/MarcKaufmann/congame/issues/16
+;;
+;; TODO: Get rid of this. It was a bad early design decision that we
+;; never revisited. The example in #16 can be handled by picking the
+;; target number in a transition or in a previous step.
 (define-syntax-parser page
   [(_ {~optional {~seq #:validator validator-expr:expr}} e)
    #'(letrec ([render
