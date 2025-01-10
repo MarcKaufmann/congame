@@ -143,7 +143,15 @@
         "potential infinite loop at path ~s~n"
         "  see also: https://github.com/MarcKaufmann/congame/issues/92")
        (car previous-paths)))
-    (with-handlers ([exn:bot:done? void])
+    (with-handlers* ([exn:bot:done? void]
+                     [(lambda (e)
+                        (and (exn:fail? e)
+                             (or (regexp-match? #rx"element .* is stale" (exn-message e))
+                                 (regexp-match? #rx"failed to get study stack" (exn-message e))
+                                 (regexp-match? #rx"failed to get step id" (exn-message e)))))
+                      (lambda (_)
+                        (sleep 1)
+                        (execute! b previous-paths))])
       (page-wait-for!
        #:timeout 10
        #:visible? #f
@@ -153,7 +161,11 @@
       (unless study-stack-str
         (raise-bot-error "failed to get study stack at ~a" (url->string (page-url (current-page)))))
       (define study-stack (read (open-input-string study-stack-str)))
-      (define step-id (string->symbol (find-attribute "data-step-id")))
+      (define step-id
+        (let ([step-id (find-attribute "data-step-id")])
+          (unless step-id
+            (raise-bot-error "failed to get step id"))
+          (string->symbol step-id)))
       (define path (cons step-id study-stack))
       (log-congame-bots-debug "found path ~s" path)
       (define stepper
