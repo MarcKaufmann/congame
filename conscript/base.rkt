@@ -72,6 +72,8 @@
  take drop
  current-seconds
 
+ vector vector-ref vector-length
+
  in-hash
  hash hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys
 
