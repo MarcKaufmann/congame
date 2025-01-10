@@ -89,9 +89,6 @@
     (lambda ()
       (matchmaker match-waiter))))
 
-(define (autofill-ask-why)
-  (bot:autofill 'test))
-
 (defstep (ask-why)
   @md{# Choice Explanation
 
@@ -120,7 +117,7 @@
     (for/hash ([p '(basic selfish angels)])
       (define n
         (for/fold ([res (hash)])
-                ([(_ v) (in-hash (hash-ref results p (hash)))])
+                  ([(_ v) (in-hash (hash-ref (if-undefined results (hash)) p (hash)))])
         (define ap
           (cons (hash-ref v 'self) (hash-ref v 'other)))
         (hash-update res ap add1 0)))
@@ -190,7 +187,7 @@
       ## Answers
 
       @`(div
-         ,@(for/list ([(k1 v1) (in-hash n-answers)])
+         ,@(for/list ([(k1 v1) (in-hash (if-undefined n-answers (hash)))])
              @div{
                   @h4{@(~a k1)}
 
@@ -198,6 +195,9 @@
                      ,@(for/list ([(k2 v2) (in-hash v1)])
                          @(li (format "~a: ~a times" k2 v2))))}))
 
+      ## Bots
+
+      @button[#:to-step-id 'bots]{Manage Bots}
       })
 
 ; NOTE: Should this be made visible at the transition level?
@@ -344,7 +344,7 @@
    --> make-choice/basic
    --> wait-for-other-player
    --> [display-result/basic (display-result)]
-   --> {ask-why (with-bot ask-why autofill-ask-why)}
+   --> ask-why
    --> ,reset-group-and-done])
 
 (defstep (intro/selfish)
@@ -382,7 +382,7 @@
    --> make-choice/selfish
    --> wait-for-other-player
    --> [display-result/selfish (display-result selfish-utility)]
-   --> {ask-why (with-bot ask-why autofill-ask-why)}
+   --> ask-why
    --> ,reset-group-and-done])
 
 (defstudy grade-game/angels
@@ -391,7 +391,7 @@
    --> make-choice/angels
    --> wait-for-other-player
    --> [display-result/angels (display-result angels-utility)]
-   --> {ask-why (with-bot ask-why autofill-ask-why)}
+   --> ask-why
    --> ,reset-group-and-done])
 
 (define (wait-for-start)
@@ -429,7 +429,9 @@
 
       ## Questions
 
-      @form{
+      @form[#:bot ([test
+                     (#:selfish-vs-angel "α")
+                     (#:angel-vs-selfish "β")])]{
             Suppose that you play in a mixed game.
 
             @set![selfish-vs-angel @radios[
@@ -500,9 +502,6 @@
 ;;; BOTS
 ;;; TODO: Should be for general 2x2 games
 
-(provide
- grade-game-model)
-
 (with-namespace xyz.trichotomy.congame.grade-game
   (defvar* bot-behavior)
   (defvar* bot-group-id))
@@ -545,16 +544,13 @@
    (equal? bot-group-id group-id)))
 
 
-#;(define make-grade-game-bot
-  (bot:study->bot grade-game-lecture))
-
 (define (grade-game-model k proc)
   (match k
     [`(*root* instructions)
      (set! bot-behavior (random-ref '(α β)))
      (proc)]
-    [`(*root* ask-why)
-     (proc)]
+    [`(*root* ,_ ask-why)
+     (bot:autofill 'test)]
     [`(*root* lecture-end)
      (bot:completer)]
     [(list '*root* (or 'basic 'selfish 'angels) r)
@@ -573,24 +569,18 @@
        ,(or 'wait-for-start
             'wait-for-next-phase-or-end))
      (sleep 1)]
-
     [`(*root* matchmake)
      (sleep 1)]
     [`(*root* make-choice)
      (bot:click bot-behavior)]
     [`(*root* wait)
      (sleep 1)]
+    [`(*root* mixed-game-questions)
+     (bot:autofill 'test)]
     [_ (proc)]))
 
-(define ((make-grade-game-spawn-model group-to-join) k proc)
-  (match k
-    [`(*root* intro)
-     (set! bot-group-id group-to-join)
-     (grade-game-model k proc)]
-    [_
-     (grade-game-model k proc)]))
-
-(define grade-game-lecture (make-admin-study
-         #:models `((grade-game . ,grade-game-model))
-         #:admin admin/lecture
-         grade-game-lecture/no-admin))
+(define grade-game-lecture
+  (make-admin-study
+   #:models `((grade-game . ,grade-game-model))
+   #:admin admin/lecture
+   grade-game-lecture/no-admin))

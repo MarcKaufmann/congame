@@ -13,8 +13,7 @@
   [make-admin-study
    (->* [study?]
         [#:models (listof (cons/c symbol? any/c))
-         ; FIXME: For some reason `step?` throws an error, even after adding to conscript/base.rkt.
-         #:admin any/c]
+         #:admin procedure?]
         study?)]))
 
 (defstep (check-admin)
