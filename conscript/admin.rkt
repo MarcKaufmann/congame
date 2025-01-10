@@ -28,9 +28,9 @@
       @button[#:to-step-id 'bots]{Manage Bots}
       @button[#:to-step-id 'substudy]{Participate in Study}})
 
-;; '(intro substudy *root*) -> '(intro *root*)
+;; '(*root* substudy intro) -> '(*root* substudy)
 (define (rebase k)
-  (reverse (cons '*root* (drop (reverse k) 2))))
+  (cons '*root* (drop k 2)))
 
 (define ((nest-model m) k proc)
   (m (rebase k) proc))
