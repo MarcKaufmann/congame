@@ -74,11 +74,15 @@
 ; The Variations of the Grade Game
 
 (defstep (match-waiter)
-  @md{# Please Wait
+  (cond [(member phase completed-phases)
+         done]
 
-      Please wait while another participant joins the queue.
+        [else
+         @md{# Please Wait (Phase @(~a phase))
 
-      @refresh-every[5]})
+             Please wait while another participant joins the queue.
+
+             @refresh-every[5]}]))
 
 (defstep matchmake
   (let ([matchmaker (make-matchmaker 2)])
@@ -340,6 +344,7 @@
    --> make-choice/basic
    --> wait-for-other-player
    --> [display-result/basic (display-result)]
+   --> {ask-why (with-bot ask-why autofill-ask-why)}
    --> ,reset-group-and-done])
 
 (defstep (intro/selfish)
@@ -377,6 +382,7 @@
    --> make-choice/selfish
    --> wait-for-other-player
    --> [display-result/selfish (display-result selfish-utility)]
+   --> {ask-why (with-bot ask-why autofill-ask-why)}
    --> ,reset-group-and-done])
 
 (defstudy grade-game/angels
@@ -385,6 +391,7 @@
    --> make-choice/angels
    --> wait-for-other-player
    --> [display-result/angels (display-result angels-utility)]
+   --> {ask-why (with-bot ask-why autofill-ask-why)}
    --> ,reset-group-and-done])
 
 (define (wait-for-start)
@@ -475,14 +482,13 @@
    --> ,(lambda ()
           phase)]
 
-  [(basic grade-game/basic) --> ,(lambda () 'ask-why)]
+  [(basic grade-game/basic) --> ,(lambda () 'wait-for-next-phase-or-end)]
 
-  [(selfish grade-game/selfish) --> ,(lambda () 'ask-why)]
+  [(selfish grade-game/selfish) --> ,(lambda () 'wait-for-next-phase-or-end)]
 
-  [(angels grade-game/angels) --> ,(lambda () 'ask-why)]
+  [(angels grade-game/angels) --> ,(lambda () 'wait-for-next-phase-or-end)]
 
-  [{ask-why (with-bot ask-why autofill-ask-why)}
-   --> wait-for-next-phase-or-end
+  [wait-for-next-phase-or-end
    --> mixed-game-questions
    --> store-answers!
    --> store-identity
