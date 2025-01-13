@@ -191,7 +191,7 @@
       ## Results
 
       @`(ul
-         ,@(for/list ([i (range 1 5)])
+         ,@(for/list ([i (range 1 6)])
              (li (format "~a occurs ~a times"
                          i (hash-ref action-count i 0)))))
       })
