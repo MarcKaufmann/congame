@@ -46,7 +46,7 @@
 
 ; TODO: update for lecture (not game) instructions.
 (defstep (instructions)
-  (define actions (hash-ref grade-game-form 'actions))
+  (define actions (hash-ref grade-game-form 'actions1))
   @md{# Grade Game
 
       ## Instructions
@@ -166,11 +166,11 @@
 
       ### Selfish
 
-      @(payoff-matrix grade-game-form selfish-utility)
+      @(payoff-matrix/sym grade-game-form selfish-utility)
 
       ### Indignant Angels
 
-      @(payoff-matrix grade-game-form angels-utility)
+      @(payoff-matrix/sym grade-game-form angels-utility)
 
       ## Results
 
@@ -224,13 +224,21 @@
 
 ; Configurations
 
-(define grade-game-form
+(define grade-game-outcomes
   (hash
-   'actions '(α β)
    '(α . α) '(B- . B-)
    '(α . β) '(A  . C+)
    '(β . α) '(C+ . A )
    '(β . β) '(B+ . B+)))
+
+(define grade-game-form
+  (hash
+   'actions1 '(α β)
+   'actions2 '(α β)
+   'outcomes1 (for/hash ([(ap out) (in-hash grade-game-outcomes)])
+                (values ap (car out)))
+   'outcomes2 (for/hash ([(ap out) (in-hash grade-game-outcomes)])
+                (values ap (cdr out)))))
 
 (define (selfish-utility ap)
   (match ap
@@ -282,7 +290,7 @@
 
       ## Payoff Matrix
 
-      @(payoff-matrix grade-game-form selfish-utility)})
+      @(payoff-matrix/sym grade-game-form selfish-utility)})
 
 (defstep (make-choice/angels)
   @md{# Indignant Angel Choice
@@ -293,7 +301,7 @@
 
       ## Payoff Matrix
 
-      @(payoff-matrix grade-game-form angels-utility)})
+      @(payoff-matrix/sym grade-game-form angels-utility)})
 
 (defstep (wait-for-other-player)
   (if (= (hash-count ((&hash-ref* (get-current-group)) choices)) 1)
@@ -356,7 +364,7 @@
 
       This can be represented by the following payoff matrix:
 
-      @(payoff-matrix grade-game-form selfish-utility)
+      @(payoff-matrix/sym grade-game-form selfish-utility)
 
       @button{Continue}})
 
@@ -372,7 +380,7 @@
 
       This can be represented by the following payoff matrix:
 
-      @(payoff-matrix grade-game-form angels-utility)
+      @(payoff-matrix/sym grade-game-form angels-utility)
 
       @button{Continue}})
 
@@ -421,11 +429,11 @@
 
       The payoff matrix for selfish players:
 
-      @(payoff-matrix grade-game-form selfish-utility)
+      @(payoff-matrix/sym grade-game-form selfish-utility)
 
       The payoff matrix for indignant angels:
 
-      @(payoff-matrix grade-game-form angels-utility)
+      @(payoff-matrix/sym grade-game-form angels-utility)
 
       ## Questions
 

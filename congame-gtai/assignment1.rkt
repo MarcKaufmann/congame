@@ -1,5 +1,17 @@
 #lang conscript
 
+;; For later (maybe):
+;;
+;; - Find all NE in a game where iterated gives a unique answer, but with many actions, so they should use iterated deletion. Check Pollak
+;; - Question on 2nd price auction and finding an equilibrium where the person who cares less gets the good.
+;; Play chicken game? Provide the game form.
+
+; Quiz structure:
+; - 2 comprehension questions
+; - 4 easy questions
+; - 2 harder questions
+; - 2 games against bots
+
 ; Questions and games I would like to play:
 ; - Comprehension questions about the grade game with various other preferences.
 ; - Find the dominant strategies for some games
@@ -23,207 +35,477 @@
 ; Problem 1 of Tutorial 1
 
 (require conscript/game-theory
+         conscript/survey-tools
          racket/match
          hash-view)
 
 (provide
  assignment1)
 
-(hash-view problem (description form answer score))
-
 (with-namespace xyz.trichotomy.congame-gtai.assignment1
-  (defvar* p1t1/q1)
-  (defvar* p1t1/q2)
-  (defvar* p1t1/q3)
-  (defvar* test)
-  (defvar* index))
+  ;; fq problem - fight for prey
+  (defvar* fq-scores)
 
-(define (yes/no)
-  (radios '(("yes" . "Yes")
-            ("no"  . "No"))
-          ""))
+  ;; gg problem
+  (defvar* gg-scores)
 
-(define problem1/tutorial1
-  (problem
-    @md*{Two animals are fighting over some prey. Each can be passive or aggressive. Each prefers to be aggressive if its opponent is passive, and passive if its opponent is aggressive; given its own stance, it prefers the outcome in which its opponent is passive to that in which its opponent is aggressive.
+  ;; mixed strategy
+  (defvar* ms-scores)
+  )
 
-         1. Formulate this situation as a strategic game.
-         2. If you call the aggressive action Fink and the passive action Quiet, is the resulting game the same as the Prisoner’s Dilemma? (That is, are the players’ preferences in the resulting game the same as their preferences in the Prisoner’s Dilemma?) If not, how do they differ?
-         3. Find the pure-strategy Nash equilibria (if any) of the game.}
+(defvar ms1)
+(defvar ms2)
 
-    (lambda ()
+(define inspect-shirk-game
+  (hash 'actions1 '(T B)
+        'actions2 '(L R)
+        'outcomes1 (hash
+                    '(T . L) 0
+                    '(T . R) 3
+                    '(B . L) 1
+                    '(B . R) 1)
+        'outcomes2 (hash
+                    '(T . L) -1
+                    '(T . R) -3
+                    '(B . L) 0
+                    '(B . R) 1)))
+
+(define (input-probability label)
+  (input-number #:min 0 #:max 1 #:step 0.001 label))
+
+(defstep (ms-question)
+  @md{# Mixed Strategy Equilibrium
+
+      Consider the following game:
+
+      @(outcome-matrix inspect-shirk-game)
+
       @form{
-        @div{
-          1. Formulate this situation as a strategic game.
+        @md*{
+          ### Question 1
+
+          Find a mixed strategy equilibrium for the game. Provide the probabilities up to the third decimal after the comma.
+
+          @set![ms1 (input-list
+                     (list
+                      (input-probability "Probability of player  1 playing T")
+                      (input-probability "Probability of player 2 playing L")))]
+
+          ### Question 2
+
+          @set![ms2 @input-number[#:min 0 #:max 10]{How many Nash equilibria are there, both pure and mixed? (You can go up to 10 - if there are more than 10, including if there are infinite Nash equilibria, then choose 10.)}]
+
+          @submit-button}}
+
+      @button[#:to-step-id 'problem-overview]{Cancel}})
+
+(defstep (ms-compute-score)
+  (define pT 0.333)
+  (define pL 0.667)
+  (define given-pT (first ms1))
+  (define given-pL (second ms1))
+  (define delta
+    (+ (abs (- pT given-pT)) (abs (- pL given-pL))))
+  (set! ms-scores
+        (list
+         (if (> 0.01 delta) 100 0)
+         (if (= ms2 1) 100 0)))
+  (skip))
+
+(defstep (ms-overview)
+  @md{# Mixed Strategy: Your Answers
+
+      1. Find a mixed strategy
+
+      You gave the following probabilities (for T and L):
+      @(format "(~a, ~a)" (first ms1) (second ms1))
+
+      2. How many Nash equilibria are there (the max you could choose was 10, which stands for "10 or more").
+
+      Your answer: @(~a ms2)
+
+      @button{Continue}})
+
+(defstudy ms-study
+  [ms-question --> ms-compute-score --> ms-overview --> ,(lambda () done)])
+
+(defvar p1t1/q1)
+(defvar p1t1/q2)
+(defvar ff)
+(defvar fq)
+(defvar qf)
+(defvar qq)
+(defvar gg1)
+(defvar gg2)
+(defvar gg3)
+(defvar gg4)
+(defvar gg5)
+
+(define (yes/no [label ""])
+  (map-result
+   (radios '(("yes" . "Yes")
+            ("no" . "No"))
+          label)
+   (lambda (r)
+     (string=? r "yes"))))
+
+(defstep (fq-init)
+  (when (undefined? fq-scores)
+    ; FIXME
+    (set! fq-scores 3))
+  (skip))
+
+(defstep (fq-questions)
+   @md{# Fighting over Prey
+
+       Two animals are fighting over some prey. Each can be passive or aggressive. Each prefers to be aggressive if its opponent is passive, and passive if its opponent is aggressive; given its own stance, it prefers the outcome in which its opponent is passive to that in which its opponent is aggressive.
+
+       @form{
+        @md*{
+          #### 1. Formulate this situation as a strategic game.
 
           @set![p1t1/q1 (input-list
                          (list
                           @input-number{Payoff to player 1 from "Fink-Fink"}
                           @input-number{Payoff to player 1 from "Fink-Quiet"}
                           @input-number{Payoff to player 1 from "Quiet-Fink"}
-                          @input-number{Payoff to player 1 from "Quiet-Quiet"}))]}
+                          @input-number{Payoff to player 1 from "Quiet-Quiet"}))]
 
+          #### 2. Is this game a Prisoner's Dilemma?
 
-        @div{
-          2. Is this game the same as the Prisoner's Dilemma?
+          If you call the aggressive action Fink and the passive action Quiet, is the resulting game the same as the Prisoner’s Dilemma? (That is, are the players’ preferences in the resulting game the same as their preferences in the Prisoner’s Dilemma?) If not, how do they differ?
 
-          @set![p1t1/q2 (yes/no)]}
+          @set![p1t1/q2 (yes/no)]
 
-        @div{
-          3. Which of the following are pure-strategy Nash equilibria?
-          @set![p1t1/q3 (input-list
-                         (list
-                          @checkbox[#:required? #f]{Fink-Fink}
-                          @checkbox[#:required? #f]{Fink-Quiet}
-                          @checkbox[#:required? #f]{Quiet-Fink}
-                          @checkbox[#:required? #f]{Quiet-Quiet}))]}
+          #### 3. What are the pure-strategy Nash equilibria (if any) of the game?
 
-        @submit-button
-       })
+          Check all action profiles that are Nash equilibria.
 
-    (lambda ()
-      @md*{
-        1. What are payoffs consistent with that game?
+          @div{
+            @set![ff @checkbox[#:required? #f]{Fink-Fink}]}
+          @div{
+            @set![fq @checkbox[#:required? #f]{Fink-Quiet}]}
+          @(div (set! qf @checkbox[#:required? #f]{Quiet-Fink}))
+          @(div (set! qq @checkbox[#:required? #f]{Quiet-Quiet}))
 
-        Your answer:
+          @submit-button}}
 
-        - "Fink-Fink": @(~a (first p1t1/q1))
-        - "Fink-Quiet": @(~a (second p1t1/q1))
-        - "Quiet-Fink": @(~a (third p1t1/q1))
-        - "Quiet-Quiet": @(~a (fourth p1t1/q1))
+       @button[#:to-step-id 'fq-overview]{Cancel}})
 
-        2. Is this game the same as the Prisoner's Dilemma?
+(defstep (fq-compute-score)
+  (match-define (list a b c d)
+    p1t1/q1)
+  (set! fq-scores
+        (list
+         (+ (if (and (> c a) (> b d)) 50 0)
+            (if (and (> b a) (> d c)) 50 0))
+         (if (equal? p1t1/q2 #f) 100 0)
+         (for/sum ([answer (list ff fq qf qq)]
+                   [correct-answer '(#f #t #t #f)])
+           (if (equal? answer correct-answer) 25 -25))))
+  (skip))
 
-        Your answer: @(~a p1t1/q2)
+(defstep (fq-overview)
+  @md{# Fighting over Prey: Your Answers
 
-        3. Which of the following are pure-strategy Nash equilibria?
+      1. What are payoffs consistent with that game?
 
-        Your answer:
+      @(if (undefined? p1t1/q1)
+           @md*{You have not yet provided an answer.}
+           @md*{
+             Your answer:
 
-        @`(ul
-           ,@(for/list ([answer p1t1/q3]
-                        [ap '("Fink-Fink" "Fink-Quiet" "Quiet-Fink" "Quiet-Quiet")])
-               (li (format "~a: ~a" answer ap))))
+             - "Fink-Fink": @(~a (first p1t1/q1))
+             - "Fink-Quiet": @(~a (second p1t1/q1))
+             - "Quiet-Fink": @(~a (third p1t1/q1))
+             - "Quiet-Quiet": @(~a (fourth p1t1/q1))
+           })
 
-      })
+      2. Is this game the same as the Prisoner's Dilemma?
 
+      @(if (undefined? p1t1/q2)
+           @md*{You have not yet provided an answer.}
+           @md*{Your answer: @(if p1t1/q2 "yes" "no")})
+
+      3. Which of the following are pure-strategy Nash equilibria?
+
+      Your answer:
+
+      @(if (undefined? p1t1/q2)
+           @md*{You have not yet provided an answer.}
+           @md*{
+             @`(ul
+               ,@(for/list ([answer (list ff fq qf qq)]
+                            [ap '("Fink-Fink" "Fink-Quiet" "Quiet-Fink" "Quiet-Quiet")])
+                   (li (format "~a: ~a" ap (if answer "yes" "no")))))
+           })
+
+      @(if (past-deadline?)
+           ""
+           @button[#:to-step-id 'fq-question]{Change your Answers})
+
+      @button{Back to other Problems}})
+
+(defstudy fq-study
+  [fq-init --> fq-questions --> fq-compute-score --> fq-overview --> ,(lambda () done)])
+
+(define grade-game-outcomes
+  (hash
+   '(α . α) '(B- . B-)
+   '(α . β) '(A  . C+)
+   '(β . α) '(C+ . A )
+   '(β . β) '(B+ . B+)))
+
+(define (gg-selfish-utility ap)
+  (match ap
+   [(cons 'α  'α)  0]
+   [(cons 'α  'β)  3]
+   [(cons 'β  'α) -1]
+   [(cons 'β  'β)  1]))
+
+(define (gg-angels-utility ap)
+  (match ap
+   [(cons 'α  'α)  0]
+   [(cons 'α  'β) -1]
+   [(cons 'β  'α) -3]
+   [(cons 'β  'β)  1]))
+
+(define grade-game-form
+  (hash
+   'actions1 '(α β)
+   'actions2 '(α β)
+   'outcomes1 (for/hash ([(ap out) (in-hash grade-game-outcomes)])
+                (values ap (car out)))
+   'outcomes2 (for/hash ([(ap out) (in-hash grade-game-outcomes)])
+                (values ap (cdr out)))))
+
+(define gg-opts
+  '((a . "(α, α)")
+    (b . "(α, β)")
+    (c . "(β, α)")
+    (d . "(β, β)")))
+
+(define (display-gg-opts ggs)
+  (cond [(undefined? ggs)
+         @md*{You have not yet provided an answer.}]
+        [else
+         (define (name-to-ap n)
+           (case n
+             [(a) "(α, α)"]
+             [(b) "(α, β)"]
+             [(c) "(β, α)"]
+             [(d) "(β, β)"]))
+         @md*{
+              @`(ul
+                 ,@(for/list ([ap '(a b c d)])
+                     (li (format "~a: ~a"
+                                 (name-to-ap ap)
+                                 (if (member (symbol->string ap) ggs) "yes" "no")))))}]))
+
+(define (given-answers ggs)
+  (for/list ([n '(a b c d)])
+    (if (member (symbol->string n) ggs) #t #f)))
+
+(define (gg-score correct ggs)
+  (for/sum ([c correct]
+            [g (given-answers ggs)])
+    (if (equal? c g) 25 0)))
+
+(define (past-deadline?)
+  ; FIXME
+  #f)
+
+(define (select-gg-opts)
+  (make-multiple-checkboxes gg-opts))
+
+(defstep (gg-question)
+  (cond [(past-deadline?)
+         (skip)]
+        [else
+
+         @md{# Grade Game Problem
+
+             Consider the grade game from class with the following outcome-matrix:
+
+             @(outcome-matrix grade-game-form)
+
+             This problem asks you to state what will happen when different types of players play this game. Unless otherwise stated, the players are rational (meaning they don't play strictly dominated actions) and there is common knowledge of rationality.
+
+             For each of the situations described below, check all the action profiles that are possible (meaning you cannot rule them out) under the above assumptions. **Note:** the above assumptions do not imply that a person plays Nash equilibrium.
+
+             ### Payoff matrix for selfish players
+
+             @(payoff-matrix/sym grade-game-form gg-selfish-utility)
+
+             ### Payoff matrix for indignant angels
+
+             @(payoff-matrix/sym grade-game-form gg-angels-utility)
+
+             @form{
+                   @style{
+                     label {
+                       display: block;
+                     }
+                     .group {
+                       border: none;
+                     }
+                   }
+
+                   @md*{
+                        #### 1. Two selfish players play the game.
+
+                        Check all possible action profiles:
+
+                        @set![gg1 @(select-gg-opts)]
+
+                        #### 2. Two indignant angels play the game.
+
+                        Check all possible action profiles:
+
+                        @set![gg2 @(select-gg-opts)]
+
+                        #### 3. Two indignant angels play the game
+
+                        Moreover, each thinks that the other player is selfish. Check all possible action profiles:
+
+                        @set![gg3 @(select-gg-opts)]
+
+                        #### 4. Two selfish players play the game
+
+                        Morever, each confuses action α for action β. Check all possible action profiles:
+
+                        @set![gg4 @(select-gg-opts)]
+
+                        #### 5. Player 1 is selfish, player 2 is an indignant angel
+
+                        Moreover, neither player believes the other player to be rational. Check all possible action profiles:
+
+                        @set![gg5 @(select-gg-opts)]
+
+                        @submit-button
+                        }}
+
+             @button[#:to-step-id 'gg-overview]{Cancel}}]))
+
+(defstep (gg-compute-score)
+  (set! gg-scores
     (list
-     (lambda ()
-       (match-define (list a b c d)
-         p1t1/q1)
-       (+ (if (and (> c a) (> b d)) 50 0)
-          (if (and (> b a) (> d c)) 50 0)))
+     (gg-score (list #t #f #f #f) gg1)
+     (gg-score (list #t #t #t #t) gg2)
+     (gg-score (list #t #f #f #f) gg3)
+     (gg-score (list #f #f #f #t) gg4)
+     (gg-score (list #t #t #f #f) gg5)))
+  (skip))
 
-     (lambda ()
-       (if (string=? p1t1/q2 "no") 100 0))
+(defstep (gg-cancel)
+  (skip))
 
-     (lambda ()
-       (for/sum ([answer p1t1/q3]
-                 [correct-answer '(#f #t #t #f)])
-         (if (equal? answer correct-answer) 25 -25)))
-     )))
+(defstep (gg-overview)
+  @md{# Grade Game: Your Answers
 
+      1. Two selfish players play the game:
 
-(define problem2/tutorial1
-  (problem
+      @display-gg-opts[gg1]
 
-    @md*{Two people enter a bus. Two adjacent cramped seats are free. Each person must decide whether to sit or stand. Sitting alone is more comfortable than sitting next to the other person, which is more comfortable than standing.
+      2. Two indignant angels play the game:
 
-         1. Suppose that each person cares only about her own comfort. Model the situation as a strategic game. Is this game the same as the Prisoner’s Dilemma (except for the names of the actions)? Find its Nash equilibrium (equilibria?).
-         2. Suppose that each person is altruistic, ranking the outcomes according to the other person’s comfort, but, out of politeness, prefers to stand than to sit if the other person stands. Model the situation as a strategic game. Is this game the Prisoner’s Dilemma (except for the names of the actions)? Find its Nash equilibrium (equilibria?).
-         3. Compare the people’s comfort in the equilibria of the two games.
-        }
+      @display-gg-opts[gg2]
 
-    (lambda ()
-      @form{
+      3. Two indignant angels play the game, each thinking that the other is selfish.
 
-        @set![test @input-text{Something}]
+      @display-gg-opts[gg3]
 
-        @submit-button
+      4. Two selfish players play the game, but each of them confuses action α for action β.
+
+      @display-gg-opts[gg4]
+
+      5. Player 1 is selfish, player 2 is an indignant angel, but neither player believes the other player to be rational.
+
+      @display-gg-opts[gg5]
+
+      @(if (past-deadline?)
+           ""
+           @button[#:to-step-id 'gg-question]{Change your Answers})
+
+      @button{Back to other Problems}
       })
 
-    (lambda ()
-      @md*{Your answers})
+(defvar active-problem)
 
-    (list
-     (lambda () 0))))
+(defstep (gg-init)
+  (when (undefined? gg-scores)
+    (set! gg-scores
+          (build-list 5 (lambda (x) 0))))
+  (skip))
 
-(define problems
-  (vector
-   problem1/tutorial1
-   problem2/tutorial1))
+(defstudy grade-game-quiz
+  [gg-init --> gg-question --> gg-compute-score --> gg-overview --> ,(lambda () done)])
 
-(defstep (overview)
-  @md{# Assignment 1
+(defstep (problem-overview)
+  @md{# Problems
 
-      @`(div
+      @(if (past-deadline?)
+           @md*{## Scores
 
-         ,@(for/list ([p problems]
-                      [i (in-range 1 (add1 (vector-length problems)))])
-             @md*{## Problem @(~a i)
+                Your overall score is: ... (TBD)
 
-                  @(problem-description p)
+                @button[#:to-step-id 'show-scores]{Go to Scores}}
+           @div{})
 
-                  @button[(λ () (set! index i))]{
-                    @(format "Submit Answers to Problem ~a" i)
-                  }
-                 }))
+      ## Mixed Strategy
 
-      @button[#:to-step-id 'grade-submission]{Finalize your Submission}
+      Find the mixed strategy equilbria of a game.
+
+      @button[(λ () (set! active-problem 'ms-game))]{Go to "Mixed Strategy"}
+
+      ## Grade Game Problem
+
+      Variations on the grade game from class.
+
+      @button[(λ () (set! active-problem 'grade-game))]{Go to "Grade Game"}
+
+      ## Fighting over Prey
+
+      @button[(λ () (set! active-problem 'fq-game))]{Go to "Fighting over Prey"}
+
       })
 
-(defstep (submission)
-  (define p
-    (vector-ref problems (sub1 index)))
-  @md{# Problem @(~a index)
+(defstep (show-scores)
+  (define (display-scores scs)
+    @`(ul
+     ,@(for/list ([i (in-range (length scs))]
+                  [s scs])
+         (li (format "Problem ~a: score ~a / 100" (add1 i) s)))))
 
-      ## Description
+  (if (not (past-deadline?))
+      @md{# Scores
 
-      @(problem-description p)
+          Scores are only available once the submission deadline is past.
 
-      ## Submit Answer
+          @button{Back}}
+      @md{# Scores
 
-      @((problem-form p))})
+          ## Mixed Strategy
 
-(defstep (overview-after-submission)
-  @md{# Assignment 1
+          @(display-scores ms-scores)
 
-      @button[#:to-step-id 'overview]{Reopen Assignment to Change Your Submission}
+          ## Grade Game
 
-      # Your Submission
+          @(display-scores gg-scores)
 
-      @`(div
+          ## Fighting over Prey
 
-         ,@(for/list ([p problems]
-                      [i (in-range 1 (add1 (vector-length problems)))])
-             @md*{## Problem @(~a i)
+          @(display-scores fq-scores)
 
-                  @(problem-description p)
-
-                  @((problem-answer p))
-                 }))})
-
-(defstep (grade-submission)
-  (define scores
-    (for/list ([p problems])
-      (for/list ([s (problem-score p)])
-       (s))))
-  ; FIXME: Replace by skipping, since I shouldn't display the score until later.
-  @md{# The scores
-
-      @`(ul
-         ,@(for/list ([p scores]
-                      [i (in-range 1 (add1 (length scores)))])
-
-             (li (format "Scores on Problem ~a:" i)
-               (apply ol
-                 (for/list ([s p]
-                            [j (in-range 1 (add1 (length p)))])
-                   (li (format "Score on question ~a: ~a" j s)))
-                 ))))
-
-      @button{Continue}})
+          @button{Back to Problems}}))
 
 (defstudy assignment1
-  [overview --> submission --> overview]
-  [grade-submission --> overview-after-submission --> overview-after-submission])
+  [problem-overview --> ,(lambda ()
+                           (case active-problem
+                             [(grade-game) 'grade-game-quiz]
+                             [(fq-game) 'fq-study]
+                             [(ms-game) 'ms-study]))]
+  [grade-game-quiz --> problem-overview]
+  [fq-study --> problem-overview]
+  [ms-study --> problem-overview]
+  [show-scores --> problem-overview])
