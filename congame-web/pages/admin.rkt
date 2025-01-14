@@ -644,10 +644,6 @@
                 (response/jsexpr
                  (study-instance->jsexpr db study-id study-instance-id vars participants))))])
            "Export JSON"))
-         (:h4
-          (:a
-           ([:href (embed/url (run-simulation-page the-instance))])
-           "Run Simulation"))
          (:h2 "Bot Sets")
          (:h3
           (:a
@@ -721,42 +717,6 @@
          (render-study-instance-vars vars)
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))
-
-(define ((run-simulation-page the-instance) req)
-  (send/suspend/dispatch/protect
-   (lambda (embed/url)
-     (let loop ([req req])
-       (match (form-run run-simulation-form req)
-         [`(passed ,n ,_)
-          (define path-segments
-            (string-split (reverse-uri 'anon-login-page (study-instance-slug the-instance)) "/"))
-          (define login-url
-            (apply make-application-url path-segments))
-          (tpl:page
-           (tpl:container
-            (haml
-             (:div
-              ,@(for/list ([_ (in-range n)])
-                  (haml
-                   (:iframe
-                    ([:sandbox "allow-scripts"]
-                     [:src login-url]))))))))]
-         [`(,_ ,_ ,rw)
-          (tpl:page
-           (tpl:container
-            (haml
-             (:form
-              ([:action (embed/url loop)]
-               [:method "POST"])
-              (:h1 "Run Simulation")
-              (rw "n" (field-group "Participants:" (widget-number)))
-              (:button.button
-               ([:type "submit"])
-               "Run Simulation")))))])))))
-
-(define run-simulation-form
-  (form* ([n (ensure binding/number (required))])
-    n))
 
 (define (render-study-instance-vars vars)
   (haml
