@@ -3,6 +3,7 @@
 (require (submod conscript/resource private)
          file/zip
          koyo/http
+         marionette
          (prefix-in http: net/http-easy)
          net/sendurl
          net/url
@@ -47,10 +48,11 @@ MESSAGE
 usage: raco congame <command> <option> ... <arg> ...
 
 available commands:
-  help   display this help message
-  login  log into a congame server
-  logout log out of a congame server
-  upload upload a study to the server
+  help     display this help message
+  login    log into a congame server
+  logout   log out of a congame server
+  upload   upload a study to the server
+  simulate simulate multiple concurrent sessions to one study
 
 HELP
           )
@@ -205,13 +207,47 @@ HELP
       (dynamic-require mp id)))
   (hash-keys registry))
 
+(define (handle-simulate)
+  (define n 2)
+  (define host "http://127.0.0.1:5100")
+  (define slug
+    (command-line
+     #:once-each
+     [("--host")
+      HOST "the congame host"
+      (set! host HOST)]
+     [("-n")
+      NUM "the number of simultaneous sessions to run"
+      (set! n (string->number NUM))
+      (unless (and n (> n 0))
+        (error 'handle-simulate "NUM must be positive"))]
+     #:args [slug]
+     slug))
+  (define thds
+    (for/list ([(_ idx) (in-indexed (in-range n))])
+      (thread
+       (lambda ()
+         (call-with-marionette/browser/page!
+          #:port (+ 2829 idx)
+          #:headless? #f
+          (lambda (p)
+            (page-goto! p (format "~a/_anon-login/~a" host slug))
+            (thread-receive)))
+         (sleep 1)))))
+  (with-handlers ([exn:break? void])
+    (sync/enable-break never-evt))
+  (for ([thd (in-list thds)])
+    (thread-send thd '(stop))
+    (thread-wait thd)))
+
 (module+ main
   (define commands
     (hasheq
      'help handle-help
      'login handle-login
      'logout handle-logout
-     'upload handle-upload))
+     'upload handle-upload
+     'simulate handle-simulate))
 
   (define-values (command handler args)
     (match (current-command-line-arguments)
