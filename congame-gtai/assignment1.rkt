@@ -36,8 +36,10 @@
 
 (require conscript/game-theory
          conscript/survey-tools
+         racket/format
          racket/match
-         hash-view)
+         hash-view
+         gregor)
 
 (provide
  assignment1)
@@ -51,10 +53,34 @@
 
   ;; mixed strategy
   (defvar* ms-scores)
+
+  ;; Opening and closing assignment
+  (defvar*/instance assignment-open?)
+
+  ;; Track total scores
+  (defvar*/instance scores)
+
+  ;; Track if score was already put to identity
+  (defvar* score-put?)
   )
 
 (defvar ms1)
 (defvar ms2)
+
+;; Score weights of problems
+(define problem-weights
+  (hash 'ms 0.33
+        'fq 0.33
+        'gg 0.34))
+
+;; Score weights of subproblems
+
+(define ms-weights
+  (list 0.75 0.25))
+(define fq-weights
+  (list 0.25 0.25 0.5))
+(define gg-weights
+  (list 0.2 0.2 0.2 0.2 0.2))
 
 (define inspect-shirk-game
   (hash 'actions1 '(T B)
@@ -106,10 +132,12 @@
   (define given-pL (second ms1))
   (define delta
     (+ (abs (- pT given-pT)) (abs (- pL given-pL))))
+  (define raw-scores
+    (list
+     (if (> 0.01 delta) 100 0)
+     (if (= ms2 1) 100 0)))
   (set! ms-scores
-        (list
-         (if (> 0.01 delta) 100 0)
-         (if (= ms2 1) 100 0)))
+        (map * ms-weights raw-scores))
   (skip))
 
 (defstep (ms-overview)
@@ -192,17 +220,19 @@
 
        @button[#:to-step-id 'fq-overview]{Cancel}})
 
+
 (defstep (fq-compute-score)
   (match-define (list a b c d)
     p1t1/q1)
-  (set! fq-scores
-        (list
-         (+ (if (and (> c a) (> b d)) 50 0)
-            (if (and (> b a) (> d c)) 50 0))
-         (if (equal? p1t1/q2 #f) 100 0)
-         (for/sum ([answer (list ff fq qf qq)]
-                   [correct-answer '(#f #t #t #f)])
-           (if (equal? answer correct-answer) 25 -25))))
+  (define raw-scores
+    (list
+     (+ (if (and (> c a) (> b d)) 50 0)
+        (if (and (> b a) (> d c)) 50 0))
+     (if (equal? p1t1/q2 #f) 100 0)
+     (for/sum ([answer (list ff fq qf qq)]
+               [correct-answer '(#f #t #t #f)])
+       (if (equal? answer correct-answer) 25 -25))))
+  (set! fq-scores (map * fq-weights raw-scores))
   (skip))
 
 (defstep (fq-overview)
@@ -240,7 +270,7 @@
                    (li (format "~a: ~a" ap (if answer "yes" "no")))))
            })
 
-      @(if (past-deadline?)
+      @(if (assignment-closed?)
            ""
            @button[#:to-step-id 'fq-question]{Change your Answers})
 
@@ -311,15 +341,15 @@
             [g (given-answers ggs)])
     (if (equal? c g) 25 0)))
 
-(define (past-deadline?)
-  ; FIXME
-  #f)
-
 (define (select-gg-opts)
   (make-multiple-checkboxes gg-opts))
 
+(define (assignment-closed?)
+  ; If undefined, it means that admin didn't set, so I assume it is open.
+  (not (if-undefined assignment-open? #t)))
+
 (defstep (gg-question)
-  (cond [(past-deadline?)
+  (cond [(assignment-closed?)
          (skip)]
         [else
 
@@ -388,13 +418,14 @@
              @button[#:to-step-id 'gg-overview]{Cancel}}]))
 
 (defstep (gg-compute-score)
-  (set! gg-scores
+  (define raw-scores
     (list
      (gg-score (list #t #f #f #f) gg1)
      (gg-score (list #t #t #t #t) gg2)
      (gg-score (list #t #f #f #f) gg3)
      (gg-score (list #f #f #f #t) gg4)
      (gg-score (list #t #t #f #f) gg5)))
+  (set! gg-scores (map * gg-weights raw-scores))
   (skip))
 
 (defstep (gg-cancel)
@@ -423,7 +454,7 @@
 
       @display-gg-opts[gg5]
 
-      @(if (past-deadline?)
+      @(if (assignment-closed?)
            ""
            @button[#:to-step-id 'gg-question]{Change your Answers})
 
@@ -441,66 +472,97 @@
 (defstudy grade-game-quiz
   [gg-init --> gg-question --> gg-compute-score --> gg-overview --> ,(lambda () done)])
 
-(defstep (problem-overview)
-  @md{# Problems
+(define (~points k)
+  (~r (* 100 (hash-ref problem-weights k)) #:precision 0))
 
-      @(if (past-deadline?)
+(defstep (problem-overview)
+  (define total-score
+    (for/sum ([ss (list ms-scores fq-scores gg-scores)]
+              [k '(ms fq gg)])
+      (if (undefined? ss)
+          0
+          (* (hash-ref problem-weights k) (apply + ss)))))
+  (with-study-transaction
+    (set! scores
+          (hash-set scores
+                    (current-participant-id)
+                    total-score)))
+  ; TODO: I could just always put, but that seems wasteful.
+  (when (and (assignment-closed?)
+             (not score-put?))
+    (put/identity 'total-score total-score))
+  @md{# Problems (Total: 100 points)
+
+      @(if (assignment-closed?)
            @md*{## Scores
 
-                Your overall score is: ... (TBD)
+                Your overall score is: @(~r total-score #:precision 0)
 
                 @button[#:to-step-id 'show-scores]{Go to Scores}}
            @div{})
 
-      ## Mixed Strategy
+      ## Mixed Strategy (@(~points 'ms) Points)
 
       Find the mixed strategy equilbria of a game.
 
       @button[(λ () (set! active-problem 'ms-game))]{Go to "Mixed Strategy"}
 
-      ## Grade Game Problem
+      ## Grade Game Problem (@(~points 'gg) Points)
 
       Variations on the grade game from class.
 
       @button[(λ () (set! active-problem 'grade-game))]{Go to "Grade Game"}
 
-      ## Fighting over Prey
+      ## Fighting over Prey (@(~points 'fq) Points)
 
       @button[(λ () (set! active-problem 'fq-game))]{Go to "Fighting over Prey"}
 
       })
 
 (defstep (show-scores)
-  (define (display-scores scs)
-    @`(ul
-     ,@(for/list ([i (in-range (length scs))]
-                  [s scs])
-         (li (format "Problem ~a: score ~a / 100" (add1 i) s)))))
+  (define (display-scores scs label k)
+    (define w (hash-ref problem-weights k))
+    (cond [(undefined? scs)
+           @md*{## @(~a label) (0 Points)
 
-  (if (not (past-deadline?))
+                You didn't provide any answers to this part, so your score is 0.}]
+          [else
+           (define total
+             (apply + (map (lambda (x) (* x w)) scs)))
+
+           @md*{## @(~a label) (@(~r total #:precision 1) Points)
+
+                @`(ul
+                   ,@(for/list ([i (in-range (length scs))]
+                                [s scs])
+                       (li (format "Problem ~a: score ~a" (add1 i) (~r (* s w) #:precision 1)))))}]))
+
+  (if assignment-open?
       @md{# Scores
 
-          Scores are only available once the submission deadline is past.
+          Scores are only available once the submission is closed.
 
           @button{Back}}
       @md{# Scores
 
-          ## Mixed Strategy
+          @(display-scores ms-scores "Mixed Strategy" 'ms)
 
-          @(display-scores ms-scores)
+          @(display-scores fq-scores "Fighting over Prey" 'fq)
 
-          ## Grade Game
-
-          @(display-scores gg-scores)
-
-          ## Fighting over Prey
-
-          @(display-scores fq-scores)
+          @(display-scores gg-scores "Grade Game" 'gg)
 
           @button{Back to Problems}}))
 
-(defstudy assignment1
-  [problem-overview --> ,(lambda ()
+(defstep (init)
+  (when (undefined? score-put?)
+    (set! score-put? #f))
+  (with-study-transaction
+    (when (undefined? scores)
+      (set! scores (hash))))
+  (skip))
+
+(defstudy assignment1/no-admin
+  [init --> problem-overview --> ,(lambda ()
                            (case active-problem
                              [(grade-game) 'grade-game-quiz]
                              [(fq-game) 'fq-study]
@@ -509,3 +571,32 @@
   [fq-study --> problem-overview]
   [ms-study --> problem-overview]
   [show-scores --> problem-overview])
+
+;; Admin
+
+(require conscript/admin)
+
+(defstep (admin)
+  (with-study-transaction
+    (when (undefined? assignment-closed?)
+      (set! assignment-open? #t)))
+  @md{# Admin
+
+      ## Open/Close Assignment
+
+      @(if assignment-open?
+           @button[(lambda () (set! assignment-open? #f))]{Close Assignment}
+           @button[(lambda () (set! assignment-open? #t))]{Reopen Assignment})
+
+      ## Scores
+
+      @`(ul
+         ,@(for/list ([(k v) (in-hash (if-undefined scores (hash)))])
+             (li (format "Participant ~a: Score ~a" k (~r v #:precision 0)))))
+      })
+
+(define assignment1
+  (make-admin-study
+   #:models `()
+   #:admin admin
+   assignment1/no-admin))
