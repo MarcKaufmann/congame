@@ -99,30 +99,39 @@
   (input-number #:min 0 #:max 1 #:step 0.001 label))
 
 (defstep (ms-question)
+  (define (on-submit #:ms1 m1 #:ms2 m2)
+    (cond [assignment-open?
+
+           (set! ms1 m1)
+           (set! ms2 m2)
+           (skip)]
+          [else
+           (skip 'submission-closed)]))
+
   @md{# Mixed Strategy Equilibrium
 
       Consider the following game:
 
       @(outcome-matrix inspect-shirk-game)
 
-      @form{
+      @form[#:action on-submit]{
         @md*{
           ### Question 1
 
           Find a mixed strategy equilibrium for the game. Provide the probabilities up to the third decimal after the comma.
 
-          @set![ms1 (input-list
-                     (list
-                      (input-probability "Probability of player  1 playing T")
-                      (input-probability "Probability of player 2 playing L")))]
+          @(input-list #:ms1
+                       (list
+                        (input-probability "Probability of player  1 playing T")
+                        (input-probability "Probability of player 2 playing L")))
 
           ### Question 2
 
-          @set![ms2 @input-number[#:min 0 #:max 10]{How many Nash equilibria are there, both pure and mixed? (You can go up to 10 - if there are more than 10, including if there are infinite Nash equilibria, then choose 10.)}]
+          @@input-number[#:ms2 #:min 0 #:max 10]{How many Nash equilibria are there, both pure and mixed? (You can go up to 10 - if there are more than 10, including if there are infinite Nash equilibria, then choose 10.)}
 
           @submit-button}}
 
-      @button[#:to-step-id 'problem-overview]{Cancel}})
+      @button[#:to-step-id 'ms-overview]{Cancel}})
 
 (defstep (ms-compute-score)
   (define pT 0.333)
@@ -153,8 +162,19 @@
 
       @button{Continue}})
 
+(defstep ((check-assignment-open? k))
+  (if assignment-open? (skip) (skip k)))
+
+(defstep (submission-closed)
+  @md{# Submisssion Closed
+
+      Your answers couldn't be registered, since submissions are closed.
+
+      @button{Continue}})
+
 (defstudy ms-study
-  [ms-question --> ms-compute-score --> ms-overview --> ,(lambda () done)])
+  [[check-assignment (check-assignment-open? 'ms-overview)] --> ms-question --> ms-compute-score --> ms-overview --> ,(lambda () done)]
+  [submission-closed --> ms-overview])
 
 (defvar p1t1/q1)
 (defvar p1t1/q2)
@@ -178,42 +198,56 @@
 
 (defstep (fq-init)
   (when (undefined? fq-scores)
-    ; FIXME
-    (set! fq-scores 3))
+    (set! fq-scores '(0 0 0)))
   (skip))
 
-(defstep (fq-questions)
+(defstep (fq-question)
+   (define (on-submit #:p1t1/q1 q1 #:p1t1/q2 q2 #:ff q3 #:fq q4 #:qf q5 #:qq q6)
+     (cond [assignment-open?
+            (set! p1t1/q1 q1)
+            (set! p1t1/q2 (string=? q2 "yes"))
+            (set! ff q3)
+            (set! fq q4)
+            (set! qf q5)
+            (set! qq q6)
+            (skip)]
+
+           [else
+            (skip 'submission-closed)]))
    @md{# Fighting over Prey
 
        Two animals are fighting over some prey. Each can be passive or aggressive. Each prefers to be aggressive if its opponent is passive, and passive if its opponent is aggressive; given its own stance, it prefers the outcome in which its opponent is passive to that in which its opponent is aggressive.
 
-       @form{
+       @form[#:action on-submit]{
         @md*{
           #### 1. Formulate this situation as a strategic game.
 
-          @set![p1t1/q1 (input-list
-                         (list
-                          @input-number{Payoff to player 1 from "Fink-Fink"}
-                          @input-number{Payoff to player 1 from "Fink-Quiet"}
-                          @input-number{Payoff to player 1 from "Quiet-Fink"}
-                          @input-number{Payoff to player 1 from "Quiet-Quiet"}))]
+          @(input-list #:p1t1/q1
+                       (list
+                        @input-number{Payoff to player 1 from "Fink-Fink"}
+                        @input-number{Payoff to player 1 from "Fink-Quiet"}
+                        @input-number{Payoff to player 1 from "Quiet-Fink"}
+                        @input-number{Payoff to player 1 from "Quiet-Quiet"}))
 
           #### 2. Is this game a Prisoner's Dilemma?
 
-          If you call the aggressive action Fink and the passive action Quiet, is the resulting game the same as the Prisoner’s Dilemma? (That is, are the players’ preferences in the resulting game the same as their preferences in the Prisoner’s Dilemma?) If not, how do they differ?
+          If you call the aggressive action Fink and the passive action Quiet, is the resulting game the same as the Prisoner’s Dilemma? (That is, are the players’ preferences in the resulting game the same as their preferences in the Prisoner’s Dilemma?)
 
-          @set![p1t1/q2 (yes/no)]
+          @(radios #:p1t1/q2
+                   '(("yes" . "Yes")
+                     ("no" . "No"))
+                   "")
 
           #### 3. What are the pure-strategy Nash equilibria (if any) of the game?
 
           Check all action profiles that are Nash equilibria.
 
           @div{
-            @set![ff @checkbox[#:required? #f]{Fink-Fink}]}
+            @checkbox[#:ff #:required? #f]{Fink-Fink}}
           @div{
-            @set![fq @checkbox[#:required? #f]{Fink-Quiet}]}
-          @(div (set! qf @checkbox[#:required? #f]{Quiet-Fink}))
-          @(div (set! qq @checkbox[#:required? #f]{Quiet-Quiet}))
+            @checkbox[#:fq #:required? #f]{Fink-Quiet}}
+          @(div @checkbox[#:qf #:required? #f]{Quiet-Fink})
+          @(div @checkbox[#:qq #:required? #f]{Quiet-Quiet})
 
           @submit-button}}
 
@@ -276,7 +310,12 @@
       @button{Back to other Problems}})
 
 (defstudy fq-study
-  [fq-init --> fq-questions --> fq-compute-score --> fq-overview --> ,(lambda () done)])
+  [fq-init --> [check-assignment (check-assignment-open? 'fq-overview)]
+           --> fq-question
+           --> fq-compute-score
+           --> fq-overview
+           --> ,(lambda () done)]
+  [submission-closed --> fq-overview])
 
 (define grade-game-outcomes
   (hash
@@ -336,9 +375,11 @@
     (if (member (symbol->string n) ggs) #t #f)))
 
 (define (gg-score correct ggs)
-  (for/sum ([c correct]
-            [g (given-answers ggs)])
-    (if (equal? c g) 25 0)))
+  (if (undefined? ggs)
+      0
+      (for/sum ([c correct]
+                [g (given-answers ggs)])
+        (if (equal? c g) 25 0))))
 
 (define (select-gg-opts)
   (make-multiple-checkboxes gg-opts))
@@ -348,6 +389,18 @@
   (not (if-undefined assignment-open? #t)))
 
 (defstep (gg-question)
+  (define (on-submit #:gg1 g1 #:gg2 g2 #:gg3 g3 #:gg4 g4 #:gg5 g5)
+    (cond [assignment-open?
+           (set! gg1 g1)
+           (set! gg2 g2)
+           (set! gg3 g3)
+           (set! gg4 g4)
+           (set! gg5 g5)
+           (skip)]
+
+          [else
+           (skip 'submission-closed)]))
+
   (cond [(assignment-closed?)
          (skip)]
         [else
@@ -370,7 +423,7 @@
 
              @(payoff-matrix/sym grade-game-form gg-angels-utility)
 
-             @form{
+             @form[#:action on-submit]{
                    @style{
                      label {
                        display: block;
@@ -385,31 +438,31 @@
 
                         Check all possible action profiles:
 
-                        @set![gg1 @(select-gg-opts)]
+                        @binding[#:gg1 @make-multiple-checkboxes[gg-opts]]
 
                         #### 2. Two indignant angels play the game.
 
                         Check all possible action profiles:
 
-                        @set![gg2 @(select-gg-opts)]
+                        @binding[#:gg2 @make-multiple-checkboxes[gg-opts]]
 
                         #### 3. Two indignant angels play the game
 
                         Moreover, each thinks that the other player is selfish. Check all possible action profiles:
 
-                        @set![gg3 @(select-gg-opts)]
+                        @binding[#:gg3 @make-multiple-checkboxes[gg-opts]]
 
                         #### 4. Two selfish players play the game
 
                         Morever, each confuses action α for action β. Check all possible action profiles:
 
-                        @set![gg4 @(select-gg-opts)]
+                        @binding[#:gg4 @make-multiple-checkboxes[gg-opts]]
 
                         #### 5. Player 1 is selfish, player 2 is an indignant angel
 
                         Moreover, neither player believes the other player to be rational. Check all possible action profiles:
 
-                        @set![gg5 @(select-gg-opts)]
+                        @binding[#:gg5 @make-multiple-checkboxes[gg-opts]]
 
                         @submit-button
                         }}
@@ -469,7 +522,12 @@
   (skip))
 
 (defstudy grade-game-quiz
-  [gg-init --> gg-question --> gg-compute-score --> gg-overview --> ,(lambda () done)])
+  [gg-init --> [check-assignment (check-assignment-open? 'gg-overview)]
+           --> gg-question
+           --> gg-compute-score
+           --> gg-overview
+           --> ,(lambda () done)]
+  [submission-closed --> gg-overview])
 
 (define (~points k)
   (~r (* 100 (hash-ref problem-weights k)) #:precision 0))
