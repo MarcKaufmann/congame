@@ -38,8 +38,7 @@
          conscript/survey-tools
          racket/format
          racket/match
-         hash-view
-         gregor)
+         )
 
 (provide
  assignment1)
