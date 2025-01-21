@@ -154,11 +154,13 @@
       1. Find a mixed strategy
 
       You gave the following probabilities (for T and L):
-      @(format "(~a, ~a)" (first ms1) (second ms1))
+      @(if (undefined? ms1) "not yet answered"
+           (format "(~a, ~a)" (first ms1) (second ms1)))
 
       2. How many Nash equilibria are there (the max you could choose was 10, which stands for "10 or more").
 
-      Your answer: @(~a ms2)
+      @(if (undefined? ms2) "not yet answered"
+           @md*{Your answer: @(~a ms2)})
 
       @button{Continue}})
 
