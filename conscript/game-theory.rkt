@@ -12,7 +12,12 @@
  payoff-matrix
  payoff-matrix/sym
  choices
- choices/rounds)
+ choices/rounds
+ get-own-choice
+ get-own-choice/rounds
+ get-other-choice
+ get-other-choice/rounds
+ )
 
 (with-namespace xyz.trichotomy.congame.grade-game
   (defvar*/instance choices)
@@ -42,6 +47,38 @@
   (with-study-transaction
     (set! choices/rounds ((&my-choice/rounds r) choices/rounds choice))))
 
+(define (get-own-choice)
+  ((&my-choice) choices))
+
+(define (get-own-choice/rounds r)
+  ((&my-choice/rounds r) choices/rounds))
+
+(define (get-other-choice)
+  (define-values (_my-choice other-choice)
+    (for/fold ([my-choice #f]
+               [other-choice #f])
+              ([(k v) (in-hash (hash-ref choices (get-current-group)))])
+      (if (equal? k (current-participant-id))
+          (values v other-choice)
+          (values my-choice v))))
+  other-choice)
+
+(define (&my-group/rounds r)
+  (parameterize ([current-hash-maker hash])
+    (&opt-hash-ref*
+     (get-current-group)
+     r)))
+
+; This assumes that there are two people, but doesn't check for it. Will return some random other participant as 'other' otherwise.
+(define (get-other-choice/rounds r)
+  (define-values (_my-choice other-choice)
+    (for/fold ([my-choice #f]
+               [other-choice #f])
+              ([(k v) (in-hash ((&my-group/rounds r) choices/rounds))])
+      (if (equal? k (current-participant-id))
+          (values v other-choice)
+          (values my-choice v))))
+  other-choice)
 
 ; Helper functions to display games
 ; TODO: Refactor for general 2x2 games
