@@ -8,12 +8,15 @@
  outcomes
  outcome-matrix
  make-choice!
+ make-choice/rounds!
  payoff-matrix
  payoff-matrix/sym
- choices)
+ choices
+ choices/rounds)
 
 (with-namespace xyz.trichotomy.congame.grade-game
-  (defvar*/instance choices))
+  (defvar*/instance choices)
+  (defvar*/instance choices/rounds))
 
 ; Helper for getting and setting choices
 ; TODO: refactor for general 2x2 games
@@ -27,6 +30,18 @@
 (define (make-choice! choice)
   (with-study-transaction
     (set! choices ((&my-choice) choices choice))))
+
+(define (&my-choice/rounds r)
+  (parameterize ([current-hash-maker hash])
+    (&opt-hash-ref*
+     (get-current-group)
+     r
+     (current-participant-id))))
+
+(define (make-choice/rounds! choice r)
+  (with-study-transaction
+    (set! choices/rounds ((&my-choice/rounds r) choices/rounds choice))))
+
 
 ; Helper functions to display games
 ; TODO: Refactor for general 2x2 games
