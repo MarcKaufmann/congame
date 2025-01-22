@@ -9,7 +9,7 @@
     "gui-easy-lib"
     "koyo-lib"
     ["http-easy-lib" #:version "0.8"]
-    "marionette-lib"
+    ["marionette-lib" #:version "1.3.1"]
     "net-lib"
     "threading-lib"
     "web-server-lib"))
