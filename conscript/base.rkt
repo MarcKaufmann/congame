@@ -1,6 +1,7 @@
 #lang racket/base
 
 (require (for-syntax racket/base
+                     racket/syntax
                      syntax/parse/pre)
          (prefix-in bot: congame/components/bot)
          (prefix-in bot: congame/components/bot-maker)
@@ -165,6 +166,9 @@
       congame-web/components/uploaded-file
       conscript/admin
       conscript/game-theory
+      conscript/game-theory-sig
+      conscript/game-theory-unit
+      conscript/game-theory-vars-sig
       conscript/matchmaking
       conscript/survey-tools
       data/monocle
@@ -179,6 +183,7 @@
       racket/random
       racket/string
       racket/vector
+      racket/unit
       threading))
   (define (check-module-whitelisted mod-stx)
     (unless (memq (syntax->datum mod-stx) whitelist)
@@ -266,6 +271,12 @@
              #:with tg-e #'(arrow.tg-e ...)
              #:with ((step-id step-e) ...) #'((arrow.step-id arrow.step-e) ...)}))
 
+;; TODO: Potentially remove requires and provides, both from here
+;; and from core. Sharing between parents and children should be
+;; done by using defvar*s that the child provides to the parent.
+;; Sharing instance-level locations should work the other way: the
+;; parent provides the [separate] locations to the children (see
+;; game-theory-unit.rkt).
 (define-syntax (defstudy stx)
   (syntax-parse stx
     [(_ id:id
@@ -327,6 +338,21 @@
      (make-step/study id v)]
     [else
      (make-step id v)]))
+
+
+;; boxes ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ defbox)
+
+(define-syntax (defbox stx)
+  (syntax-parse stx
+    [(_ var-id:id)
+     #:with getter-id (format-id #'var-id "get-~a" #'var-id)
+     #:with setter-id (format-id #'var-id "set!-~a" #'var-id)
+     #'(begin
+         (define (getter-id) var-id)
+         (define (setter-id v) (set! var-id v)))]))
 
 
 ;; util ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

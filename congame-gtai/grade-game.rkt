@@ -6,11 +6,22 @@
          conscript/survey-tools
          data/monocle
          racket/match
+         racket/unit
          threading
          )
 
 (provide
  grade-game-lecture)
+
+(with-namespace xyz.trichotomy.congame.congame-gtai.opera-football
+  (defvar*/instance choices)
+  (defvar*/instance choices/rounds))
+
+(defbox choices)
+(defbox choices/rounds)
+(define-values/invoke-unit game-theory@
+  (import game-theory-vars^)
+  (export game-theory^))
 
 ; Variables
 ; In addition, conscript/game-theory provides
