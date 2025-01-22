@@ -23,7 +23,8 @@
  (struct-out exn:fail:api:not-authorized)
  handle-login
  handle-logout
- upload-study)
+ upload-study
+ simulate)
 
 (struct exn:fail:api exn:fail (response))
 (struct exn:fail:api:not-authorized exn:fail:api ())
@@ -223,6 +224,9 @@ HELP
         (error 'handle-simulate "NUM must be positive"))]
      #:args [slug]
      slug))
+  (simulate host n slug))
+
+(define (simulate host n slug)
   (define thds
     (for/list ([(_ idx) (in-indexed (in-range n))])
       (thread
