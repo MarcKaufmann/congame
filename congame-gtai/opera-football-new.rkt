@@ -6,12 +6,14 @@
  opera-or-football)
 
 (require conscript/admin
+         conscript/game-theory
          conscript/survey-tools
          data/monocle
          racket/match
          threading)
 
 (with-namespace xyz.trichotomy.congame.congame-gtai.opera-football
+  (defvar*/instance choices)
   (defvar*/instance choices/rounds))
 
 (define n 2)
@@ -43,7 +45,7 @@
 
 (define instructions
   @md*{# Instructions
- This experiment goes over **5 rounds.** In the beginning of **each** round, participants are randomly matched to pairs of two. The experiment is computerized. You make all your decisions at the computer.
+ This experiment goes over **3 rounds.** In the beginning of **each** round, participants are randomly matched to pairs of two. The experiment is computerized. You make all your decisions at the computer.
  In each round, both participants in each group are randomly assigned roles. One participant is an “opera fan”, the other participant is a “football fan”. (Think of a couple.) Both make plans for tonight. The opera fan would most of all like to go to the opera (a value of E$ 10); the football fan would love to go to a football game (also a value of E$ 10). However, both would like to be at the same place rather than different ones (a value of E$ 20 for both). But they have to make their decision right now, without being able to communicate before.
  So, to repeat:
  - If the opera fan goes to the opera, he receives a value of E$ 10; if he goes to the football game, he has a value of E$ 0.
@@ -180,36 +182,6 @@ Your payoffs will be summed up over rounds and added to your E$ account.
     @toggleable-xexpr["Show/Hide Instructions" instructions]
   })
 
-(define (&my-choice/rounds r)
-  (parameterize ([current-hash-maker hash])
-    (&opt-hash-ref*
-     (get-current-group)
-     r
-     (current-participant-id))))
-
-(define (get-own-choice/rounds r)
-  ((&my-choice/rounds r) choices/rounds))
-
-(define (make-choice/rounds! choice r)
-  (with-study-transaction
-    (set! choices/rounds ((&my-choice/rounds r) choices/rounds choice))))
-
-(define (&my-group/rounds r)
-  (parameterize ([current-hash-maker hash])
-    (&opt-hash-ref*
-     (get-current-group)
-     r)))
-
-; This assumes that there are two people, but doesn't check for it. Will return some random other participant as 'other' otherwise.
-(define (get-other-choice/rounds r)
-  (define-values (_my-choice other-choice)
-    (for/fold ([my-choice #f]
-               [other-choice #f])
-              ([(k v) (in-hash ((&my-group/rounds r) choices/rounds))])
-      (if (equal? k (current-participant-id))
-          (values v other-choice)
-          (values my-choice v))))
-  other-choice)
 
 (defstep (store-choices)
   ; This stores it so the other participant can see it.
@@ -284,7 +256,7 @@ Your payoffs will be summed up over rounds and added to your E$ account.
 
   @md{# Final Results
 
-      - **Total points (equal rescaled points) earned over 5 rounds:** @(~a total-points)
+      - **Total points earned over 3 rounds:** @(~a total-points)
 
       ## Summary of Your Game:
 
@@ -296,12 +268,55 @@ Your payoffs will be summed up over rounds and added to your E$ account.
                          (hash-ref a 'own-payout)
                          (hash-ref a 'other-payout)))))})
 
-(defstep (store-score)
-  (define total-points
-    (for/sum ([a answers])
-      (hash-ref a 'own-payout)))
-  (put/identity 'score total-points)
-  (skip))
+; Admin
+
+(defview (admin-view _req)
+  (cond [(not (current-participant-owner?))
+         @md{# Nothing to see here}]
+        [else
+         (with-study-transaction
+           (when (undefined? choices/rounds)
+             (set! choices/rounds (hash))))
+         (define round-choices
+           (for/fold ([c (hash 1 '() 2 '() 3 '())])
+                     ([(_ gc) (in-hash choices/rounds)])
+             (define (update i)
+               (lambda (x)
+                 (let ([new-choice (hash-ref gc i #f)])
+                   (if new-choice
+                       (cons new-choice x)
+                       x))))
+             (~> c
+                 (hash-update 1 (update 1))
+                 (hash-update 2 (update 2))
+                 (hash-update 3 (update 3))
+                 )))
+         (define (count-ap i)
+           (for/fold ([res (hash)])
+                     ([gc (hash-ref round-choices i)])
+             (hash-update res (hash-values gc) add1 0)))
+
+         (define (display-round i)
+           @md*{## Results for round @(~a i)
+                @`(ul
+                   ,@(for/list ([(ap n) (count-ap i)])
+                       (li (format "Action profile ~a chosen ~a times."
+                                   ap n))))})
+         @md{# Admin
+
+             @display-round[1]
+
+             @display-round[2]
+
+             @display-round[3]
+             }]))
+
+(defstep (admin)
+  @md{# Admin
+
+      @a[#:href (~current-view-uri)
+         #:up-layer "new"
+         #:up-target ".container"]{Overlay}})
 
 (defstudy opera-or-football/no-admin
   [intro --> matchmake
@@ -314,62 +329,13 @@ Your payoffs will be summed up over rounds and added to your E$ account.
          --> display-choices
          --> store-round
          --> ,(lambda ()
-                (define n 5)
+          (define n 3)
                 (set! round (add1 round))
                 (if (< round (add1 n))
                     'matchmake
-                    'store-score))]
+                    'the-end))]
 
-  [store-score --> the-end --> the-end])
-
-; Admin
-
-(defstep (admin)
-  (with-study-transaction
-    (when (undefined? choices/rounds)
-      (set! choices/rounds (hash))))
-  (define round-choices
-    (for/fold ([c (hash 1 '() 2 '() 3 '() 4 '() 5 '())])
-              ([(_ gc) (in-hash choices/rounds)])
-      (define (update i)
-        (lambda (x)
-          (let ([new-choice (hash-ref gc i #f)])
-            (if new-choice
-                (cons new-choice x)
-                x))))
-      (~> c
-          (hash-update 1 (update 1))
-          (hash-update 2 (update 2))
-          (hash-update 3 (update 3))
-          (hash-update 4 (update 4))
-          (hash-update 5 (update 5))
-          )))
-  (define (count-ap i)
-    (for/fold ([res (hash)])
-              ([gc (hash-ref round-choices i)])
-      (hash-update res (hash-values gc) add1 0)))
-
-  (define (display-round i)
-    @md*{## Results for round @(~a i)
-         @`(ul
-            ,@(for/list ([(ap n) (count-ap i)])
-                (li (format "Action profile ~a chosen ~a times."
-                            ap n))))})
-  @md{# Admin
-
-      @display-round[1]
-
-      @display-round[2]
-
-      @display-round[3]
-
-      @display-round[4]
-
-      @display-round[5]
-      })
-
-(define opera-or-football
-  (make-admin-study
-   opera-or-football/no-admin
-   #:models '()
-   #:admin admin))
+  [the-end --> the-end]
+  [{admin (make-step
+          #:view-handler admin-view
+          'admin admin)} --> admin])
