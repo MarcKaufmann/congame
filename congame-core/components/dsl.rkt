@@ -37,9 +37,15 @@
     [_
      (dsl-require* src id)]))
 
+(define (user-with-require-permissions?)
+  ; FIXME: Add correct user checks after adding permissions
+  #t)
+
 (define (dsl-require* src id)
   (log-dsl-debug "dsl-require: ~a" (~.s #:max-width 1024 src))
-  (unless (regexp-match? #rx"^#lang conscript *\r?\n" src)
+  (unless (or (regexp-match? #rx"^#lang conscript *\r?\n" src)
+              (and (regexp-match? #rx"^#lang conscript/with-require *\r?\n" src) (user-with-require-permissions?)))
+    ; FIXME: update error message
     (error 'dsl-require "only #lang conscript is supported"))
   (define path #f)
   (dynamic-wind
