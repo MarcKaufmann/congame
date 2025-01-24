@@ -22,6 +22,8 @@
 (defvar/instance group-participants)
 (defvar role)
 (defvar round)
+(defvar next-round)
+(defvar enter-transitions)
 (defvar answers)
 (defvar current-round)
 (defvar round-choice)
@@ -59,7 +61,11 @@ Your payoffs will be summed up over rounds and added to your E$ account.
     (when (undefined? choices/rounds)
       (set! choices/rounds (hash))))
   (when (undefined? round)
-    (set! round 1)))
+    (set! round 1))
+  (when (undefined? next-round)
+    (set! next-round 1))
+  (when (undefined? enter-transitions)
+    (set! enter-transitions '())))
 
 (defstep (intro)
   (set!/if-undefined group-participants-box (hash))
@@ -78,6 +84,7 @@ Your payoffs will be summed up over rounds and added to your E$ account.
 (defstep matchmake
   (let ([matchmaker (make-matchmaker n)])
     (lambda ()
+      (log-conscript-warning "entering matchmake with round ~a for participant ~a" round (current-participant-id))
       (matchmaker waiter))))
 
 (define (current-group-participants)
@@ -123,6 +130,7 @@ Your payoffs will be summed up over rounds and added to your E$ account.
   (skip))
 
 (defstep (the-game)
+  (set! next-round (add1 round))
     (define current-group-roles
     (hash-ref group-roles (get-current-group)))
  @md{
@@ -167,8 +175,9 @@ Your payoffs will be summed up over rounds and added to your E$ account.
 
     @div[#:class "form-container"]{
       @span[#:class "form-label"]{Please decide where you want to go:}
-      @form{
-        @(set! round-choice (select
+      @form[#:bot ([test (#:round-choice "Opera")])]{
+        @(set! round-choice (input-text "Bla")
+               #;(select
                                '(("" . "-- choose --")
                                  ("Opera" . "Opera")
                                  ("Football" . "Football"))
@@ -179,6 +188,9 @@ Your payoffs will be summed up over rounds and added to your E$ account.
 
     @toggleable-xexpr["Show/Hide Instructions" instructions]
   })
+
+(define (autofill-form)
+  (bot:autofill 'test))
 
 (define (&my-choice/rounds r)
   (parameterize ([current-hash-maker hash])
@@ -274,7 +286,6 @@ Your payoffs will be summed up over rounds and added to your E$ account.
 (defstep (store-round)
   (set! answers
         (cons current-round (if-undefined answers '())))
-  (reset-current-group)
   (skip))
 
 (defstep (the-end)
@@ -308,19 +319,33 @@ Your payoffs will be summed up over rounds and added to your E$ account.
          --> register-as-group-participant
          --> wait-for-group-ids
          --> assign-roles
-         --> the-game
+         --> {the-game (with-bot the-game autofill-form)}
          --> store-choices
          --> wait-for-choice
          --> display-choices
          --> store-round
          --> ,(lambda ()
                 (define n 5)
-                (set! round (add1 round))
+                (log-conscript-warning "transition: round at start is ~a for participant ~a~n" round (current-participant-id))
+                (set! round next-round)
+                (set! enter-transitions
+                      (cons next-round enter-transitions))
+                (log-conscript-warning "transition: round at end is ~a for participant ~a~n" round (current-participant-id))
                 (if (< round (add1 n))
                     'matchmake
                     'store-score))]
 
   [store-score --> the-end --> the-end])
+
+;; Bot
+
+(define (opera-model k proc)
+  (match k
+    [`(*root* the-end)
+     (bot:completer)]
+    [`(*root* ,(or 'matchmake 'wait-for-choice 'wait-for-group-ids 'assign-roles))
+     (sleep 1)]
+    [_ (proc)]))
 
 ; Admin
 
@@ -366,10 +391,14 @@ Your payoffs will be summed up over rounds and added to your E$ account.
       @display-round[4]
 
       @display-round[5]
+
+      ## Bots
+
+      @button[#:to-step-id 'bots]{Manage Bots}
       })
 
 (define opera-or-football
   (make-admin-study
    opera-or-football/no-admin
-   #:models '()
+   #:models `((opera-or-football . ,opera-model))
    #:admin admin))
