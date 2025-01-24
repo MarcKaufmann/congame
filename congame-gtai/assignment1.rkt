@@ -578,8 +578,9 @@
 
       })
 
-(defstep (show-scores)
-  (define (display-scores scs label k)
+(defstep ((show-scores lop))
+  (define (display-scores get-scs label k)
+    (define scs (get-scs))
     (define w (hash-ref problem-weights k))
     (cond [(undefined? scs)
            @md*{## @(~a label) (0 Points)
@@ -604,13 +605,17 @@
           @button{Back}}
       @md{# Scores
 
-          @(display-scores ms-scores "Mixed Strategy" 'ms)
-
-          @(display-scores fq-scores "Fighting over Prey" 'fq)
-
-          @(display-scores gg-scores "Grade Game" 'gg)
-
+          @`(div
+             ,@(for/list ([p lop])
+                 @(display-scores (first p) (second p) (third p))))
           @button{Back to Problems}}))
+
+(defstep show-scores1
+  (show-scores
+   (list
+    (list (λ () ms-scores) "Mixed Strategy" 'ms)
+    (list (λ () fq-scores) "Fighting over Prey" 'fq)
+    (list (λ () gg-scores) "Grade Game" 'gg))))
 
 (defstep (init)
   (when (undefined? score-put?)
@@ -629,7 +634,7 @@
   [grade-game-quiz --> problem-overview]
   [fq-study --> problem-overview]
   [ms-study --> problem-overview]
-  [show-scores --> problem-overview])
+  [show-scores1 --> problem-overview])
 
 ;; Admin
 
