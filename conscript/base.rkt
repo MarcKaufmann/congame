@@ -396,3 +396,15 @@
            (values void action-or-label null)
            (values action-or-label (car args) (cdr args))))
      (keyword-apply congame:button kws kw-args action label args*))))
+
+;; logger ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ log-conscript-debug
+ log-conscript-error
+ log-conscript-fatal
+ log-conscript-info
+ log-conscript-warning
+ )
+
+(define-logger conscript)

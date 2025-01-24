@@ -232,7 +232,7 @@ QUERY
                       (lambda (e)
                         (case (exn:fail:sql-sqlstate e)
                           [("40001")
-                           (log-study-warning "failed to apply instance transaction, retrying...")
+                           (log-study-warning "failed to apply instance transaction for participant ~a, retrying..." (current-participant-id))
                            (loop)]
 
                           [else
