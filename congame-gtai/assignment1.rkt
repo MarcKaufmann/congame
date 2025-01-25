@@ -44,6 +44,16 @@
  assignment1)
 
 (with-namespace xyz.trichotomy.congame-gtai.assignment1
+  ;; Opening and closing assignment
+  (defvar*/instance assignment-open?)
+
+  ;; Track total scores
+  (defvar*/instance scores)
+
+  ;; Track if score was already put to identity
+  (defvar* score-put?)
+
+  ;;;; Assignment 1
   ;; fq problem - fight for prey
   (defvar* fq-scores)
 
@@ -53,14 +63,10 @@
   ;; mixed strategy
   (defvar* ms-scores)
 
-  ;; Opening and closing assignment
-  (defvar*/instance assignment-open?)
+  ;;;; Assignment 2
+  ;; ms2 problem - mixed strategy 2
+  (defvar* ms2-scores)
 
-  ;; Track total scores
-  (defvar*/instance scores)
-
-  ;; Track if score was already put to identity
-  (defvar* score-put?)
   )
 
 (defvar ms1)
@@ -68,14 +74,20 @@
 
 ;; Score weights of problems
 (define problem-weights
-  (hash 'ms 0.33
+  (hash ; Assignment 1: sum to 1
+        'ms 0.33
         'fq 0.33
-        'gg 0.34))
+        'gg 0.34
+
+        ; Assignment 2: sum to 1
+        'ms2 0.25
+        'ms3 0.25
+        'ms4 0.40
+        'second-price 0.10
+        ))
 
 ;; Score weights of subproblems
 
-(define ms-weights
-  (list 0.75 0.25))
 (define fq-weights
   (list 0.25 0.25 0.5))
 (define gg-weights
@@ -134,6 +146,8 @@
       @button[#:to-step-id 'ms-overview]{Cancel}})
 
 (defstep (ms-compute-score)
+  (define weights
+    (list 0.75 0.25))
   (define pT 0.333)
   (define pL 0.667)
   (define given-pT (first ms1))
@@ -145,7 +159,7 @@
      (if (> 0.01 delta) 100 0)
      (if (= ms2 1) 100 0)))
   (set! ms-scores
-        (map * ms-weights raw-scores))
+        (map * weights raw-scores))
   (skip))
 
 (defstep (ms-overview)
@@ -174,8 +188,12 @@
 
       @button{Continue}})
 
+(defstep (ms-init)
+  (when (undefined? ms-scores)
+    (set! ms-scores '(0 0))))
+
 (defstudy ms-study
-  [[check-assignment (check-assignment-open? 'ms-overview)] --> ms-question --> ms-compute-score --> ms-overview --> ,(lambda () done)]
+  [ms-init --> [check-assignment (check-assignment-open? 'ms-overview)] --> ms-question --> ms-compute-score --> ms-overview --> ,(lambda () done)]
   [submission-closed --> ms-overview])
 
 (defvar p1t1/q1)
@@ -664,3 +682,160 @@
    #:models `()
    #:admin admin
    assignment1/no-admin))
+
+;; Assignment 2
+
+(defvar ms2-ne)
+(defvar ms2-n-pure-eqba)
+
+(defstep (ms2-init)
+  (when (undefined? ms2-scores)
+    (set! ms2-scores '(0 0)))
+  (skip))
+
+(define ms2-game
+  (hash
+   'actions1 '(T B)
+   'actions2 '(L R)
+   'outcomes1 (hash '(T . L) 6
+                    '(T . R) 0
+                    '(B . L) 3
+                    '(B . R) 6)
+
+   'outcomes2 (hash '(T . L) 0
+                    '(T . R) 6
+                    '(B . L) 2
+                    '(B . R) 0)))
+
+; FIXME: The 'Cancel' button is a pain to remember to always add. The rest of
+; the plumbing also feels needlessly painful. Try to refactor better, without
+; hardcoding too much.
+(defstep (ms2-question)
+  (define (on-submit #:ms2-ne ne #:ms2-n-pure-eqba n)
+    (cond [assignment-open?
+
+           (set! ms2-ne ne)
+           (set! ms2-n-pure-eqba n)
+           (skip)]
+
+          [else
+           (skip 'submission-closed)]))
+
+  @md{# Find the Mixed Strategy Nash Equilibria
+
+      Consider the following game:
+
+      @(outcome-matrix ms2-game)
+
+      @form[#:action on-submit]{
+        @div{
+          Find the mixed strategy Nash equilibrium of the following game which is not a pure-strategy equilibrium. (Note: there is only one in this case - that is not a general feature.)
+        @(input-list #:ms2-ne
+         (list
+          (input-probability "Probability of player 1 playing T")
+          (input-probability "Probability of player 2 playing L")))}
+        @div{
+          @input-number[#:ms2-n-pure-eqba #:min 0 #:max 4]{How many pure-strategy equilibria are there for this game?}
+             }
+
+        @submit-button}
+
+      @button[#:to-step-id 'ms2-overview]{Cancel}
+      })
+
+; FIXME: refactor with ms1-compute-score eventually
+(defstep (ms2-compute-score)
+  (define weights
+    (list 0.75 0.25))
+  (define pT 0.250)
+  (define pL 0.667)
+  (define given-pT (first ms2-ne))
+  (define given-pL (second ms2-ne))
+  (define delta
+    (+ (abs (- pT given-pT)) (abs (- pL given-pL))))
+  (define raw-scores
+    (list
+     (if (> 0.01 delta) 100 0)
+     (if (= ms2-n-pure-eqba 0) 100 0)))
+  (set! ms2-scores
+        (map * weights raw-scores))
+  (skip))
+
+(defstep (ms2-overview)
+  @md{# Mixed Strategy: Your Answers
+
+      1. Find a mixed strategy equilibrium (that is not an equilibrium in pure strategies).
+
+      You gave the following probabilities (for T and L):
+      @(if (undefined? ms2-ne) "not yet answered"
+           (format "(~a, ~a)" (first ms2-ne) (second ms2-ne)))
+
+      2. How many pure-strategy Nash equilibria are there? (0 to 4)
+
+      @(if (undefined? ms2-n-pure-eqba) "not yet answered"
+           @md*{Your answer: @(~a ms2-n-pure-eqba)})
+
+      @button{Continue}})
+
+(defstudy ms2-study
+  [ms2-init --> [check-assignment (check-assignment-open? 'ms2-overview)] --> ms2-question --> ms2-compute-score --> ms2-overview --> ,(lambda () done)]
+  [submission-closed --> ms2-overview])
+
+; FIXME: Refactor problem-overview and assignment2-overview
+; In that case, I should pass in the problem-weights as an argument.
+; Some of the hard-coded skips in buttons, e.g., #:to-step-id 'show-score
+; are hard to add to a function that can be reused.
+(defstep (assignment2-overview)
+  (define total-score
+    (for/sum ([ss (list ms2-scores)]
+              [k '(ms2)])
+      (if (undefined? ss)
+          0
+          (* (hash-ref problem-weights k) (apply + ss)))))
+  (with-study-transaction
+    (set! scores
+          (hash-set scores
+                    (current-participant-id)
+                    total-score)))
+  ; TODO: I could just always put, but that seems wasteful.
+  (when (and (assignment-closed?)
+             (not score-put?))
+    (put/identity 'total-score total-score))
+
+  @md{# Problems (Total: 100 points)
+
+      @(if (assignment-closed?)
+           @md*{## Scores
+
+                Your overall score is: @(~r total-score #:precision 0)
+
+                @button[#:to-step-id 'show-scores]{Go to Scores}}
+           @div{})
+
+      ## Mixed Strategy 1 (@(~points 'ms2) Points)
+
+      @button[(λ () (set! active-problem 'ms2-game))]{Go to "Mixed Strategy 1"}
+      })
+
+(defstep show-scores2
+  (show-scores
+   (list
+    (list (λ () ms2-scores) "Mixed Strategy 1" 'ms2)
+    )))
+
+(defstudy assignment2/no-admin
+  [init --> [assignment-overview assignment2-overview] --> ,(lambda ()
+                           (case active-problem
+                             [(ms2-game) 'ms2-study]
+                             ))]
+  [ms2-study --> assignment-overview]
+  [[show-scores show-scores2] --> assignment-overview])
+
+(provide
+ assignment2)
+
+(define assignment2
+  (make-admin-study
+   #:models `()
+   #:admin admin
+   assignment2/no-admin))
