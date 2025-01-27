@@ -78,7 +78,7 @@
  vector vector-ref vector-length
 
  in-hash
- hash hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys
+ hash hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys hash-has-key?
 
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling truncate
  = < > <= >= equal? eq?
