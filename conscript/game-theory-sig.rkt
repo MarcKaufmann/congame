@@ -7,3 +7,5 @@ get-own-choice
 get-own-choice/rounds
 get-other-choice
 get-other-choice/rounds
+&group-choices
+&group-choices/rounds

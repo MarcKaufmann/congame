@@ -46,18 +46,20 @@
           (values my-choice v))))
   other-choice)
 
-(define (&my-group/rounds r)
+(define (&group-choices)
   (parameterize ([current-hash-maker hash])
-    (&opt-hash-ref*
-     (get-current-group)
-     r)))
+    (&opt-hash-ref* (get-current-group))))
+
+(define (&group-choices/rounds r)
+  (parameterize ([current-hash-maker hash])
+    (&opt-hash-ref* (get-current-group) r)))
 
 ; This assumes that there are two people, but doesn't check for it. Will return some random other participant as 'other' otherwise.
 (define (get-other-choice/rounds r)
   (define-values (_my-choice other-choice)
     (for/fold ([my-choice #f]
                [other-choice #f])
-              ([(k v) (in-hash ((&my-group/rounds r) (get-choices/rounds)))])
+              ([(k v) (in-hash ((&group-choices/rounds r) (get-choices/rounds)))])
       (if (equal? k (current-participant-id))
           (values v other-choice)
           (values my-choice v))))
