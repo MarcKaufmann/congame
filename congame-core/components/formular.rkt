@@ -33,6 +33,7 @@
  checkbox
  radios
  select
+ select/inline
  input-date
  input-file
  input-list
@@ -461,6 +462,17 @@
        (:label
         ((widget-select options #:attributes attributes) name value errors) label)
        ,@((widget-errors) name value errors))))))
+
+(define (select/inline options
+                       #:required? [required? #t]
+                       #:validators [validators null]
+                       #:attributes [attributes null])
+  (make-formular-field
+   #:validator
+   (apply ensure binding/text (cons/required? required? validators))
+   #:widget
+   (lambda (name value errors)
+     ((widget-select options #:attributes attributes) name value errors))))
 
 (define (input-file [label #f]
                     #:required? [required? #t]

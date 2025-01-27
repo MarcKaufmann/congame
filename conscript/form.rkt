@@ -28,7 +28,8 @@
   [congame:make-checkboxes make-checkboxes]
   [congame:make-sliders make-sliders]
   [congame:make-radios make-radios]
-  [congame:make-radios-with-other make-radios-with-other])
+  [congame:make-radios-with-other make-radios-with-other]
+  [congame:select/inline select/inline])
  form
  radios
  select
@@ -68,8 +69,10 @@
      congame:input-text
      congame:input-time
      congame:textarea
+     congame:select/inline
      radios
-     select))
+     select
+     ))
 
   (define widget-binding?
     (literal-set->predicate widget-bindings))

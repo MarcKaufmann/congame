@@ -66,6 +66,7 @@
  for* for*/fold for*/hash for*/list
  for/and for/or for/sum for/product
  for*/and for*/or for*/sum for*/product
+ ormap andmap
  sort remove-duplicates
  build-list
  list list? list* null null? cons pair? car cdr map member for-each shuffle length findf filter rest reverse

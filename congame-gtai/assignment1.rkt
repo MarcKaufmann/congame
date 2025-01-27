@@ -67,6 +67,11 @@
   ;; ms2 problem - mixed strategy 2
   (defvar* ms2-scores)
 
+  ;; ms3 problem - mixed strategy 3
+  (defvar* ms3-scores)
+
+  ;; ms4 problem - mixed strategy 4
+  (defvar* ms4-scores)
   )
 
 (defvar ms1)
@@ -80,10 +85,9 @@
         'gg 0.34
 
         ; Assignment 2: sum to 1
-        'ms2 0.25
-        'ms3 0.25
+        'ms2 0.30
+        'ms3 0.30
         'ms4 0.40
-        'second-price 0.10
         ))
 
 ;; Score weights of subproblems
@@ -107,7 +111,7 @@
                     '(B . L) 0
                     '(B . R) 1)))
 
-(define (input-probability label)
+(define (input-probability [label ""])
   (input-number #:min 0 #:max 1 #:step 0.001 label))
 
 (defstep (ms-question)
@@ -685,6 +689,8 @@
 
 ;; Assignment 2
 
+;; Problem 1
+
 (defvar ms2-ne)
 (defvar ms2-n-pure-eqba)
 
@@ -781,14 +787,300 @@
   [ms2-init --> [check-assignment (check-assignment-open? 'ms2-overview)] --> ms2-question --> ms2-compute-score --> ms2-overview --> ,(lambda () done)]
   [submission-closed --> ms2-overview])
 
+;; Problem 2
+
+(defvar ms3-ne-comp-p)
+(defvar ms3-ne-p)
+(defvar ms3-ne-comp-q)
+(defvar ms3-ne-q)
+(defvar ms3-n-pure-eqba)
+
+(defstep (ms3-init)
+  (when (undefined? ms3-scores)
+    (set! ms3-scores '(0 0)))
+  (skip))
+
+(define ms3-game
+  (hash
+   'actions1 '(T B)
+   'actions2 '(L R)
+   'outcomes1 (hash '(T . L) 2
+                    '(T . R) 0
+                    '(B . L) 2
+                    '(B . R) 1)
+
+   'outcomes2 (hash '(T . L) 2
+                    '(T . R) 0
+                    '(B . L) 0
+                    '(B . R) 1)))
+
+(defstep (ms3-question)
+  (define (on-submit #:ms3-ne-comp-p p-comp
+                     #:ms3-ne-p p
+                     #:ms3-ne-comp-q q-comp
+                     #:ms3-ne-q q
+                     #:ms3-n-pure-eqba n)
+    (cond [assignment-open?
+
+           (set! ms3-ne-comp-p p-comp)
+           (set! ms3-ne-p p)
+           (set! ms3-ne-comp-q q-comp)
+           (set! ms3-ne-q q)
+           (set! ms3-n-pure-eqba n)
+           (skip)]
+
+          [else
+           (skip 'submission-closed)]))
+
+  @md{@(mathjax-scripts)
+
+      # Find the Mixed Strategy Nash Equilibria
+
+      Consider the following game: \\(p\\)
+
+      @(outcome-matrix ms3-game)
+
+      @form[#:action on-submit]{
+        @md*{
+        @div{
+          Find the range p of mixed strategy Nash of the following game (don't search for pure strategy equilibria that do not fall within this range).}
+
+        @div{
+          The probability \(p\) that player 1 plays T is given by \(p\)
+          @select/inline[#:ms3-ne-comp-p `(("" . " ")
+                                           ("=" . "=")
+                                           (">=" . ">=")
+                                           ("<=" . "<=")
+                                           )]
+          @input-number[#:ms3-ne-p #:min 0 #:max 1 #:step 0.001].}
+
+        @div{
+          @~error[#:ms3-ne-comp-p] @~error[#:ms3-ne-p]}
+
+
+        @div{
+             The probability \(q\) that player 2 plays \(L\) is given by \(q\)
+             @select/inline[#:ms3-ne-comp-q `(("" . " ")
+                                              ("=" . "=")
+                                              (">=" . ">=")
+                                              ("<=" . "<="))]
+             @input-number[#:ms3-ne-q #:min 0 #:max 1 #:step 0.001].}
+
+        @div{
+          @~error[#:ms3-ne-comp-q] @~error[#:ms3-ne-q]}
+
+        @div{
+          @input-number[#:ms3-n-pure-eqba #:min 0 #:max 4]{How many pure-strategy equilibria are there for this game?}
+             }
+
+        @submit-button}}
+
+      @button[#:to-step-id 'ms3-overview]{Cancel}
+      })
+
+; FIXME: refactor with ms1-compute-score eventually
+(defstep (ms3-compute-score)
+  (define weights
+    (list 0.75 0.25))
+  (define p 0.333)
+  (define p-comp ">=")
+  (define q-comp "=")
+  (define q 1.000)
+  (define given-p ms3-ne-p)
+  (define given-p-comp ms3-ne-comp-p)
+  (define given-q ms3-ne-q)
+  (define given-q-comp ms3-ne-comp-q)
+  (define delta
+    (+ (abs (- p given-p)) (abs (- q given-q))))
+  (define raw-scores
+    (list
+     (+ (if (> 0.01 delta) 50 0)
+        (if (and (string=? p-comp given-p-comp) (string=? q-comp given-q-comp)) 50 0))
+     (if (= ms3-n-pure-eqba 2) 100 0)))
+  (set! ms3-scores
+        (map * weights raw-scores))
+  (skip))
+
+(defstep (ms3-overview)
+  @md{@(mathjax-scripts)
+
+      # Mixed Strategy: Your Answers
+
+      1. Find the range of mixed strategy Nash of the following game (don't search for pure strategy equilibria that do not fall within this range).
+
+      Your answer:
+
+      @(if (undefined? ms3-ne-p)
+           "not yet answered"
+           @md*{
+             @p{The probability \(p\) that player 1 plays \(T\) is given by \(p\) @(~a ms3-ne-comp-p) @(~a ms3-ne-p).}
+             @p{The probability \(q\) that player 2 plays \(L\) is given by \(q\) @(~a ms3-ne-comp-p) @(~a ms3-ne-q).}})
+
+      2. How many pure-strategy Nash equilibria are there? (0 to 4)
+
+      @(if (undefined? ms3-n-pure-eqba) "not yet answered"
+           @md*{Your answer: @(~a ms3-n-pure-eqba)})
+
+      @button{Continue}})
+
+(defstudy ms3-study
+  [ms3-init --> [check-assignment (check-assignment-open? 'ms3-overview)] --> ms3-question --> ms3-compute-score --> ms3-overview --> ,(lambda () done)]
+  [submission-closed --> ms3-overview])
+
+;; Problem 3
+
+(defvar ms4-dominated-action)
+(defvar ms4-ne1)
+(defvar ms4-ne2)
+(defvar ms4-ne3)
+(defvar ms4-ne4)
+
+(defstep (ms4-init)
+  (when (undefined? ms4-scores)
+    (set! ms4-scores '(0 0)))
+  (skip))
+
+(define ms4-game
+  (hash
+   'actions1 '(T M B)
+   'actions2 '(L R)
+   'outcomes1 (hash '(T . L) 2
+                    '(T . R) 2
+                    '(M . L) 3
+                    '(M . R) 0
+                    '(B . L) 0
+                    '(B . R) 7)
+
+   'outcomes2 (hash '(T . L) 3
+                    '(T . R) 3
+                    '(M . L) 1
+                    '(M . R) 0
+                    '(B . L) 0
+                    '(B . R) 2)))
+
+(defstep (ms4-question)
+  (define (on-submit #:dominated-action da
+                     #:p1 p1 #:q1 q1
+                     #:p2 p2 #:q2 q2
+                     #:p3 p3 #:q3 q3
+                     #:p4 p4 #:q4 q4
+                     )
+    (cond [assignment-open?
+
+           (set! ms4-dominated-action da)
+           (set! ms4-ne1 (cons p1 q1))
+           (set! ms4-ne2 (cons p2 q2))
+           (set! ms4-ne3 (cons p3 q3))
+           (set! ms4-ne4 (cons p4 q4))
+           (skip)]
+
+          [else
+           (skip 'submission-closed)]))
+
+  @md{@(mathjax-scripts)
+
+      # Find the Mixed Strategy Nash Equilibria
+
+      Consider the following game:
+
+      @(outcome-matrix ms4-game)
+
+      @form[#:action on-submit]{
+        @md*{
+
+        ### Find the dominated action
+
+        @div{
+          @radios[#:dominated-action '(("T" . "T") ("M" . "M") ("B" . "B"))]{Which action by player 1 is strictly dominated by a mixed strategy?}}
+
+        ### Find all mixed strategy NE
+
+        Find as many mixed strategy NE as you can find (up to 4). Denote by X and Y the two non-dominated strategies of player 1 ordered by T before M before B -- e.g., if action T was dominated, then X is M and Y is B. Then report each NE by first providing the probability \(p\) that player 1 plays X, and then the probability \(q\) that player 2 plays L.
+
+        **Note:** Provide all numbers up to the third digit, i.e., if the answer is 1/3, then write 0.333.
+
+        1. Probability that player 1 plays X: @input-number[#:p1 #:min 0 #:max 1 #:step 0.001]; probability that player 2 plays L: @input-number[#:q1 #:min 0 #:max 1 #:step 0.001]. @~error[#:p1] @~error[#:q1]
+        2. Probability that player 1 plays X: @input-number[#:p2 #:required? #f #:min 0 #:max 1 #:step 0.001]; probability that player 2 plays L: @input-number[#:q2 #:required? #f #:min 0 #:max 1 #:step 0.001]. @~error[#:p2] @~error[#:q2]
+        3. Probability that player 1 plays X: @input-number[#:p3 #:required? #f #:min 0 #:max 1 #:step 0.001]; probability that player 2 plays L: @input-number[#:q3 #:required? #f #:min 0 #:max 1 #:step 0.001]. @~error[#:p3] @~error[#:q3]
+        4. Probability that player 1 plays X: @input-number[#:p4 #:required? #f #:min 0 #:max 1 #:step 0.001]; probability that player 2 plays L: @input-number[#:q4 #:required? #f #:min 0 #:max 1 #:step 0.001]. @~error[#:p4] @~error[#:q4]
+
+        @submit-button}}
+
+      @button[#:to-step-id 'ms4-overview]{Cancel}
+      })
+
+(define (near x y [delta 0.01])
+   (> delta (abs (- (if x x +inf.0) (if y y -inf.0)))))
+
+; FIXME: refactor with ms1-compute-score eventually
+(defstep (ms4-compute-score)
+  (define (true? x)
+    (if x #t #f))
+  (define weights '(0.20 0.80))
+  (define (near-ne ne1 ne2)
+    (and (near (car ne1) (car ne2))
+         (near (cdr ne1) (cdr ne2))))
+  (define nes
+    (list ms4-ne1 ms4-ne2 ms4-ne3 ms4-ne4))
+  (define true-nes
+    '((1 . 1) (0 . 0) (0.667 . 0.700)))
+  (define (is-x-in-l? x l)
+    (if (not x)
+        (member #f l)
+        (findf (lambda (y) (near-ne x y)) (filter true? l))))
+  (eprintf "true-nes: ~a; given-nes: ~a" true-nes nes)
+  (define raw-scores
+    (list
+     (if (string=? ms4-dominated-action "M") 100 0)
+     (for/sum ([true-ne true-nes])
+       (if (is-x-in-l? true-ne nes) 100/3 0))))
+
+  (set! ms4-scores
+        (map * weights raw-scores))
+  (skip))
+
+(defstep (ms4-overview)
+  (define nes-given
+    (list ms4-ne1 ms4-ne2 ms4-ne3 ms4-ne4))
+
+  @md{@(mathjax-scripts)
+
+      # Mixed Strategy: Your Answers
+
+      1. Find player 1's dominated action.
+
+      Your answer:
+
+      @(if (undefined? ms4-dominated-action)
+           "not yet answered"
+           (format "Action ~a" ms4-dominated-action))
+
+      2. Find all the mixed strategy Nash Equilibria (up to 4)
+
+      @(if (ormap undefined? nes-given) "not yet answered"
+           @md*{
+            Your answer:
+
+            @`(ul
+               ,@(for/list ([ne nes-given]
+                            #:when (or (car ne) (cdr ne)))
+                   (li (format "(~a, ~a)" (car ne) (cdr ne)))))})
+
+      @button{Continue}})
+
+(defstudy ms4-study
+  [ms4-init --> [check-assignment (check-assignment-open? 'ms4-overview)] --> ms4-question --> ms4-compute-score --> ms4-overview --> ,(lambda () done)]
+  [submission-closed --> ms4-overview])
+
+
 ; FIXME: Refactor problem-overview and assignment2-overview
 ; In that case, I should pass in the problem-weights as an argument.
 ; Some of the hard-coded skips in buttons, e.g., #:to-step-id 'show-score
 ; are hard to add to a function that can be reused.
 (defstep (assignment2-overview)
   (define total-score
-    (for/sum ([ss (list ms2-scores)]
-              [k '(ms2)])
+    (for/sum ([ss (list ms2-scores ms3-scores ms4-scores)]
+              [k '(ms2 ms3 ms4)])
       (if (undefined? ss)
           0
           (* (hash-ref problem-weights k) (apply + ss)))))
@@ -815,20 +1107,34 @@
       ## Mixed Strategy 1 (@(~points 'ms2) Points)
 
       @button[(λ () (set! active-problem 'ms2-game))]{Go to "Mixed Strategy 1"}
+
+      ## Mixed Strategy 2 (@(~points 'ms3) Points)
+
+      @button[(λ () (set! active-problem 'ms3-game))]{Go to "Mixed Strategy 2"}
+
+      ## Mixed Strategy 3 (@(~points 'ms4) Points)
+
+      @button[(λ () (set! active-problem 'ms4-game))]{Go to "Mixed Strategy 3"}
       })
 
 (defstep show-scores2
   (show-scores
    (list
     (list (λ () ms2-scores) "Mixed Strategy 1" 'ms2)
+    (list (λ () ms3-scores) "Mixed Strategy 2" 'ms3)
+    (list (λ () ms4-scores) "Mixed Strategy 3" 'ms4)
     )))
 
 (defstudy assignment2/no-admin
   [init --> [assignment-overview assignment2-overview] --> ,(lambda ()
                            (case active-problem
                              [(ms2-game) 'ms2-study]
+                             [(ms3-game) 'ms3-study]
+                             [(ms4-game) 'ms4-study]
                              ))]
   [ms2-study --> assignment-overview]
+  [ms3-study --> assignment-overview]
+  [ms4-study --> assignment-overview]
   [[show-scores show-scores2] --> assignment-overview])
 
 (provide
