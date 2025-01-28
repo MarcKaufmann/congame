@@ -7,12 +7,14 @@
          conscript/game-theory
          conscript/survey-tools
          racket/format
-         racket/unit)
+         racket/list
+         racket/unit
+         )
 
-;(with-namespace xyz.trichotomy.congame.congame-gtai.volunteer-dilemma)
+(with-namespace xyz.trichotomy.congame.congame-gtai.volunteer-dilemma
+  (defvar*/instance choices/rounds))
 
 (defvar/instance choices)
-(defvar/instance choices/rounds)
 (defvar/instance round-of-group)
 (defbox choices)
 (defbox choices/rounds)
@@ -20,7 +22,7 @@
   (import game-theory-vars^)
   (export game-theory^))
 
-(define n 2)
+(define n-participants 2)
 (define n-rounds 3)
 
 (defvar counter)
@@ -91,7 +93,7 @@
           (hash-ref round-of-group group-id #f)))
 
 (defstep matchmake
-  (let ([matchmaker (make-matchmaker n participant-same-round?)])
+  (let ([matchmaker (make-matchmaker n-participants participant-same-round?)])
     (lambda ()
       (matchmaker match-waiter))))
 
@@ -119,9 +121,9 @@
 
 (defstep (wait-for-choice)
   (define r (current-round))
-  (if (= (hash-count ((&group-choices/rounds r) choices/rounds)) n)
+  (if (= (hash-count ((&group-choices/rounds r) choices/rounds)) n-participants)
       (skip)
-      @md{# Round @|r|: Please wait for the other participants to make their choices
+      @md{# Round @(~a r): Please wait for the other participants to make their choices
 
           @refresh-every[5]}))
 
@@ -180,9 +182,9 @@
     (when (undefined? choices/rounds)
       (set! choices/rounds (hash))))
   (define (choices-in-round i)
-    (for/list ([(_gid c) (in-hash choices/rounds)]
-               #:when (hash-has-key? c i))
-      (hash-ref c i)))
+    (for/list ([(_gid r&c) (in-hash choices/rounds)]
+               #:when (hash-has-key? r&c i))
+      (hash-ref r&c i)))
   (define (count-volunteers chs)
     (for/fold ([count (hash)])
               ([ch chs])
@@ -192,14 +194,28 @@
                 (lambda (x) (if x 1 0))
                 (hash-values ch))))
       (hash-update count n-volunteers add1 0)))
+  (define (display-volunteer-count cs)
+    (eprintf "[display-volunteer-count] cs: ~a~n" cs)
+    @`(ul
+       ,@(for/list ([i (range (add1 n-participants))])
+           (li (format "~a volunteers in ~a cases" i (hash-ref cs i 0))))))
   @md{# Admin study
 
+      ## All Rounds
+
+      @(display-volunteer-count
+        (count-volunteers
+         (for*/list ([round&choice (hash-values choices/rounds)]
+                     [(_round choice) (in-hash round&choice)])
+           choice)))
+
       @`(div
+         ,@(for/list ([i (range 1 (add1 n-rounds))])
+             @md*{## Round @(~a i)
 
-        ,@(for/list ([i '(1 2 3)])
-            @md*{## Round @(~a i)
-
-                 @(~a (count-volunteers (choices-in-round i)))}))})
+                  @(display-volunteer-count
+                    (count-volunteers
+                     (choices-in-round i)))}))})
 
 (define volunteer-dilemma
   (make-admin-study
