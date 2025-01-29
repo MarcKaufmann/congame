@@ -22,7 +22,7 @@
   (import game-theory-vars^)
   (export game-theory^))
 
-(define n-participants 2)
+(define n-participants 3)
 (define n-rounds 3)
 
 (defvar counter)
