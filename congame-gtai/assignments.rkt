@@ -38,6 +38,7 @@
          conscript/survey-tools
          racket/format
          racket/match
+         threading
          )
 
 (provide
@@ -72,6 +73,15 @@
 
   ;; ms4 problem - mixed strategy 4
   (defvar* ms4-scores)
+
+  ;; Assignment3
+  ;; ext1 problem - extensive form game 1
+  (defvar* ext1-scores)
+
+  ;; ext2 problem - extensive form game 2
+  (defvar* ext2-scores)
+
+
   )
 
 (defvar ms1)
@@ -88,14 +98,16 @@
         'ms2 0.30
         'ms3 0.30
         'ms4 0.40
+
+        ; Assignment 3: sum to 1
+        'ext1 0.60
+        'ext2 0.40
         ))
 
 ;; Score weights of subproblems
 
 (define fq-weights
   (list 0.25 0.25 0.5))
-(define gg-weights
-  (list 0.2 0.2 0.2 0.2 0.2))
 
 (define inspect-shirk-game
   (hash 'actions1 '(T B)
@@ -145,7 +157,7 @@
 
           @@input-number[#:ms2 #:min 0 #:max 10]{How many Nash equilibria are there, both pure and mixed? (You can go up to 10 - if there are more than 10, including if there are infinite Nash equilibria, then choose 10.)}
 
-          @submit-button}}
+          @(if assignment-open? submit-button @div{})}}
 
       @button[#:to-step-id 'ms-overview]{Cancel}})
 
@@ -194,10 +206,11 @@
 
 (defstep (ms-init)
   (when (undefined? ms-scores)
-    (set! ms-scores '(0 0))))
+    (set! ms-scores '(0 0)))
+  (skip))
 
 (defstudy ms-study
-  [ms-init --> [check-assignment (check-assignment-open? 'ms-overview)] --> ms-question --> ms-compute-score --> ms-overview --> ,(lambda () done)]
+  [ms-init --> ms-question --> ms-compute-score --> ms-overview --> ,(lambda () done)]
   [submission-closed --> ms-overview])
 
 (defvar p1t1/q1)
@@ -273,7 +286,7 @@
           @(div @checkbox[#:qf #:required? #f]{Quiet-Fink})
           @(div @checkbox[#:qq #:required? #f]{Quiet-Quiet})
 
-          @submit-button}}
+          @(if assignment-open? submit-button @div{})}}
 
        @button[#:to-step-id 'fq-overview]{Cancel}})
 
@@ -334,8 +347,7 @@
       @button{Back to other Problems}})
 
 (defstudy fq-study
-  [fq-init --> [check-assignment (check-assignment-open? 'fq-overview)]
-           --> fq-question
+  [fq-init --> fq-question
            --> fq-compute-score
            --> fq-overview
            --> ,(lambda () done)]
@@ -488,12 +500,14 @@
 
                         @binding[#:gg5 @make-multiple-checkboxes[gg-opts]]
 
-                        @submit-button
+                        @(if assignment-open? submit-button @div{})
                         }}
 
              @button[#:to-step-id 'gg-overview]{Cancel}}]))
 
 (defstep (gg-compute-score)
+  (define gg-weights
+    (list 0.2 0.2 0.2 0.2 0.2))
   (define raw-scores
     (list
      (gg-score (list #t #f #f #f) gg1)
@@ -546,8 +560,7 @@
   (skip))
 
 (defstudy grade-game-quiz
-  [gg-init --> [check-assignment (check-assignment-open? 'gg-overview)]
-           --> gg-question
+  [gg-init --> gg-question
            --> gg-compute-score
            --> gg-overview
            --> ,(lambda () done)]
@@ -569,7 +582,7 @@
                     (current-participant-id)
                     total-score)))
   ; TODO: I could just always put, but that seems wasteful.
-  (when (and (assignment-closed?)
+  #;(when (and (assignment-closed?)
              (not score-put?))
     (put/identity 'total-score total-score))
   @md{# Problems (Total: 100 points)
@@ -1104,6 +1117,13 @@
                 @button[#:to-step-id 'show-scores]{Go to Scores}}
            @div{})
 
+      ## Notes
+
+      - You can submit and resubmit answers as often as you want before the deadline.
+      - You can see your previously submitted answers by going to the problem, and instead of clicking on "Submit" clicking on "Cancel"
+      - After the deadline, you will see your score
+      - When inputting numbers, provide up to 3 decimals of precision so the answers can be compared sufficiently precisely
+
       ## Mixed Strategy 1 (@(~points 'ms2) Points)
 
       @button[(λ () (set! active-problem 'ms2-game))]{Go to "Mixed Strategy 1"}
@@ -1145,3 +1165,353 @@
    #:models `()
    #:admin admin
    assignment2/no-admin))
+
+;; Assignment 3
+
+;; Problem 1
+(defvar ext1-nes)
+(defvar ext1-wses)
+
+(define ext1-ne-opts
+  (let ([->up (lambda (x)
+                (string-upcase (symbol->string x)))])
+    (for*/list ([a1 '(l r)]
+                [a2 '(l r)]
+                [a3 '(l r)])
+      (cons (string->symbol (format "~a~a~a" a1 a2 a3))
+            (format "(~a, ~a, ~a)" (->up a1) (->up a2) (->up a3))))))
+
+(defstep (ext1-init)
+  (when (undefined? ext1-scores)
+    (set! ms-scores '(0 0)))
+  (when (undefined? ext1-wses)
+    (set! ext1-wses (hash 'counter 0)))
+  (skip))
+
+(defstep (add-wse)
+  (define select-actions
+    '(("" . "--action--")
+                         ("L" . "L")
+                         ("R" . "R")))
+  (define (on-submit #:wse1 wse1 #:wse2 wse2 #:wse3 wse3 #:wse3-belief p)
+    (define new-wse
+      (list wse1 wse2 wse3 p))
+    (define counter
+      (hash-ref ext1-wses 'counter))
+    (set! ext1-wses
+          (hash-set
+           (hash-set ext1-wses counter new-wse)
+           'counter
+           (add1 counter))))
+
+  (cond [(not assignment-open?)
+         @md{# Assignment is closed
+
+             The assignment is closed, you can no longer submit answers.
+
+             @button {Continue}}]
+
+        [else
+          @md{# Add WSE
+
+              @form[#:action on-submit]{
+                Provide another WSE:
+
+                @select[#:wse1 select-actions]{Action of Player 1}
+
+                @select[#:wse2 select-actions]{Action of Player 2}
+
+                @select[#:wse3 select-actions]{Action of Player 3}
+
+                @binding[#:wse3-belief @input-probability{Probability with which player 3 believes that history "(L)" occurred when they have to make a decision.}]
+                @submit-button}
+
+              @button{Cancel}}]))
+
+(define (display-wses [remove? #t])
+  (define (remove-wse i)
+    (set! ext1-wses
+          (hash-remove ext1-wses i)))
+  @`(table
+     ,@(for/list ([(i wse) (in-hash (hash-remove ext1-wses 'counter))])
+         (tr (td (format
+              "WSE ~a: strategy profile (~a, ~a, ~a) with P3 putting probability ~a on history \"(L)\""
+              i (first wse) (second wse) (third wse) (fourth wse)))
+             @(if remove?
+                  (td @button[(λ () (remove-wse i)) #:to-step-id 'ext1-question]{Remove this WSE})
+                  @td{})))))
+
+(define-static-resource ext1-game-screenshot "ext1-game.png")
+
+(define (img-ext1-game)
+  @div[#:class "screenshot"]{
+    @img[#:src (resource-uri ext1-game-screenshot) #:alt "The Game"]})
+
+(defstep (ext1-question)
+  (define (on-submit #:ext1-nes nes)
+    (cond [assignment-open?
+           (set! ext1-nes nes)
+           (skip)]
+          [else
+           (skip 'ext1-overview)]))
+
+  @md{# Extensive Form Game with Imperfect Information
+
+      @form[#:action on-submit]{
+            @style{
+              label {
+                     display: block;
+                     }
+              .group {
+                      border: none;
+                      }
+              }
+            Consider the following game:
+
+        @(img-ext1-game)
+
+        @md*{## Find all the pure strategy Nash equilibria
+
+             For each of the following pure strategy profiles, check whether it is or is not a Nash equilibrium of the game:
+
+             @binding[#:ext1-nes @make-multiple-checkboxes[ext1-ne-opts]]
+        }
+        @submit-button}
+
+        @md*{## Find all weak sequential equilibria
+
+             Find all the pure strategy weak sequential equilibria of the game. (Hint: Every WSE must be a NE.)
+
+             Note that for every equilibrium, in addition to the strategy profile you also have to specify the belief system, i.e., the beliefs over the history that has occurred for each information set with more than one history. For each different action profile that is part of a WSE, specify the highest belief p such that this is a WSE - p is player 3' belief that the history of arriving at their information set is the history "(L)".
+
+             @button[#:to-step-id 'add-wse]{Add a new WSE}
+
+             @display-wses[]}
+
+      @button[#:to-step-id 'ext1-overview]{Cancel}})
+
+(defstep (ext1-compute-score)
+  (define ext1-weights '(0.5 0.5))
+  (define wses
+    (hash-remove ext1-wses 'counter))
+  (eprintf "wses: ~a; nes: ~a~n~n" wses ext1-nes)
+  (define true-nes-found
+    (+ (if (member "lrl" ext1-nes) 1 0)
+       (if (member "rrr" ext1-nes) 1 0)))
+  (eprintf "true-nes-found: ~a~n" true-nes-found)
+  (define wrong-nes-found
+    (- (length ext1-nes) true-nes-found))
+  (define ne-score
+    (max (- (* 50 true-nes-found)
+            (* 25 wrong-nes-found))
+         0))
+  (define (correct-wse? x)
+    (eprintf "correct-wse? x: ~a~n~n" x)
+    (and (equal? (first x) "R")
+         (equal? (second x) "R")
+         (equal? (third x) "R")
+         (near (fourth x) 0.333)))
+  (eprintf "values of WSES: ~a~n~n~n" (hash-values wses))
+  (define wse-true-found
+    (findf correct-wse? (hash-values wses)))
+  (eprintf "Didn't get here...~n~n~n")
+  (define wse-wrong-found
+    (- (hash-count wses) (if wse-true-found 1 0)))
+  (define wse-score
+    (max (- (* 100 (if wse-true-found 1 0))
+            (* 30 wse-wrong-found))
+         0))
+  (eprintf "Scores - ne-scores: ~a; wse-scores: ~a~n" ne-score wse-score)
+  (set! ext1-scores (map * ext1-weights (list ne-score wse-score)))
+  (skip))
+
+(defstep (ext1-overview)
+  (define (ext1-answer->ap a)
+    (string-join
+     (map string
+          (string->list
+           (string-upcase a)))
+     ", "))
+  @md{# Your answers to the questions
+
+      ## Find the pure strategy Nash equilibria of the game
+
+      Your answers:
+
+      @(if (undefined? ext1-nes)
+          "No answer provided."
+          @`(ul
+             ,@(for/list ([a ext1-nes])
+                 (li (ext1-answer->ap a)))))
+
+      ## Find the pure strategy weak sequential equilibria
+
+      @display-wses[#f]
+
+      @button{Continue}})
+
+(defstudy ext1-study
+  [ext1-init --> [check (check-assignment-open? 'ext1-overview)] --> ext1-question --> ext1-compute-score --> ext1-overview --> ,(lambda () done)]
+  [add-wse --> ext1-compute-score]
+  [submission-closed --> ext1-overview])
+
+;; Problem 2
+
+(defvar ext2-spes)
+
+(defstep (ext2-init)
+  (when (undefined? ext2-scores)
+    (set! ext2-scores '(0)))
+  (when (undefined? ext2-spes)
+    (set! ext2-spes (hash 'counter 0)))
+  (skip))
+
+(define (display-spes [remove? #t])
+  (define (remove-spe i)
+    (set! ext2-spes
+          (hash-remove ext2-spes i)))
+  @`(table
+     ,@(for/list ([(i a) (in-hash (hash-remove ext2-spes 'counter))])
+         (tr
+          (td (format "SPE ~a: union suggests wage ~a, firm chooses labor ~a" i (first a) (second a)))
+          (if remove?
+              @td{@button[(λ () (remove-spe i)) #:to-step-id 'ext2-question]{Remove this SPE}}
+              @td{})))))
+
+(defstep (ext2-question)
+  @md{@(mathjax-scripts)
+
+      # Firm and Union Game
+
+      A firm's output is \\(L (100 - L)\\) when it uses \\(L \leq 50\\) units of labor, and \\(2500\\) when it uses \\(L > 50\\) units of labor. The price of output is \\(1\\). A union that represents workers presents a wage demand (a nonnegative number \\(w\\)), which the firm either accepts or rejects. If the firm accepts the demand, it chooses the number \\(L\\) of workers to employ (which you should take to be a continuous variable, not an integer); if it rejects the demand, no production takes place \\((L = 0)\\). The firm's preferences are represented by its profit; the union's preferences are represented by the value of \\(w L\\).
+
+      Find the subgame perfect equilibrium (equilibria?) of the game.
+
+      @button[#:class "add-new" #:to-step-id 'add-spe]{Add new SPE}
+
+      @display-spes[]
+
+      @button{Go back to problems}})
+
+(defstep (add-spe)
+  (define (on-submit #:spe spe)
+    (cond [assignment-open?
+           ; NOTE: Should I wrap these in a transaction?
+           (define c (hash-ref ext2-spes 'counter))
+           (set! ext2-spes
+                 (~> ext2-spes
+                     (hash-set c spe)
+                     (hash-set 'counter (add1 c))))
+           (skip)]
+
+          [else
+           (skip 'submission-closed)]))
+
+  @md{# Add SPE
+
+      For each SPE, provide the wage of the union, and the labor asked by the firm. Note: when the firm would reject the offer, just report that the firm asks for 0 labor.
+      @form[#:action on-submit]{
+        @binding[#:spe @input-list[
+                                   (list
+                                    @input-number[#:min 0 #:max 200 #:step 0.01]{Wage demanded by union.}
+                                    @input-number[#:min 0 #:max 100 #:step 0.01]{Labor chosen by firm.})]]
+        @submit-button}})
+
+(defstep (ext2-compute-score)
+  (define spes
+    (hash-values
+     (hash-remove ext2-spes 'counter)))
+  (define (true-spe? x)
+    (and (near 50 (first x))
+         (near 25 (second x))))
+  (define n-true-spes-found
+    (if (findf true-spe? spes) 1 0))
+  (define n-wrong-spes-found
+    (- (length spes) n-true-spes-found))
+  (set! ext2-scores
+        (list (- (* 100 n-true-spes-found)
+                 (* 33 n-wrong-spes-found))))
+  (skip))
+
+(defstep (ext2-overview)
+  @md{# Your answers
+
+      @display-spes[#f]
+
+      @button{Continue}})
+
+(defstudy ext2-study
+  [ext2-init --> [check (check-assignment-open? 'ext2-overview)] --> ext2-question --> ext2-compute-score --> ext2-overview --> ,(lambda () done)]
+  [add-spe --> ext2-question]
+  [submission-closed --> ext2-overview])
+
+;; Overview
+(defstep (assignment3-overview)
+  (define total-score
+    (for/sum ([ss (list ext1-scores ext2-scores)]
+              [k '(ext1 ext2)])
+      (if (undefined? ss)
+          0
+          (* (hash-ref problem-weights k) (apply + ss)))))
+  (with-study-transaction
+    (set! scores
+          (hash-set scores
+                    (current-participant-id)
+                    total-score)))
+  ; TODO: I could just always put, but that seems wasteful.
+  (when (and (assignment-closed?)
+             (not score-put?))
+    (put/identity 'total-score total-score))
+
+  @md{# Problems (Total: 100 points)
+
+      @(if (assignment-closed?)
+           @md*{## Scores
+
+                Your overall score is: @(~r total-score #:precision 0)
+
+                @button[#:to-step-id 'show-scores]{Go to Scores}}
+           @div{})
+
+      ## Notes
+
+      - You can submit and resubmit answers as often as you want before the deadline.
+      - You can see your previously submitted answers by going to the problem, and instead of clicking on "Submit" clicking on "Cancel"
+      - After the deadline, you will see your score
+      - When inputting numbers, provide up to 3 decimals of precision so the answers can be compared sufficiently precisely
+
+      ## Extensive Form Game 1 (@(~points 'ext1) Points)
+
+      @button[(λ () (set! active-problem 'ext1-game))]{Go to "Extensive Form Game 1"}
+
+      ## Extensive Form Game 2(@(~points 'ext2) Points)
+
+      @button[(λ () (set! active-problem 'ext2-game))]{Go to "Extensive Form Game 2"}
+
+      })
+
+(defstep show-scores3
+  (show-scores
+   (list
+    (list (λ () ext1-scores) "Extensive Form Game 2" 'ext1)
+    (list (λ () ext2-scores) "Extensive Form Game 2" 'ext2)
+    )))
+
+(defstudy assignment3/no-admin
+  [init --> [assignment-overview assignment3-overview]
+        --> ,(lambda ()
+               (case active-problem
+                 [(ext1-game) 'ext1-study]
+                 [(ext2-game) 'ext2-study]))]
+  [ext1-study --> assignment-overview]
+  [ext2-study --> assignment-overview]
+  [[show-scores show-scores3] --> assignment-overview])
+
+(provide
+ assignment3)
+
+(define assignment3
+  (make-admin-study
+   #:models `()
+   #:admin admin
+   assignment3/no-admin))
