@@ -173,13 +173,19 @@
   (case content-type
     [(#"application/zip" #"application/x-zip-compressed")
      (define archive-path (save-file! b))
-     (dsl-require `(archive ,archive-path) dsl-id)
+     (dsl-require
+      #;src `(archive ,archive-path)
+      #;study-id dsl-id
+      #;owner-is-admin? (user-admin-like? (current-user)))
      `(archive ,archive-path)]
     [else
      (define source
        (bytes->string/utf-8
         (binding:file-content b)))
-     (dsl-require source dsl-id) ;; for effect
+     (dsl-require
+      #;src source
+      #;study-id dsl-id
+      #;owner-is-admin? (user-admin-like? (current-user))) ;; for effect
      `(source ,source)]))
 
 (define ((field-group label [w (widget-text)] [ew (widget-errors)]) name value errors)
@@ -391,8 +397,14 @@
          (:a
           ([:href (embed/url
                    (λ (_req)
+                     (define owner-is-admin?
+                       (with-database-connection [conn db]
+                         (~> (from user #:as u)
+                             (where (= u.id ,(study-meta-owner-id meta)))
+                             (lookup conn _)
+                             (user-admin-like?))))
                      (define the-study
-                       (lookup-study* meta))
+                       (lookup-study* meta owner-is-admin?))
                      (define temp-dir
                        (make-temporary-file (~a (study-meta-name meta) "~a") 'directory))
                      (define pdfs

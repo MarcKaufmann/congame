@@ -5,7 +5,8 @@
          racket/format
          racket/lazy-require
          racket/match
-         racket/port)
+         racket/port
+         racket/string)
 
 (lazy-require
  [congame-web/components/upload (call-with-uploaded-file)])
@@ -15,7 +16,7 @@
 
 (define-logger dsl)
 
-(define (dsl-require src id)
+(define (dsl-require src id [owner-is-admin? #f])
   (match src
     [`(archive ,path)
      (call-with-uploaded-file path
@@ -33,20 +34,21 @@
           in dir entry-name
           (lambda (_name _dir? entry-in)
             (set! data (port->string entry-in))))
-         (dsl-require* data id)))]
+         (dsl-require* data id owner-is-admin?)))]
     [_
-     (dsl-require* src id)]))
+     (dsl-require* src id owner-is-admin?)]))
 
-(define (user-with-require-permissions?)
-  ; FIXME: Add correct user checks after adding permissions
-  #t)
-
-(define (dsl-require* src id)
+(define (dsl-require* src id owner-is-admin?)
   (log-dsl-debug "dsl-require: ~a" (~.s #:max-width 1024 src))
-  (unless (or (regexp-match? #rx"^#lang conscript *\r?\n" src)
-              (and (regexp-match? #rx"^#lang conscript/with-require *\r?\n" src) (user-with-require-permissions?)))
-    ; FIXME: update error message
-    (error 'dsl-require "only #lang conscript is supported"))
+  (define allowed-langs
+    (if owner-is-admin?
+        '(conscript conscript/with-require)
+        '(conscript)))
+  (match-define (list _ (app (compose1 string->symbol string-trim) src-lang))
+    (regexp-match #rx"^#lang ([^ ]+) *\r?\n" src))
+  (eprintf "src-lang: ~s~n" src-lang)
+  (unless (memq src-lang allowed-langs)
+    (error 'dsl-require "#lang may only be one of: ~a" (string-join (map ~a allowed-langs) ", ")))
   (define path #f)
   (dynamic-wind
     (lambda ()

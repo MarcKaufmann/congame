@@ -38,6 +38,7 @@
          "xexpr.rkt")
 
 (lazy-require
+ [congame-web/components/user (user-admin-like?)]
  ["dsl.rkt" (dsl-require)])
 
 
@@ -1593,30 +1594,34 @@ QUERY
       [else #f])))
 
 (define/contract (lookup-study db slug user-id)
-  (-> database? string? id/c (or/c false/c (list/c study? study-participant?)))
+  (-> database? string? id/c (or/c #f (list/c study? study-participant?)))
   (with-database-transaction [conn db]
     (cond
-      [(lookup conn
-               (~> (from study-instance #:as i)
-                   (where (= i.slug ,slug))))
+      [(~> (from study-instance #:as i)
+           (where (= i.slug ,slug))
+           (lookup conn _))
        => (lambda (i)
+            (define owner
+              (~> (from user #:as u)
+                  (where (= u.id ,(study-instance-owner-id i)))
+                  (lookup conn _)))
             (define meta
-              (lookup conn
-                      (~> (from study-meta #:as m)
-                          (where (= m.id ,(study-instance-study-id i))))))
-
+              (~> (from study-meta #:as m)
+                  (where (= m.id ,(study-instance-study-id i)))
+                  (lookup conn _)))
             (define participant
-              (lookup conn
-                      (~> (from study-participant #:as p)
-                          (where (and (= p.user-id ,user-id)
-                                      (= p.instance-id ,(study-instance-id i)))))))
-
-            (and participant (list (lookup-study* meta) participant)))]
-
+              (~> (from study-participant #:as p)
+                  (where (and (= p.user-id ,user-id)
+                              (= p.instance-id ,(study-instance-id i))))
+                  (lookup conn _)))
+            (and participant
+                 (list
+                  (lookup-study* meta (user-admin-like? owner))
+                  participant)))]
       [else #f])))
 
-(define/contract (lookup-study* meta)
-  (-> study-meta? study?)
+(define/contract (lookup-study* meta [owner-is-admin? #f])
+  (->* [study-meta?] [boolean?] study?)
   (case (study-meta-type meta)
     [(racket)
      (lookup-registered-study
@@ -1627,10 +1632,12 @@ QUERY
      (if (sql-null? (study-meta-dsl-archive-path meta))
          (dsl-require
           (study-meta-dsl-source meta)
-          (study-meta-racket-id meta))
+          (study-meta-racket-id meta)
+          owner-is-admin?)
          (dsl-require
           `(archive ,(study-meta-dsl-archive-path meta))
-          (study-meta-racket-id meta)))]))
+          (study-meta-racket-id meta)
+          owner-is-admin?))]))
 
 (define/contract (lookup-study-meta db study-id)
   (-> database? id/c (or/c #f study-meta?))
