@@ -90,7 +90,7 @@
 
  string? symbol?
  format ~a string number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
- string-join string-append
+ string-split string-join string-append
  bytes? bytes->string/utf-8 char?
 
  box? box set-box! unbox
