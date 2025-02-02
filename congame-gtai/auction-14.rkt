@@ -1,18 +1,19 @@
 #lang conscript
-(provide auction-14)
-(require conscript/survey-tools
-          data/monocle
-          racket/match)
-(define n 3)
-;change the number of roles Names of possible roles and their frequency
+
+(provide
+ auction-14)
+
+(require conscript/admin
+         conscript/survey-tools
+         racket/match)
 
 (define roles '(participant-1 participant-2 participant-3))
+(define n (length roles))
 
 (defvar/instance group-roles)
 (defvar/instance group-participants)
 (defvar/instance bids)
 (defvar role)
-
 
 (define group-roles-box
   (case-lambda
@@ -24,40 +25,30 @@
      [() group-participants]
      [(v) (set! group-participants v)]))
 
-
 (define (set!/if-undefined l-box v)
   (with-study-transaction
     (when (undefined? (l-box))
       (l-box v))))
 
-
-(define (initialize)
-  (when (undefined? bids)
-    (set! bids (hash))))
-
-
-
-
 (define instructions
   @md*{# Instructions
- In this experiment you will participate in an auction. There are randomly assigned groups of 4 bidders, a certificate is auctioned off, and each bidder receives a value for the certificate randomly drawn from the integer numbers E$ 10 to E$ 50. As before, each bidder knows his own value, but does not know the value of the other bidders.
+ In this experiment you will participate in an auction. There are randomly assigned groups of @(~a n) bidders, a certificate is auctioned off, and each bidder receives a value for the certificate randomly drawn from the integer numbers E$ 10 to E$ 50. As before, each bidder knows his own value, but does not know the value of the other bidders.
 
  After every bidder received his value, the bidding process starts. **Simultaneously** and only once, all bidders are asked to **submit their bid** for the certificate. The auction winner is the bidder who submitted the highest bid (with random selection in case of a tie). The **price** will be equal to the **submitted bid of the auction winner.**
 
- Thus, the payoff of the auction winner from this experiment will be his value for the certificate minus the price he paid. The other bidders will have a payoff of zero.
+ Thus, the payoff of the auction winner from this experiment will be his value for the certificate minus the price he paid. The other bidders will have a payoff of zero.})
 
- })
-
-
-
-(defstep (intro)
+(defstep (init)
   (set!/if-undefined group-participants-box (hash))
   (set!/if-undefined group-roles-box (hash))
-  
-  @md{
-      @instructions
+  (when (undefined? bids)
+    (set! bids (hash)))
+  (skip))
+
+(defstep (intro)
+  @md{@instructions
        
-      @button[initialize]{Continue}})
+      @button{Continue}})
 
 (defstep (waiter)
   @md{# Please Wait
@@ -65,7 +56,6 @@
       Please wait while the other participants join the queue...
 
       @refresh-every[5]})
-
 
 (defstep matchmake
   (let ([matchmaker (make-matchmaker n)])
@@ -115,41 +105,39 @@
          (current-participant-id)))
   (skip))
 
-
-
 (defvar bid)
 (defvar certificate-value)
 
+(define (bidder-number i)
+  (match i
+    ['participant-1 "1"]
+    ['participant-2 "2"]
+    ['participant-3 "3"]
+    [_ "Unknown participant"]))
+
 (defstep (the-auction)
-  (define current-group-roles
+  #;(define current-group-roles
     (hash-ref group-roles (get-current-group)))
   (set! certificate-value (+ 10 (random 41)))
   @md{# Auction
-You were randomly matched to a group of 4 bidders.
-You are bidder number @(match role
-  ['participant-1 "1"]
-  ['participant-2 "2"]
-  ['participant-3 "3"]
-  [else "Unknown participant"]).
-Your randomly drawn value for the certificate is @(~a certificate-value) points.
+      You were randomly matched to a group of @(~a n) bidders.
+      You are bidder number @(bidder-number role).
+      Your randomly drawn value for the certificate is @(~a certificate-value) points.
 
+      @form{
 
-   @form{
- 
-      Please submit your bid: @(set! bid (input-number #:min 0))
- 
-      @submit-button
-   }
+            Please submit your bid: @(set! bid (input-number #:min 0))
 
-   @toggleable-xexpr["Show/Hide Instructions"
-     instructions]})
+            @submit-button
+            }
 
-
+      @toggleable-xexpr["Show/Hide Instructions"
+                        instructions]})
 
 (defstep (store-bids)
   (with-study-transaction
     ; Retrieve the current group participants
-    (define current-group-ids (hash-ref group-participants (get-current-group) '()))
+    #;(define current-group-ids (hash-ref group-participants (get-current-group) '()))
     ; Retrieve the existing guesses hash or initialize a new one
     (define bids-so-far
       (hash-ref bids (get-current-group) (hash)))
@@ -157,7 +145,7 @@ Your randomly drawn value for the certificate is @(~a certificate-value) points.
     (define new-bids
       (hash-set bids-so-far (current-participant-id) bid))
     (set! bids
-          (hash-set bids-so-far
+          (hash-set bids
                     (get-current-group)
                     new-bids)))
   (skip))
@@ -171,56 +159,69 @@ Your randomly drawn value for the certificate is @(~a certificate-value) points.
 
           @refresh-every[2]})) ;
 
-
-
-
 (defstep (the-end)
   (define bids-list (hash-values (hash-ref bids (get-current-group))))
   (eprintf "HERE bids: ~a; bids-list: ~a~n~n" bids bids-list)
   
   (define highest-bid (apply max bids-list))
-  (define winner-id (car (filter (lambda (id) (equal? (hash-ref (hash-ref bids (get-current-group)) id) highest-bid))
-                                 (hash-keys (hash-ref bids (get-current-group))))))
-  
-  (define winner-role (hash-ref (hash-ref group-roles (get-current-group)) winner-id))
+  (define winner-id
+    (car
+     (sort
+      (filter
+       (lambda (id)
+         (equal?
+          (hash-ref (hash-ref bids (get-current-group)) id)
+          highest-bid))
+       (hash-keys (hash-ref bids (get-current-group)))) <)))
+  (define winner-role
+    (hash-ref
+     (hash-ref group-roles (get-current-group)) winner-id))
+
   (define payoff (if (equal? (current-participant-id) winner-id)
-                    (- certificate-value highest-bid)
-                    0))
+                     (- certificate-value highest-bid)
+                     0))
+
+  (put/identity 'score payoff)
 
   @md{# Auction Results
-## Your Participation
-- You were bidder number @(match role
-  ['participant-1 "1"]
-  ['participant-2 "2"]
-  ['participant-3 "3"]
-  [else "Unknown participant"]).
 
-- You submitted a bid of **@(~a bid)** points.
+      ## Your Participation
 
-- Your randomly drawn value for the certificate was **@(~a certificate-value)**.
+      - You were bidder number @(bidder-number role).
 
-## Auction Outcome
-- The highest bid was **@(~a highest-bid)** points.
-- This bid was submitted by Bidder @(match winner-role
-  ['participant-1 "1"]
-  ['participant-2 "2"]
-  ['participant-3 "3"]
-  [else "Unknown participant"]).
+      - You submitted a bid of **@(~a bid)** points.
 
-## Your Payoff
-- Your final payoff is **@(~a payoff)** points.
- @toggleable-xexpr["Show/Hide Instructions" instructions]
+      - Your randomly drawn value for the certificate was **@(~a certificate-value)**.
+
+      ## Auction Outcome
+
+      - The highest bid was **@(~a highest-bid)** points.
+      - This bid was submitted by Bidder @(bidder-number winner-role).
+
+      ## Your Payoff
+
+      - Your final payoff is **@(~a payoff)** points.
+      @toggleable-xexpr["Show/Hide Instructions" instructions]
   })
 
 
-(defstudy auction-14
-  [intro --> matchmake
-         --> register-as-group-participant
-         --> wait-for-group-ids
-         --> assign-roles
-         --> the-auction
-         --> store-bids
-         --> wait-for-bids
-         --> the-end]
+(defstudy auction-14/no-admin
+  [init --> intro
+        --> matchmake
+        --> register-as-group-participant
+        --> wait-for-group-ids
+        --> assign-roles
+        --> the-auction
+        --> store-bids
+        --> wait-for-bids
+        --> the-end]
   [the-end --> the-end])
 
+(defstep (admin)
+  @md{# Admin})
+
+(define auction-14
+  (make-admin-study
+   #:models `()
+   #:admin admin
+   auction-14/no-admin))
