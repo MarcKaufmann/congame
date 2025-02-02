@@ -1,14 +1,27 @@
 #lang conscript
 
 (provide
- GTAI-TramLine-exp10)
+ tramline-exp10)
 
-(require racket/format
-         conscript/admin
+(require conscript/admin
          conscript/game-theory
          conscript/survey-tools
          data/monocle
-         threading)
+         racket/format
+         racket/unit
+         threading
+         )
+
+(with-namespace xyz.trichotomy.congame.congame-gtai.tramline-exp10
+  (defvar*/instance choices/rounds)
+  ; Needed due to design of conscript/game-theory, which needs FIXME.
+  (defvar*/instance choices))
+
+(defbox choices/rounds)
+(defbox choices)
+(define-values/invoke-unit game-theory@
+  (import game-theory-vars^)
+  (export game-theory^))
 
 (defvar contribution)
 (defvar counter)
@@ -163,7 +176,7 @@
       This yields a total payoff of @(~r #:precision 1 total), which is worth a rescaled score of @(~r #:precision 1 (rescale-score total))
       })
 
-(defstudy GTAI-TramLine-exp10
+(defstudy tramline-exp10/no-admin
   [init --> intro
         --> instructions
         --> matchmake
@@ -179,9 +192,6 @@
   [store-score --> end --> end])
 
 ;; Admin Page
-
-(provide
- tramline1-experiment)
 
 (defstep (admin)
   (with-study-transaction
@@ -209,7 +219,7 @@
          @`(ul
             ,@(for/list ([r (hash-ref round-choices i)])
                 (li (format "Average group contribution is ~a"
-                            (avg-group-contrib r)))))})
+                            (~r #:precision 2 (avg-group-contrib r))))))})
   @md{# Admin
 
       @display-round[1]
@@ -219,8 +229,8 @@
       @display-round[3]
       })
 
-(define tramline1-experiment
+(define tramline-exp10
   (make-admin-study
    #:models '()
    #:admin admin
-   GTAI-TramLine-exp10))
+   tramline-exp10/no-admin))
