@@ -1,7 +1,7 @@
 #lang conscript
-(provide GTAI-TramLine-exp11)
 
-(require racket/string)
+(provide
+ tramline-exp11)
 
 (defvar contribution)
 (defvar/instance contributions)
@@ -11,14 +11,9 @@
   (set! counter 3)
   (skip))
 
-(defstep (assign-roles)
-  ;; Role assignment
-  (skip))
-
 (defstep (intro)
   @md{# Introduction
- This experiment is computerized. You make all your decisions at the computer.
- 
+
  In this experiment, you represent the mayor of a suburb. There are three other mayors in your group, making a total of four. These four suburbs are connected by a tram line to the capital. 
 
  Each suburb benefits equally from the tram line, and the more funds are allocated to the tram, the greater the benefits for all suburbs. However, you must also decide how much to allocate to beautifying your own suburb’s streets.
@@ -88,7 +83,6 @@
       Your contribution to the streets: @(~a street-contribution)
       
       Total contributions to the tram line:
-      
 
       @button{Continue}})
 
@@ -154,7 +148,7 @@
       
       What did you learn from the experiment?})
 
-(defstudy GTAI-TramLine-exp11
+(defstudy tramline-exp11
   [init --> intro
          --> instructions
          --> assign-roles
