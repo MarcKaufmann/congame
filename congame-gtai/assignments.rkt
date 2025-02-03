@@ -1415,7 +1415,8 @@
                                    (list
                                     @input-number[#:min 0 #:max 200 #:step 0.01]{Wage demanded by union.}
                                     @input-number[#:min 0 #:max 100 #:step 0.01]{Labor chosen by firm.})]]
-        @submit-button}})
+        @submit-button}
+      @button{Back}})
 
 (defstep (ext2-compute-score)
   (define spes
@@ -1429,8 +1430,10 @@
   (define n-wrong-spes-found
     (- (length spes) n-true-spes-found))
   (set! ext2-scores
-        (list (- (* 100 n-true-spes-found)
-                 (* 33 n-wrong-spes-found))))
+        (list (max
+               (- (* 100 n-true-spes-found)
+                  (* 33 n-wrong-spes-found))
+               0)))
   (skip))
 
 (defstep (ext2-overview)
