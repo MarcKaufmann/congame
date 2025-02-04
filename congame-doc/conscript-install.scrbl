@@ -17,6 +17,13 @@ the Racket programming language environment.
 
 You’ll need a computer running Linux, Mac OS, @mark{or Windows}.
 
+Ensure Git is installed.
+
+@define[git-lfs]{https://docs.github.com/en/repositories/working-with-files/managing-large-files/installing-git-large-file-storage}
+
+Install Git Large File Storage (Git LFS): follow @hyperlink[git-lfs]{these installation
+instructions} for your operating system.
+
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @subsection{Install Racket}
@@ -74,19 +81,19 @@ to create a Docker “account”, but you can safely skip this step if you wish.
 
 @section[#:tag "download"]{Download Congame and Conscript}
 
-Download a copy of the Congame/Conscript source code:
+Using your Git client, clone @link["https://github.com/MarcKaufmann/congame"]{the GitHub repository}
+to your computer — somewhere permanent and easy to find.
 
-@itemlist[
+Using the CLI, you would do this:
 
-@item{You can get the source code as a
-@link["https://github.com/MarcKaufmann/congame/archive/refs/heads/master.zip"]{ZIP file} (that’s a
-direct download link for the most current version) and extract its contents to a suitable location.}
+@terminal{
+    @:>{git clone https://github.com/MarcKaufmann/congame}
+}
 
-@item{@emph{Or}, if you’re comfortable with Git, you can clone
-@link["https://github.com/MarcKaufmann/congame"]{the GitHub repository} — again, place the files
-somewhere permanent and easy to find.}
+@margin-note{If you get an error at this point, ensure you have @hyperlink[git-lfs]{Git LFS}
+installed (see @secref{Prerequisites} above).}
 
-]
+This will place the files in a subfolder of the current directory, named @filepath{congame}.
 
 @;===============================================
 
@@ -145,8 +152,8 @@ point you should be able to browse to @url{http://localhost:5100} in your browse
 home page.
 
 @margin-note{If you prefer the command line, you can enter @exec{docker compose up} from the main
-@filepath{congame} folder to start the Congame server, and press @kbd{CTRL}@kbd{C} in the same
-terminal window to stop it again. You’ll still need the Docker desktop app runnning in the
+@filepath{congame} folder to start the Congame server, and (when finished) press @kbd{CTRL}@kbd{C}
+in the same terminal window to stop it. You’ll still need the Docker desktop app runnning in the
 background, however.}
 
 To log in, use the built-in user @tt{admin@"@"congame.local} with password @tt{admin}.
@@ -160,33 +167,28 @@ container in the Docker desktop app.
 
 To update to a new version of Congame and Conscript:
 
-@itemlist[
+@itemlist[#:style 'ordered
 
 @item{Ensure your local Congame container isn’t running.}
 
-@item{Update your local copy of the source code:
+@item{Update your local copy of the source code: go to the main @filepath{congame} folder and run
+these commands:
 
-@itemlist[
+@terminal{
+    @:>{git pull}
+    @:>{raco pkg update congame-core/ congame-web/ congame-cli/ conscript/ congame-doc/}
+}
 
-@item{If you downloaded by cloning the GitHub repository: do a @exec{git pull} from within the main
-@filepath{congame} folder.}
+}
 
-@item{If you downloaded Congame as a ZIP file: download a fresh copy using the download link in
-@secref["download"]. @mark{Delete the old @filepath{congame} folder and replace
-it with the extracted contents of the new ZIP file.}}
-
-]}
-
-@item{Do @exec{raco setup congame conscript} to compile the new versions of the packages.}
-
-@item{Update the Docker container: with the Docker desktop app running on your computer, run these
-commands in the terminal:
+@item{Ensure the @emph{Docker desktop app is open} and running on your computer, and run these
+additional commands in the terminal:
 
 @terminal{
     @:>{docker compose pull}
     @:>{docker compose build}
 }
 
-Unlike the initial setup, this will take only a couple of minutes.}
+This will take much less time than the initial Docker setup.}
 
 ]
