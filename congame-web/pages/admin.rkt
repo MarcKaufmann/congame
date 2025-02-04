@@ -1074,11 +1074,38 @@
                    "headless?" "1"))
            (match (form-run bot-set-run-form req #:defaults defaults)
              [`(passed (,concurrency ,headless?) ,_)
-              (define runner
-                (make-bot-runner db um the-study the-instance the-bot-set
-                                 #:concurrency concurrency
-                                 #:headless? headless?))
-              (runner req)]
+              (define-values (wait-for-bots kill-bots)
+                (run-bot-set
+                 db um the-study the-instance the-bot-set
+                 #:concurrency concurrency
+                 #:headless? headless?))
+              (let wait-loop ([req req]) ;; noqa
+                (if (sync/timeout 30 (thread wait-for-bots))
+                    (redirect-to
+                     (reverse-uri
+                      'admin:view-study-instance-page
+                      study-id
+                      study-instance-id))
+                    (response/xexpr
+                     (haml
+                      (:div
+                       (:p "The bots aren't done yet.")
+                       (:ul
+                        (:li
+                         (:a
+                          ([:href (embed/url wait-loop)])
+                          "Wait 30 More Seconds"))
+                        (:li
+                         (:a
+                          ([:href (embed/url
+                                   (lambda (_req)
+                                     (kill-bots)
+                                     (redirect-to
+                                      (reverse-uri
+                                       'admin:view-study-instance-page
+                                       study-id
+                                       study-instance-id))))])
+                          "Kill Bots"))))))))]
 
              [`(,(or 'pending 'failed) ,_ ,rw)
               (render-bot-set-run-form (embed/url loop) rw)]))
@@ -1094,9 +1121,9 @@
          (:h2 "Participants")
          (render-participant-list study-id study-instance-id participants))))))))
 
-(define ((make-bot-runner db um the-study the-instance the-set
-                          #:concurrency [concurrency 3]
-                          #:headless? [headless? #t]) _req)
+(define (run-bot-set db um the-study the-instance the-set
+                     #:concurrency [concurrency 3]
+                     #:headless? [headless? #t])
   (define-values (password users)
     (prepare-bot-set! db um the-set))
   (define study-racket-id
@@ -1111,43 +1138,44 @@
     (hash-ref
      (bot-info-models bot-info)
      (bot-set-model-id the-set)))
-  (define sema
-    (make-semaphore concurrency))
+  (define custodian
+    (make-custodian))
   (define promises
-    (for/list ([u (in-list users)]
-               [p (in-naturals 60100)])
-      (delay/thread
-       (call-with-semaphore sema
-         (lambda ()
-           ;; FIXME: Rename study-page to study-instance-page.
-           (define participant
-             (with-database-connection [conn db]
-               (~> (from study-participant #:as p)
-                   (where (and (= p.instance-id ,(study-instance-id the-instance))
-                               (= p.user-id ,(user-id u))))
-                   (lookup conn _))))
-           (call-with-study-manager
-            (make-study-manager
-             #:database db
-             #:participant participant)
-            (lambda ()
-              (run-bot
-               #:study-url (apply
-                            make-application-url
-                            (string-split
-                             (reverse-uri 'study-page (study-instance-slug the-instance))
-                             "/"))
-               #:username (user-username u)
-               #:password password
-               #:headless? headless?
-               #:port p
-               (bot model)))))))))
-  (for-each force promises)
-  (redirect-to
-   (reverse-uri
-    'admin:view-study-instance-page
-    (study-meta-id the-study)
-    (study-instance-id the-instance))))
+    (parameterize ([current-custodian custodian]
+                   [current-subprocess-custodian-mode 'interrupt])
+      (define sema
+        (make-semaphore concurrency))
+      (for/list ([u (in-list users)]
+                 [p (in-naturals 60100)])
+        (delay/thread
+         (call-with-semaphore sema
+           (lambda ()
+             ;; FIXME: Rename study-page to study-instance-page.
+             (define participant
+               (with-database-connection [conn db]
+                 (~> (from study-participant #:as p)
+                     (where (and (= p.instance-id ,(study-instance-id the-instance))
+                                 (= p.user-id ,(user-id u))))
+                     (lookup conn _))))
+             (call-with-study-manager
+              (make-study-manager
+               #:database db
+               #:participant participant)
+              (lambda ()
+                (run-bot
+                 #:study-url (apply
+                              make-application-url
+                              (string-split
+                               (reverse-uri 'study-page (study-instance-slug the-instance))
+                               "/"))
+                 #:username (user-username u)
+                 #:password password
+                 #:headless? headless?
+                 #:port p
+                 (bot model))))))))))
+  (values
+   (λ () (for-each force promises))
+   (λ () (custodian-shutdown-all custodian))))
 
 (define/contract ((bulk-archive-instances-page db) req)
   (-> database? (-> request? response?))
