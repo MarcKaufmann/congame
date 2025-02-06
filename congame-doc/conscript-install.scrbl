@@ -24,6 +24,11 @@ Ensure Git is installed.
 Install Git Large File Storage (Git LFS): follow @hyperlink[git-lfs]{these installation
 instructions} for your operating system.
 
+@margin-note{Git LFS (Large File Storage) is an extension for Git that manages large files
+efficiently by storing them separately and replacing them with lightweight pointers in the
+repository. Congame uses Git LFS to manage MP3 and PNG files included as part of certain example
+studies.}
+
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 @subsection{Install Racket}
