@@ -8,7 +8,7 @@
                ["forms-lib" #:version "0.6.1"]
                "gregor-lib"
                "koyo-lib"
-               "marionette-lib"
+               ["marionette-lib" #:version "1.4"]
                "sentry-lib"
                "threading-lib"
                "web-server-lib"))
