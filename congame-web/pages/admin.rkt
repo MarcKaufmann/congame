@@ -873,6 +873,10 @@
            (study-meta-name the-study))
           "'")
          (:h4
+          "Progress: "
+          (:code
+           (format "~a" (study-participant/admin-progress the-participant))))
+         (:h4
           (:a
            ([:onclick "return confirm('Are you sure?')"]
             [:href (embed/url
