@@ -136,9 +136,6 @@
         (element-type! (find "[name=password]") password)
         (element-click! (find "button[type=submit]")))))
 
-  ;; TODO: In marionette, add a way to get a synchornizable event that
-  ;; is ready for synchronization when the current page will have
-  ;; changed.
   (define (execute! b [previous-paths null])
     (when (>= (count-path-run previous-paths) INFINITE-LOOP-THRESHOLD)
       (raise-bot-error
@@ -172,10 +169,18 @@
       (define path (cons step-id study-stack))
       (log-congame-bots-debug "found path ~s" path)
       (define stepper
-        (hash-ref (bot-steppers b) path (lambda ()
-                                          (raise-bot-error "no stepper for path ~s" path))))
+        (hash-ref
+         #;ht (bot-steppers b)
+         #;key path
+         #;fail-proc
+         (lambda ()
+           (raise-bot-error "no stepper for path ~s" path))))
+      (define change-evt
+        (page-change-evt (current-page)))
       ((bot-stepper-action stepper))
       (sleep (current-delay))
+      (unless (sync/timeout 30 change-evt)
+        (raise-bot-error "page did not change after 30 seconds"))
       (execute! b (cons path previous-paths))))
 
   (define (count-path-run paths)
