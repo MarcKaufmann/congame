@@ -848,9 +848,7 @@
           [else
            (skip 'submission-closed)]))
 
-  @md{@(mathjax-scripts)
-
-      # Find the Mixed Strategy Nash Equilibria
+  @md{# Find the Mixed Strategy Nash Equilibria
 
       Consider the following game: \\(p\\)
 
@@ -918,9 +916,7 @@
   (skip))
 
 (defstep (ms3-overview)
-  @md{@(mathjax-scripts)
-
-      # Mixed Strategy: Your Answers
+  @md{# Mixed Strategy: Your Answers
 
       1. Find the range of mixed strategy Nash of the following game (don't search for pure strategy equilibria that do not fall within this range).
 
@@ -993,9 +989,7 @@
           [else
            (skip 'submission-closed)]))
 
-  @md{@(mathjax-scripts)
-
-      # Find the Mixed Strategy Nash Equilibria
+  @md{# Find the Mixed Strategy Nash Equilibria
 
       Consider the following game:
 
@@ -1059,9 +1053,7 @@
   (define nes-given
     (list ms4-ne1 ms4-ne2 ms4-ne3 ms4-ne4))
 
-  @md{@(mathjax-scripts)
-
-      # Mixed Strategy: Your Answers
+  @md{# Mixed Strategy: Your Answers
 
       1. Find player 1's dominated action.
 
@@ -1384,9 +1376,7 @@
               @td{})))))
 
 (defstep (ext2-question)
-  @md{@(mathjax-scripts)
-
-      # Firm and Union Game
+  @md{# Firm and Union Game
 
       A firm's output is \\(L (100 - L)\\) when it uses \\(L \leq 50\\) units of labor, and \\(2500\\) when it uses \\(L > 50\\) units of labor. The price of output is \\(1\\). A union that represents workers presents a wage demand (a nonnegative number \\(w\\)), which the firm either accepts or rejects. If the firm accepts the demand, it chooses the number \\(L\\) of workers to employ (which you should take to be a continuous variable, not an integer); if it rejects the demand, no production takes place \\((L = 0)\\). The firm's preferences are represented by its profit; the union's preferences are represented by the value of \\(w L\\).
 

@@ -4,6 +4,7 @@ import "./calibration";
 import "./counter";
 import "./filesize";
 import "./mask";
+import "./mathjax";
 import "./toggleable";
 import "./track-timings";
 

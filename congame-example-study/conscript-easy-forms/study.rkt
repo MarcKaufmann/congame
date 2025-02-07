@@ -147,8 +147,6 @@
 
 (defstep (display-math)
   @md{
-    @(mathjax-scripts)
-
     # Display Math
 
     We know that \\(x^2 + 2 \cdot x + 1 = (x + 1)^2\\). Smart. And as a standalone equation:

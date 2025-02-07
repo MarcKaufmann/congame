@@ -18,8 +18,7 @@
  static-uri
  container
  page
- page/xexpr
- mathjax-scripts)
+ page/xexpr)
 
 (define (static-uri path)
   (define path/full (format "/static/~a?rev=~a" path config:version))
@@ -66,7 +65,9 @@
          ([:crossorigin "anonymous"]
           [:src "https://js.sentry-cdn.com/fb877e2559424bf292eeb8331b8479b9.min.js"]))))
 
-     (:link ([:rel "stylesheet"] [:href "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.11.2/cdn/themes/light.css"]))
+     (:link
+      ([:rel "stylesheet"]
+       [:href "https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.11.2/cdn/themes/light.css"]))
      (:script
       ([:type "module"]
        [:blocking "render"])
@@ -75,6 +76,11 @@ import 'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.11.2/cdn/compone
 import 'https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.11.2/cdn/components/radio/radio.js';
 SCRIPT
       )
+
+     (:script
+      ([:id "MathJax-script"]
+       [:async ""]
+       [:src "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"]))
 
      (:script ([:src (static-uri "app.js")])))
     (:body
@@ -138,13 +144,3 @@ SCRIPT
          (displayln "<!doctype html>")
          (write-xml/content (xexpr->xml page))
          (profile-write profile))))))
-
-(define (mathjax-scripts)
-  (haml
-   (:div
-    (:script
-     ([:src "https://polyfill.io/v3/polyfill.min.js?features=es6"]))
-    (:script
-     ([:id "MathJax-script"]
-      [:async ""]
-      [:src "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"])))))
