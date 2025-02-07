@@ -172,8 +172,10 @@
     (+ (abs (- pT given-pT)) (abs (- pL given-pL))))
   (define raw-scores
     (list
-     (if (> 0.01 delta) 100 0)
-     (if (= ms2 1) 100 0)))
+     (if (> 0.015 delta) 100 0)
+     (cond [(= ms2 1) 100]
+           [(= ms1 0) 50]
+           [else 0])))
   (set! ms-scores
         (map * weights raw-scores))
   (skip))
@@ -211,7 +213,7 @@
 
 (defstudy ms-study
   [ms-init --> ms-question --> ms-compute-score --> ms-overview --> ,(lambda () done)]
-  [submission-closed --> ms-overview])
+  [submission-closed --> ms-compute-score --> ms-overview])
 
 (defvar p1t1/q1)
 (defvar p1t1/q2)
@@ -583,8 +585,9 @@
                     total-score)))
   ; TODO: I could just always put, but that seems wasteful.
   #;(when (and (assignment-closed?)
-             (not score-put?))
-    (put/identity 'total-score total-score))
+               (not score-put?))
+      (put/identity 'total-score total-score))
+  (put/identity 'total-score total-score)
   @md{# Problems (Total: 100 points)
 
       @(if (assignment-closed?)
@@ -927,7 +930,7 @@
            "not yet answered"
            @md*{
              @p{The probability \(p\) that player 1 plays \(T\) is given by \(p\) @(~a ms3-ne-comp-p) @(~a ms3-ne-p).}
-             @p{The probability \(q\) that player 2 plays \(L\) is given by \(q\) @(~a ms3-ne-comp-p) @(~a ms3-ne-q).}})
+             @p{The probability \(q\) that player 2 plays \(L\) is given by \(q\) @(~a ms3-ne-comp-q) @(~a ms3-ne-q).}})
 
       2. How many pure-strategy Nash equilibria are there? (0 to 4)
 
@@ -1186,13 +1189,15 @@
     (set! ms-scores '(0 0)))
   (when (undefined? ext1-wses)
     (set! ext1-wses (hash 'counter 0)))
+  (when (undefined? ext1-nes)
+    (set! ext1-nes null))
   (skip))
 
 (defstep (add-wse)
   (define select-actions
     '(("" . "--action--")
-                         ("L" . "L")
-                         ("R" . "R")))
+      ("L" . "L")
+      ("R" . "R")))
   (define (on-submit #:wse1 wse1 #:wse2 wse2 #:wse3 wse3 #:wse3-belief p)
     (define new-wse
       (list wse1 wse2 wse3 p))
