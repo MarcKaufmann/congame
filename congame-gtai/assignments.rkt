@@ -174,7 +174,7 @@
     (list
      (if (> 0.015 delta) 100 0)
      (cond [(= ms2 1) 100]
-           [(= ms1 0) 50]
+           [(= ms2 0) 50]
            [else 0])))
   (set! ms-scores
         (map * weights raw-scores))
@@ -212,8 +212,8 @@
   (skip))
 
 (defstudy ms-study
-  [ms-init --> ms-question --> ms-compute-score --> ms-overview --> ,(lambda () done)]
-  [submission-closed --> ms-compute-score --> ms-overview])
+  [ms-init --> ms-question --> ms-compute-score --> ms-overview --> [ms-compute-score2 ms-compute-score] --> ,(lambda () done)]
+  [submission-closed --> ms-overview])
 
 (defvar p1t1/q1)
 (defvar p1t1/q2)
@@ -672,7 +672,7 @@
   [grade-game-quiz --> problem-overview]
   [fq-study --> problem-overview]
   [ms-study --> problem-overview]
-  [show-scores1 --> problem-overview])
+  [[show-scores show-scores1] --> problem-overview])
 
 ;; Admin
 
