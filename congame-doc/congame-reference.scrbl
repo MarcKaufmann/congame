@@ -17,7 +17,7 @@ understand their usage.
 
 @table-of-contents[]
 
-@section{Studies and Steps}
+@section[#:style 'quiet]{Studies and Steps}
 
 @defmodule[congame/components/study]
 
@@ -186,7 +186,7 @@ understand their usage.
   the study if @racket[to-step-id] is @racket[#f].
 }
 
-@section{Transition Graphs}
+@section[#:style 'quiet]{Transition Graphs}
 
 @defmodule[congame/components/transition-graph]
 
@@ -229,7 +229,7 @@ understand their usage.
   ]
 }
 
-@section{Bots}
+@section[#:style 'quiet]{Bots}
 @defmodule[congame/components/bot]
 
 @deftech{Bots} are scriptable automatons that traverse a study according

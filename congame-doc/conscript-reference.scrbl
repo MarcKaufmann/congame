@@ -22,7 +22,7 @@ understand their usage.
 
 @;===============================================
 
-@section{Core}
+@section[#:style 'quiet]{Core}
 
 @defmodule[conscript/base]
 
@@ -154,7 +154,7 @@ element.
 
 @;===============================================
 
-@section{Page Content}
+@section[#:style 'quiet]{Page Content}
 
 @defmodule[conscript/struct]
 
@@ -297,7 +297,7 @@ The bindings in this module are also provided by @racketmodname[conscript/base].
 
 @; ==============================================
 
-@section{Survey Tools}
+@section[#:style 'quiet]{Survey Tools}
 
 @defmodule[conscript/survey-tools]
 
@@ -328,7 +328,7 @@ Returns a string representing @racket[_n] to two decimal places and prefixed wit
 
 @;===============================================
 
-@section{Matchmaking}
+@section[#:style 'quiet]{Matchmaking}
 
 @defmodule[conscript/matchmaking]
 
@@ -352,7 +352,7 @@ participant is assigned to, or @racket[#f] if not currently assigned to any grou
 
 
 @;===============================================
-@section{Admin}
+@section[#:style 'quiet]{Admin}
 
 @defmodule[conscript/admin]
 
