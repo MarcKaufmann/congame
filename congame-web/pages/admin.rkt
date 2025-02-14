@@ -878,6 +878,10 @@
            (format "~a" (study-participant/admin-progress the-participant))))
          (:h4
           (:a
+           ([:href (embed/url (edit-participant-progress-page db the-participant (request-uri req)))])
+           "Edit Participant Progress"))
+         (:h4
+          (:a
            ([:onclick "return confirm('Are you sure?')"]
             [:href (embed/url
                     (lambda (_req)
@@ -929,6 +933,42 @@
                  (:td (~t (study-var-first-put-at v) datetime-format))
                  (:td (~t (study-var-last-put-at v) datetime-format))
                  (:td (study-var-details v))))))))))))))
+
+(define ((edit-participant-progress-page db participant return-url) req)
+  (send/suspend/dispatch/protect
+   (lambda (embed/url)
+     (let loop ([req req])
+       (define defaults
+         (hash "progress" (call-with-output-string
+                           (lambda (out)
+                             (write (study-participant/admin-progress participant) out)))))
+       (match (form-run edit-participant-progress-form req #:defaults defaults)
+         [`(passed ,progress ,_)
+          (redirect/get/forget/protect)
+          (with-database-connection [conn db]
+            (~> (from study-participant #:as p)
+                (where (= p.id ,(study-participant/admin-id participant)))
+                (lookup conn _)
+                (set-study-participant-progress progress)
+                (update-one! conn _)))
+          (redirect-to (url->string return-url))]
+         [`(,_ ,_ ,rw)
+          (tpl:page
+           (tpl:container
+            (haml
+             (:div
+              (:h1 "Edit Participant Progress")
+              (:form
+               ([:action (embed/url loop)]
+                [:method "POST"])
+               (rw "progress" (field-group "Progress" (widget-textarea)))
+               (:button
+                ([:type "submit"])
+                "Save"))))))])))))
+
+(define edit-participant-progress-form
+  (form* ([progress (ensure binding/text (required))])
+    (call-with-input-string progress read)))
 
 (define (study-var-details var)
   (haml
