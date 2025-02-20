@@ -24,9 +24,13 @@ understand their usage.
 
 @section[#:style 'quiet]{Core}
 
-@defmodule[conscript/base]
+@defmodule[conscript/base #:use-sources (conscript/var-box)]
 
 The bindings provided by this module are also provided by @code{#lang conscript}.
+
+@defform[(define-var-box ...)]{
+    Define a var-box.
+}
 
 @defform[(defstep ...)]{
     @tktk{Defines a step.}
@@ -204,7 +208,7 @@ within another page (@racket[md*]).
 
 @subsection{HTML}
 
-@defmodule[conscript/html]
+@defmodule[conscript/html #:use-sources (conscript/html-element)]
 
 The bindings in this module are also provided by @racketmodname[conscript/base].
 
