@@ -3,18 +3,25 @@
 ; Experiment 8 from Johannes
 
 (provide
- opera-or-football)
+ opera-or-football/no-admin)
 
 (require conscript/admin
          conscript/game-theory
          conscript/survey-tools
          data/monocle
          racket/match
+         racket/unit
          threading)
 
 (with-namespace xyz.trichotomy.congame.congame-gtai.opera-football
   (defvar*/instance choices)
   (defvar*/instance choices/rounds))
+
+(defbox choices)
+(defbox choices/rounds)
+(define-values/invoke-unit game-theory@
+  (import game-theory-vars^)
+  (export game-theory^))
 
 (define n 2)
 
@@ -329,7 +336,7 @@ Your payoffs will be summed up over rounds and added to your E$ account.
          --> display-choices
          --> store-round
          --> ,(lambda ()
-          (define n 3)
+                (define n 3)
                 (set! round (add1 round))
                 (if (< round (add1 n))
                     'matchmake
@@ -337,5 +344,5 @@ Your payoffs will be summed up over rounds and added to your E$ account.
 
   [the-end --> the-end]
   [{admin (make-step
-          #:view-handler admin-view
-          'admin admin)} --> admin])
+           #:view-handler admin-view
+           'admin admin)} --> admin])
