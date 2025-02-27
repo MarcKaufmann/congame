@@ -351,8 +351,12 @@
 
         [("select")
          (define the-select (bot:find (format "[name=~a]" field-id)))
-         (define the-option (bot:element-find the-select (format "[value='~a']" value)))
-         (values (cons the-option elts-to-click) elts-to-type)]
+         (m:page-execute-async!
+          (bot:current-page)
+          "args[0].value = args[1]"
+          #;args[0] (m:element-handle the-select)
+          #;args[1] value)
+         (values elts-to-click elts-to-type)]
 
         [else
          (error 'formular-autofill (format "unhandled field type ~a" field-type))])))
