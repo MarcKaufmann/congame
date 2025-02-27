@@ -7,8 +7,13 @@
                      congame/components/bot
                      (submod congame/components/bot actions)
                      congame/components/bot-maker
+                     congame/components/formular
                      congame/components/study
-                     congame/components/transition-graph))
+                     congame/components/transition-graph
+                     koyo/haml
+                     (only-in xml xexpr?)))
+
+@(require "doc-util.rkt")
 
 @title[#:style 'toc]{Congame Reference}
 
@@ -16,6 +21,9 @@ Here you can lookup individual Congame functions and macros to thoroughly
 understand their usage.
 
 @table-of-contents[]
+
+
+@;===============================================
 
 @section[#:style 'quiet]{Studies and Steps}
 
@@ -49,6 +57,8 @@ understand their usage.
 
   Runs the study @racket[s] under @racket[req] with @racket[bindings].
 }
+
+@;------------------------------------------------
 
 @subsection{Steps}
 
@@ -151,6 +161,8 @@ understand their usage.
   respectively.
 }
 
+@;------------------------------------------------
+
 @subsection{Step Widgets}
 
 @defproc[(button [action (-> void?)]
@@ -185,6 +197,278 @@ understand their usage.
   Skips to the step named by @racket[to-step-id] or the next step in
   the study if @racket[to-step-id] is @racket[#f].
 }
+
+@;------------------------------------------------
+
+@subsection{Study loops}
+
+@defmodule[congame/components/for-study]
+
+@defform[(for/study [#:substudies]
+                    [#:requires module-paths]
+                    [#:provides identifiers]
+                    (for-clause ...)
+                    body-or-break ... body)
+         #:contracts
+         ([module-paths (listof symbol?)]
+          [identifiers (listof symbol?)])
+
+]{
+
+Iterates like @racket[for] but each result of the last @racket[_body] accumulated into a list of
+@tech{steps}, which are passed to @racket[make-study] to produce a @tech{study}.
+
+Use @racket[for/study] for quickly building studies with many steps that differ in only a few
+places.
+
+@racketblock[
+(for/study ([phase (in-list '("Setup" "Activation" "Tear-down"))])
+  (page
+    (haml
+      (:h1 phase " Phase")
+      (:p "...")
+      (button void "Next"))))
+]
+
+}
+
+@;================================================
+
+@section[#:style 'quiet]{Formular: forms and fields}
+
+@defmodule[congame/components/formular]
+
+A @deftech{field} is a special value that, when used inside a study form, renders as an input element.
+When the user submits the form, the field yields whatever value the user has entered as a Racket value.
+
+@defproc[(formular-field? [v any/c]) boolean?]{
+  Returns @racket[#t] if @racket[_v] is a @tech{field}, @racket[#f] otherwise.
+  
+}
+
+@defproc[(formular-autofill [bot-id any/c]) void?]{
+
+@tktk{Autofills elements on the page for the bot with @racket[_bot-id].}
+
+}
+
+@defproc[(input-list [fields (listof formular-field?)]) formular-field?]{
+
+Returns a field that is a collection of @racket[_fields], and which will provide all values
+in @racket[_fields] as a single @racket[list] when the form is submitted.
+
+For example, the following code creates two @racket[input-number] fields:
+
+@racketblock[
+
+(set! myvals (input-list (list (input-number) (input-number))))
+
+]
+
+When the user enters two numeric values (say, @racket[-3] and @racket[9]) and submits the form, 
+@racketidfont{myvals} will contain @racket['(-3 9)].
+
+}
+
+@deftogether[(
+@defproc[(input-number [label (or/c #f string?) #f]
+                       [#:min min real? -inf.0]
+                       [#:max max real? +inf.0]
+                       [#:step step integer? 1]
+                       [#:required? req (or/c string? boolean?) #t]
+                       [#:validators validators '()]
+                       [#:attributes attribs (listof (list/c symbol? string?)) '()])
+          formular-field?]
+@defproc[(input-range [label (or/c #f string?) #f]
+                      [#:min min real? -inf.0]
+                      [#:max max real? +inf.0]
+                      [#:step step integer? 1]
+                      [#:required? req (or/c string? boolean?) #t]
+                      [#:validators validators '()]
+                      [#:attributes attribs (listof (list/c symbol? string?)) '()])
+          formular-field?])]{
+
+Returns a field that ensures its input is numeric and falls between @racket[_min] and @racket[_max]
+(inclusive). Use @racket[input-number] field to get a textbox with spinner arrow buttons
+for incrementing/decrementing the value, or @racket[input-range] to get a horizontal slider.
+
+If @racket[_step] is provided, then using the stepper arrows or slider will increase or decrease the
+value by that amount (though the value is not guaranteed to be a multiple of @racket[_step]).
+
+If @racket[required?] is not @racket[#f], the field must contain data before the form can be
+submitted. 
+
+}
+
+
+@defproc[(checkbox [label (or/c #f string?)]
+                   [#:required? required? any/c #t]
+                   [#:attributes attrs (listof (list/c symbol? string?)) null])
+         formular-field?]{
+
+Returns a @tech{field} that renders as a single checkbox. If @racket[required?] is not @racket[#f],
+the checkbox must be selected before the form can be submitted. Any @racket[_attrs] will be used as
+@tech{HTML} attributes in the checkbox’s @racketresultfont{<input>} tag.
+
+}
+
+@defproc[(input-text [label (or/c #f string?) #f]
+                     [#:required? req (or/c string? boolean?) #t]
+                     [#:validators validators '()]
+                     [#:attributes attrs (listof (list/c symbol? string?)) '()])
+          formular-field?]{
+
+Returns a field that renders as a single-line text input. If @racket[required?] is not @racket[#f],
+the checkbox must be selected before the form can be submitted. Any @racket[_attrs] will be used as
+@tech{HTML} attributes in the text box’s @racketresultfont{<input>} tag.
+ 
+
+}
+
+@defproc[(textarea [label (or/c #f string?)]
+                   [#:required? req (or/c string? boolean?) #t]
+                   [#:validators validators '()]
+                   [#:attributes attrs (listof (list/c symbol? string?)) '()])
+          formular-field?]{
+
+Returns a field that renders as a multi-line text input area. If @racket[required?] is not
+@racket[#f], the text box must contain text before the form can be submitted. Any @racket[_attrs]
+will be used as @tech{HTML} attributes in the field’s @racketresultfont{<input>} tag.
+
+Use @racket[_attrs] to specify the size of the text box in rows and columns:
+
+@racketblock[
+(textarea "Label" #:attributes '((rows "5") (cols "33")))
+]
+
+}
+
+@deftogether[(
+@defproc[(input-date [label (or/c #f string?)]
+                     [#:required? req (or/c string? boolean?) #t]
+                     [#:validators validators '()]
+                     [#:attributes attrs (listof (list/c symbol? string?)) '()])
+          formular-field?]
+@defproc[(input-time [label (or/c #f string?)]
+                     [#:required? req (or/c string? boolean?) #t]
+                     [#:validators validators '()]
+                     [#:attributes attrs (listof (list/c symbol? string?)) '()])
+          formular-field?])]{
+
+Return fields for entering date and time values, respectively. 
+
+Date values are returned in strings of the form @racket{yyyy-mm-dd}. Time values are returned as
+strings of the form @racket{hh:mm} (24-hour format).
+
+If @racket[required?] is not @racket[#f], the field must contain text before the form can be
+submitted. Any @racket[_attrs] will be used as @tech{HTML} attributes in the field’s
+@racketresultfont{<input>} tag.
+
+}
+
+@defform[(input-file arg)
+         #:contracts ([arg any/c])]{
+
+input-file form
+
+}
+
+@defform[(make-checkboxes arg)
+         #:contracts ([arg any/c])]{
+
+make-checkboxes form
+
+}
+
+@defform[(make-radios arg)
+         #:contracts ([arg any/c])]{
+
+make-radios form
+
+}
+
+@defform[(make-radios-with-other arg)
+         #:contracts ([arg any/c])]{
+
+make-radios-with-other form
+
+}
+
+@defform[(make-sliders arg)
+         #:contracts ([arg any/c])]{
+
+make-sliders form
+
+}
+
+
+@defform[(select/inline arg)
+         #:contracts ([arg any/c])]{
+
+select/inline form
+
+}
+
+
+@defproc[(map-result [arg any/c]) any/c]{
+
+map-result proc
+
+}
+
+@defform[(map-result* arg)
+         #:contracts ([arg any/c])]{
+
+map-result* form
+
+}
+
+
+@defproc[(map-validator [arg any/c]) any/c]{
+
+map-validator proc
+
+}
+
+
+@defform[(~all-errors arg)
+         #:contracts ([arg any/c])]{
+
+~all-errors form
+
+}
+
+@defform[(~error arg)
+         #:contracts ([arg any/c])]{
+
+~error form
+
+}}
+
+@defform[(~errors arg)
+         #:contracts ([arg any/c])]{
+
+~errors form
+
+}
+
+@;------------------------------------------------
+
+@subsection{Form tools}
+
+@defmodule[(submod congame/components/formular tools)]
+
+@deftogether[(@defthing[submit-button xexpr?]
+              @defproc[(submit-button/label [label string?]) xexpr?])]{
+
+Returns a representation of an @tech{HTML} button that submits a form. The @racket[_label] argument
+is used as the button’s label.
+
+}
+
+
+
+@;===============================================
 
 @section[#:style 'quiet]{Transition Graphs}
 
@@ -229,7 +513,10 @@ understand their usage.
   ]
 }
 
+@;===============================================
+
 @section[#:style 'quiet]{Bots}
+
 @defmodule[congame/components/bot]
 
 @deftech{Bots} are scriptable automatons that traverse a study according
@@ -241,6 +528,11 @@ that step.
 
 @defproc[(bot? [v any/c]) boolean?]{
   Returns @racket[#t] when @racket[v] is a @tech{bot}.
+}
+
+@defparam[current-user-bot? v any/c #:auto-value]{
+  A parameter set to a non-@racket[#f] value when the current user
+  is a bot, @racket[#f] otherwise.
 }
 
 @defproc[(make-bot [step (or/c bot? bot-stepper?)] ...+) bot?]{
@@ -265,7 +557,10 @@ that step.
   procedure.
 }
 
+@;------------------------------------------------
+
 @subsection{Making Bots}
+
 @defmodule[congame/components/bot-maker]
 
 @defthing[model/c (-> (listof symbol?) procedure? any)]{
@@ -288,7 +583,10 @@ that step.
   currently running the model.
 }
 
+@;------------------------------------------------
+
 @subsection{Bot Actions}
+
 @defmodule[(submod congame/components/bot actions)]
 
 @defproc[(run-bot [b bot?]
@@ -357,7 +655,10 @@ that step.
   Returns all the children of @racket[elt] that match @racket[selector].
 }
 
+@;------------------------------------------------
+
 @subsection{Running Bots From Studies}
+
 @defmodule[congame-web/components/study-bot]
 
 @defproc[(spawn-bot [b bot?]) void?]{

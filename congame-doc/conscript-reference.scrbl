@@ -3,6 +3,7 @@
 @(require [for-label buid
                      racket/contract
                      congame/components/bot-maker
+                     (only-in congame/components/formular formular-field?)
                      conscript/base
                      conscript/markdown
                      (only-in racket/base string?)
@@ -18,7 +19,7 @@ understand their usage.
 @table-of-contents[]
 
 @(define e (make-base-eval #:lang 'racket/base))
-@(e '(require conscript/base conscript/survey-tools))
+@(e '(require (except-in conscript/base require) conscript/survey-tools))
 
 @;===============================================
 
@@ -135,8 +136,7 @@ element.
 @defform[(with-bot step-expr bot-expr)]{
   Wraps @racket[step-expr] so that its default bot is @racket[bot-expr].
 
-  @examples[
-    (require conscript/base)
+  @racketblock[
     (defstep (hello)
       (button "Continue..."))
     (defstudy s
@@ -266,7 +266,7 @@ HTML suitable for use within another page (@racket[html*]).
 @defform[(video #:src src content ...) #:contracts ([content xexpr?])]
 )]{
 
-Return representations (X-expressions) of HTML tags of the same names.
+Return representations (X-expressions) of @tech{HTML} tags of the same names.
 
 Any keyword arguments supplied are converted attribute names/values in the resulting HTML
 representation. Keyword arguments specifically noted above are required for their respective
@@ -285,11 +285,43 @@ forms.
 
 @defmodule[conscript/form]
 
-The bindings in this module are also provided by @racketmodname[conscript/base].
+In addition to the bindings documented here, this module also reprovides most of the bindings in
+@racketmodname[congame/components/formular].
+
+The bindings provided by this module are also provided by @racketmodname[conscript/base].
+
+@defproc[(bot:autofill [arg any/c]) any/c]{
+
+@tktk{bot:autofill proc}
+
+}
 
 
+@defproc[(radios [arg any/c]) any/c]{
 
-@tktk{...}
+radios proc
+
+}
+
+@defproc[(select [arg any/c]) any/c]{
+
+select proc
+
+}
+
+@defform[(binding arg)
+         #:contracts ([arg any/c])]{
+
+binding form
+
+}
+
+@defform[(form arg)
+         #:contracts ([arg any/c])]{
+
+form form
+
+}
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -329,6 +361,76 @@ Returns a string representing @racket[_n] to two decimal places and prefixed wit
 ]
 
 }
+
+@defproc[(diceroll-js [arg any/c]) any/c]{
+
+@tktk{diceroll-js proc}
+
+}
+
+@defproc[(questions [arg any/c]) any/c]{
+
+@tktk{questions proc}
+
+}
+
+@defproc[(slider-js [arg any/c]) any/c]{
+
+@tktk{slider-js proc}
+
+}
+
+@defproc[(timer [arg any/c]) any/c]{
+
+@tktk{timer proc}
+
+}
+
+@defform[(assigning-treatments arg)
+         #:contracts ([arg any/c])]{
+
+@tktk{assigning-treatments form}
+
+}
+
+@defform[(is-equal arg)
+         #:contracts ([arg any/c])]{
+
+@tktk{is-equal form}
+
+}
+
+@;Not documenting the optional render-proc argument because it's complicated, its default value
+@;is a binding that's not provided outside the module, and it appears to be for internal use only.
+@defproc[(make-multiple-checkboxes [options (listof (cons/c symbol? string?))]
+                                   [#:n num-required exact-nonnegative-integer? 0]
+                                   [#:message message (or/c #f string?)])
+          formular-field?]{ 
+
+@margin-note{See @secref["How_to_have_a_form_input_with_multiple_checkboxes"] for more examples of
+this function in use.}
+
+Returns a @tech{field} containing multiple checkboxes defined by the @racket[_options] list. The
+@racket[_num-required] argument specifies the minimum number of checkboxes the user must check
+before they can submit the form. If @racket[_message] is not @racket[#f], it will be shown to
+the participant @mark{if they don’t check at least @racket[_num-required] boxes.}
+
+}
+
+@defform[(make-sliders arg)
+         #:contracts ([arg any/c])]{
+
+make-sliders form
+
+}
+
+@defform[(toggleable-xexpr arg)
+         #:contracts ([arg any/c])]{
+
+toggleable-xexpr form
+
+}
+
 
 @;===============================================
 
