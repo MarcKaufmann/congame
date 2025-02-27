@@ -43,13 +43,19 @@
       ([:http-equiv "refresh"]
        [:content (format "~a; ~a" duration target)]))))))
 
-(define/contract ((anon-login-page auth db users) _req slug)
+(define/contract ((anon-login-page auth db users) req slug)
   (-> auth-manager? database? user-manager? (-> request? string? response?))
   (define the-instance (core:lookup-study-instance/by-slug db slug))
   (unless the-instance
     (next-dispatcher))
   (define the-user
     (user-manager-create-anon! users))
+  (define binds (request-bindings/raw req))
+  (define correlation-id (bindings-ref binds 'correlation-id))
+  (when correlation-id
+    (with-database-connection [conn db]
+      (~> (set-user-correlation-id the-user correlation-id)
+          (update-one! conn _))))
   (define target
     (reverse-uri 'study-page slug))
   (auth-manager-login!/nopass auth the-user)

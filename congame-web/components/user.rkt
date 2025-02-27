@@ -48,6 +48,7 @@
    [bot-set-id integer/f #:nullable]
    [identity-service-url string/f #:nullable]
    [identity-service-key string/f #:nullable]
+   [correlation-id string/f #:nullable]
    [(created-at (now/moment)) datetime-tz/f]
    [(updated-at (now/moment)) datetime-tz/f])
 
