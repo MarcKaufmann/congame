@@ -4,6 +4,7 @@
                      racket/base
                      racket/contract
                      congame-web/components/study-bot
+                     congame/components/for-study
                      congame/components/bot
                      (submod congame/components/bot actions)
                      congame/components/bot-maker
@@ -205,13 +206,13 @@ understand their usage.
 @defmodule[congame/components/for-study]
 
 @defform[(for/study [#:substudies]
-                    [#:requires module-paths]
-                    [#:provides identifiers]
+                    [#:requires requires]
+                    [#:provides provides]
                     (for-clause ...)
                     body-or-break ... body)
          #:contracts
-         ([module-paths (listof symbol?)]
-          [identifiers (listof symbol?)])
+         ([requires (listof symbol?)]
+          [provides (listof symbol?)])
 
 ]{
 
