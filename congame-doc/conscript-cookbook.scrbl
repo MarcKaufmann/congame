@@ -132,51 +132,6 @@ that participants see.
 
 @;===============================================
 
-@section{Displaying results from previous forms}
-
-By default, the form inputs store the value they are passed in under the ID that
-you provide: so a field @code|{@input-number[#:a-number]}| will store the value
-provided under the key @racket['a-number], which you can @racket[get] via
-@code|{(get 'a-number)}|. In order to display it on the page, you have to make
-sure that you convert it to a string first, which you can do with @racket[~a].
-
-Here is an example of a page that displays the values of several forms. Note
-that the second argument to @racket[get] defines the default value that should
-be returned if no value with the given key is found. So while @code|{(get
-'a-number)}| will throw an error if the key @racket['a-number] is not found,
-@code|{(get 'a-number 0)}| will return the value @racket[0] if no such key is
-found. You should use this feature only if there is a genuine reason why the key
-is not found: for example if people in one treatment are asked the question.
-Otherwise it is better to throw the error, which alerts you to the fact that
-something doesn't work as you expected.
-
-@codeblock[#:keep-lang-line? #f]|{
-#lang conscript
-(defstep (display-results)
-  (define checkboxes
-    (~a (get 'multiple-checkboxes '())))
-
-  (define free-form
-     (get 'n-required #f))
-
-  (define twice-free-form
-    (if free-form (* 2 free-form) "no value provided"))
-
-  (define radios-with-other
-    (get 'radios-with-other #f))
-
-  @md{
-    # Results so far
-
-    1. Result from `Multiple Checkboxes`: @checkboxes
-    2. Twice the result from `Free-Form Forms`: @(~a twice-free-form)
-    3. Radios with other: @(~a radios-with-other)
-
-    @button{Next}})
-}|
-
-@;===============================================
-
 @section{How to add the @"@" sign on a page}
 
 Write @"@\"@\"". For example:
