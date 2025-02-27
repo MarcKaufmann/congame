@@ -87,6 +87,9 @@ It provides the structure and content that the web browser renders to display a 
 consists of @deftech{elements} which are represented by @deftech{tags} (keywords enclosed in
 @litchar{<} and @litchar{>}) which surround the content of each element.
 
+@margin-note{The @link["https://developer.mozilla.org/en-US/docs/Web/HTML"]{HTML documentation on
+MDN} provides good tutorials and reference material for HTML.}
+
 Below is a fragment from an HTML document:
 
 @filebox["example.html"]{
@@ -123,6 +126,9 @@ styling to each element:
 
 @deftech{Markdown} is a simple text format for producing @tech{HTML}-formatted text.
 
+@margin-note{The Commonmark site has a handy @link["https://commonmark.org/help/"]{intro and quick
+reference sheet} which also links to a 10-minute tutorial.}
+
 Here’s how we’d write the above fragment using Markdown:
 
 @filebox["example.md"]{
@@ -144,17 +150,6 @@ above. As you can see, this is much quicker to type than the HTML version, and i
 Conscript provides functions for generating specific HTML elements, as well as functions that
 accept Markdown-formatted text and convert it to HTML for you.
 
-Here are some good resources for learning more:
-
-@itemlist[
-
-@item{HTML: The @link["https://developer.mozilla.org/en-US/docs/Web/HTML"]{HTML documentation on MDN}
-provides good tutorials and reference material for HTML.}
-
-@item{Markdown: The Commonmark site has a handy @link["https://commonmark.org/help/"]{intro and quick
-reference sheet} which also links to a 10-minute tutorial.}
-
-]
 
 @; ==============================================
 
