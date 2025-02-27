@@ -166,6 +166,7 @@
       congame-web/components/study-bot
       congame-web/components/uploaded-file
       conscript/admin
+      conscript/form0
       conscript/game-theory
       conscript/game-theory-sig
       conscript/game-theory-unit

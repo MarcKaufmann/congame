@@ -1,9 +1,6 @@
-#lang conscript/with-require
+#lang conscript
 
-(require (prefix-in congame: congame/components/study)
-         forms
-         koyo/haml
-         racket/match)
+(require conscript/form0)
 
 (provide
  conscript-forms-lib)
@@ -19,36 +16,20 @@
 (defvar age)
 
 (defstep (survey)
-  (define survey-form
-    (form* ([name (ensure binding/text (required))]
-            [age (ensure binding/number (required))])
-      (list name age)))
-
-  (define (on-submit data)
-    (match-define (list n a) data)
-    (set! name n)
-    (set! age a))
+  (define-values (survey-form on-submit)
+    (form+submit
+     [name (ensure binding/text (required))]
+     [age (ensure binding/number (required))]))
 
   (define (render rw)
-    (haml
-     (:div
-      (:div
-       (:label
-        "Name: "
-        (rw "name" (widget-text))
-        ,@(rw "name" (widget-errors))))
-      (:div
-       (:label
-        "Age: "
-        (rw "age" (widget-number))
-        ,@(rw "age" (widget-errors))))
-      (:button
-       ([:type "submit"])
-       "Submit"))))
+    @md*{@rw["name" (input-text)]
+         @rw["age" (input-number)]
+         @|submit-button|})
 
   @md{# Survey
 
-      @congame:form[survey-form on-submit render]})
+      @form[survey-form on-submit render]
+      })
 
 (defstep (display-info)
   @md{# Thanks
