@@ -58,6 +58,7 @@
 ; TODO: update for lecture (not game) instructions.
 (defstep (instructions)
   (define actions (hash-ref grade-game-form 'actions1))
+  (eprintf "form: ~s~n" grade-game-form)
   @md{# Grade Game
 
       ## Instructions
@@ -70,8 +71,10 @@
          ,@(for*/list ([a1 actions]
                        [a2 actions])
              (define outcome
-               (hash-ref grade-game-form (cons a1 a2)))
-             (li (format "If you choose ~a and your pair chooses ~a, then you get a grade ~a and your pair a grade ~a." a1 a2 (car outcome) (cdr outcome)))))
+               (for/list ([k (in-list '(outcomes1 outcomes2))])
+                 (~> (hash-ref grade-game-form k)
+                     (hash-ref (cons a1 a2)))))
+             (li (format "If you choose ~a and your pair chooses ~a, then you get a grade ~a and your pair a grade ~a." a1 a2 (car outcome) (cadr outcome)))))
 
       @button{Continue}})
 
@@ -147,7 +150,7 @@
 
   (define (display-chosen-action-profiles gf h)
     (define actions
-      (hash-ref gf 'actions))
+      (hash-ref gf 'actions null))
     @`(ul
        ,@(for*/list ([a1 actions]
                      [a2 actions])
