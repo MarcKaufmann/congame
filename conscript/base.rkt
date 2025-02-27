@@ -69,7 +69,7 @@
  ormap andmap
  sort remove-duplicates
  build-list
- list list? list* null null? cons pair? car cdr map member for-each shuffle length findf filter rest reverse
+ list list? list* null null? cons pair? car cdr cadr map member for-each shuffle length findf filter rest reverse
  first second third fourth fifth sixth seventh eighth ninth tenth
  display displayln print println printf eprintf write writeln
  take drop
