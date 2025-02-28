@@ -14,8 +14,12 @@
  dyn:form
  (all-from-out forms)
 
+ checkbox
  input-text
- input-number)
+ input-number
+ radios
+
+ required-unless)
 
 (define-syntax (form+submit stx)
   (syntax-parse stx
@@ -27,13 +31,32 @@
                      (match-define (list tmp ...) data)
                      (set! id tmp) ...)))]))
 
-(define (((make-input-widget widget) [label #f]) name value errors)
+(define (((make-input-widget widget)
+          [label #f]
+          #:attributes [attributes null])
+         name value errors)
   (haml
    (.field-group
     (:label
      (or label (string-titlecase name))
-     ((widget) name value errors)
+     ((widget #:attributes attributes) name value errors)
      ,@((widget-errors) name value errors)))))
 
+(define checkbox (make-input-widget widget-checkbox))
 (define input-text (make-input-widget widget-text))
 (define input-number (make-input-widget widget-number))
+
+(define ((radios options
+                [label #f]
+                #:attributes [attributes null])
+         name value errors)
+  (haml
+   (.group
+    (:label.radio-group
+     label
+     ((widget-radio-group options #:attributes attributes) name value errors))
+    ,@((widget-errors) name value errors))))
+
+(define ((required-unless pred) v)
+  (cond [(pred) (ok v)]
+        [((required) v)]))
