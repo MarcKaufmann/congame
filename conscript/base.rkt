@@ -68,7 +68,7 @@
  for*/and for*/or for*/sum for*/product
  ormap andmap
  sort remove-duplicates
- build-list
+ build-list list-ref
  list list? list* null null? cons pair? car cdr cadr map member for-each shuffle length findf filter rest reverse
  first second third fourth fifth sixth seventh eighth ninth tenth
  display displayln print println printf eprintf write writeln
@@ -90,6 +90,7 @@
 
  string? symbol?
  format ~a string number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
+ inexact->exact
  string-split string-join string-append
  bytes? bytes->string/utf-8 char?
 
