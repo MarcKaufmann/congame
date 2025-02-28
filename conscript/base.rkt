@@ -361,10 +361,7 @@
 
 (provide
  (contract-out
-  [~current-view-uri (-> string?)]
-  [~url (->* [string?]
-             [#:params (listof (cons/c symbol? string?))]
-             string?)]))
+  [~current-view-uri (-> string?)]))
 
 (define (~current-view-uri)
   (format "/study/~a/view/~a"
@@ -375,14 +372,6 @@
                                     (list (step-id (current-step)))))])
              (symbol->string id))
            "/")))
-
-(define (~url urlish #:params [params null])
-  (define u
-    (string->url
-     (if (not (regexp-match? #rx"^[^:]+?://" urlish))
-         (string-append "https://" urlish)
-         urlish)))
-  (url->string (struct-copy url u [query params])))
 
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
