@@ -1041,7 +1041,7 @@
   (eprintf "true-nes: ~a; given-nes: ~a" true-nes nes)
   (define raw-scores
     (list
-     (if (string=? ms4-dominated-action "M") 100 0)
+     (if (string=? ms4-dominated-action "T") 100 0)
      (for/sum ([true-ne true-nes])
        (if (is-x-in-l? true-ne nes) 100/3 0))))
 
@@ -1077,8 +1077,8 @@
       @button{Continue}})
 
 (defstudy ms4-study
-  [ms4-init --> [check-assignment (check-assignment-open? 'ms4-overview)] --> ms4-question --> ms4-compute-score --> ms4-overview --> ,(lambda () done)]
-  [submission-closed --> ms4-overview])
+  [ms4-init --> [check-assignment (check-assignment-open? 'submission-closed)] --> ms4-question --> ms4-compute-score --> ms4-overview --> ,(lambda () done)]
+  [submission-closed --> ms4-compute-score])
 
 
 ; FIXME: Refactor problem-overview and assignment2-overview
@@ -1098,8 +1098,7 @@
                     (current-participant-id)
                     total-score)))
   ; TODO: I could just always put, but that seems wasteful.
-  (when (and (assignment-closed?)
-             (not score-put?))
+  (when (assignment-closed?)
     (put/identity 'total-score total-score))
 
   @md{# Problems (Total: 100 points)
