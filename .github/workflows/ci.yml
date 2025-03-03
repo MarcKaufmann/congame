@@ -168,7 +168,7 @@ jobs:
           ++lang conscript \
           ++lang conscript/with-require \
           ++lib conscript/admin \
-          ++lib conscript/forms0 \
+          ++lib conscript/form0 \
           ++lib conscript/game-theory \
           ++lib conscript/survey-tools \
           ++lang north \
