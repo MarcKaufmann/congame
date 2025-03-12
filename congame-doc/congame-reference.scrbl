@@ -61,6 +61,44 @@ understand their usage.
 
 @;------------------------------------------------
 
+@subsection{Study variables}
+
+@deftogether[(
+
+@defform[(defvar id)]
+
+@defform[(defvar* id global-id)])]{
+
+Defines a study variable with @tech{participant scope} bound to @racket[_id]. The study variable can
+be accessed inside the study steps using @racket[_id] and updated with @racket[(set! _id _expr)]. 
+
+The value of the study variable will be stored in the Congame server database under the current
+study → instance → participant. 
+
+Study variables created with @racket[defvar*] will additionally be visible to any child studies (see
+@racket[defstep/study]).
+
+@bold{Important:} when using @racket[defvar*], you must provide a second identifier
+@racket[_global-id] and manually ensure it is distinct from any identifiers that may be used in
+child studies. This prevents child studies that may be using the same identifier names from
+accidentally overwriting your parent study’s variable.
+
+}
+
+@deftogether[(
+
+@defform[(defvar/instance ...)]
+
+@defform[(defvar*/instance ...)])]{
+
+Like @racket[defvar] and @racket[defvar*], but for creating study variables with @tech{instance
+scope} --- that is, the stored value is shared by all participants in the study instance.
+
+}
+
+
+@;------------------------------------------------
+
 @subsection{Steps}
 
 @defproc[(step? [v any/c]) boolean?]{
@@ -424,35 +462,7 @@ map-result* form
 
 }
 
-
-@defproc[(map-validator [arg any/c]) any/c]{
-
-map-validator proc
-
 }
-
-
-@defform[(~all-errors arg)
-         #:contracts ([arg any/c])]{
-
-~all-errors form
-
-}
-
-@defform[(~error arg)
-         #:contracts ([arg any/c])]{
-
-~error form
-
-}}
-
-@defform[(~errors arg)
-         #:contracts ([arg any/c])]{
-
-~errors form
-
-}
-
 @;------------------------------------------------
 
 @subsection{Form tools}
@@ -475,7 +485,8 @@ is used as the button’s label.
 
 @defmodule[congame/components/transition-graph]
 
-@defform[(transition-graph transition-clause ...+)
+@defform[#:literals (unquote lambda --> goto)
+         (transition-graph transition-clause ...+)
          #:grammar
          [(transition-clause (code:line [id transition-entry ...+]))
 
@@ -512,6 +523,14 @@ is used as the button’s label.
       (make-step 'b b)
       (make-step 'c c)))
   ]
+}
+
+@deftogether[(@defidform[-->]
+              @defform[(goto step-id)])]{
+
+Forms used in @racket[transition-graph]s to define transitions between study steps. Use of these
+forms in places where a transition graph is not being defined will result in a syntax error.
+
 }
 
 @;===============================================

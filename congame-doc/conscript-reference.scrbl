@@ -3,6 +3,7 @@
 @(require [for-label buid
                      racket/contract
                      congame/components/bot-maker
+                     ;(except-in congame/components/study button)
                      (only-in congame/components/formular formular-field?)
                      conscript/base
                      conscript/markdown
@@ -29,49 +30,40 @@ understand their usage.
 
 The bindings provided by this module are also provided by @code{#lang conscript}.
 
-@defform[(define-var-box ...)]{
-    Define a var-box.
-}
+@defform[(defstep (step-id) step-body)]{
 
-@defform[(defstep ...)]{
-    @tktk{Defines a step.}
-}
+@margin-note{For examples of @racket[defstep] in use, see @secref["intro"].}
 
-@defform[(defstep/study ...)]{
-    @tktk{...}
-}
-
-@deftogether[(
-
-@defform[(defvar ...)]
-
-@defform[(defvar* ...)])]{
-
-@tktk{Define a variable with some extra magic behind it. @racket[defvar] and @racket[defvar*] are both
-particiant scope; @racket[defvar*] scope across parent/child studies. ...}
+Defines a study @tech{step}. The @racket[_step-body] must be an expression that evaluates to a
+@racket[study-page] — usually @racket[md] or @racket[html].
 
 }
 
-@deftogether[(
+@defform[(defstep/study step-id #:study child-study-expr 
+                        maybe-require-bindings
+                        maybe-provide-bindings)
+         #:grammar
+         [(maybe-require-bindings (code:line)
+                                  (code:line #:require-bindings ([child-id parent-id] ...)))
+          (maybe-provide-bindings (code:line)
+                                  (code:line #:provide-bindings ([parent-id child-id] ...)))]]{
+    
 
-@defform[(defvar/instance ...)]
+Defines a study step that runs @racket[_child-study-expr] when reached. 
 
-@defform[(defvar*/instance ...)])]{
+The step @racket[_step-id] is said to be part of the “parent” study, of which
+@racket[_child-study-expr] becomes a “child” study.
 
-@tktk{Like @racket[defvar] and @racket[defvar*], but scoped to the current study @tech{instance} ---
-that is, the stored value is shared by all participants in the study instance.}
+The @racket[#:require-bindings] argument is used to map identifiers required by the child study to
+identifiers available in the current study context if their names differ. Any identifiers required
+by the child study that are not mapped here are assumed to be named identically to identifiers in
+the parent study context, and @racket[defstep/study] will attempt to map them accordingly.
+
+The @racket[#:provide-bindings] argument can be used to map identifiers in the parent study to
+particular identifiers provided by @racket[_child-study-expr] upon completion. When
+@racket[#:provide-bindings] is not specified, no values are assigned.
 
 }
-
-@;{ Important anti-feature to document: for `defvar*`, we need to provide a unique id to track the
-variable in the DB. E.g., `(defvar* bla unique-id-for-bla)`. If any part of the same study uses the
-same `unique-id-for-bla`, say because we use `bla` as the id and lazily use the same elsewhere, then
-these two variables will overwrite each others values!
-
-We used to have a check that ensured that we had unique ids, but it was too strict and doesn't work
-with uploaded studies (as opposed to one's that are bundled in the source code), so we switched it
-off. Since these unique ids have to be provided statically, we have to develop some checks and
-debugging tools, but also just document this anti-feature. }
 
 @defform[(defview ...)]{
 
@@ -80,7 +72,10 @@ debugging tools, but also just document this anti-feature. }
 }
 
 @defform[#:literals (-->)
-         (defstudy maybe-requires maybe-provides step-transition ...)
+         (defstudy study-id
+                   maybe-requires
+                   maybe-provides 
+                   step-transition ...)
          #:grammar
          [(maybe-requires (code:line)
                           (code:line #:requires (value-id-sym ...)))
@@ -94,11 +89,22 @@ debugging tools, but also just document this anti-feature. }
          ([value-id-sym symbol?]
           [step step?])]{
 
-@tktk{More to come...}
+Defines a study in terms of steps joined by transitions. The transitions follow the same grammar as
+@racket[transition-graph].
 
-Defines a study.
+For any “final” step (that is, a step that marks the study’s end or one of the study’s endings) you
+must include a separate @racket[_step-transition] with the step at both ends.
 
-Any number of steps may be joined by transitions using @defidform/inline[-->].
+Example:
+
+@racketblock[
+(defstudy college-try
+  [attempt --> ,(lambda () (if success
+                               (goto good-ending)
+                               (goto bad-ending)))]
+  [bad-ending --> bad-ending]
+  [good-ending --> good-ending])
+]
 
 }
 
@@ -126,13 +132,6 @@ element.
 
 }
 
-
-@defform[(for/study ...)]{
-
-@tktk{See loops, definition of}
-
-}
-
 @defform[(with-bot step-expr bot-expr)]{
   Wraps @racket[step-expr] so that its default bot is @racket[bot-expr].
 
@@ -144,9 +143,107 @@ element.
   ]
 }
 
+@;------------------------------------------------
+
+@subsection{Boxes}
+
+
+@defform[(defbox id)]{
+
+Defines two functions, @racketkeywordfont{get-}@racket[_id] (which takes no arguments and returns
+the value of @racket[_id]) and @racketkeywordfont{set!-}@racket[_id] (which takes one argument and
+updates the value of @racket[_id]).
+
+@examples[#:eval e
+(define flux 81)
+(defbox flux)
+(get-flux)
+(set!-flux "new")
+(get-flux)
+flux
+
+]
+
+}
+
+@defform[(define-var-box id var)]{
+
+Binds @racket[_id] to a function that can take zero arguments or one argument. If given no
+arguments, the function returns the current value of @racket[_var] (which must already be defined
+elsewhere); if given a single argument, the function @racket[set!]s the value of @racket[_var] to
+that value.
+
+The function @racket[_id] can be passed to other functions, allowing them to access or update a
+local variable.
+
+@examples[#:eval e
+(define flux #f)
+(define-var-box get-or-set flux)
+
+(get-or-set)
+(get-or-set 'foo)
+(get-or-set)
+flux
+]
+
+}
+
+
+
+@;------------------------------------------------
+
+@subsection{Logging}
+
+@deftogether[(
+@defform*[[(log-conscript-debug string-expr)
+           (log-conscript-debug format-string-expr v ...)]]
+@defform*[[(log-conscript-info string-expr)
+           (log-conscript-info format-string-expr v ...)]]
+@defform*[[(log-conscript-warning string-expr)
+           (log-conscript-warning format-string-expr v ...)]]
+@defform*[[(log-conscript-error string-expr)
+           (log-conscript-error format-string-expr v ...)]]
+@defform*[[(log-conscript-fatal string-expr)
+           (log-conscript-fatal format-string-expr v ...)]])]{
+
+@margin-note{See @secref["logging" #:doc '(lib "scribblings/reference/reference.scrbl")] in the 
+@italic{Racket Reference} for more information on logging.}
+
+Logs an event with the Conscript logger, evaluating @racket[string-expr] or @racket[(format
+format-string-expr v ...)]. These forms are listed above in order of severity.
+
+Logging functions are useful for debugging: for example, when you want to capture and surface
+state information in the middle of a process, or extra context about possible causes of a problem.
+
+Logged events are printed on the console (@tt{stderr}) of a running Congame server.
+
+Note that since the result of a @racketkeywordfont{log-conscript-}@racket[_level] form is
+@|void-const|, you can't use it directly inside a study step. Instead, wrap it in a 
+@racket[begin] expression that returns an empty string:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (age-name-survey)
+  @md{
+    # Survey
+ 
+    @form{
+      What is your first name? @(set! first-name (input-text))
+ 
+      @(begin
+        (log-conscript-info "Hello")
+        "")
+      @submit-button
+  }})
+}|
+
+}
+
+@screenshot{ref-log-example-output.png}
+
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@subsection{Local Testing}
+@; @subsection{Local Testing}
 
 @; @defmodulelang[conscript/local]
 
