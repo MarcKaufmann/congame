@@ -1,6 +1,6 @@
 #lang scribble/manual
 
-@title{Congame Configurations}
+@title[#:style 'quiet]{Congame Configurations}
 
 @section{Basic setup: single congame server}
 

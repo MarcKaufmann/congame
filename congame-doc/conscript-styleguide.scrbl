@@ -4,7 +4,7 @@
           "doc-util.rkt"
           "howtos.rkt")
 
-@title{Conscript Style Guide}
+@title[#:style 'quiet]{Conscript Style Guide}
 
 These are some best practices you should follow to prevent common errors, and to make your code more
 consistent and readable.

@@ -4,7 +4,7 @@
         [for-label conscript/base
                    conscript/markdown])
 
-@title[#:tag "intro"]{Introduction: a quick tour using Conscript}
+@title[#:tag "intro" #:style 'quiet]{Introduction: a quick tour using Conscript}
 
 You can follow the steps in this tour to get a fast, high-level introduction to Congame and
 Conscript:

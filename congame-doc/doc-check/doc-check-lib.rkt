@@ -130,7 +130,7 @@
          id " proc\n\n"
          "}\n\n")]
     [(form)
-     (~a "@defform[(" id "arg)\n"
+     (~a "@defform[(" id " arg)\n"
          "         #:contracts ([arg any/c])]{\n\n"
          id " form\n\n"
          "}\n\n")]))
@@ -147,7 +147,7 @@
              not)))
 
 (define (term-bytes . b)
-  (when (force in-term?) (apply write-bytes b)))
+  (when (force in-term?) (for-each write-bytes b)))
 
 ;; From https://github.com/lexi-lambda/racket-commonmark/blob/master/commonmark-test/tests/commonmark/spec.rkt
 

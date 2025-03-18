@@ -1,5 +1,5 @@
 #lang scribble/manual
 
-@title{Deploying Congame Servers in Production}
+@title[#:style 'quiet]{Deploying Congame Servers in Production}
 
 ...
