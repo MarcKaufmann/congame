@@ -675,6 +675,12 @@ that step.
   Returns all the children of @racket[elt] that match @racket[selector].
 }
 
+@defproc[(find-attribute [attr string?]) (or/c string? #f)]{
+
+  Returns the value of the attribute @racket[_attr] in the first element found on the current page
+  with that attribute, or @racket[#f] if no matching element/attribute is found.
+}
+
 @;------------------------------------------------
 
 @subsection{Running Bots From Studies}

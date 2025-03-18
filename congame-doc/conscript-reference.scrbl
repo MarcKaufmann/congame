@@ -108,6 +108,26 @@ Example:
 
 }
 
+@defproc[(put/identity [key symbol?] [value any/c]) void?]{
+
+If the user enrolled in the study via an identity server, stores @racket[_value] under @racket[_key]
+within their enrollment on that server; if the user did not enroll through an identity server, it
+stores the value under @racket[_key] directly on the Congame server.
+
+The point of enrolling via an identity server is to prevent the study author from connecting a
+participant’s answers with their identity --- but there are cases where a well-designed study will
+still need to attach some data to their identity. For example, at the end of a study you might call
+@racket[(put/identity 'payment-due pay-amount)] so that, despite not knowing the participant’s
+answers, you know how much you need to pay them.
+
+}
+
+@defproc[(~current-view-uri) string?]{
+
+Returns the URI of the current view handler page.
+
+}
+
 @defproc[(button [action-proc (-> any/c) void]
                  [label string?]
                  [#:id id string? ""]
