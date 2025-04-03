@@ -35,33 +35,32 @@ SCRIPT
       (put/instance k v))))
 
 (define (describe-study)
-  (page
-   (haml
-    (.container
-     (:h1 "Welcome to the toy Racketfest Study")
+  (haml
+   (.container
+    (:h1 "Welcome to the toy Racketfest Study")
 
-     (:p "If you participate, the following will happen:")
+    (:p "If you participate, the following will happen:")
 
-     (:ol
-      (:li "You will be asked to do two mandatory tasks to familiarize yourself with them")
-      (:li "You will be randomly matched with one other participant into a pair")
-      (:li "One of the pair will be assigned the role of chooser, the other the role of receiver")
-      (:li "The chooser will then decide how to allocate 4 tedious tasks that your pair has to complete.")
-      (:li "Then both of you will have to do the number of tasks as decided by the chooser"))
+    (:ol
+     (:li "You will be asked to do two mandatory tasks to familiarize yourself with them")
+     (:li "You will be randomly matched with one other participant into a pair")
+     (:li "One of the pair will be assigned the role of chooser, the other the role of receiver")
+     (:li "The chooser will then decide how to allocate 4 tedious tasks that your pair has to complete.")
+     (:li "Then both of you will have to do the number of tasks as decided by the chooser"))
 
-     (button
-      (lambda ()
-        (init/instance 'count 0)
-        (init/instance 'partners (hash))
-        (init/instance 'roles (hash))
-        (init/instance 'unassigned-participants '())
-        (init/instance 'allocations (hash))
-        (with-study-transaction
-          (define count (get/instance 'count))
-          (put 'id count)
-          (put/instance 'count (add1 count))
-          (put/instance 'unassigned-participants (cons count (get/instance 'unassigned-participants)))))
-      "Next")))))
+    (button
+     (lambda ()
+       (init/instance 'count 0)
+       (init/instance 'partners (hash))
+       (init/instance 'roles (hash))
+       (init/instance 'unassigned-participants '())
+       (init/instance 'allocations (hash))
+       (with-study-transaction
+         (define count (get/instance 'count))
+         (put 'id count)
+         (put/instance 'count (add1 count))
+         (put/instance 'unassigned-participants (cons count (get/instance 'unassigned-participants)))))
+     "Next"))))
 
 (define (wait-to-assign-roles)
   ; FIXME: Cannot have `skip` inside `with-study-transaction`
@@ -90,68 +89,62 @@ SCRIPT
       (put/instance 'roles new-roles)))
   (when (get-partner)
     (skip))
-  (page
-   (haml
-    (.container
-     (:h1 "Please wait until we match you to a partner")
+  (haml
+   (.container
+    (:h1 "Please wait until we match you to a partner")
 
-     (refresh-every 5)))))
+    (refresh-every 5))))
 
 (define (dictator-choice)
-  (page
-   (haml
-    (.container
-     (:h1 "Allocate the workload")
+  (haml
+   (.container
+    (:h1 "Allocate the workload")
 
-     (formular
-      (haml
-       (:div
-        (#:allocation (input-number #:min 0 #:max 4 "How many of the 4 tasks are you going to do? The person matched with you will have to do the remaining tasks."))
-        (:button.button.next-button ([:type "submit"]) "Submit")))
-      (lambda (#:allocation allocation)
-        (with-study-transaction
-          (define id (get 'id))
-          (define partner-id (get-partner))
-          (define allocations (get/instance 'allocations))
-          (define new-allocations
-            (hash-set
-             (hash-set allocations id allocation)
-             partner-id (- 4 allocation)))
-          (put/instance 'allocations new-allocations))))))))
+    (formular
+     (haml
+      (:div
+       (#:allocation (input-number #:min 0 #:max 4 "How many of the 4 tasks are you going to do? The person matched with you will have to do the remaining tasks."))
+       (:button.button.next-button ([:type "submit"]) "Submit")))
+     (lambda (#:allocation allocation)
+       (with-study-transaction
+         (define id (get 'id))
+         (define partner-id (get-partner))
+         (define allocations (get/instance 'allocations))
+         (define new-allocations
+           (hash-set
+            (hash-set allocations id allocation)
+            partner-id (- 4 allocation)))
+         (put/instance 'allocations new-allocations)))))))
 
 (define (receiver-wait-for-dictator)
   (when (hash-ref (get/instance 'allocations) (get 'id) #f)
     (skip))
-  (page
-   (haml
-    (.container
-     (:h1 "Wait for the other person to allocate tasks")
-     (refresh-every 5)))))
+  (haml
+   (.container
+    (:h1 "Wait for the other person to allocate tasks")
+    (refresh-every 5))))
 
 (define (display-allocation)
   (define allocation
     (hash-ref (get/instance 'allocations) (get 'id)))
-  (page
-   (haml
-    (.container
-     (:h1 (format "You have been allocated ~a tasks" allocation))
+  (haml
+   (.container
+    (:h1 (format "You have been allocated ~a tasks" allocation))
 
-     (button
-      (lambda ()
-        (put 'allocation allocation))
-      "Start the tasks")))))
+    (button
+     (lambda ()
+       (put 'allocation allocation))
+     "Start the tasks"))))
 
 (define (thank-you)
-  (page
-   (haml
-    (.container
-     (:h1 "Thank you for participating")))))
+  (haml
+   (.container
+    (:h1 "Thank you for participating"))))
 
 (define (failed-tasks)
-  (page
-   (haml
-    (.container
-     (:h1 "You failed at too many tasks")))))
+  (haml
+   (.container
+    (:h1 "You failed at too many tasks"))))
 
 ;; STUDIES
 (define toy-study

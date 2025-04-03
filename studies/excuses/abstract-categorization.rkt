@@ -101,12 +101,11 @@
   (define-values (text/in cat/in text/out cat/out)
     (values (abstract-text a/in) (abstract-categories a/in)
             (abstract-text a/out) (abstract-non-categories a/out)))
-  (page
-   (haml
-    (.container
-     @:h1{Task Description}
+  (haml
+   (.container
+    @:h1{Task Description}
 
-     @:p{As mentioned before, the task you have to do in this study consists of categorizing abstracts (short summaries of research papers) by topics.}
+    @:p{As mentioned before, the task you have to do in this study consists of categorizing abstracts (short summaries of research papers) by topics.}
 
     @:h3{Example Abstract for '@string-titlecase[cat/in]'}
 
@@ -120,7 +119,7 @@
 
     @:p.abstract{"@text/out"}
 
-    @button[void]{Continue}))))
+    @button[void]{Continue})))
 
 (define (binding:csv-file->list f)
   (map-result*
@@ -139,28 +138,27 @@
          (map ->abstract rows)))))
 
 (define (upload-abstracts/page)
-  (page
-   (haml
-    (.container
-     (:h1 "Upload a csv with the abstracts")
-     (:p "The csv should contain the following columns (in that order):")
-     (:ol
-      (:li "Abstract Text")
-      (:li "Categories that apply, separated by semicolons")
-      (:li "Categories that definitely do not apply, separated by semicolons"))
+  (haml
+   (.container
+    (:h1 "Upload a csv with the abstracts")
+    (:p "The csv should contain the following columns (in that order):")
+    (:ol
+     (:li "Abstract Text")
+     (:li "Categories that apply, separated by semicolons")
+     (:li "Categories that definitely do not apply, separated by semicolons"))
 
-     (formular
-      (haml
-       (:div
-        (#:abstracts (input-abstracts "csv file with abstracts and categories"))
-        (#:header? (yn-radios "Is the first row of the csv file a header row?"))
-        submit-button))
-      (lambda (#:abstracts abstracts
-               #:header? header?)
-        (put/abstracts* 'header? header?)
-        (put/instance/abstracts* 'raw-abstracts (if header? (cdr abstracts) abstracts))))
+    (formular
+     (haml
+      (:div
+       (#:abstracts (input-abstracts "csv file with abstracts and categories"))
+       (#:header? (yn-radios "Is the first row of the csv file a header row?"))
+       submit-button))
+     (lambda (#:abstracts abstracts
+              #:header? header?)
+       (put/abstracts* 'header? header?)
+       (put/instance/abstracts* 'raw-abstracts (if header? (cdr abstracts) abstracts))))
 
-     (button void "Cancel" #:to-step-id 'cancel)))))
+    (button void "Cancel" #:to-step-id 'cancel))))
 
 (define (display-abstracts)
   (haml
@@ -226,23 +224,22 @@
 
 (define (check-abstracts)
   (define abstracts (get/instance/abstracts* 'raw-abstracts))
-  (page
-   (haml
-    (.container
-     (:h1 "Check Abstracts")
+  (haml
+   (.container
+    (:h1 "Check Abstracts")
 
-     (:p "If you are fine with the abstracts, click 'Continue'. If you want to upload other abstracts, click 'Upload Abstracts' instead, which will overwrite the existing abstracts.")
+    (:p "If you are fine with the abstracts, click 'Continue'. If you want to upload other abstracts, click 'Upload Abstracts' instead, which will overwrite the existing abstracts.")
 
-     (button
-      (lambda ()
-        (store-abstracts abstracts))
-      "Keep Abstracts")
+    (button
+     (lambda ()
+       (store-abstracts abstracts))
+     "Keep Abstracts")
 
-     (button void "Upload other abstracts" #:to-step-id 'upload-abstracts)
-     ; NOTE: The cancel doesn't undo the previous step where we stored stuff on 'raw-abstracts. That's probably fine.
-     (button void "Cancel" #:to-step-id 'cancel)
+    (button void "Upload other abstracts" #:to-step-id 'upload-abstracts)
+    ; NOTE: The cancel doesn't undo the previous step where we stored stuff on 'raw-abstracts. That's probably fine.
+    (button void "Cancel" #:to-step-id 'cancel)
 
-     (display-raw-abstracts)))))
+    (display-raw-abstracts))))
 
 (define (cancel)
   (skip))
@@ -273,45 +270,44 @@
     (~> (input-file label)
         binding:csv-file->list))
 
-  (page
-   (haml
-    (.container
-     (:h1 "Upload Reasons")
+  (haml
+   (.container
+    (:h1 "Upload Reasons")
 
-     (formular
-      (haml
-       (:div
-        (:div (#:reasons (input-reasons "Upload a csv file with reasons")))
-        submit-button))
+    (formular
+     (haml
+      (:div
+       (:div (#:reasons (input-reasons "Upload a csv file with reasons")))
+       submit-button))
 
-      (lambda (#:reasons reasons)
-        (put/instance* 'raw-reasons reasons)
-        (define-values (reasons-for reasons-against)
-          (for/fold ([reasons-for (hash)]
-                     [reasons-against (hash)])
-                    ; Assumes that the csv file has a header
-                    ([r (cdr reasons)])
-            (match-define
-              (list _question topic _avg _ranking dir text)
-              r)
-            (if (string=? dir "for")
-                (values (hash-update
-                         reasons-for
-                         (string->symbol (string-downcase topic))
-                         (λ (v)
-                           (cons text v))
-                         null)
-                        reasons-against)
-                (values reasons-for
-                        (hash-update reasons-against
-                                     (string->symbol (string-downcase topic))
-                                     (λ (v)
-                                       (cons text v))
-                                     null)))))
-        (put/instance* 'reasons-for reasons-for)
-        (put/instance* 'reasons-against reasons-against)))
+     (lambda (#:reasons reasons)
+       (put/instance* 'raw-reasons reasons)
+       (define-values (reasons-for reasons-against)
+         (for/fold ([reasons-for (hash)]
+                    [reasons-against (hash)])
+                   ; Assumes that the csv file has a header
+                   ([r (cdr reasons)])
+           (match-define
+             (list _question topic _avg _ranking dir text)
+             r)
+           (if (string=? dir "for")
+               (values (hash-update
+                        reasons-for
+                        (string->symbol (string-downcase topic))
+                        (λ (v)
+                          (cons text v))
+                        null)
+                       reasons-against)
+               (values reasons-for
+                       (hash-update reasons-against
+                                    (string->symbol (string-downcase topic))
+                                    (λ (v)
+                                      (cons text v))
+                                    null)))))
+       (put/instance* 'reasons-for reasons-for)
+       (put/instance* 'reasons-against reasons-against)))
 
-     (button void "Cancel" #:to-step-id cancel)))))
+    (button void "Cancel" #:to-step-id cancel))))
 
 (define (start-timer #:start-name [name 'start-time])
   (put #:root '*timer* name (current-seconds)))
@@ -375,37 +371,35 @@
   (start-timer)
   ; FIXME: I also should show the fail page once they have too many incorrect answers.
   (cond [(and real-stakes? (>= incorrect-n max-wrong))
-         (page
-          (haml
-           (.container
-            (:h1 "You categorized too many abstracts wrongly")
+         (haml
+          (.container
+           (:h1 "You categorized too many abstracts wrongly")
 
-            (:p "We are sorry, but you categorized more more than ~a abstracts wrongly, and thus cannot complete the study."))))]
+           (:p "We are sorry, but you categorized more more than ~a abstracts wrongly, and thus cannot complete the study.")))]
 
         [else
-         (page
-          (haml
-           (.container
-            (:h2 (format "~a: Categorize Abstract ~a out of ~a" batch-name (add1 i) total))
+         (haml
+          (.container
+           (:h2 (format "~a: Categorize Abstract ~a out of ~a" batch-name (add1 i) total))
 
-            (cond [(and real-stakes? (>= max-wrong incorrect-n (- max-wrong 5)))
-                   (haml
-                    (:p.alert (:strong "Watch out!") (format "You are within 5 wrong attempts of failing out of the study: you got ~a abstracts wrong and you can get at most ~a wrong!" incorrect-n max-wrong)))]
+           (cond [(and real-stakes? (>= max-wrong incorrect-n (- max-wrong 5)))
+                  (haml
+                   (:p.alert (:strong "Watch out!") (format "You are within 5 wrong attempts of failing out of the study: you got ~a abstracts wrong and you can get at most ~a wrong!" incorrect-n max-wrong)))]
 
-                  [(and real-stakes? (zero? (modulo (+ correct-n incorrect-n) 8)))
-                   (haml
-                    (:p.info (format "You miscategorized ~a abstracts so far. Remember that you can miscategorize at most ~a abstracts (66%), otherwise you cannot complete the study." incorrect-n max-wrong)))]
+                 [(and real-stakes? (zero? (modulo (+ correct-n incorrect-n) 8)))
+                  (haml
+                   (:p.info (format "You miscategorized ~a abstracts so far. Remember that you can miscategorize at most ~a abstracts (66%), otherwise you cannot complete the study." incorrect-n max-wrong)))]
 
-                  [else
-                   (haml
-                    (:p ""))])
+                 [else
+                  (haml
+                   (:p ""))])
 
-            (:h4 "Decide whether this abstract is about " (haml (:strong (string-titlecase cat))) " or not.")
+           (:h4 "Decide whether this abstract is about " (haml (:strong (string-titlecase cat))) " or not.")
 
-            ; FIXME: use cat an non-cat to check if the answer is right.
-            (:p.abstract text)
-            (button (lambda () (categorize 'in)) (string-titlecase cat))
-            (button (lambda () (categorize 'out)) "Other"))))]))
+           ; FIXME: use cat an non-cat to check if the answer is right.
+           (:p.abstract text)
+           (button (lambda () (categorize 'in)) (string-titlecase cat))
+           (button (lambda () (categorize 'out)) "Other")))]))
 
 (define (random-abstracts n category #:on-topic? [on-topic? #t])
   (define abstract-texts

@@ -30,6 +30,7 @@
          threading
          web-server/dispatchers/dispatch
          web-server/servlet
+         (only-in xml xexpr?)
          "bot.rkt"
          (prefix-in bot: (submod "bot.rkt" actions))
          "export.rkt"
@@ -490,7 +491,6 @@ QUERY
 
 (provide
  when-bot
- page
  make-stub
  button
  button/confirm
@@ -507,40 +507,18 @@ QUERY
 (define current-return
   (make-parameter 'no-return))
 
-(define current-renderer
-  (make-parameter 'no-renderer))
-
 (module+ private
   (provide
    current-embed/url
    current-request
-   current-return
-   current-renderer))
-
-;; The point of this is to wrap rendering in a thunk so that we may
-;; re-run the rendering part upon form validation error, but not the
-;; rest of the step (i.e. the stuff before the page).
-;;
-;; See https://github.com/MarcKaufmann/congame/issues/16
-;;
-;; TODO: Get rid of this. It was a bad early design decision that we
-;; never revisited. The example in #16 can be handled by picking the
-;; target number in a transition or in a previous step.
-(define-syntax-parser page
-  [(_ {~optional {~seq #:validator validator-expr:expr}} e)
-   #'(letrec ([render
-               (lambda ()
-                 (parameterize ([current-renderer render])
-                   e))])
-       (step-page render {~? validator-expr validate-xexpr}))])
+   current-return))
 
 (define ((make-stub title [final? #f]))
-  (page
-   (haml
-    (.container
-     (:h1 title)
-     (unless final?
-       (button void "Next"))))))
+  (haml
+   (.container
+    (:h1 title)
+    (unless final?
+      (button void "Next")))))
 
 (define-syntax-rule (define-widget-stxparams id ...)
   (begin
@@ -558,7 +536,6 @@ QUERY
 (define-syntax-rule (with-widget-parameterization e ...)
   ;; Capture return here so that any embedded (via embed/url) lambda can close over it.
   (let ([embed/url (current-embed/url)]
-        [the-renderer (current-renderer)]
         [the-request (current-request)]
         [return (current-return)]
         [the-step (current-step)]
@@ -569,7 +546,6 @@ QUERY
                               #'(embed/url
                                  (lambda (req)
                                    (parameterize ([current-embed/url embed/url]
-                                                  [current-renderer the-renderer]
                                                   [current-request req]
                                                   [current-return return]
                                                   [current-step the-step]
@@ -684,7 +660,7 @@ QUERY
       (:form
        ([:action (embed
                   (lambda (_req)
-                    (response/render this-step (current-renderer))))]
+                    (response/render this-step)))]
         [:data-widget-id (when-bot id)]
         [:enctype enctype]
         [:method "POST"])
@@ -724,7 +700,6 @@ QUERY
 (provide
  current-xexpr-wrapper
  step-id
- step-page?
  study?
  step?
  study-transitions
@@ -748,7 +723,7 @@ QUERY
    (struct-out study)))
 
 (define step-id/c symbol?)
-(define handler/c (-> step-page?))
+(define handler/c (-> xexpr?))
 (define transition-result/c (or/c done? next? step-id/c))
 (define transition/c (-> transition-result/c))
 (define binding/c (list/c symbol? (or/c symbol? (list/c 'const any/c) (-> any/c))))
@@ -834,7 +809,7 @@ QUERY
 (define current-xexpr-wrapper
   (make-parameter values))
 
-(define (response/render s r [validator validate-xexpr])
+(define (response/render s [validator validate-xexpr])
   (response/xexpr*
    #:validator validator
    ((current-xexpr-wrapper)
@@ -846,15 +821,7 @@ QUERY
                                        (write (current-study-stack) out))))]
        [:data-step-id (when-bot (step-id s))]
        [:data-track-timings ""])
-      (r))))))
-
-(define (response/step s)
-  (match-define (step-page renderer validator)
-    ((step-handler s)))
-  (response/render s renderer validator))
-
-(module+ private
-  (provide response/step))
+      ((step-handler s)))))))
 
 (define-syntax-rule (when-bot e)
   (if (current-user-bot?) (~a e) ""))
@@ -1066,7 +1033,7 @@ QUERY
                          [current-request req]
                          [current-return return]
                          [current-step the-step])
-            (response/step the-step)))))
+            (response/render the-step)))))
      servlet-prompt))
 
   (log-study-debug "step ~e returned ~e" (step-id the-step) res)

@@ -7,7 +7,7 @@
  test-empty-study)
 
 (define (done)
-  (page (haml (:p#study-done "Done."))))
+  (haml (:p#study-done "Done.")))
 
 (define test-empty-study
   (make-study

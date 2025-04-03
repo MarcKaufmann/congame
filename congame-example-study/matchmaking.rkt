@@ -32,38 +32,34 @@
 
 (define (lobby)
   (if (matchmake)
-      (page
-       (button
-        void
-        "Start the study."))
-      (page
-       (haml
-        (:div
-         (:p "Please wait for more participants to join.")
-         (:script
-          #<<SCRIPT
+      (button
+       void
+       "Start the study.")
+      (haml
+       (:div
+        (:p "Please wait for more participants to join.")
+        (:script
+         #<<SCRIPT
 setTimeout(function() {
   document.location.reload();
 }, 1000);
 SCRIPT
-          ))))))
+         )))))
 
 (define (show-group)
-  (page
-   (haml
-    (:div
-     (:p
-      (~a "You are in group " (get-current-group-name)))
-     (button
-      (lambda ()
-        (put #:round (get-current-round-stack)
-             #:group (get-current-group-stack)
-             'done #t))
-      "Continue")))))
+  (haml
+   (:div
+    (:p
+     (~a "You are in group " (get-current-group-name)))
+    (button
+     (lambda ()
+       (put #:round (get-current-round-stack)
+            #:group (get-current-group-stack)
+            'done #t))
+     "Continue"))))
 
 (define (end)
-  (page
-   "Done."))
+  "Done.")
 
 (define matchmaking-study
   (make-study

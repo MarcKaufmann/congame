@@ -35,91 +35,87 @@
 (define survey-duration 12)
 
 (define (welcome-and-consent)
-  (page
-   (haml
-    (.container
-     (:h1 "Welcome")
+  (haml
+   (.container
+    (:h1 "Welcome")
 
-     (:p (format "The following short survey asks your opinion about, and familiarity with, ~a specific topics. It takes around ~a minutes to complete, and you will receive ~a GBP (roughly ~a USD) as a completion bonus. Please answer the questions truthfully, as they provide valuable information to us for another study. We will not reveal your individual answers to the participants of the subsequent study. Instead, we will show them statistics based on the responses of all participants in this survey. We will not be able to link your answers and your identity beyond the Prolific ID."
-                 n-topics
-                 survey-duration
-                 payment
-                 USD-payment))
+    (:p (format "The following short survey asks your opinion about, and familiarity with, ~a specific topics. It takes around ~a minutes to complete, and you will receive ~a GBP (roughly ~a USD) as a completion bonus. Please answer the questions truthfully, as they provide valuable information to us for another study. We will not reveal your individual answers to the participants of the subsequent study. Instead, we will show them statistics based on the responses of all participants in this survey. We will not be able to link your answers and your identity beyond the Prolific ID."
+                n-topics
+                survey-duration
+                payment
+                USD-payment))
 
-     (:p "If you agree to participate in the survey, you can still opt out anytime. However, you only receive the completion bonus if you complete the whole survey.")
+    (:p "If you agree to participate in the survey, you can still opt out anytime. However, you only receive the completion bonus if you complete the whole survey.")
 
-     (formular
-      (haml
+    (formular
+     (haml
+      (:div
        (:div
-        (:div
-         (#:prolific-id
-          (input-text "Please provide your Prolific ID.")))
+        (#:prolific-id
+         (input-text "Please provide your Prolific ID.")))
 
-        (:div
-         (#:consent?
-          (radios "Do you agree to participate in the survey?"
-                  '(("yes" . "Yes")
-                    ("no"  . "No"))))
-         submit-button))))))))
+       (:div
+        (#:consent?
+         (radios "Do you agree to participate in the survey?"
+                 '(("yes" . "Yes")
+                   ("no"  . "No"))))
+        submit-button)))))))
 
 (define (no-consent)
-  (page
-   (haml
-    (.container
-     (:h1 "Thank you")
+  (haml
+   (.container
+    (:h1 "Thank you")
 
-     (:p "You did not agree to participate in the survey. Thank you for taking the time to consider it.")))))
+    (:p "You did not agree to participate in the survey. Thank you for taking the time to consider it."))))
 
 (define (input-likert/how adjective)
   (input-likert (format "How ~a do you find the topic? (1: not at all. 7: extremely.)" adjective)))
 
 (define ((topic-survey topic index p))
-  (page
-   (haml
-    (.container
-     (:h3 (format "Topic number ~a: ~a" index topic))
+  (haml
+   (.container
+    (:h3 (format "Topic number ~a: ~a" index topic))
 
-     (:p (hash-ref topic-descriptions topic) " Please answer the following questions for this topic.")
+    (:p (hash-ref topic-descriptions topic) " Please answer the following questions for this topic.")
 
-     (formular
-      (haml
+    (formular
+     (haml
+      (:div
        (:div
-        (:div
-         (#:interesting (input-likert/how "interesting")))
-        (:div
-         (#:important (input-likert/how "important")))
-        (:div
-         (#:controversial (input-likert/how "controversial")))
-        (:div
-         (#:understandable (input-likert/how "easy to understand")))
-        (:div (#:knowledge
-          (input-likert "How well do you know the topic? (1: never heard about it. 7: you are an expert.)")))
-        (:div
-         (#:how-often-talk-family
-          (input-likert (format "How often do you talk about the topic with your family? (1: never. 7: all the time.)"))))
-        (:div
-         (#:how-often-talk-colleagues
-          (input-likert (format "How often do you talk about the topic with colleagues? (1: never. 7: all the time.)"))))
-        (:div
-         (#:curious
-          (input-likert (format "How curious are you about the topic? (1: not at all. 7: extremely, you would enroll in a course on the topic if you had time.)"))))
-        (:div
-         (#:heard-of-last-week
-          (radios "Have you heard about the topic in the last week (the last 7 days)?"
-                  '(("yes" . "Yes")
-                    ("no"  . "No")))))
-        submit-button))
-      (put-form/with p))))))
+        (#:interesting (input-likert/how "interesting")))
+       (:div
+        (#:important (input-likert/how "important")))
+       (:div
+        (#:controversial (input-likert/how "controversial")))
+       (:div
+        (#:understandable (input-likert/how "easy to understand")))
+       (:div (#:knowledge
+              (input-likert "How well do you know the topic? (1: never heard about it. 7: you are an expert.)")))
+       (:div
+        (#:how-often-talk-family
+         (input-likert (format "How often do you talk about the topic with your family? (1: never. 7: all the time.)"))))
+       (:div
+        (#:how-often-talk-colleagues
+         (input-likert (format "How often do you talk about the topic with colleagues? (1: never. 7: all the time.)"))))
+       (:div
+        (#:curious
+         (input-likert (format "How curious are you about the topic? (1: not at all. 7: extremely, you would enroll in a course on the topic if you had time.)"))))
+       (:div
+        (#:heard-of-last-week
+         (radios "Have you heard about the topic in the last week (the last 7 days)?"
+                 '(("yes" . "Yes")
+                   ("no"  . "No")))))
+       submit-button))
+     (put-form/with p)))))
 
 (define (thank-you)
-  (page
-   (haml
-    (.container
-     (:h1 "Thank you")
+  (haml
+   (.container
+    (:h1 "Thank you")
 
-     (:p "Thank you for participating in our survey. Please provide the following completion code on prolific to receive your payment:")
+    (:p "Thank you for participating in our survey. Please provide the following completion code on prolific to receive your payment:")
 
-     (:h4 completion-code)))))
+    (:h4 completion-code))))
 
 
 (define topic-descriptions
@@ -182,14 +178,13 @@
   (define (maybe-attention-check)
     (define i (get/loop 'index))
     (cond [(and (> i 1) (zero? (modulo (sub1 i) 5)))
-           (page
-            (haml
-             (.container
-              (:h1 (format "You have completed ~a topics" (sub1 i)))
+           (haml
+            (.container
+             (:h1 (format "You have completed ~a topics" (sub1 i)))
 
-              (:p "If the questions are becoming monotonous - since we ask the same questions about all topics - take a few breaths to refocus before continuing.")
+             (:p "If the questions are becoming monotonous - since we ask the same questions about all topics - take a few breaths to refocus before continuing.")
 
-              (button void "Continue when ready"))))]
+             (button void "Continue when ready")))]
           [else
            (skip)]))
 

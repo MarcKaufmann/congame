@@ -14,26 +14,23 @@
       [else (begin0 1
               (put 'round-number 1))]))
   (put-current-round-name (~a "round " round-number))
-  (page
-   (button
-    void
-    (~a "Start " (get-current-round-name)))))
+  (button
+   void
+   (~a "Start " (get-current-round-name))))
 
 (define (loop)
   (put
    #:round (get-current-round-stack)
    'current-time (current-seconds))
-  (page
-   `(div
-     "Loopy!"
-     ,(button
-       (lambda ()
-         (put 'round-number (add1 (get 'round-number))))
-       "Continue"))))
+  `(div
+    "Loopy!"
+    ,(button
+      (lambda ()
+        (put 'round-number (add1 (get 'round-number))))
+      "Continue")))
 
 (define (end)
-  (page
-   "Yer done."))
+  "Yer done.")
 
 (define (make-looping-study [other-steps null] [end-steps (list (make-step 'end end))])
   (make-study

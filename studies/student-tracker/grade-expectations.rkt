@@ -77,12 +77,11 @@
          (skip 'schedule-next-survey-or-done)]
 
         [else
-         (page
-          (haml
-           (.container
-            (:h1 "The next survey is not yet open")
+         (haml
+          (.container
+           (:h1 "The next survey is not yet open")
 
-            (:p (format "The next survey only opens on ~a. Please come back then." (~t next-survey "EEEE, MMMM d"))))))]))
+           (:p (format "The next survey only opens on ~a. Please come back then." (~t next-survey "EEEE, MMMM d")))))]))
 
 (define (input-percent/grade g)
   (input-number (format "What is the percent chance that you will get a final grade of ~a or more in this course? (0-100)" g)
@@ -102,41 +101,40 @@
   (unless (sd-survey? next-survey)
     (skip))
 
-  (page
-   (haml
-    (.container
-     (:h1 "Survey of Grade Expectations")
+  (haml
+   (.container
+    (:h1 "Survey of Grade Expectations")
 
-     (formular
-      (haml
+    (formular
+     (haml
+      (:div
        (:div
-        (:div
-         (#:grade
-          (radios
-           "What grade do you expect in this course?"
-           '(("A" . "A")
-             ("A-" . "A-")
-             ("B+" . "B+")
-             ("B"  . "B")
-             ("B-" . "B-")
-             ("C+" . "C+")
-             ("F"  . "F")))))
-        (:div
-         (#:grade-above-A-minus
-          (input-percent/grade "A-"))
-         (#:grade-above-B-minus
-          (input-percent/grade "B"))
-         (#:grade-above-C-plus
-          (input-percent/grade "C+")))
-        (:div
-         (#:final-score
-          (input-number "What score from 0 to 100 do you expect on the final exam (not on the course)?" #:min 0 #:max 100))
-         ; FIXME: Do this in a follow-up page?
-         (#:final-score-certainty
-          (input-number "How likely it is that your score on the final will be 10 or more points below the score you just reported?"
-                        #:min 0 #:max 100)))
-        submit-button))
-      (make-put-form/hash (string->symbol (format "survey-~a" (sd-id next-survey)))))))))
+        (#:grade
+         (radios
+          "What grade do you expect in this course?"
+          '(("A" . "A")
+            ("A-" . "A-")
+            ("B+" . "B+")
+            ("B"  . "B")
+            ("B-" . "B-")
+            ("C+" . "C+")
+            ("F"  . "F")))))
+       (:div
+        (#:grade-above-A-minus
+         (input-percent/grade "A-"))
+        (#:grade-above-B-minus
+         (input-percent/grade "B"))
+        (#:grade-above-C-plus
+         (input-percent/grade "C+")))
+       (:div
+        (#:final-score
+         (input-number "What score from 0 to 100 do you expect on the final exam (not on the course)?" #:min 0 #:max 100))
+        ; FIXME: Do this in a follow-up page?
+        (#:final-score-certainty
+         (input-number "How likely it is that your score on the final will be 10 or more points below the score you just reported?"
+                       #:min 0 #:max 100)))
+       submit-button))
+     (make-put-form/hash (string->symbol (format "survey-~a" (sd-id next-survey))))))))
 
 (define (report-grade)
   (define next-sd
@@ -146,18 +144,17 @@
 
   (define report-type
     (sd-report-type next-sd))
-  (page
-   (haml
-    (.container
-     ; FIXME: Make flexible heading to allow for midterm
-     (:h1 (format "Report your grade on ~a" report-type))
-     (formular
-      (haml
-       (:div
-        (#:problem-set-grade
-         (input-number (format "What grade did you get on ~a? (0-100)" report-type) #:min 0 #:max 100))
-        submit-button))
-      (make-put-form/hash (string->symbol (format "report-~a" (sd-id next-sd)))))))))
+  (haml
+   (.container
+    ; FIXME: Make flexible heading to allow for midterm
+    (:h1 (format "Report your grade on ~a" report-type))
+    (formular
+     (haml
+      (:div
+       (#:problem-set-grade
+        (input-number (format "What grade did you get on ~a? (0-100)" report-type) #:min 0 #:max 100))
+       submit-button))
+     (make-put-form/hash (string->symbol (format "report-~a" (sd-id next-sd))))))))
 
 (define (schedule-next-survey-or-done)
   (define surveys
@@ -180,11 +177,10 @@
          (skip 'waiting-page)]))
 
 (define (thank-you)
-  (page
-   (haml
-    (.container
-     (:h1 "Thank you")
-     (:p "Thank you for participating in the study, you have completed it.")))))
+  (haml
+   (.container
+    (:h1 "Thank you")
+    (:p "Thank you for participating in the study, you have completed it."))))
 
 (define (keep-score)
   (define score

@@ -112,33 +112,31 @@
 (define (lobby)
   (define review-phase? (equal? (get/instance 'phase) 'review))
   (if review-phase?
-      (page
-       (haml
-        (.container
-         (:h1 "Review Phase has started")
-         (:p "You can now go on to review submissions assigned to you.")
-         (button
-          (lambda ()
-            (define all-assignments (get/instance 'assignments))
-            (define participant-assignments (hash-ref all-assignments (current-participant-id)))
-            (put 'assignments participant-assignments)
-            (put 'n-assignments (length participant-assignments))
-            (put 'n-reviewed-assignments 0)
-            (define all-submissions (get/instance 'submissions))
-            (define participant-submissions
-              (for/hash ([a participant-assignments])
-                (values a (hash-ref all-submissions a))))
-            (put 'submissions participant-submissions))
-          "Continue."))))
-      (page
-       (haml
-        (.container
-         (:h1 "Waiting for Review Phase to Start")
-         (:p "You have reached the end of the submission phase. Come back once the review phase has started.")
-         (button
-          void
-          "Replace your submissions"
-          #:to-step-id 'submit))))))
+      (haml
+       (.container
+        (:h1 "Review Phase has started")
+        (:p "You can now go on to review submissions assigned to you.")
+        (button
+         (lambda ()
+           (define all-assignments (get/instance 'assignments))
+           (define participant-assignments (hash-ref all-assignments (current-participant-id)))
+           (put 'assignments participant-assignments)
+           (put 'n-assignments (length participant-assignments))
+           (put 'n-reviewed-assignments 0)
+           (define all-submissions (get/instance 'submissions))
+           (define participant-submissions
+             (for/hash ([a participant-assignments])
+               (values a (hash-ref all-submissions a))))
+           (put 'submissions participant-submissions))
+         "Continue.")))
+      (haml
+       (.container
+        (:h1 "Waiting for Review Phase to Start")
+        (:p "You have reached the end of the submission phase. Come back once the review phase has started.")
+        (button
+         void
+         "Replace your submissions"
+         #:to-step-id 'submit)))))
 
 (define/contract ((final compute-scores final-page))
   ; FIXME: compute-score should return a hash of submission -> score. This should be checked upon creation of the study with a helpful error message.
@@ -251,48 +249,47 @@
         (phase-button 'review 'submit "Re-Open Submit Phase")
         (phase-button 'over 'review "Re-Open Review Phase")))))
 
-  (page
-   (parameterize ([current-study-stack '(*root*)])
-     (haml
-      (.container
-       (:h1 "Admin Interface")
+  (parameterize ([current-study-stack '(*root*)])
+    (haml
+     (.container
+      (:h1 "Admin Interface")
 
-       (submissions-interface)
-       (reviews-interface)
+      (submissions-interface)
+      (reviews-interface)
 
-       (cond [(member (get/instance 'phase) '(review done))
-              (haml
+      (cond [(member (get/instance 'phase) '(review done))
+             (haml
+              (:div
+               (:p "Submission phase is over -- cannot reassign reviews")))]
+
+            [(and (equal? (get/instance 'phase) 'submit)
+                  (not (get/instance 'assignments #f)))
+             (button
+              (λ ()
+                (parameterize ([current-study-stack '(*root*)])
+                  (put/instance 'admin-triggers-assignments #t)
+                  (matchmake #:self-review? self-review?)))
+              "Assign Reviews")]
+
+            [(and (equal? (get/instance 'phase) 'submit)
+                  (get/instance 'assignments #f))
+             (haml
+              (:div
                (:div
-                (:p "Submission phase is over -- cannot reassign reviews")))]
+                (button
+                 (λ ()
+                   (parameterize ([current-study-stack '(*root*)])
+                     (put/instance 'admin-triggers-assignments #t)
+                     (put/instance 'assignments #f)
+                     (matchmake)))
+                 "Reassign Reviews"
+                 #:to-step-id 'admin))))]
 
-             [(and (equal? (get/instance 'phase) 'submit)
-                   (not (get/instance 'assignments #f)))
-              (button
-               (λ ()
-                 (parameterize ([current-study-stack '(*root*)])
-                   (put/instance 'admin-triggers-assignments #t)
-                   (matchmake #:self-review? self-review?)))
-               "Assign Reviews")]
-
-             [(and (equal? (get/instance 'phase) 'submit)
-                   (get/instance 'assignments #f))
-              (haml
-               (:div
-                (:div
-                 (button
-                  (λ ()
-                    (parameterize ([current-study-stack '(*root*)])
-                      (put/instance 'admin-triggers-assignments #t)
-                      (put/instance 'assignments #f)
-                      (matchmake)))
-                  "Reassign Reviews"
-                  #:to-step-id 'admin))))]
-
-             [else
-              (haml (:div))])
-       (:div
-        (:h4 "Change Phases")
-        phase-buttons))))))
+            [else
+             (haml (:div))])
+      (:div
+       (:h4 "Change Phases")
+       phase-buttons)))))
 
 (define (default-admin-interface)
   (make-study
@@ -303,23 +300,23 @@
     (make-step 'admin (admin-interface-handler)))))
 
 (define (default-final-page)
-  (page
-   (haml
-    (.container
-     (:h1 "Thank you for participating")
-     (:p "You are done.")))))
+  (haml
+   (.container
+    (:h1 "Thank you for participating")
+    (:p "You are done."))))
 
 (define (wait-submit-phase)
   (case (get/instance 'phase 'none)
-    [(none init)    (page
-                     (haml
-                      (.container
-                       (:h1 "Submissions are not yet open. Come back later."))))]
-    [(submit)       (skip)]
-    [(review over)  (page
-                     (haml
-                      (.container
-                       (:h1 "Submissions are closed."))))]))
+    [(none init)
+     (haml
+      (.container
+       (:h1 "Submissions are not yet open. Come back later.")))]
+    [(submit)
+     (skip)]
+    [(review over)
+     (haml
+      (.container
+       (:h1 "Submissions are closed.")))]))
 
 (define ((wrapper/check-review? s))
   (define phase
@@ -339,13 +336,12 @@
                              #:admin-interface [admin-interface (default-admin-interface)])
   (define (show-next-review)
     (define n (get 'n-reviewed-assignments))
-    (page
-     (haml
-      (.container
-       (:h1 (format "Review Next Submission (~a out of ~a)" (add1 n) (get 'n-assignments)))
-       (button
-        void
-        "Go to Review")))))
+    (haml
+     (.container
+      (:h1 (format "Review Next Submission (~a out of ~a)" (add1 n) (get 'n-assignments)))
+      (button
+       void
+       "Go to Review"))))
 
   (make-study
    "review-study"
@@ -359,16 +355,15 @@
                          [else (fail e)]))
    (list
     (make-step 'start (λ ()
-                        (page
-                         (haml
-                          (.container
-                           (:h1 "Submission and Review")
-                           (:p "This is the start of the submission and review process.")
-                           (button
-                            (λ ()
-                              (unless (get/instance 'phase #f)
-                                (put/instance 'phase 'init)))
-                            "Go to Submission"))))))
+                        (haml
+                         (.container
+                          (:h1 "Submission and Review")
+                          (:p "This is the start of the submission and review process.")
+                          (button
+                           (λ ()
+                             (unless (get/instance 'phase #f)
+                               (put/instance 'phase 'init)))
+                           "Go to Submission")))))
     (make-step 'check-owner skip
                (λ ()
                  (cond [(current-participant-owner?)
@@ -671,23 +666,22 @@
 ;; SUBMIT+REVIEW-PDF
 
 (define ((submit-single-pdf-submission #:instructions [instructions #f]))
-  (page
-   (haml
-    (.container
-     (if instructions instructions (haml (:div "")))
-     (formular
-      (haml
-       (:div
-        (#:submission (input-file "Please provide your pdf submission for the assignment" #:validators (list valid-pdf?)))
-        (:button.button.next-button ([:type "submit"]) "Submit")))
-      (lambda (#:submission submission)
-        (define submission-upload
-          (upload-file! submission #:prefix (number->string (current-participant-id))))
-        (put 'submissions
-             (cons (hash 'submission-id (get 'next-submission-id 0)
-                         'submission submission-upload)
-                   (get 'submissions)))
-        (put 'next-submission-id (add1 (get 'next-submission-id 0)))))))))
+  (haml
+   (.container
+    (if instructions instructions (haml (:div "")))
+    (formular
+     (haml
+      (:div
+       (#:submission (input-file "Please provide your pdf submission for the assignment" #:validators (list valid-pdf?)))
+       (:button.button.next-button ([:type "submit"]) "Submit")))
+     (lambda (#:submission submission)
+       (define submission-upload
+         (upload-file! submission #:prefix (number->string (current-participant-id))))
+       (put 'submissions
+            (cons (hash 'submission-id (get 'next-submission-id 0)
+                        'submission submission-upload)
+                  (get 'submissions)))
+       (put 'next-submission-id (add1 (get 'next-submission-id 0))))))))
 
 (define (submit-pdf-submissions [n 2] #:instructions [instructions #f])
   (submit-submissions
@@ -701,21 +695,20 @@
                  ('submission submission-upload)
                  ('submission-id submission-id))
     r)
-  (page
-   (haml
-    (.container
-     (:h1 (format "Review this PDF ~a (of ~a) for this submitter" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
-     (:p.submission (uploaded-file-attachment submission-upload "Download"))
-     (:div
-      (:h3 "Rubric for PDF")
-      (formular
-       (haml
-        (:div
-         (#:how-good-is-the-submission
-          (input-number "On a scale from 0 (very bad) to 5 (very good), how good is the submission?"
-                        #:min 0 #:max 5))
-         (:button.button.next-button ([:type "submit"]) "Submit")))
-       (make-put-form/cons-hash 'reviews)))))))
+  (haml
+   (.container
+    (:h1 (format "Review this PDF ~a (of ~a) for this submitter" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
+    (:p.submission (uploaded-file-attachment submission-upload "Download"))
+    (:div
+     (:h3 "Rubric for PDF")
+     (formular
+      (haml
+       (:div
+        (#:how-good-is-the-submission
+         (input-number "On a scale from 0 (very bad) to 5 (very good), how good is the submission?"
+                       #:min 0 #:max 5))
+        (:button.button.next-button ([:type "submit"]) "Submit")))
+      (make-put-form/cons-hash 'reviews))))))
 
 (define (review-R-intro-pdf-handler)
   (define subs (get 'current-submissions))
@@ -724,71 +717,70 @@
                  ('submission submission-upload)
                  ('submission-id submission-id))
     r)
-  (page
-   (haml
-    (.container
-     (:h1 "Review this PDF")
-     (:p.submission (uploaded-file-attachment submission-upload "Download submission"))
-     (:div
-      (:h3 "Rubric for PDF")
-      (formular
-       (haml
-        (:div
-         (#:genuine-attempt
-          (radios
-           "Is this assignment a genuine attempt?"
-           '(("0" . "(0 points) No assignment submitted, or it contains barely anything different from the default template provided in class.")
-             ("1" . "(1 point) Half or more of the exercises were not attempted.")
-             ("2" . "(2 points) 75% of all parts were attempted in a meaningful way.")
-             ("3" . "(3 points) All parts were attempted in a meaningful way."))))
+  (haml
+   (.container
+    (:h1 "Review this PDF")
+    (:p.submission (uploaded-file-attachment submission-upload "Download submission"))
+    (:div
+     (:h3 "Rubric for PDF")
+     (formular
+      (haml
+       (:div
+        (#:genuine-attempt
+         (radios
+          "Is this assignment a genuine attempt?"
+          '(("0" . "(0 points) No assignment submitted, or it contains barely anything different from the default template provided in class.")
+            ("1" . "(1 point) Half or more of the exercises were not attempted.")
+            ("2" . "(2 points) 75% of all parts were attempted in a meaningful way.")
+            ("3" . "(3 points) All parts were attempted in a meaningful way."))))
 
-         (#:genuine-attempt-explanation
-          (textarea "In one sentence, explain your score whether this submission is a genuine attempt. E.g. \"While all parts were attempted, half of them do little more than restate the exercise and do not solve it.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"You should say why you chose the particular functions you used. In exercise 2, for example, you use both `geom_col` and `geom_bar` without even briefly saying what each of them does."))
+        (#:genuine-attempt-explanation
+         (textarea "In one sentence, explain your score whether this submission is a genuine attempt. E.g. \"While all parts were attempted, half of them do little more than restate the exercise and do not solve it.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"You should say why you chose the particular functions you used. In exercise 2, for example, you use both `geom_col` and `geom_bar` without even briefly saying what each of them does."))
 
-         (#:where-got-stuck
-          (radios
-           "For incomplete problems, did the person highlight clearly why they got stuck?"
-           '(("0" . "(0 points) There is no code example included for any of the problems that occurred, no explanation given for why something wasn't achieved, no attempt at resolving issues that the person encountered.")
-             ("1" . "(1 point) Whenever a problem was encountered, the author simply states that they couldn't get any further and didn't know how to solve it. They didn't post questions about these issues in the forum (or they did so less than 24 hours before the deadline).")
-             ("2" . "(2 points) For most problems, the person states clearly what part of the code they think is the issue, and describe it well enough that you can understand what went wrong. Most of the time, you can replicate the problem.")
-             ("3" . "(3 points) Either the person never got stuck. Or for every problem encountered, the person clearly states where things went wrong, what they tried (google searches, Slack questions, R help). You can see what went wrong, even if the diagnosis of the problem may itself be wrong. "))))
+        (#:where-got-stuck
+         (radios
+          "For incomplete problems, did the person highlight clearly why they got stuck?"
+          '(("0" . "(0 points) There is no code example included for any of the problems that occurred, no explanation given for why something wasn't achieved, no attempt at resolving issues that the person encountered.")
+            ("1" . "(1 point) Whenever a problem was encountered, the author simply states that they couldn't get any further and didn't know how to solve it. They didn't post questions about these issues in the forum (or they did so less than 24 hours before the deadline).")
+            ("2" . "(2 points) For most problems, the person states clearly what part of the code they think is the issue, and describe it well enough that you can understand what went wrong. Most of the time, you can replicate the problem.")
+            ("3" . "(3 points) Either the person never got stuck. Or for every problem encountered, the person clearly states where things went wrong, what they tried (google searches, Slack questions, R help). You can see what went wrong, even if the diagnosis of the problem may itself be wrong. "))))
 
-         (#:where-got-stuck-explanation
-          (textarea "In one sentence, explain your score on incomplete problems and how clearly the person highlighted where they got stuck. E.g. \"Whenever you got stuck, you simply seem to have stopped without saying why you stopped or what you tried yet failed to work.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"For exercise 3, it seems that you simply mistyped the variable name (it is missing an underscore '_'). If so, you should have said that you ran the code and what error you hit.\""))
+        (#:where-got-stuck-explanation
+         (textarea "In one sentence, explain your score on incomplete problems and how clearly the person highlighted where they got stuck. E.g. \"Whenever you got stuck, you simply seem to have stopped without saying why you stopped or what you tried yet failed to work.\" Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"For exercise 3, it seems that you simply mistyped the variable name (it is missing an underscore '_'). If so, you should have said that you ran the code and what error you hit.\""))
 
-         (#:clear-presentation
-          (radios
-           "How clear is the writing and presentation? Take into account that an incorrect answer is likely to be less clear and more confusing, but try not to penalize again for this. Thus if the person writes clearly what they did (even if wrong), you should give high score."
-           '(("0" . "(0 points) The document is an incomprehensible jumble of things. It is hard to know which graph belongs to what, the goal and intent of the code and graphs is not explained.")
-             ("1" . "(1 point) While code and graphs are described, it is quite hard for you to follow what is going on without putting in some effort.")
-             ("2" . "(2 points) Most code and graphs are well described, they are well referenced, and you are rarely confused.")
-             ("3" . "(3 points) The document is clearly written, graphs and code well described, and the document is as easy to understand as the material allows."))))
+        (#:clear-presentation
+         (radios
+          "How clear is the writing and presentation? Take into account that an incorrect answer is likely to be less clear and more confusing, but try not to penalize again for this. Thus if the person writes clearly what they did (even if wrong), you should give high score."
+          '(("0" . "(0 points) The document is an incomprehensible jumble of things. It is hard to know which graph belongs to what, the goal and intent of the code and graphs is not explained.")
+            ("1" . "(1 point) While code and graphs are described, it is quite hard for you to follow what is going on without putting in some effort.")
+            ("2" . "(2 points) Most code and graphs are well described, they are well referenced, and you are rarely confused.")
+            ("3" . "(3 points) The document is clearly written, graphs and code well described, and the document is as easy to understand as the material allows."))))
 
-         (#:clear-presentation-explanation
-          (textarea "Explain your score on presentation in one sentence (e.g. \"I had to spend a lot of time to figure out which graph/which chunk of code belonged to which exercise\"). Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"For exercise 4, I suggest to split the code across several lines and to add a comment why you chose the method 'gam' rather than 'lm'.\" No more than 2 sentences."))
-         (:button.button.next-button ([:type "submit"]) "Submit")))
-       (lambda (#:genuine-attempt genuine-attempt
-                #:genuine-attempt-explanation genuine-attempt-explanation
-                #:where-got-stuck where-got-stuck
-                #:where-got-stuck-explanation where-got-stuck-explanation
-                #:clear-presentation clear-presentation
-                #:clear-presentation-explanation clear-presentation-explanation)
-         (define genuine-attempt/n (string->number genuine-attempt))
-         (define where-got-stuck/n (string->number where-got-stuck))
-         (define clear-presentation/n (string->number clear-presentation))
-         (put 'reviews
-              (cons
-               (~> r
-                   (hash-set 'submitter-id (get 'current-assignment))
-                   (hash-set 'reviewer-id (current-participant-id))
-                   (hash-set 'genuine-attempt genuine-attempt/n)
-                   (hash-set 'genuine-attempt-explanation genuine-attempt-explanation)
-                   (hash-set 'where-got-stuck where-got-stuck/n)
-                   (hash-set 'where-got-stuck-explanation where-got-stuck-explanation)
-                   (hash-set 'clear-presentation clear-presentation/n)
-                   (hash-set 'clear-presentation-explanation clear-presentation-explanation)
-                   (hash-set 'score (+ genuine-attempt/n where-got-stuck/n clear-presentation/n)))
-               (get 'reviews '()))))))))))
+        (#:clear-presentation-explanation
+         (textarea "Explain your score on presentation in one sentence (e.g. \"I had to spend a lot of time to figure out which graph/which chunk of code belonged to which exercise\"). Suggest one (not two or five) ways to improve the submissions: pick a single concrete example from the submission and how it could have been improved. E.g. \"For exercise 4, I suggest to split the code across several lines and to add a comment why you chose the method 'gam' rather than 'lm'.\" No more than 2 sentences."))
+        (:button.button.next-button ([:type "submit"]) "Submit")))
+      (lambda (#:genuine-attempt genuine-attempt
+               #:genuine-attempt-explanation genuine-attempt-explanation
+               #:where-got-stuck where-got-stuck
+               #:where-got-stuck-explanation where-got-stuck-explanation
+               #:clear-presentation clear-presentation
+               #:clear-presentation-explanation clear-presentation-explanation)
+        (define genuine-attempt/n (string->number genuine-attempt))
+        (define where-got-stuck/n (string->number where-got-stuck))
+        (define clear-presentation/n (string->number clear-presentation))
+        (put 'reviews
+             (cons
+              (~> r
+                  (hash-set 'submitter-id (get 'current-assignment))
+                  (hash-set 'reviewer-id (current-participant-id))
+                  (hash-set 'genuine-attempt genuine-attempt/n)
+                  (hash-set 'genuine-attempt-explanation genuine-attempt-explanation)
+                  (hash-set 'where-got-stuck where-got-stuck/n)
+                  (hash-set 'where-got-stuck-explanation where-got-stuck-explanation)
+                  (hash-set 'clear-presentation clear-presentation/n)
+                  (hash-set 'clear-presentation-explanation clear-presentation-explanation)
+                  (hash-set 'score (+ genuine-attempt/n where-got-stuck/n clear-presentation/n)))
+              (get 'reviews '())))))))))
 
 (define (display-review/intro-R r)
   (define rid (hash-ref r 'reviewer-id))
@@ -908,30 +900,29 @@
   (define n-other-reviewers-pending
     (- n-other-reviewers-total n-other-reviewers-received))
 
-  (page
-   (haml
-    (.container
-     (:h1 "You are done")
+  (haml
+   (.container
+    (:h1 "You are done")
 
-     (:p "Your participation id is: " (~a (current-participant-id)))
+    (:p "Your participation id is: " (~a (current-participant-id)))
 
-     (:p (format "Total Score for submissions and reviews: ~a (~a reviews from others received, ~a reviews pending)"
-                  total-score
-                  n-other-reviewers-received
-                  n-other-reviewers-pending) " This sums up the score from your submission and from your reviews. See below for the breakdown.")
+    (:p (format "Total Score for submissions and reviews: ~a (~a reviews from others received, ~a reviews pending)"
+                total-score
+                n-other-reviewers-received
+                n-other-reviewers-pending) " This sums up the score from your submission and from your reviews. See below for the breakdown.")
 
-     (:h2 "Detailed Scores and Feedback on Your Submission")
+    (:h2 "Detailed Scores and Feedback on Your Submission")
 
-     ,@(for/list ([r participant-reviews])
-         (display-review/intro-R r))
+    ,@(for/list ([r participant-reviews])
+        (display-review/intro-R r))
 
-     (:h2 "Bonus/Malus for Quality of Your Reviews: " (~a reviewer-score))
+    (:h2 "Bonus/Malus for Quality of Your Reviews: " (~a reviewer-score))
 
-     (:p "In addition to the score you receive for your submission, I (Marc) review the reviews each week. Unless your review is particularly good or bad, you will receive 0 -- otherwise a +1 or -1. If it says 'not reviewed', it means that I did not review your review, not that you did not submit it.")
+    (:p "In addition to the score you receive for your submission, I (Marc) review the reviews each week. Unless your review is particularly good or bad, you will receive 0 -- otherwise a +1 or -1. If it says 'not reviewed', it means that I did not review your review, not that you did not submit it.")
 
-     ,@(for/list ([r reviews-by-participant])
-         (display-review-scores/intro-R r)
-         )))))
+    ,@(for/list ([r reviews-by-participant])
+        (display-review-scores/intro-R r)
+        ))))
 
 (define (review-pdf)
   (review-submissions review-next-pdf-handler))
@@ -949,34 +940,33 @@
                  ('reviewer-id reviewer-id)
                  ('submitter-id submitter-id))
     r)
-  (page
-   (haml
-    (.container
-     (:h1 "Review this Review")
+  (haml
+   (.container
+    (:h1 "Review this Review")
 
-     (.submission
-      (:h3 "Original Submission and Review")
-      (:p (:strong "submitter id: ") (~a submitter-id))
-      (:p (:strong "Submission: ")
-          (uploaded-file-attachment submission-upload "Download File")))
+    (.submission
+     (:h3 "Original Submission and Review")
+     (:p (:strong "submitter id: ") (~a submitter-id))
+     (:p (:strong "Submission: ")
+         (uploaded-file-attachment submission-upload "Download File")))
 
-     (formular
-      (haml
-       (:div
-        (#:comments-on-review
-         (textarea "Comments on Review:"))
-        (#:review-score
-         (input-number "Review Score (-1 to +1): "
-                       #:min -1 #:max 1))
-        (:button.button.next-button ([:type "submit"]) "Submit")))
-      (λ (#:comments-on-review comments-on-review
-          #:review-score review-score)
-        (put 'reviews
-             (cons
-              (hash-set
-               (hash-set r 'comments-on-review comments-on-review)
-               'review-score review-score)
-              (get 'reviews '())))))))))
+    (formular
+     (haml
+      (:div
+       (#:comments-on-review
+        (textarea "Comments on Review:"))
+       (#:review-score
+        (input-number "Review Score (-1 to +1): "
+                      #:min -1 #:max 1))
+       (:button.button.next-button ([:type "submit"]) "Submit")))
+     (λ (#:comments-on-review comments-on-review
+         #:review-score review-score)
+       (put 'reviews
+            (cons
+             (hash-set
+              (hash-set r 'comments-on-review comments-on-review)
+              'review-score review-score)
+             (get 'reviews '()))))))))
 
 (define (review-reviews-pdf)
   (review-submissions review-next-review-pdfs))
@@ -996,35 +986,34 @@
                  ('submitter-id submitter-id))
     r)
   (displayln (format "REVIEW: ~a" r))
-  (page
-   (haml
-    (.container
-     (:h1 "Review this Review")
-     (.submission
-      (:h3 "Submission")
-      (:p (uploaded-file-attachment (hash-ref r 'submission) "Submitted file")))
+  (haml
+   (.container
+    (:h1 "Review this Review")
+    (.submission
+     (:h3 "Submission")
+     (:p (uploaded-file-attachment (hash-ref r 'submission) "Submitted file")))
 
-     (:h3 "Review")
-     (display-review r)
+    (:h3 "Review")
+    (display-review r)
 
-     (:h3 "Feedback on Review")
-     (formular
-      (haml
-       (:div
-        (#:comments-on-review
-         (textarea "Comments on Review:"))
-        (#:review-score
-         (input-number "Review Score (-1 to +1): "
-                       #:min -1 #:max 1))
-        (:button.button.next-button ([:type "submit"]) "Submit")))
-      (λ (#:comments-on-review comments-on-review
-          #:review-score review-score)
-        (put 'reviews
-             (cons
-              (hash-set
-               (hash-set r 'comments-on-review comments-on-review)
-               'review-score review-score)
-              (get 'reviews '())))))))))
+    (:h3 "Feedback on Review")
+    (formular
+     (haml
+      (:div
+       (#:comments-on-review
+        (textarea "Comments on Review:"))
+       (#:review-score
+        (input-number "Review Score (-1 to +1): "
+                      #:min -1 #:max 1))
+       (:button.button.next-button ([:type "submit"]) "Submit")))
+     (λ (#:comments-on-review comments-on-review
+         #:review-score review-score)
+       (put 'reviews
+            (cons
+             (hash-set
+              (hash-set r 'comments-on-review comments-on-review)
+              'review-score review-score)
+             (get 'reviews '()))))))))
 
 (define (review-reviews/intro-R)
   (review-submissions (review-next-review display-review/intro-R)))
@@ -1067,43 +1056,42 @@
                  ('submission submission-upload)
                  ('submission-id submission-id))
     r)
-  (page
-   (haml
-    (.container
-     (:h1 "Review this PDF")
-     (:p.submission (uploaded-file-attachment submission-upload "Download submission"))
-     (:div
-      (display-rubric/description)
+  (haml
+   (.container
+    (:h1 "Review this PDF")
+    (:p.submission (uploaded-file-attachment submission-upload "Download submission"))
+    (:div
+     (display-rubric/description)
 
-      (formular
-       (haml
-        (:div
-         (#:one-page-limit (radios
-                            "Does the proposal stay within the 1-page limit without resorting to tiny fonts or similar tricks?"
-                            '(("yes" . "Yes")
-                              ("no"  . "No"))))
-         (#:how-clear-question (input-number "How clearly is the research / policy question articulated from 0 (least clear) to 2 (most clear)?"
-                                             #:min 0 #:max 2))
-         (#:quality (input-number "What overall score between 0 (lowest) and 7 (highest) would you give this proposal?"
-                                  #:min 0 #:max 7))
-         (#:feedback (textarea "Provide comments for the overall score and give at least one constructive item of feedback: a suggestion how to improve one particular aspect of the proposal."))
-         (:button.button.next-button ((:type "submit")) "Submit")))
-       (lambda (#:one-page-limit one-page-limit
-                #:how-clear-question how-clear-question
-                #:quality quality
-                #:feedback feedback)
-         (define op (string=? "yes" one-page-limit))
-         (put 'reviews
-              (cons
-               (~> r
-                   (hash-set 'submitter-id (get 'current-assignment))
-                   (hash-set 'reviewer-id (current-participant-id))
-                   (hash-set 'one-page-limit op)
-                   (hash-set 'how-clear-question how-clear-question)
-                   (hash-set 'quality quality)
-                   (hash-set 'feedback feedback)
-                   (hash-set 'score (+ (if op 1 0) how-clear-question quality)))
-               (get 'reviews '()))))))))))
+     (formular
+      (haml
+       (:div
+        (#:one-page-limit (radios
+                           "Does the proposal stay within the 1-page limit without resorting to tiny fonts or similar tricks?"
+                           '(("yes" . "Yes")
+                             ("no"  . "No"))))
+        (#:how-clear-question (input-number "How clearly is the research / policy question articulated from 0 (least clear) to 2 (most clear)?"
+                                            #:min 0 #:max 2))
+        (#:quality (input-number "What overall score between 0 (lowest) and 7 (highest) would you give this proposal?"
+                                 #:min 0 #:max 7))
+        (#:feedback (textarea "Provide comments for the overall score and give at least one constructive item of feedback: a suggestion how to improve one particular aspect of the proposal."))
+        (:button.button.next-button ((:type "submit")) "Submit")))
+      (lambda (#:one-page-limit one-page-limit
+               #:how-clear-question how-clear-question
+               #:quality quality
+               #:feedback feedback)
+        (define op (string=? "yes" one-page-limit))
+        (put 'reviews
+             (cons
+              (~> r
+                  (hash-set 'submitter-id (get 'current-assignment))
+                  (hash-set 'reviewer-id (current-participant-id))
+                  (hash-set 'one-page-limit op)
+                  (hash-set 'how-clear-question how-clear-question)
+                  (hash-set 'quality quality)
+                  (hash-set 'feedback feedback)
+                  (hash-set 'score (+ (if op 1 0) how-clear-question quality)))
+              (get 'reviews '())))))))))
 
 (define (display-review/beliefs r)
 
@@ -1160,26 +1148,25 @@
 
   (put/identity 'total-score total-score)
 
-  (page
-   (haml
-    (.container
-     (:h1 "You are done")
+  (haml
+   (.container
+    (:h1 "You are done")
 
-     (:p "Your participation number is: " (~a (current-participant-id)))
+    (:p "Your participation number is: " (~a (current-participant-id)))
 
-     (:h4 (format "Total Score: ~a (~a reviews from others received, ~a reviews pending)"
-                  total-score
-                  n-other-reviewers-received
-                  n-other-reviewers-pending))
-     (:h3 "Scores and Feedback")
+    (:h4 (format "Total Score: ~a (~a reviews from others received, ~a reviews pending)"
+                 total-score
+                 n-other-reviewers-received
+                 n-other-reviewers-pending))
+    (:h3 "Scores and Feedback")
 
-     ,@(for/list ([r participant-reviews])
-         (display-review/beliefs r))
+    ,@(for/list ([r participant-reviews])
+        (display-review/beliefs r))
 
-     (:h3 "Scores for Reviews")
+    (:h3 "Scores for Reviews")
 
-     ,@(for/list ([r reviews-by-participant])
-         (display-review-scores/beliefs r))))))
+    ,@(for/list ([r reviews-by-participant])
+        (display-review-scores/beliefs r)))))
 
 (define (review-reviews/beliefs)
   (review-submissions (review-next-review display-review/beliefs)))
@@ -1209,20 +1196,19 @@
 (define (submit-single-research-idea)
   (define i (add1 (length (get 'submissions '()))))
   (define n (get 'n))
-  (page
-   (haml
-    (.container
-     (formular
-      (haml
-       (:div
-        (#:research-idea (textarea (format "Provide research idea ~a of ~a" i n)))
-        (:button.button.next-button ([:type "submit"]) "Submit")))
-      (lambda (#:research-idea idea)
-        (put 'submissions
-             (cons (hash 'submission-id (get 'next-submission-id 0)
-                         'submission idea)
-                   (get 'submissions)))
-        (put 'next-submission-id (add1 (get 'next-submission-id 0)))))))))
+  (haml
+   (.container
+    (formular
+     (haml
+      (:div
+       (#:research-idea (textarea (format "Provide research idea ~a of ~a" i n)))
+       (:button.button.next-button ([:type "submit"]) "Submit")))
+     (lambda (#:research-idea idea)
+       (put 'submissions
+            (cons (hash 'submission-id (get 'next-submission-id 0)
+                        'submission idea)
+                  (get 'submissions)))
+       (put 'next-submission-id (add1 (get 'next-submission-id 0))))))))
 
 (define (submit-research-ideas [n 2])
   (submit-submissions submit-single-research-idea n #:study-name "research-ideas-study"))
@@ -1232,37 +1218,36 @@
   (match-define (hash-table ('submission submission)
                             ('submission-id submission-id))
     (car (get 'current-submissions)))
-  (page
-   (haml
-    (.container
-     (:h1 (format "Review Research Idea ~a (of ~a)" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
-     (.submission
-      (:h3 "Submitted Research Idea")
-      (:p submission))
+  (haml
+   (.container
+    (:h1 (format "Review Research Idea ~a (of ~a)" (add1 (get 'n-reviewed-submissions)) (get 'n-total-submissions)))
+    (.submission
+     (:h3 "Submitted Research Idea")
+     (:p submission))
 
-     (:h3 "Rubric for Research Idea")
-     (:p "See "(:a ((:href research-ideas-examples-url)) "Examples of Research Ideas") " for details. Only mark an idea as invalid if it cannot be interpreted as a research question OR if it is effectively a duplicate of another research question by this person. Ignore (for now) whether it is interesting or original; whether you like it; whether there is a way to answer it; ... . Those comments you can keep for constructive and kind feedback.")
-     (formular
-      (haml
-       (:div
-        (#:valid-research-idea?
-         (radios
-          "Do you consider this a valid research idea?"
-          '(("yes" . "Yes")
-            ("no"  . "No"))))
-        (#:feedback (textarea "Provide a constructive suggestion how to improve this research question / turn it into a valid research question. Remember: be kind."))
-        (:button.button.next-button ((:type "submit")) "Submit")))
-      (lambda (#:valid-research-idea? valid-research-idea?
-               #:feedback feedback)
-        (put 'reviews
-             (cons
-              (hash 'submitter-id           (get 'current-assignment)
-                    'reviewer-id            (current-participant-id)
-                    'submission             submission
-                    'submission-id          submission-id
-                    'valid-research-idea?   (string=? valid-research-idea? "yes")
-                    'feedback               feedback)
-              (get 'reviews '())))))))))
+    (:h3 "Rubric for Research Idea")
+    (:p "See "(:a ((:href research-ideas-examples-url)) "Examples of Research Ideas") " for details. Only mark an idea as invalid if it cannot be interpreted as a research question OR if it is effectively a duplicate of another research question by this person. Ignore (for now) whether it is interesting or original; whether you like it; whether there is a way to answer it; ... . Those comments you can keep for constructive and kind feedback.")
+    (formular
+     (haml
+      (:div
+       (#:valid-research-idea?
+        (radios
+         "Do you consider this a valid research idea?"
+         '(("yes" . "Yes")
+           ("no"  . "No"))))
+       (#:feedback (textarea "Provide a constructive suggestion how to improve this research question / turn it into a valid research question. Remember: be kind."))
+       (:button.button.next-button ((:type "submit")) "Submit")))
+     (lambda (#:valid-research-idea? valid-research-idea?
+              #:feedback feedback)
+       (put 'reviews
+            (cons
+             (hash 'submitter-id           (get 'current-assignment)
+                   'reviewer-id            (current-participant-id)
+                   'submission             submission
+                   'submission-id          submission-id
+                   'valid-research-idea?   (string=? valid-research-idea? "yes")
+                   'feedback               feedback)
+             (get 'reviews '()))))))))
 
 (define (review-next-review-research-ideas)
   (define r (car (get 'current-submissions)))
@@ -1272,33 +1257,32 @@
                             ('submitter-id submitter-id)
                             ('valid-research-idea? valid?))
     r)
-  (page
-   (haml
-    (.container
-     (:h1 "Review this Review")
+  (haml
+   (.container
+    (:h1 "Review this Review")
 
-     (.submission
-      (:h3 "Original Submission and Review")
-      (:p (:strong "Submission: ") submission)
-      (:p (:strong "Review: ") feedback))
+    (.submission
+     (:h3 "Original Submission and Review")
+     (:p (:strong "Submission: ") submission)
+     (:p (:strong "Review: ") feedback))
 
-     (formular
-      (haml
-       (:div
-        (#:comments-on-review
-         (textarea "Comments on Review:"))
-        (#:review-score
-         (input-number "Review Score (-1 to +1): "
-                       #:min -1 #:max 1))
-        (:button.button.next-button ([:type "submit"]) "Submit")))
-      (λ (#:comments-on-review comments-on-review
-          #:review-score review-score)
-        (put 'reviews
-             (cons
-              (hash-set
-               (hash-set r 'comments-on-review comments-on-review)
-               'review-score review-score)
-              (get 'reviews '())))))))))
+    (formular
+     (haml
+      (:div
+       (#:comments-on-review
+        (textarea "Comments on Review:"))
+       (#:review-score
+        (input-number "Review Score (-1 to +1): "
+                      #:min -1 #:max 1))
+       (:button.button.next-button ([:type "submit"]) "Submit")))
+     (λ (#:comments-on-review comments-on-review
+         #:review-score review-score)
+       (put 'reviews
+            (cons
+             (hash-set
+              (hash-set r 'comments-on-review comments-on-review)
+              'review-score review-score)
+             (get 'reviews '()))))))))
 
 (define (review-research-ideas)
   (review-submissions review-next-research-idea))
@@ -1406,18 +1390,17 @@
               (:li "Feedback: " feedback)
               (:li "Valid: " (if valid? "Yes" "No"))))))))))
 
-  (page
-   (haml
-    (.container
-     (:h1 "End of Review Phase")
-     (:p "Thanks for completing your reviews.")
-     score-display
-     submission-feedback
+  (haml
+   (.container
+    (:h1 "End of Review Phase")
+    (:p "Thanks for completing your reviews.")
+    score-display
+    submission-feedback
 
-     (:h3 "Scores for Reviews")
+    (:h3 "Scores for Reviews")
 
-     ,@(for/list ([r reviews-by-participant])
-         (display-review-scores/research-ideas r))))))
+    ,@(for/list ([r reviews-by-participant])
+        (display-review-scores/research-ideas r)))))
 
 (define (research-ideas-admin-handler)
   (submissions-admin-interface-handler
@@ -1456,80 +1439,79 @@
     (input-number
      (format "Score on exercise ~a -- from 0 to 5 (see explanation on grades above)" n)
      #:min 0 #:max 5))
-  (page
-   (haml
-    (.container
-     (:h1 "Review this PDF")
-     (:p.submission (uploaded-file-attachment submission-upload "Download submission"))
-     (:div
-      (:h3 "Rubric for PDF")
-      (:p "Each exercise should be scored from 0 to 5 and thus counts the same as every other exercise. At the end, the sum of scores gets rescaled to however much the current assignment is worth (15 or 25). The meaning of scores is as follows:")
-      (:ul
-       (:li "0: Not attempted/Wrong Exercise/Nothing of Value")
-       (:li "1: A minor point was achieved or the person at least stated why they got stuck (lack of time does not count).")
-       (:li "2: Some progress was made, or the person reports several meaningful attempts that failed (with code examples) that pointed in the right direction and explain why the person got stuck. (Lack of time still does not count.) Alternatively, the person describes how the problem could be approached conceptually and this is genuinely helpful to solve the problem.")
-       (:li "3: Same as 2, but with more progress. Alternatively, the person achieved almost the right solution but due to a bug the result is wrong in a major way (i.e. not just a typo or some minor oversight, but it does not work or provide the right output).")
-       (:li "4: The solution is close to complete. There is some minor detail missing, a minor bug (typo), some subtlety in forgetting to drop edge cases. Alternatively, the solution is correct and complete, but unclear, confusing, and with poor code.")
-       (:li "5: The solution is clear, correct, and complete."))
-      (formular
-       (haml
-        (:div
-         (#:exercise1
-          (input-exercise-score 1))
-         (#:exercise1-explanation
-          (textarea "Explain your score for exercise 1 briefly."))
-         (#:exercise2
-          (input-exercise-score 2))
-         (#:exercise2-explanation
-          (textarea "Explain your score for exercise 2 briefly."))
-         (#:exercise3
-          (input-exercise-score 3))
-         (#:exercise3-explanation
-          (textarea "Explain your score for exercise 3 briefly."))
-         (#:exercise4
-          (input-exercise-score 4))
-         (#:exercise4-explanation
-          (textarea "Explain your score for exercise 4 briefly."))
-         (#:exercise5
-          (input-exercise-score 5))
-         (#:exercise5-explanation
-          (textarea "Explain your score for exercise 5 briefly."))
-         (#:exercise6
-          (input-exercise-score 6))
-         (#:exercise6-explanation
-          (textarea "Explain your score for exercise 6 briefly."))
-         (:button.button.next-button ([:type "submit"]) "Submit")))
-       (lambda (#:exercise1 exercise1
-                #:exercise2 exercise2
-                #:exercise3 exercise3
-                #:exercise4 exercise4
-                #:exercise5 exercise5
-                #:exercise6 exercise6
-                #:exercise1-explanation exercise1-explanation
-                #:exercise2-explanation exercise2-explanation
-                #:exercise3-explanation exercise3-explanation
-                #:exercise4-explanation exercise4-explanation
-                #:exercise5-explanation exercise5-explanation
-                #:exercise6-explanation exercise6-explanation)
-         (define (make-exercise name score expl)
-           (hash 'name name
-                 'score score
-                 'explanation expl))
-         (define exercises
-           (list
-            (make-exercise "Exercise 1" exercise1 exercise1-explanation)
-            (make-exercise "Exercise 2" exercise2 exercise2-explanation)
-            (make-exercise "Exercise 3" exercise3 exercise3-explanation)
-            (make-exercise "Exercise 4" exercise4 exercise4-explanation)
-            (make-exercise "Exercise 5" exercise5 exercise5-explanation)
-            (make-exercise "Exercise 6" exercise6 exercise6-explanation)))
-         (put 'reviews
-              (cons
-               (~> r
-                   (hash-set 'submitter-id (get 'current-assignment))
-                   (hash-set 'reviewer-id (current-participant-id))
-                   (hash-set 'exercises exercises))
-               (get 'reviews '()))))))))))
+  (haml
+   (.container
+    (:h1 "Review this PDF")
+    (:p.submission (uploaded-file-attachment submission-upload "Download submission"))
+    (:div
+     (:h3 "Rubric for PDF")
+     (:p "Each exercise should be scored from 0 to 5 and thus counts the same as every other exercise. At the end, the sum of scores gets rescaled to however much the current assignment is worth (15 or 25). The meaning of scores is as follows:")
+     (:ul
+      (:li "0: Not attempted/Wrong Exercise/Nothing of Value")
+      (:li "1: A minor point was achieved or the person at least stated why they got stuck (lack of time does not count).")
+      (:li "2: Some progress was made, or the person reports several meaningful attempts that failed (with code examples) that pointed in the right direction and explain why the person got stuck. (Lack of time still does not count.) Alternatively, the person describes how the problem could be approached conceptually and this is genuinely helpful to solve the problem.")
+      (:li "3: Same as 2, but with more progress. Alternatively, the person achieved almost the right solution but due to a bug the result is wrong in a major way (i.e. not just a typo or some minor oversight, but it does not work or provide the right output).")
+      (:li "4: The solution is close to complete. There is some minor detail missing, a minor bug (typo), some subtlety in forgetting to drop edge cases. Alternatively, the solution is correct and complete, but unclear, confusing, and with poor code.")
+      (:li "5: The solution is clear, correct, and complete."))
+     (formular
+      (haml
+       (:div
+        (#:exercise1
+         (input-exercise-score 1))
+        (#:exercise1-explanation
+         (textarea "Explain your score for exercise 1 briefly."))
+        (#:exercise2
+         (input-exercise-score 2))
+        (#:exercise2-explanation
+         (textarea "Explain your score for exercise 2 briefly."))
+        (#:exercise3
+         (input-exercise-score 3))
+        (#:exercise3-explanation
+         (textarea "Explain your score for exercise 3 briefly."))
+        (#:exercise4
+         (input-exercise-score 4))
+        (#:exercise4-explanation
+         (textarea "Explain your score for exercise 4 briefly."))
+        (#:exercise5
+         (input-exercise-score 5))
+        (#:exercise5-explanation
+         (textarea "Explain your score for exercise 5 briefly."))
+        (#:exercise6
+         (input-exercise-score 6))
+        (#:exercise6-explanation
+         (textarea "Explain your score for exercise 6 briefly."))
+        (:button.button.next-button ([:type "submit"]) "Submit")))
+      (lambda (#:exercise1 exercise1
+               #:exercise2 exercise2
+               #:exercise3 exercise3
+               #:exercise4 exercise4
+               #:exercise5 exercise5
+               #:exercise6 exercise6
+               #:exercise1-explanation exercise1-explanation
+               #:exercise2-explanation exercise2-explanation
+               #:exercise3-explanation exercise3-explanation
+               #:exercise4-explanation exercise4-explanation
+               #:exercise5-explanation exercise5-explanation
+               #:exercise6-explanation exercise6-explanation)
+        (define (make-exercise name score expl)
+          (hash 'name name
+                'score score
+                'explanation expl))
+        (define exercises
+          (list
+           (make-exercise "Exercise 1" exercise1 exercise1-explanation)
+           (make-exercise "Exercise 2" exercise2 exercise2-explanation)
+           (make-exercise "Exercise 3" exercise3 exercise3-explanation)
+           (make-exercise "Exercise 4" exercise4 exercise4-explanation)
+           (make-exercise "Exercise 5" exercise5 exercise5-explanation)
+           (make-exercise "Exercise 6" exercise6 exercise6-explanation)))
+        (put 'reviews
+             (cons
+              (~> r
+                  (hash-set 'submitter-id (get 'current-assignment))
+                  (hash-set 'reviewer-id (current-participant-id))
+                  (hash-set 'exercises exercises))
+              (get 'reviews '())))))))))
 
 (define (review-pdf/intro-R-exercises)
   (review-submissions review-R-intro-pdf-handler/exercises))
@@ -1605,29 +1587,28 @@
 
   (put/identity 'total-score total-score)
 
-  (page
-   (haml
-    (.container
-     (:h1 "You are done")
+  (haml
+   (.container
+    (:h1 "You are done")
 
-     (:p "Your participation id is: " (~a (current-participant-id)))
+    (:p "Your participation id is: " (~a (current-participant-id)))
 
-     (:p (format "Total Score for submissions and reviews: ~a (~a reviews from others received, ~a reviews pending)"
-                  total-score
-                  n-other-reviewers-received
-                  n-other-reviewers-pending) " This sums up the score from your submission and from your reviews. See below for the breakdown.")
+    (:p (format "Total Score for submissions and reviews: ~a (~a reviews from others received, ~a reviews pending)"
+                total-score
+                n-other-reviewers-received
+                n-other-reviewers-pending) " This sums up the score from your submission and from your reviews. See below for the breakdown.")
 
-     (:h2 "Detailed Scores and Feedback on Your Submission")
+    (:h2 "Detailed Scores and Feedback on Your Submission")
 
-     ,@(for/list ([r participant-reviews])
-         (display-review/intro-R-exercises r))
+    ,@(for/list ([r participant-reviews])
+        (display-review/intro-R-exercises r))
 
-     (:h2 "Bonus/Malus for Quality of Your Reviews: " (~a reviewer-score))
+    (:h2 "Bonus/Malus for Quality of Your Reviews: " (~a reviewer-score))
 
-     (:p "In addition to the score you receive for your submission, I (Marc) review the reviews each week. Unless your review is particularly good or bad, you will receive 0 -- otherwise a +1 or -1. If it says 'not reviewed', it means that I did not review your review, not that you did not submit it.")
+    (:p "In addition to the score you receive for your submission, I (Marc) review the reviews each week. Unless your review is particularly good or bad, you will receive 0 -- otherwise a +1 or -1. If it says 'not reviewed', it means that I did not review your review, not that you did not submit it.")
 
-     ,@(for/list ([r reviews-by-participant])
-         (display-review-scores/intro-R-exercises r))))))
+    ,@(for/list ([r reviews-by-participant])
+        (display-review-scores/intro-R-exercises r)))))
 
 (define (review-reviews/intro-R-exercises)
   (review-submissions (review-next-review display-review/intro-R-exercises)))

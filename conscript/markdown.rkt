@@ -14,10 +14,9 @@
 (define-syntax (md stx)
   (syntax-parse stx
     [(_ content ...)
-     #'(page
-        `(div
-          ([class "container"])
-          ,(md* content ...)))]))
+     #'`(div
+         ([class "container"])
+         ,(md* content ...))]))
 
 (define-syntax (md* stx)
   (syntax-parse stx

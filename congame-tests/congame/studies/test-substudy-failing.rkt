@@ -13,16 +13,16 @@
   (box #f))
 
 (define (info)
-  (page (button void "Continue")))
+  (button void "Continue"))
 
 (define (done)
-  (page (haml (:p "Done."))))
+  (haml (:p "Done.")))
 
 (define (do-fail)
-  (page (button
-         (λ ()
-           (fail 'expected-failure))
-         "Fail")))
+  (button
+   (λ ()
+     (fail 'expected-failure))
+   "Fail"))
 
 (define test-substudy-failing/child1
   (make-study

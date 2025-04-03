@@ -9,28 +9,26 @@
  calibration)
 
 (define (calibration-form)
-  (page
-   (haml
-    (.container
-     (:h1 "Calibration")
+  (haml
+   (.container
+    (:h1 "Calibration")
 
-     (formular
-      (haml
+    (formular
+     (haml
+      (:div
        (:div
-        (:div
-         (#:wtw
-          (input-number #:attributes `([data-calibration "calibration" ]
-                                       [data-calibrationPrefix "£"]) #:min 0 #:max 4 "WTW" #:step 0.1)))
-        (:div#confirm-choice
-         (:span#confirmation-message "")
-         (:a#reset-button.button ([:href ""])"Reset")
-        (:button.button.next-button ([:type "submit"]) "Yes, proceed to next step")))))))))
+        (#:wtw
+         (input-number #:attributes `([data-calibration "calibration" ]
+                                      [data-calibrationPrefix "£"]) #:min 0 #:max 4 "WTW" #:step 0.1)))
+       (:div#confirm-choice
+        (:span#confirmation-message "")
+        (:a#reset-button.button ([:href ""])"Reset")
+        (:button.button.next-button ([:type "submit"]) "Yes, proceed to next step"))))))))
 
 (define (end)
-  (page
-   (haml
-    (.container
-     (:h1 "The End")))))
+  (haml
+   (.container
+    (:h1 "The End"))))
 
 (define calibration
   (make-study

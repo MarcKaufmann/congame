@@ -19,14 +19,13 @@
  )
 
 (define ((start questions))
-  (page
-   (haml
-    (.container
-     (:h1 "Quiz")
-     (:p "When ready, start the quiz")
-     (button
-      void
-      "Start Quiz")))))
+  (haml
+   (.container
+    (:h1 "Quiz")
+    (:p "When ready, start the quiz")
+    (button
+     void
+     "Start Quiz"))))
 
 #;(serializable-struct quiz-question (text answer score)
                      #:transparent
@@ -81,37 +80,36 @@
   (put 'total-score total-score)
   (put/identity 'total-score total-score)
 
-  (page
-   (haml
-    (.container
-     (:h1 "Quiz Completed")
+  (haml
+   (.container
+    (:h1 "Quiz Completed")
 
-     (:p (:strong "Your participant id: ") (~a (current-participant-id)))
-     (:h3 (format "Total Score: ~a" total-score))
-     (:p "Your score will be updated as your questions are graded")
+    (:p (:strong "Your participant id: ") (~a (current-participant-id)))
+    (:h3 (format "Total Score: ~a" total-score))
+    (:p "Your score will be updated as your questions are graded")
 
-     (:h3 "Overview")
-     ,@(for/list ([(key answer) (in-hash (hash-ref (get/instance 'quiz-answers) (current-participant-id)))])
-         (define q-score
-           (quiz-question-score answer))
-         (haml
-          (:div.quiz
-           (:ul
-            (:li (:strong "Question: ") (quiz-question-text answer))
-            (:li (:strong "Your Score: ") (if q-score (~a q-score) "(Not graded)"))
-            (:li (:strong "Your Answer: ") (quiz-question-answer answer)))
-           (if (get/instance 'phase-show-answers #f)
-               (haml
-                (:div
-                 (:h4 "Suggested Answer")
-                 (answer-haml-for key)))
-               (haml
-                (:div
-                 (button
-                  (λ ()
-                    (put 'question-to-change (list (list key (quiz-question-text answer) ""))))
-                  "Change your Answer"
-                  #:to-step-id 'change-answer)))))))))))
+    (:h3 "Overview")
+    ,@(for/list ([(key answer) (in-hash (hash-ref (get/instance 'quiz-answers) (current-participant-id)))])
+        (define q-score
+          (quiz-question-score answer))
+        (haml
+         (:div.quiz
+          (:ul
+           (:li (:strong "Question: ") (quiz-question-text answer))
+           (:li (:strong "Your Score: ") (if q-score (~a q-score) "(Not graded)"))
+           (:li (:strong "Your Answer: ") (quiz-question-answer answer)))
+          (if (get/instance 'phase-show-answers #f)
+              (haml
+               (:div
+                (:h4 "Suggested Answer")
+                (answer-haml-for key)))
+              (haml
+               (:div
+                (button
+                 (λ ()
+                   (put 'question-to-change (list (list key (quiz-question-text answer) ""))))
+                 "Change your Answer"
+                 #:to-step-id 'change-answer))))))))))
 
 (define (question-for key)
   (cdr (findf (λ (q)
@@ -196,27 +194,26 @@
                "Incorrect"
                #:to-step-id 'admin)))))))))
 
-  (page
-   (haml
-    (.container
-     (:h1 "Quiz Admin")
-     ,@(for/list ([n quiz-question-names])
-         (display-table n))
+  (haml
+   (.container
+    (:h1 "Quiz Admin")
+    ,@(for/list ([n quiz-question-names])
+        (display-table n))
 
-     (:h3 "Actions")
-     (button
-      (λ ()
-        (parameterize ([current-study-stack '(*root*)])
-          (put/instance 'phase-show-answers #t)))
-      "Release Answers to Participants"
-      #:to-step-id 'admin)
-     (button
-      (λ ()
-        (parameterize ([current-study-stack '(*root*)])
-          (put/instance 'phase-show-answers #f)))
-      "Hide Answers from Participants"
-      #:to-step-id 'admin)
-     ))))
+    (:h3 "Actions")
+    (button
+     (λ ()
+       (parameterize ([current-study-stack '(*root*)])
+         (put/instance 'phase-show-answers #t)))
+     "Release Answers to Participants"
+     #:to-step-id 'admin)
+    (button
+     (λ ()
+       (parameterize ([current-study-stack '(*root*)])
+         (put/instance 'phase-show-answers #f)))
+     "Hide Answers from Participants"
+     #:to-step-id 'admin)
+    )))
 
 (define quiz-admin/study
   (make-study
@@ -239,30 +236,29 @@
         (if answer?
             (quiz-question-answer answer?)
             #f)))
-    (page
-     (haml
-      (.container
-       (:h3 "Question")
-       (:p (:strong "Your participant id: ") (~a (current-participant-id)))
-       (if maybe-answer
-           (haml
-            (:div
-             (:p (:strong "Your previous answer: ") maybe-answer)))
-           (haml
-            (:div
-             "")))
-       (formular
-        (haml
-         (:div
-          (#:answer (textarea q-text))
-          (:button.button.next-button ([:type "submit"]) "Submit")))
-        (lambda (#:answer answer)
-          (let ([q (make-quiz-question q-text answer)])
-            (put 'quiz-answers
-                 (hash-set (get 'quiz-answers (hash)) next-key q))
-            (put 'quiz-questions-done
-                 (cons (car remaining-questions) (get 'quiz-questions-done '())))
-            (put 'quiz-questions (cdr remaining-questions)))))))))
+    (haml
+     (.container
+      (:h3 "Question")
+      (:p (:strong "Your participant id: ") (~a (current-participant-id)))
+      (if maybe-answer
+          (haml
+           (:div
+            (:p (:strong "Your previous answer: ") maybe-answer)))
+          (haml
+           (:div
+            "")))
+      (formular
+       (haml
+        (:div
+         (#:answer (textarea q-text))
+         (:button.button.next-button ([:type "submit"]) "Submit")))
+       (lambda (#:answer answer)
+         (let ([q (make-quiz-question q-text answer)])
+           (put 'quiz-answers
+                (hash-set (get 'quiz-answers (hash)) next-key q))
+           (put 'quiz-questions-done
+                (cons (car remaining-questions) (get 'quiz-questions-done '())))
+           (put 'quiz-questions (cdr remaining-questions))))))))
   (make-step
    'question
    handler
@@ -272,11 +268,10 @@
          'question))))
 
 (define (finished-all-questions)
-  (page
-   (haml
-    (.container
-     (:h2 "You finished/updated all questions")
-     (button void "Continue")))))
+  (haml
+   (.container
+    (:h2 "You finished/updated all questions")
+    (button void "Continue"))))
 
 (define quiz-study
   ;; Should check that loq not empty, that seems a mistake always

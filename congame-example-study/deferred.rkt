@@ -10,16 +10,14 @@
  wrapped-deferred-study)
 
 (define (init)
-  (page
-   (haml
-    (button
-     (λ () (put 'a 42))
-     "Continue"))))
+  (haml
+   (button
+    (λ () (put 'a 42))
+    "Continue")))
 
 (define ((make-show a))
-  (page
-   (haml
-    (:p "a = " (~a a)))))
+  (haml
+   (:p "a = " (~a a))))
 
 (define deferred-study
   (make-study
@@ -43,8 +41,7 @@
    (lambda (hdl)
      (lambda ()
        (define the-page-thunk (hdl))
-       (page
-        (haml
-         (:div
-          (:h1 "Wrapper")
-          (the-page-thunk))))))))
+       (haml
+        (:div
+         (:h1 "Wrapper")
+         (the-page-thunk)))))))

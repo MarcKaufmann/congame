@@ -8,29 +8,27 @@
 (provide pre-survey)
 
 (define (welcome)
-  (page
-   (haml
-    (.container
-     @:h1{Welcome}
+  (haml
+   (.container
+    @:h1{Welcome}
 
-     @:p{Thank you for participating in this survey. Since this is an anonymous survey, if you close this window your progress will be lost and you will have to restart again. So make sure to only close the window once you have finished the whole survey, received the completion code, and entered it on Prolific.}
+    @:p{Thank you for participating in this survey. Since this is an anonymous survey, if you close this window your progress will be lost and you will have to restart again. So make sure to only close the window once you have finished the whole survey, received the completion code, and entered it on Prolific.}
 
-     @(formular
-       (haml
-        (:div
-         (#:prolific-id (input-text "Please provide your prolific ID."))
-         (#:country (input-text "In what country do you currently reside?"))
-         submit-button)))))))
+    @(formular
+      (haml
+       (:div
+        (#:prolific-id (input-text "Please provide your prolific ID."))
+        (#:country (input-text "In what country do you currently reside?"))
+        submit-button))))))
 
 
 (define completion-code
   "CVH6OUIR")
 
 (define (page-from-formular f)
-  (page
-   (haml
-    (.container
-      f))))
+  (haml
+   (.container
+    f)))
 
 (define (yn-radios label)
   (map-result
@@ -50,134 +48,125 @@
       submit-button)))))
 
 (define (do-you-have-BA)
-    (page
+  (haml
+   (.container
+    (:h3 "Bachelor/Undergraduate Degree")
+    (formular
      (haml
-      (.container
-       (:h3 "Bachelor/Undergraduate Degree")
-       (formular
-        (haml
-         (:div
-          (#:has-BA? (yn-radios "Do you have a undergraduate/bachelor degree?"))
-          submit-button)))))))
+      (:div
+       (#:has-BA? (yn-radios "Do you have a undergraduate/bachelor degree?"))
+       submit-button))))))
 
 (define (when-got-BA)
-  (page
-   (haml
-    (.container
-     (:h3 "Bachelor/Undergraduate Degree")
-     (formular
-      (haml
-       (:div
-        (#:when-got-BA (input-date "When did you get your undergraduate/bachelor degree?"))
-        submit-button)))))))
+  (haml
+   (.container
+    (:h3 "Bachelor/Undergraduate Degree")
+    (formular
+     (haml
+      (:div
+       (#:when-got-BA (input-date "When did you get your undergraduate/bachelor degree?"))
+       submit-button))))))
 
 (define (BA-in-progress)
-  (page
-   (haml
-    (.container
-     (:h3 "Bachelor/Undergraduate Degree")
-     (formular
-      (haml
-       (:div
-        (#:BA-in-progress? (yn-radios "Are you in the progress of getting a undergraduate/bachelor degree?"))
-        submit-button)))))))
+  (haml
+   (.container
+    (:h3 "Bachelor/Undergraduate Degree")
+    (formular
+     (haml
+      (:div
+       (#:BA-in-progress? (yn-radios "Are you in the progress of getting a undergraduate/bachelor degree?"))
+       submit-button))))))
 
 (define (BA-info)
   (define BA-in-progress? (equal? (get 'BA-in-progress? #f) 'yes))
-  (page
-   (haml
-    (.container
-     (:h3 "Bachelor/Undergraduate Degree")
-     (formular
-      (haml
-       (:div
-        (.group
-         (:label (format "What ~a the focus of your undergraduate/bachelor? Select all that apply."
-                         (if BA-in-progress? "is" "was")))
-         (#:computer-science (checkbox "Computer Science"))
-         (#:data-science (checkbox "Data Science/Business Analytics"))
-         (#:economics (checkbox "Economics"))
-         (#:engineering (checkbox "Engineering"))
-         (#:humanities (checkbox "Humanities (Philosophy, History, ...)"))
-         (#:natural-science (checkbox "Natural Science (Maths, Physics, ...)"))
-         (#:social-science (checkbox "Social Science other than Economics (Sociology, Anthropology, ...)"))
-         (#:other (checkbox "Other")))
-        (.group
-         (#:BA-location (input-text (format "In which country ~a you studying for your undergraduate/bachelor? (If you studied remotely, state the country in which the college/university institution is located.)" (if BA-in-progress? "are" "were")))))
-        submit-button)))))))
+  (haml
+   (.container
+    (:h3 "Bachelor/Undergraduate Degree")
+    (formular
+     (haml
+      (:div
+       (.group
+        (:label (format "What ~a the focus of your undergraduate/bachelor? Select all that apply."
+                        (if BA-in-progress? "is" "was")))
+        (#:computer-science (checkbox "Computer Science"))
+        (#:data-science (checkbox "Data Science/Business Analytics"))
+        (#:economics (checkbox "Economics"))
+        (#:engineering (checkbox "Engineering"))
+        (#:humanities (checkbox "Humanities (Philosophy, History, ...)"))
+        (#:natural-science (checkbox "Natural Science (Maths, Physics, ...)"))
+        (#:social-science (checkbox "Social Science other than Economics (Sociology, Anthropology, ...)"))
+        (#:other (checkbox "Other")))
+       (.group
+        (#:BA-location (input-text (format "In which country ~a you studying for your undergraduate/bachelor? (If you studied remotely, state the country in which the college/university institution is located.)" (if BA-in-progress? "are" "were")))))
+       submit-button))))))
 
 (define (study-abroad)
-  (page
-   (haml
-    (.container
-     (:h3 "Study Abroad")
-     (formular
-      (haml
-       (:div
-        (#:study-abroad? (yn-radios "Have you considered pursuing education in a different country?"))
-        submit-button)))))))
+  (haml
+   (.container
+    (:h3 "Study Abroad")
+    (formular
+     (haml
+      (:div
+       (#:study-abroad? (yn-radios "Have you considered pursuing education in a different country?"))
+       submit-button))))))
 
 (define (places-study-abroad)
-  (page
-   (haml
-    (.container
-     (:h3 "Study Abroad")
-     (formular
-      (haml
-       (:div
-        (:h3 "Which of the following places would you consider for studying abroad? Select all that apply.")
-        (#:consider-africa (checkbox "Africa"))
-        (#:consider-asia (checkbox "Asia"))
-        (#:consider-australia (checkbox "Australia"))
-        (#:consider-central-eastern-europe (checkbox "Central and Eastern Europe"))
-        (#:consider-north-america (checkbox "North America"))
-        (#:consider-south-america (checkbox "South America"))
-        (#:consider-western-europe (checkbox "Western Europe"))
-        submit-button)))))))
+  (haml
+   (.container
+    (:h3 "Study Abroad")
+    (formular
+     (haml
+      (:div
+       (:h3 "Which of the following places would you consider for studying abroad? Select all that apply.")
+       (#:consider-africa (checkbox "Africa"))
+       (#:consider-asia (checkbox "Asia"))
+       (#:consider-australia (checkbox "Australia"))
+       (#:consider-central-eastern-europe (checkbox "Central and Eastern Europe"))
+       (#:consider-north-america (checkbox "North America"))
+       (#:consider-south-america (checkbox "South America"))
+       (#:consider-western-europe (checkbox "Western Europe"))
+       submit-button))))))
 
 (define (where-in-western-europe)
-  (page
-   (haml
-    (.container
-     (:h3 "Study Abroad")
-     (formular
-      (haml
-       (:div
-        (.group
-         (:h3 "Which of the following regions in Western Europe would you consider for studying abroad? Select all that apply.")
-         (#:consider-scandinavia (checkbox "Denmark, Finland, Norway, Sweden"))
-         (#:consider-english (checkbox "Ireland, United Kingdom"))
-         (#:consider-german (checkbox "Austria, Germany, Switzerland"))
-         (#:consider-italy (checkbox "France"))
-         (#:consider-france (checkbox "Italy"))
-         (#:consider-iberia (checkbox "Portugal, Spain"))
-         (#:consider-benelux (checkbox "Belgium, Netherlands, Luxembourg")))
-        submit-button)))))))
+  (haml
+   (.container
+    (:h3 "Study Abroad")
+    (formular
+     (haml
+      (:div
+       (.group
+        (:h3 "Which of the following regions in Western Europe would you consider for studying abroad? Select all that apply.")
+        (#:consider-scandinavia (checkbox "Denmark, Finland, Norway, Sweden"))
+        (#:consider-english (checkbox "Ireland, United Kingdom"))
+        (#:consider-german (checkbox "Austria, Germany, Switzerland"))
+        (#:consider-italy (checkbox "France"))
+        (#:consider-france (checkbox "Italy"))
+        (#:consider-iberia (checkbox "Portugal, Spain"))
+        (#:consider-benelux (checkbox "Belgium, Netherlands, Luxembourg")))
+       submit-button))))))
 
 (define (attention-check)
-  (page
-   (haml
-    (.container
-     (:p "The question regarding about cities you are about to be asked is simple: when asked for your favorite city to visit, you must type 'Lagos'. This is an attention check.")
-     (formular
-      (haml
-       (:div
-        (:h3 "Your favorite city")
-        (#:favorite-city (input-text "Based on the instructions above, what is your favorite city to visit?"))
-        submit-button))
-      (lambda (#:favorite-city favorite-city)
-        (put 'favorite-city favorite-city)
-        (put 'pass-attention-check? (string=? (string-downcase favorite-city) "lagos"))))))))
+  (haml
+   (.container
+    (:p "The question regarding about cities you are about to be asked is simple: when asked for your favorite city to visit, you must type 'Lagos'. This is an attention check.")
+    (formular
+     (haml
+      (:div
+       (:h3 "Your favorite city")
+       (#:favorite-city (input-text "Based on the instructions above, what is your favorite city to visit?"))
+       submit-button))
+     (lambda (#:favorite-city favorite-city)
+       (put 'favorite-city favorite-city)
+       (put 'pass-attention-check? (string=? (string-downcase favorite-city) "lagos")))))))
 
 (define (thank-you)
-  (page
-   (haml
-    (.container
-     @:h1{Thank you!}
+  (haml
+   (.container
+    @:h1{Thank you!}
 
-     @:p{Thank you for participating in this survey. The completion code is @(:strong completion-code), please submit it on prolific to complete this study.}
+    @:p{Thank you for participating in this survey. The completion code is @(:strong completion-code), please submit it on prolific to complete this study.}
 
-     @:p{The prolific ID that you provided is @(:strong (get 'prolific-id "#<error: could not find your ID, please contact us")). If this is not correct, please contact us.}))))
+    @:p{The prolific ID that you provided is @(:strong (get 'prolific-id "#<error: could not find your ID, please contact us")). If this is not correct, please contact us.})))
 
 (define pre-survey
   (make-study
