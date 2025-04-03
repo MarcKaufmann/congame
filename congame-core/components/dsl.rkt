@@ -6,6 +6,7 @@
          racket/lazy-require
          racket/match
          racket/port
+         racket/runtime-path
          racket/string)
 
 (lazy-require
@@ -15,6 +16,11 @@
  dsl-require)
 
 (define-logger dsl)
+
+;; XXX: Introduce dependency on conscript package without requiring it
+;; until it's needed.
+(define-runtime-module-path _conscript
+  conscript)
 
 (define (dsl-require src id [owner-is-admin? #f])
   (match src

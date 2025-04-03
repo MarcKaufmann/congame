@@ -8,8 +8,9 @@
     "commonmark-lib"
     "congame-core"
     "forms-lib"
-    "hash-view"
+    "hash-view-lib"
     "koyo-lib"
+    "monocle-lib"
     "threading-lib"
     "web-server-lib"))
 (define build-deps
