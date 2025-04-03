@@ -5,15 +5,22 @@
          conscript/survey-tools
          data/monocle
          racket/list
-         )
+         racket/unit)
 
 (provide
- median-voter-lecture/admin
- )
+ median-voter-lecture/admin)
 
 (with-namespace xyz.trichotomy.congame.median-voter
   (defvar* score)
-  (defvar*/instance game-results))
+  (defvar*/instance game-results)
+  (defvar*/instance choices)
+  (defvar*/instance choices/rounds))
+
+(defbox choices)
+(defbox choices/rounds)
+(define-values/invoke-unit game-theory@
+  (import game-theory-vars^)
+  (export game-theory^))
 
 (defstep (instructions)
   @md{# Vote, vote, vote!
