@@ -2,17 +2,27 @@
 
 ; Experiment 8 from Johannes
 
-(provide
- opera-or-football)
-
 (require conscript/admin
+         conscript/form0
+         conscript/game-theory
          conscript/survey-tools
          data/monocle
          racket/match
+         racket/unit
          threading)
 
+(provide
+ opera-or-football/no-admin)
+
 (with-namespace xyz.trichotomy.congame.congame-gtai.opera-football
+  (defvar*/instance choices)
   (defvar*/instance choices/rounds))
+
+(defbox choices)
+(defbox choices/rounds)
+(define-values/invoke-unit game-theory@
+  (import game-theory-vars^)
+  (export game-theory^))
 
 (define n 2)
 
@@ -22,21 +32,19 @@
 (defvar/instance group-participants)
 (defvar role)
 (defvar round)
-(defvar next-round)
-(defvar enter-transitions)
 (defvar answers)
 (defvar current-round)
 (defvar round-choice)
 
 (define group-roles-box
   (case-lambda
-     [() group-roles]
-     [(v) (set! group-roles v)]))
+    [() group-roles]
+    [(v) (set! group-roles v)]))
 
 (define group-participants-box
   (case-lambda
-     [() group-participants]
-     [(v) (set! group-participants v)]))
+    [() group-participants]
+    [(v) (set! group-participants v)]))
 
 (define (set!/if-undefined l-box v)
   (with-study-transaction
@@ -45,27 +53,23 @@
 
 (define instructions
   @md*{# Instructions
- This experiment goes over **5 rounds.** In the beginning of the **first** round, participants are randomly matched to pairs of two. These pairs remain constant over the course of the experiment. The experiment is computerized. You make all your decisions at the computer.
- In the first round, both participants are randomly assigned roles, which stay constant for all the rounds. One participant is an “opera fan”, the other participant is a “football fan”. (Think of a couple.) Both make plans for tonight. The opera fan would most of all like to go to the opera (a value of E$ 10); the football fan would love to go to a football game (also a value of E$ 10). However, both would like to be at the same place rather than different ones (a value of E$ 20 for both). But they have to make their decision right now, without being able to communicate before.
- So, to repeat:
- - If the opera fan goes to the opera, he receives a value of E$ 10; if he goes to the football game, he has a value of E$ 0.
- - If the football fan goes to the opera, she receives a value of E$ 0; if she goes to the football game, she has a value of E$ 10.
- - If both end up at the same place, both receive an additional value of E$ 20; if both end up at different places, both receive no additional value.
- - In each round you are told your role and you will have to decide whether to go to the opera or to the football game.
+       This experiment goes over **3 rounds.** In the beginning of **each** round, participants are randomly matched to pairs of two. The experiment is computerized. You make all your decisions at the computer.
+       In each round, both participants in each group are randomly assigned roles. One participant is an “opera fan”, the other participant is a “football fan”. (Think of a couple.) Both make plans for tonight. The opera fan would most of all like to go to the opera (a value of E$ 10); the football fan would love to go to a football game (also a value of E$ 10). However, both would like to be at the same place rather than different ones (a value of E$ 20 for both). But they have to make their decision right now, without being able to communicate before.
+       So, to repeat:
+       - If the opera fan goes to the opera, he receives a value of E$ 10; if he goes to the football game, he has a value of E$ 0.
+       - If the football fan goes to the opera, she receives a value of E$ 0; if she goes to the football game, she has a value of E$ 10.
+       - If both end up at the same place, both receive an additional value of E$ 20; if both end up at different places, both receive no additional value.
+       - In each round you are told your role and you will have to decide whether to go to the opera or to the football game.
 
-Your payoffs will be summed up over rounds and added to your E$ account.
-})
+       Your payoffs will be summed up over rounds and added to your E$ account.
+       })
 
 (define (init)
   (with-study-transaction
     (when (undefined? choices/rounds)
       (set! choices/rounds (hash))))
   (when (undefined? round)
-    (set! round 1))
-  (when (undefined? next-round)
-    (set! next-round 1))
-  (when (undefined? enter-transitions)
-    (set! enter-transitions '())))
+    (set! round 1)))
 
 (defstep (intro)
   (set!/if-undefined group-participants-box (hash))
@@ -84,7 +88,6 @@ Your payoffs will be summed up over rounds and added to your E$ account.
 (defstep matchmake
   (let ([matchmaker (make-matchmaker n)])
     (lambda ()
-      #;(log-conscript-warning "entering matchmake with round ~a for participant ~a" round (current-participant-id))
       (matchmaker waiter))))
 
 (define (current-group-participants)
@@ -130,97 +133,65 @@ Your payoffs will be summed up over rounds and added to your E$ account.
   (skip))
 
 (defstep (the-game)
-  (set! next-round (add1 round))
-    (define current-group-roles
-    (hash-ref group-roles (get-current-group)))
- @md{
-    @style{
-      .form-container {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start; /* Align everything to the left */
-        margin: 20px 0;
-        gap: 10px; /* Add space between rows */
-        font-family: Arial, sans-serif;
-      }
+  (define choices
+    '(("Opera" . "Opera")
+      ("Football" . "Football")))
 
-      .form-label {
-        font-weight: bold;
-      }
+  (define-values (survey-form on-submit)
+    (form+submit
+     [round-choice (ensure binding/text (required) (one-of choices))]))
 
-      select, button {
-        padding: 8px 12px; /* Add padding for dropdown and button */
-        font-size: 1rem;
-      }
+  (define (render rw)
+    @md{@div[#:class "form-container"]{
+          @span[#:class "form-label"]{Please decide where you want to go:}
+          @rw["round-choice" (widget-select (cons '("" . "-- choose --") choices))]
+          @apply[div @rw["round-choice" (widget-errors)]]
+          @|submit-button|}})
 
-      button {
-        background-color: #4a4a4a;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-      }
+  @md{
+      @style{
+             .form-container {
+                              display: flex;
+                              flex-direction: column;
+                              align-items: flex-start; /* Align everything to the left */
+                              margin: 20px 0;
+                              gap: 10px; /* Add space between rows */
+                              font-family: Arial, sans-serif;
+                              }
 
-      button:hover {
-        background-color: #6a6a6a;
-      }
-    }
+             .form-label {
+                          font-weight: bold;
+                          }
 
-    # The Game
+             select, button {
+                             padding: 8px 12px; /* Add padding for dropdown and button */
+                             font-size: 1rem;
+                             }
 
-    ## You are randomly matched with a new and different participant. You are the @(match role
-    ['opera-fan "opera fan"]
-    ['football-fan "football fan"]
-    [else "Unknown participant"]).
+             button {
+                     background-color: #4a4a4a;
+                     color: white;
+                     border: none;
+                     border-radius: 5px;
+                     cursor: pointer;
+                     }
 
-    @div[#:class "form-container"]{
-      @span[#:class "form-label"]{Please decide where you want to go:}
-      @form[#:bot ([test (#:round-choice "Opera")])]{
-        @(set! round-choice (select
-                               '(("" . "-- choose --")
-                                 ("Opera" . "Opera")
-                                 ("Football" . "Football"))
-                               ""))
-        @submit-button
-      }
-    }
+             button:hover {
+                           background-color: #6a6a6a;
+                           }
+             }
 
-    @toggleable-xexpr["Show/Hide Instructions" instructions]
-  })
+      # The Game
 
-(define (autofill-form)
-  (bot:autofill 'test))
+      ## You are randomly matched with a new and different participant. You are the @(match role
+                                                                                       ['opera-fan "opera fan"]
+                                                                                       ['football-fan "football fan"]
+                                                                                       [else "Unknown participant"]).
 
-(define (&my-choice/rounds r)
-  (parameterize ([current-hash-maker hash])
-    (&opt-hash-ref*
-     (get-current-group)
-     r
-     (current-participant-id))))
+      @form[survey-form on-submit render]
+      @toggleable-xexpr["Show/Hide Instructions" instructions]
+      })
 
-(define (get-own-choice/rounds r)
-  ((&my-choice/rounds r) choices/rounds))
-
-(define (make-choice/rounds! choice r)
-  (with-study-transaction
-    (set! choices/rounds ((&my-choice/rounds r) choices/rounds choice))))
-
-(define (&my-group/rounds r)
-  (parameterize ([current-hash-maker hash])
-    (&opt-hash-ref*
-     (get-current-group)
-     r)))
-
-; This assumes that there are two people, but doesn't check for it. Will return some random other participant as 'other' otherwise.
-(define (get-other-choice/rounds r)
-  (define-values (_my-choice other-choice)
-    (for/fold ([my-choice #f]
-               [other-choice #f])
-              ([(k v) (in-hash ((&my-group/rounds r) choices/rounds))])
-      (if (equal? k (current-participant-id))
-          (values v other-choice)
-          (values my-choice v))))
-  other-choice)
 
 (defstep (store-choices)
   ; This stores it so the other participant can see it.
@@ -238,7 +209,7 @@ Your payoffs will be summed up over rounds and added to your E$ account.
   (if (not (other-choice-made))
       @md{# Please wait for the other person to make their choice
 
- @refresh-every[5]}
+          @refresh-every[5]}
       (skip)))
 
 (defstep (display-choices)
@@ -285,6 +256,7 @@ Your payoffs will be summed up over rounds and added to your E$ account.
 (defstep (store-round)
   (set! answers
         (cons current-round (if-undefined answers '())))
+  (reset-current-group)
   (skip))
 
 (defstep (the-end)
@@ -294,7 +266,7 @@ Your payoffs will be summed up over rounds and added to your E$ account.
 
   @md{# Final Results
 
-      - **Total points (equal rescaled points) earned over 5 rounds:** @(~a total-points)
+      - **Total points earned over 3 rounds:** @(~a total-points)
 
       ## Summary of Your Game:
 
@@ -306,98 +278,74 @@ Your payoffs will be summed up over rounds and added to your E$ account.
                          (hash-ref a 'own-payout)
                          (hash-ref a 'other-payout)))))})
 
-(defstep (store-score)
-  (define total-points
-    (for/sum ([a answers])
-      (hash-ref a 'own-payout)))
-  (put/identity 'score total-points)
-  (skip))
+; Admin
+
+(defview (admin-view _req)
+  (cond [(not (current-participant-owner?))
+         @md{# Nothing to see here}]
+        [else
+         (with-study-transaction
+           (when (undefined? choices/rounds)
+             (set! choices/rounds (hash))))
+         (define round-choices
+           (for/fold ([c (hash 1 '() 2 '() 3 '())])
+                     ([(_ gc) (in-hash choices/rounds)])
+             (define (update i)
+               (lambda (x)
+                 (let ([new-choice (hash-ref gc i #f)])
+                   (if new-choice
+                       (cons new-choice x)
+                       x))))
+             (~> c
+                 (hash-update 1 (update 1))
+                 (hash-update 2 (update 2))
+                 (hash-update 3 (update 3))
+                 )))
+         (define (count-ap i)
+           (for/fold ([res (hash)])
+                     ([gc (hash-ref round-choices i)])
+             (hash-update res (hash-values gc) add1 0)))
+
+         (define (display-round i)
+           @md*{## Results for round @(~a i)
+                @`(ul
+                   ,@(for/list ([(ap n) (count-ap i)])
+                       (li (format "Action profile ~a chosen ~a times."
+                                   ap n))))})
+         @md{# Admin
+
+             @display-round[1]
+
+             @display-round[2]
+
+             @display-round[3]
+             }]))
+
+(defstep (admin)
+  @md{# Admin
+
+      @a[#:href (~current-view-uri)
+         #:up-layer "new"
+         #:up-target ".container"]{Overlay}})
 
 (defstudy opera-or-football/no-admin
   [intro --> matchmake
          --> register-as-group-participant
          --> wait-for-group-ids
          --> assign-roles
-         --> {the-game (with-bot the-game autofill-form)}
+         --> the-game
          --> store-choices
          --> wait-for-choice
          --> display-choices
          --> store-round
          --> ,(lambda ()
-                (define n 5)
-                #;(log-conscript-warning "transition: round at start is ~a for participant ~a~n" round (current-participant-id))
-                (set! round next-round)
-                (set! enter-transitions
-                      (cons next-round enter-transitions))
-                #;(log-conscript-warning "transition: round at end is ~a for participant ~a~n" round (current-participant-id))
+                (define n 3)
+                (set! round (add1 round))
                 (if (< round (add1 n))
                     'matchmake
-                    'store-score))]
+                    'the-end))]
 
-  [store-score --> the-end --> the-end])
-
-;; Bot
-
-(define (opera-model k proc)
-  (match k
-    [`(*root* the-end)
-     (bot:completer)]
-    [`(*root* ,(or 'matchmake 'wait-for-choice 'wait-for-group-ids 'assign-roles))
-     (sleep 1)]
-    [_ (proc)]))
-
-; Admin
-
-(defstep (admin)
-  (with-study-transaction
-    (when (undefined? choices/rounds)
-      (set! choices/rounds (hash))))
-  (define round-choices
-    (for/fold ([c (hash 1 '() 2 '() 3 '() 4 '() 5 '())])
-              ([(_ gc) (in-hash choices/rounds)])
-      (define (update i)
-        (lambda (x)
-          (let ([new-choice (hash-ref gc i #f)])
-            (if new-choice
-                (cons new-choice x)
-                x))))
-      (~> c
-          (hash-update 1 (update 1))
-          (hash-update 2 (update 2))
-          (hash-update 3 (update 3))
-          (hash-update 4 (update 4))
-          (hash-update 5 (update 5))
-          )))
-  (define (count-ap i)
-    (for/fold ([res (hash)])
-              ([gc (hash-ref round-choices i)])
-      (hash-update res (hash-values gc) add1 0)))
-
-  (define (display-round i)
-    @md*{## Results for round @(~a i)
-         @`(ul
-            ,@(for/list ([(ap n) (count-ap i)])
-                (li (format "Action profile ~a chosen ~a times."
-                            ap n))))})
-  @md{# Admin
-
-      @display-round[1]
-
-      @display-round[2]
-
-      @display-round[3]
-
-      @display-round[4]
-
-      @display-round[5]
-
-      ## Bots
-
-      @button[#:to-step-id 'bots]{Manage Bots}
-      })
-
-(define opera-or-football
-  (make-admin-study
-   opera-or-football/no-admin
-   #:models `((opera-or-football . ,opera-model))
-   #:admin admin))
+  [the-end --> the-end]
+  [{admin (make-step
+           #:view-handler admin-view
+           'admin admin)} --> admin])
