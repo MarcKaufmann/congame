@@ -74,6 +74,7 @@
  display displayln print println printf eprintf write writeln
  take drop
  current-seconds
+ error
 
  vector vector-ref vector-length
 
