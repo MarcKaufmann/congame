@@ -3,7 +3,9 @@
 (define collection "congame")
 (define deps '("at-exp-lib"
                "base"
-               "scribble-lib"))
+               "racket-index"
+               "scribble-lib"
+               "threading-lib"))
 (define build-deps '("buid"
                      "buid-lib"
                      "drracket"
@@ -12,6 +14,7 @@
                      "congame-core"
                      "congame-web"
                      "conscript"
+                     "debug"
                      "forms-doc"
                      "forms-lib"
                      "koyo-doc"
@@ -20,6 +23,7 @@
                      "marionette-lib"
                      "racket-doc"
                      "scribble-lib"
+                     "threading-lib"
                      "web-server-lib"
                      "web-server-doc"))
 (define scribblings '(("congame.scrbl" (multi-page))))
