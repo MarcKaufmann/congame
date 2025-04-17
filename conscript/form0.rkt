@@ -17,6 +17,7 @@
  checkbox
  input-text
  input-number
+ select
  radios
 
  required-unless)
@@ -56,14 +57,19 @@
 (define input-text (make-input-widget widget-text))
 (define input-number (make-input-widget widget-number))
 
-(define ((radios options
-                [label #f]
-                #:attributes [attributes null])
-         name value errors)
+(define ((select options label) name value errors)
+  (haml
+   (.field-group
+    (:label
+     (or label (string-titlecase name)))
+    ((widget-select options) name value errors)
+    ,@((widget-errors) name value errors))))
+
+(define ((radios options [label #f] #:attributes [attributes null]) name value errors)
   (haml
    (.group
     (:label.radio-group
-     label
+     (or label (string-titlecase name))
      ((widget-radio-group options #:attributes attributes) name value errors))
     ,@((widget-errors) name value errors))))
 

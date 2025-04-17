@@ -62,7 +62,7 @@
  ;; Racket Runtime
  lambda λ case-lambda identity
  void sleep
- for for/fold for/hash for/list in-range in-inclusive-range in-list
+ for for/fold for/hash for/list in-range in-inclusive-range in-list in-indexed
  for* for*/fold for*/hash for*/list
  for/and for/or for/sum for/product
  for*/and for*/or for*/sum for*/product
