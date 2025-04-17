@@ -8,7 +8,7 @@
                "db-lib"
                "dbg"
                "deta-lib"
-               "forms-lib"
+               ["forms-lib" #:version "0.8"]
                "gregor-lib"
                "hash-view-lib"
                "http-easy-lib"

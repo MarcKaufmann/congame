@@ -9,7 +9,7 @@
          racket/match)
 
 (provide
- form
+ (rename-out [form+combine form])
  form+submit
  dyn:form
  (all-from-out forms)
@@ -20,6 +20,16 @@
  radios
 
  required-unless)
+
+(define form+combine
+  (make-keyword-procedure
+   (lambda (kws kw-args f action render . args)
+     (keyword-apply
+      form kws kw-args f action render args
+      #:combine (lambda (_k v1 v2)
+                  (if (pair? v1)
+                      (append v1 (list v2))
+                      (list v1 v2)))))))
 
 (define-syntax (form+submit stx)
   (syntax-parse stx

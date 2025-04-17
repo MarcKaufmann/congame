@@ -50,7 +50,7 @@
  unquote-splicing
  provide
 
- begin begin0 let
+ begin begin0 let letrec let*
  if case cond else unless when
  or and not
  set!
@@ -68,7 +68,7 @@
  for*/and for*/or for*/sum for*/product
  ormap andmap
  sort remove-duplicates
- build-list list-ref
+ build-list list-ref make-list
  list list? list* null null? cons pair? car cdr cadr map member for-each shuffle length findf filter rest reverse
  first second third fourth fifth sixth seventh eighth ninth tenth
  display displayln print println printf eprintf write writeln
@@ -76,7 +76,8 @@
  current-seconds
  error
 
- vector vector-ref vector-length
+ list->vector vector vector-ref vector-length
+ append assq
 
  in-hash
  hash hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys hash-has-key?

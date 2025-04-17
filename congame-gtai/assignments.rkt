@@ -1,4 +1,4 @@
-#lang conscript
+#lang conscript/with-require
 
 ;; For later (maybe):
 ;;
@@ -34,12 +34,13 @@
 
 ; Problem 1 of Tutorial 1
 
-(require conscript/game-theory
+(require (prefix-in form0: conscript/form0)
+         conscript/game-theory
          conscript/survey-tools
          racket/format
          racket/match
          threading
-         )
+         (only-in web-server/http binding:form))
 
 (provide
  assignment1)
@@ -126,39 +127,62 @@
 (define (input-probability [label ""])
   (input-number #:min 0 #:max 1 #:step 0.001 label))
 
+(define (form0:input-probability label)
+  (form0:input-number label #:attributes '((min "0") (max "1") (step "0.001"))))
+
+(define (form0:input-range label #:min min #:max max)
+  (form0:input-number label #:attributes `((min ,(~a min)) (max ,(~a max)))))
+
 (defstep (ms-question)
-  (define (on-submit #:ms1 m1 #:ms2 m2)
-    (cond [assignment-open?
+  (define p-form
+    (form0:form*
+     ([ms1 (form0:ensure
+            form0:binding/list
+            (form0:list-of-length 2)
+            (form0:list-of
+             (form0:ensure
+              form0:binding/number
+              (form0:required)
+              (form0:range/inclusive 0.0 1.0))))]
+      [ms2 (form0:ensure
+            form0:binding/number
+            (form0:required)
+            (form0:range/inclusive 0 10))])
+     (list ms1 ms2)))
 
-           (set! ms1 m1)
-           (set! ms2 m2)
-           (skip)]
-          [else
-           (skip 'submission-closed)]))
+  (define on-submit
+    (match-lambda
+      [(list ms1-value ms2-value)
+       #:when assignment-open?
+       (set! ms1 ms1-value)
+       (set! ms2 ms2-value)
+       (skip)]
+      [_
+       (skip 'submission-closed)]))
 
-  @md{# Mixed Strategy Equilibrium
+  (define (render rw)
+    @md*{### Question 1
+
+         Find a mixed strategy equilibrium for the game. Provide the probabilities up to the third decimal after the comma.
+
+         @rw["ms1" (form0:widget-list
+                    (lambda (re)
+                      @md*{@re[@form0:input-probability{Probability of player 1 playing T}]
+                           @re[@form0:input-probability{Probability of player 2 playing L}]}))]
+
+         ### Question 2
+
+         @rw["ms2" @form0:input-range[#:min 0 #:max 10]{How many Nash equilibria are there, both pure and mixed? (You can go up to 10 - if there are more than 10, including if there are infinite Nash equilibria, then choose 10.)}]
+
+         @(if assignment-open? submit-button @div{})})
+
+  @md{# Mixed Strategy Equilibrium!!!!
 
       Consider the following game:
 
       @(outcome-matrix inspect-shirk-game)
 
-      @form[#:action on-submit]{
-        @md*{
-          ### Question 1
-
-          Find a mixed strategy equilibrium for the game. Provide the probabilities up to the third decimal after the comma.
-
-          @(input-list #:ms1
-                       (list
-                        (input-probability "Probability of player  1 playing T")
-                        (input-probability "Probability of player 2 playing L")))
-
-          ### Question 2
-
-          @input-number[#:ms2 #:min 0 #:max 10]{How many Nash equilibria are there, both pure and mixed? (You can go up to 10 - if there are more than 10, including if there are infinite Nash equilibria, then choose 10.)}
-
-          @(if assignment-open? submit-button @div{})}}
-
+      @form0:form[p-form on-submit render]
       @button[#:to-step-id 'ms-overview]{Cancel}})
 
 (defstep (ms-compute-score)
