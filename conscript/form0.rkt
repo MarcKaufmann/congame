@@ -6,6 +6,7 @@
          (prefix-in dyn: forms)
          (except-in forms form)
          koyo/haml
+         racket/format
          racket/match)
 
 (provide
@@ -19,6 +20,7 @@
  input-number
  select
  radios
+ checkboxes
 
  required-unless)
 
@@ -73,6 +75,22 @@
      ((widget-radio-group options #:attributes attributes) name value errors))
     ,@((widget-errors) name value errors))))
 
+(define ((checkboxes options) name value errors)
+  (haml
+   (.group
+    ((widget-list
+      (lambda (re)
+        (haml
+         (.div
+          ,@(for/list ([opt (in-list options)])
+              (match-define (cons value label) opt)
+              (haml
+               (:label
+                (re (widget-checkbox #:attributes `((value ,(~a value)))))
+                label)))))))
+     name value errors))))
+
 (define ((required-unless pred) v)
   (cond [(pred) (ok v)]
-        [((required) v)]))
+        [((required) v)]
+        [else (error 'required-unless "unreachable")]))

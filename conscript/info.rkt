@@ -7,7 +7,7 @@
     "buid-lib"
     "commonmark-lib"
     "congame-core"
-    ["forms-lib" #:version "0.8"]
+    ["forms-lib" #:version "0.9"]
     "hash-view-lib"
     "koyo-lib"
     "monocle-lib"
