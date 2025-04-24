@@ -34,7 +34,7 @@
 
 ; Problem 1 of Tutorial 1
 
-(require (prefix-in form0: conscript/form0)
+(require conscript/form0
          conscript/game-theory
          conscript/survey-tools
          racket/format
@@ -123,25 +123,25 @@
                     '(B . L) 0
                     '(B . R) 1)))
 
-(define form0:probability-form
-  (form0:form*
+(define probability-form
+  (form*
    ([probabilities
-     (form0:ensure
-      form0:binding/list
-      (form0:list-of-length 2)
-      (form0:list-of
-       (form0:ensure
-        form0:binding/number
-        (form0:required)
-        (form0:range/inclusive 0.0 1.0))))]
+     (ensure
+      binding/list
+      (list-of-length 2)
+      (list-of
+       (ensure
+        binding/number
+        (required)
+        (range/inclusive 0.0 1.0))))]
     [n-equilibria
-     (form0:ensure
-      form0:binding/number
-      (form0:required)
-      (form0:range/inclusive 0 10))])
+     (ensure
+      binding/number
+      (required)
+      (range/inclusive 0 10))])
    (list probabilities n-equilibria)))
 
-(define (form0:make-probability-form-on-submit set-probabilities! set-n-equilibria!)
+(define (make-probability-form-on-submit set-probabilities! set-n-equilibria!)
   (match-lambda
     [(list probabilities n-equilibria)
      #:when assignment-open?
@@ -151,21 +151,21 @@
     [_
      (skip 'submission-closed)]))
 
-(define form0:widget-probability
-  (form0:widget-number #:attributes '((min "0") (max "1") (step "0.001"))))
+(define widget-probability
+  (widget-number #:attributes '((min "0") (max "1") (step "0.001"))))
 
-(define (form0:input-probability label)
-  (form0:input-number label #:attributes '((min "0") (max "1") (step "0.001"))))
+(define (input-probability label)
+  (input-number label #:attributes '((min "0") (max "1") (step "0.001"))))
 
-(define (form0:input-range label #:min min #:max max)
-  (form0:input-number label #:attributes `((min ,(~a min)) (max ,(~a max)))))
+(define (input-range label #:min min #:max max)
+  (input-number label #:attributes `((min ,(~a min)) (max ,(~a max)))))
 
-(define (form0:input-spe label #:max [max 200])
-  (form0:input-number label #:attributes `((min "0") (max ,(~a max)) (step "0.01"))))
+(define (input-spe label #:max [max 200])
+  (input-number label #:attributes `((min "0") (max ,(~a max)) (step "0.01"))))
 
 (defstep (ms-question)
   (define on-submit
-    (form0:make-probability-form-on-submit
+    (make-probability-form-on-submit
      (λ (probabilities) (set! ms1 probabilities))
      (λ (n-equilibria) (set! ms2 n-equilibria))))
 
@@ -175,15 +175,15 @@
          Find a mixed strategy equilibrium for the game. Provide the probabilities up to the third decimal after the comma.
 
          @rw["probabilities"
-             (form0:widget-list
+             (widget-list
               (lambda (re)
-                @md*{@re[@form0:input-probability{Probability of player 1 playing T}]
-                     @re[@form0:input-probability{Probability of player 2 playing L}]}))]
+                @md*{@re[@input-probability{Probability of player 1 playing T}]
+                     @re[@input-probability{Probability of player 2 playing L}]}))]
 
          ### Question 2
 
          @rw["n-equilibria"
-             @form0:input-range[#:min 0 #:max 10]{How many Nash equilibria are there, both pure and mixed? (You can go up to 10 - if there are more than 10, including if there are infinite Nash equilibria, then choose 10.)}]
+             @input-range[#:min 0 #:max 10]{How many Nash equilibria are there, both pure and mixed? (You can go up to 10 - if there are more than 10, including if there are infinite Nash equilibria, then choose 10.)}]
 
          @(if assignment-open? submit-button @div{})})
 
@@ -193,7 +193,7 @@
 
       @(outcome-matrix inspect-shirk-game)
 
-      @form0:form[form0:probability-form on-submit render]
+      @form[probability-form on-submit render]
       @button[#:to-step-id 'ms-overview]{Cancel}})
 
 (defstep (ms-compute-score)
@@ -267,27 +267,27 @@
     (set! fq-scores '(0 0 0)))
   (skip))
 
-(define form0:fq-form
-  (form0:form*
+(define fq-form
+  (form*
    ([payoffs
-     (form0:ensure
-      form0:binding/list
-      (form0:list-of-length 4)
-      (form0:list-of
-       (form0:ensure
-        form0:binding/number
-        (form0:required))))]
+     (ensure
+      binding/list
+      (list-of-length 4)
+      (list-of
+       (ensure
+        binding/number
+        (required))))]
     [prisoners-dilemma?
-     (form0:ensure
-      form0:binding/text
-      (form0:required)
-      (form0:one-of
+     (ensure
+      binding/text
+      (required)
+      (one-of
        '(("yes" . #t)
          ("no"  . #f))))]
-    [fink-fink? form0:binding/boolean]
-    [fink-quiet? form0:binding/boolean]
-    [quiet-fink? form0:binding/boolean]
-    [quiet-quiet? form0:binding/boolean])
+    [fink-fink? binding/boolean]
+    [fink-quiet? binding/boolean]
+    [quiet-fink? binding/boolean]
+    [quiet-quiet? binding/boolean])
    (list payoffs prisoners-dilemma? fink-fink? fink-quiet? quiet-fink? quiet-quiet?)))
 
 (defstep (fq-question)
@@ -307,12 +307,12 @@
       #### 1. Formulate this situation as a strategic game.
 
       @rw["payoffs"
-          (form0:widget-list
+          (widget-list
            (lambda (re)
-             @md*{@re[@form0:input-number{Payoff to player 1 from "Fink-Fink"}]
-                  @re[@form0:input-number{Payoff to player 1 from "Fink-Quiet"}]
-                  @re[@form0:input-number{Payoff to player 1 from "Quiet-Fink"}]
-                  @re[@form0:input-number{Payoff to player 1 from "Quiet-Quiet"}]}))]
+             @md*{@re[@input-number{Payoff to player 1 from "Fink-Fink"}]
+                  @re[@input-number{Payoff to player 1 from "Fink-Quiet"}]
+                  @re[@input-number{Payoff to player 1 from "Quiet-Fink"}]
+                  @re[@input-number{Payoff to player 1 from "Quiet-Quiet"}]}))]
 
       #### 2. Is this game a Prisoner's Dilemma?
 
@@ -322,7 +322,7 @@
       same as their preferences in the Prisoner’s Dilemma?)
 
       @rw["prisoners-dilemma?"
-          @form0:radios['(("yes" . "Yes")
+          @radios['(("yes" . "Yes")
                           ("no"  . "No"))
                         ""]]
 
@@ -331,10 +331,10 @@
 
       Check all action profiles that are Nash equilibria.
 
-      @rw["fink-fink?" @form0:checkbox{Fink-Fink}]
-      @rw["fink-quiet?" @form0:checkbox{Fink-Quiet}]
-      @rw["quiet-fink?" @form0:checkbox{Quiet-Fink}]
-      @rw["quiet-quiet?" @form0:checkbox{Quiet-Quiet}]
+      @rw["fink-fink?" @checkbox{Fink-Fink}]
+      @rw["fink-quiet?" @checkbox{Fink-Quiet}]
+      @rw["quiet-fink?" @checkbox{Quiet-Fink}]
+      @rw["quiet-quiet?" @checkbox{Quiet-Quiet}]
 
       @(if assignment-open? submit-button @div{})})
 
@@ -342,7 +342,7 @@
 
        Two animals are fighting over some prey. Each can be passive or aggressive. Each prefers to be aggressive if its opponent is passive, and passive if its opponent is aggressive; given its own stance, it prefers the outcome in which its opponent is passive to that in which its opponent is aggressive.
 
-       @form0:form[form0:fq-form on-submit render]
+       @form[fq-form on-submit render]
        @button[#:to-step-id 'fq-overview]{Cancel}})
 
 
@@ -478,19 +478,19 @@
 
 (defstep (gg-question)
   (define gg-formlet
-    (form0:ensure
-     form0:binding/list
-     (form0:list-of
-      (form0:ensure
-       form0:binding/symbol
-       (form0:required)
-       (form0:one-of (for/list ([opt (in-list gg-opts)])
+    (ensure
+     binding/list
+     (list-of
+      (ensure
+       binding/symbol
+       (required)
+       (one-of (for/list ([opt (in-list gg-opts)])
                        ;; gg1 and co expect a list of strings
                        (match-define (cons value _) opt)
                        (cons value (~a value))))))))
 
   (define gg-form
-    (form0:form*
+    (form*
      ([gg1 gg-formlet]
       [gg2 gg-formlet]
       [gg3 gg-formlet]
@@ -527,31 +527,31 @@
 
          Check all possible action profiles:
 
-         @rw["gg1" @form0:checkboxes[gg-opts]]
+         @rw["gg1" @checkboxes[gg-opts]]
 
          #### 2. Two indignant angels play the game.
 
          Check all possible action profiles:
 
-         @rw["gg2" @form0:checkboxes[gg-opts]]
+         @rw["gg2" @checkboxes[gg-opts]]
 
          #### 3. Two indignant angels play the game
 
          Moreover, each thinks that the other player is selfish. Check all possible action profiles:
 
-         @rw["gg3" @form0:checkboxes[gg-opts]]
+         @rw["gg3" @checkboxes[gg-opts]]
 
          #### 4. Two selfish players play the game
 
          Morever, each confuses action α for action β. Check all possible action profiles:
 
-         @rw["gg4" @form0:checkboxes[gg-opts]]
+         @rw["gg4" @checkboxes[gg-opts]]
 
          #### 5. Player 1 is selfish, player 2 is an indignant angel
 
          Moreover, neither player believes the other player to be rational. Check all possible action profiles:
 
-         @rw["gg5" @form0:checkboxes[gg-opts]]
+         @rw["gg5" @checkboxes[gg-opts]]
 
 
          @(if assignment-open? submit-button @div{})})
@@ -578,7 +578,7 @@
 
              @(payoff-matrix/sym grade-game-form gg-angels-utility)
 
-             @form0:form[gg-form on-submit render]
+             @form[gg-form on-submit render]
 
              @button[#:to-step-id 'gg-overview]{Cancel}}]))
 
@@ -809,7 +809,7 @@
 ; hardcoding too much.
 (defstep (ms2-question)
   (define on-submit
-    (form0:make-probability-form-on-submit
+    (make-probability-form-on-submit
      (λ (probabilities) (set! ms2-ne probabilities))
      (λ (n-equilibria) (set! ms2-n-pure-eqba n-equilibria))))
 
@@ -823,16 +823,16 @@
 
 
       @rw["probabilities"
-          (form0:widget-list
+          (widget-list
            (lambda (re)
-             @md*{@re[@form0:input-probability{Probability of player 1 playing T}]
-                  @re[@form0:input-probability{Probability of player 2 playing L}]}))]
+             @md*{@re[@input-probability{Probability of player 1 playing T}]
+                  @re[@input-probability{Probability of player 2 playing L}]}))]
 
       ### Question 2
 
 
        @rw["n-equilibria"
-           @form0:input-range[#:min 0 #:max 4]{How many pure-strategy equilibria are there for this game?}]
+           @input-range[#:min 0 #:max 4]{How many pure-strategy equilibria are there for this game?}]
 
        @(if assignment-open? submit-button @div{})})
 
@@ -842,7 +842,7 @@
 
       @(outcome-matrix ms2-game)
 
-      @form0:form[form0:probability-form on-submit render]
+      @form[probability-form on-submit render]
       @button[#:to-step-id 'ms2-overview]{Cancel}})
 
 ; FIXME: refactor with ms1-compute-score eventually
@@ -917,25 +917,25 @@
       (">=" . ">=")
       ("<=" . "<=")))
   (define comp-formlet
-    (form0:ensure
-     form0:binding/text
-     (form0:required)
-     (form0:one-of (cdr comp-opts))))
+    (ensure
+     binding/text
+     (required)
+     (one-of (cdr comp-opts))))
   (define p-formlet
-    (form0:ensure
-     form0:binding/number
-     (form0:required)
-     (form0:range/inclusive 0.0 1.0)))
+    (ensure
+     binding/number
+     (required)
+     (range/inclusive 0.0 1.0)))
   (define ms3-form
-    (form0:form*
+    (form*
      ([p-comp comp-formlet]
       [p p-formlet]
       [q-comp comp-formlet]
       [q p-formlet]
-      [n (form0:ensure
-          form0:binding/number
-          (form0:required)
-          (form0:range/inclusive 0 4))])
+      [n (ensure
+          binding/number
+          (required)
+          (range/inclusive 0 4))])
      (list p-comp p q-comp q n)))
 
   (define (on-submit lst)
@@ -960,23 +960,23 @@
 
       @div{
         The probability \(p\) that player 1 plays T is given by \(p\)
-        @rw["p-comp" @form0:widget-select[comp-opts]]
-        @rw["p" form0:widget-probability].}
+        @rw["p-comp" @widget-select[comp-opts]]
+        @rw["p" widget-probability].}
 
       @div{
-        @apply[div @rw["p-comp" (@form0:widget-errors)]]
-        @apply[div @rw["p" (@form0:widget-errors)]]}
+        @apply[div @rw["p-comp" (@widget-errors)]]
+        @apply[div @rw["p" (@widget-errors)]]}
 
       @div{
         The probability \(q\) that player 2 plays \(L\) is given by \(q\)
-        @rw["q-comp" @form0:widget-select[comp-opts]]
-        @rw["q" form0:widget-probability].}
+        @rw["q-comp" @widget-select[comp-opts]]
+        @rw["q" widget-probability].}
 
       @div{
-        @apply[div @rw["q-comp" (@form0:widget-errors)]]
-        @apply[div @rw["q" (@form0:widget-errors)]]}
+        @apply[div @rw["q-comp" (@widget-errors)]]
+        @apply[div @rw["q" (@widget-errors)]]}
 
-      @rw["n" @form0:input-number{How many pure-strategy equilibria are there for this game?}]
+      @rw["n" @input-number{How many pure-strategy equilibria are there for this game?}]
 
       @submit-button})
 
@@ -986,7 +986,7 @@
 
       @(outcome-matrix ms3-game)
 
-      @form0:form[ms3-form on-submit render]
+      @form[ms3-form on-submit render]
       @button[#:to-step-id 'ms3-overview]{Cancel}})
 
 ; FIXME: refactor with ms1-compute-score eventually
@@ -1072,18 +1072,18 @@
     (for/list ([v (in-list '("T" "M" "B"))])
       (cons v v)))
   (define p-formlet
-    (form0:ensure
-     form0:binding/number
-     (form0:range/inclusive 0.0 1.0)))
+    (ensure
+     binding/number
+     (range/inclusive 0.0 1.0)))
 
   (define ms4-form
-    (form0:form*
-     ([da (form0:ensure
-           form0:binding/text
-           (form0:required)
-           (form0:one-of dominated-action-opts))]
-      [p1 (form0:ensure p-formlet (form0:required))]
-      [q1 (form0:ensure p-formlet (form0:required))]
+    (form*
+     ([da (ensure
+           binding/text
+           (required)
+           (one-of dominated-action-opts))]
+      [p1 (ensure p-formlet (required))]
+      [q1 (ensure p-formlet (required))]
       [p2 p-formlet]
       [q2 p-formlet]
       [p3 p-formlet]
@@ -1108,7 +1108,7 @@
   (define (render rw)
     @md*{### Find the dominated action
 
-         @rw["da" @form0:radios[dominated-action-opts]{Which action by player 1 is strictly dominated by a mixed strategy?}]
+         @rw["da" @radios[dominated-action-opts]{Which action by player 1 is strictly dominated by a mixed strategy?}]
 
         ### Find all mixed strategy NE
 
@@ -1116,18 +1116,18 @@
 
         **Note:** Provide all numbers up to the third digit, i.e., if the answer is 1/3, then write 0.333.
 
-        1. Probability that player 1 plays X: @rw["p1" @form0:widget-probability]; probability that player 2 plays L: @rw["q1" form0:widget-probability].
-        @apply[div @rw["p1" @form0:widget-errors[]]]
-        @apply[div @rw["q1" @form0:widget-errors[]]]
-        2. Probability that player 1 plays X: @rw["p2" @form0:widget-probability]; probability that player 2 plays L: @rw["q2" form0:widget-probability].
-        @apply[div @rw["p2" @form0:widget-errors[]]]
-        @apply[div @rw["q2" @form0:widget-errors[]]]
-        3. Probability that player 1 plays X: @rw["p3" @form0:widget-probability]; probability that player 2 plays L: @rw["q3" form0:widget-probability].
-        @apply[div @rw["p3" @form0:widget-errors[]]]
-        @apply[div @rw["q3" @form0:widget-errors[]]]
-        4. Probability that player 1 plays X: @rw["p4" @form0:widget-probability]; probability that player 2 plays L: @rw["q4" form0:widget-probability].
-        @apply[div @rw["p4" @form0:widget-errors[]]]
-        @apply[div @rw["q4" @form0:widget-errors[]]]
+        1. Probability that player 1 plays X: @rw["p1" @widget-probability]; probability that player 2 plays L: @rw["q1" widget-probability].
+        @apply[div @rw["p1" @widget-errors[]]]
+        @apply[div @rw["q1" @widget-errors[]]]
+        2. Probability that player 1 plays X: @rw["p2" @widget-probability]; probability that player 2 plays L: @rw["q2" widget-probability].
+        @apply[div @rw["p2" @widget-errors[]]]
+        @apply[div @rw["q2" @widget-errors[]]]
+        3. Probability that player 1 plays X: @rw["p3" @widget-probability]; probability that player 2 plays L: @rw["q3" widget-probability].
+        @apply[div @rw["p3" @widget-errors[]]]
+        @apply[div @rw["q3" @widget-errors[]]]
+        4. Probability that player 1 plays X: @rw["p4" @widget-probability]; probability that player 2 plays L: @rw["q4" widget-probability].
+        @apply[div @rw["p4" @widget-errors[]]]
+        @apply[div @rw["q4" @widget-errors[]]]
 
         @|submit-button|})
 
@@ -1137,7 +1137,7 @@
 
       @(outcome-matrix ms4-game)
 
-      @form0:form[ms4-form on-submit render]
+      @form[ms4-form on-submit render]
       @button[#:to-step-id 'ms4-overview]{Cancel}
       })
 
@@ -1311,21 +1311,21 @@
     ("L" . "L")
     ("R" . "R")))
 
-(define form0:wse-form
+(define wse-form
   (let ([wse
-         (form0:ensure
-          form0:binding/text
-          (form0:required)
-          (form0:one-of (cdr wse-choices)))])
-    (form0:form*
+         (ensure
+          binding/text
+          (required)
+          (one-of (cdr wse-choices)))])
+    (form*
      ([wse1 wse]
       [wse2 wse]
       [wse3 wse]
       [wse3-belief
-       (form0:ensure
-        form0:binding/number
-        (form0:required)
-        (form0:range/inclusive 0 10))])
+       (ensure
+        binding/number
+        (required)
+        (range/inclusive 0 10))])
      (list wse1 wse2 wse3 wse3-belief))))
 
 (defstep (add-wse)
@@ -1345,10 +1345,10 @@
   (define (render rw)
     @md*{Provide another WSE:
 
-         @rw["wse1" @form0:select[wse-choices]{Action of Player 1}]
-         @rw["wse2" @form0:select[wse-choices]{Action of Player 2}]
-         @rw["wse3" @form0:select[wse-choices]{Action of Player 3}]
-         @rw["wse3-belief" @form0:input-probability{Probability with which player 3 believes that history "(L)" occurred when they have to make a decision.}]
+         @rw["wse1" @select[wse-choices]{Action of Player 1}]
+         @rw["wse2" @select[wse-choices]{Action of Player 2}]
+         @rw["wse3" @select[wse-choices]{Action of Player 3}]
+         @rw["wse3-belief" @input-probability{Probability with which player 3 believes that history "(L)" occurred when they have to make a decision.}]
          @submit-button})
 
   (cond
@@ -1362,7 +1362,7 @@
     [else
      @md{# Add WSE
 
-         @form0:form[form0:wse-form on-submit render]
+         @form[wse-form on-submit render]
          @button{Cancel}}]))
 
 (define (display-wses [remove? #t])
@@ -1385,17 +1385,17 @@
     @img[#:src (resource-uri ext1-game-screenshot) #:alt "The Game"]})
 
 (defstep (ext1-question)
-  (define form0:ext1-form
-    (form0:dyn:form
+  (define ext1-form
+    (dyn:form
      list
      (for/list ([(opt idx) (in-indexed (in-list ext1-ne-opts))])
        (match-define (cons value _) opt)
        (cons
         (string->symbol (format "ne~a" idx))
-        (form0:ensure
-         form0:binding/boolean
+        (ensure
+         binding/boolean
          (lambda (v)
-           (form0:ok (if v (symbol->string value) ""))))))))
+           (ok (if v (symbol->string value) ""))))))))
 
   (define (on-submit nes)
     (cond
@@ -1429,12 +1429,12 @@
                     (match-define (cons _ label) opt)
                     (rw
                      (format "ne~a" idx)
-                     (form0:checkbox label))))
+                     (checkbox label))))
       @submit-button})
 
   @md{# Extensive Form Game with Imperfect Information
 
-      @form0:form[form0:ext1-form on-submit render]
+      @form[ext1-form on-submit render]
 
       ## Find all weak sequential equilibria
 
@@ -1556,13 +1556,13 @@
 
 (defstep (add-spe)
   (define spe-form
-    (form0:form*
+    (form*
      ([spe
-       (form0:ensure
-        form0:binding/list
-        (form0:list-of*
-         (form0:ensure form0:binding/number (form0:required) (form0:range/inclusive 0 200))
-         (form0:ensure form0:binding/number (form0:required) (form0:range/inclusive 0 100))))])
+       (ensure
+        binding/list
+        (list-of*
+         (ensure binding/number (required) (range/inclusive 0 200))
+         (ensure binding/number (required) (range/inclusive 0 100))))])
      spe))
 
   (define (on-submit spe)
@@ -1581,17 +1581,17 @@
 
   (define (render rw)
     @md*{@rw["spe"
-             (form0:widget-list
+             (widget-list
               (lambda (re)
-                @md*{@re[@form0:input-spe{Wage demanded by union.}]
-                     @re[@form0:input-spe[#:max 100]{Labor chosen by firm.}]}))]
+                @md*{@re[@input-spe{Wage demanded by union.}]
+                     @re[@input-spe[#:max 100]{Labor chosen by firm.}]}))]
 
          @|submit-button|})
 
   @md{# Add SPE
 
       For each SPE, provide the wage of the union, and the labor asked by the firm. Note: when the firm would reject the offer, just report that the firm asks for 0 labor.
-      @form0:form[spe-form on-submit render]
+      @form[spe-form on-submit render]
       @button{Back}})
 
 (defstep (ext2-compute-score)
