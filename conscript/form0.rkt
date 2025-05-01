@@ -6,9 +6,9 @@
          (prefix-in dyn: forms)
          (except-in forms form)
          koyo/haml
-         racket/format
          racket/match
-         racket/port)
+         racket/port
+         web-server/http)
 
 (provide
  (rename-out [form+combine form])
@@ -116,7 +116,20 @@
               (match-define (cons value label) opt)
               (haml
                (:label
-                (re (widget-checkbox #:attributes `((value ,(~a value)))))
+                (re
+                 (lambda (name bindings _errors) ;; noqa
+                   (define checked?
+                     (and bindings
+                          (for/first ([bind (in-vector bindings)]
+                                      #:do [(define v (bytes->string/utf-8 (binding:form-value bind)))]
+                                      #:when (equal? v value))
+                            #t)))
+                   `(input
+                     ([type "checkbox"]
+                      [name ,name]
+                      [value ,value]
+                      ,@(if checked? '([checked ""]) null))))
+                 #;idx #f)
                 label)))))))
      name value errors))))
 
