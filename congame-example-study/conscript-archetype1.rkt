@@ -1,11 +1,13 @@
 #lang conscript
 
-(provide
- hya54)
+(require conscript/form0
+         racket/match
+         racket/random)
 
-(require racket/random)
+(provide hya54)
 
-;; HYA54
+;; Code from the many designs study: HYA54
+;; Huber et al. 2023
 
 (defstep (welcome)
   @md{# Welcome
@@ -13,7 +15,11 @@
       @button{Continue}})
 
 (defstep (final-page)
-  @md{# Final Page})
+  @md{# Final Page
+
+      When paid: @when-paid?
+      Some other var: @some-other-var
+      })
 
 (defvar* treatment unique-treatment)
 
@@ -43,19 +49,32 @@
 (defvar some-other-var)
 
 (defstep (comprehension-control)
-  @md{# Comprehension Test
-      @form{
-            @(set!
-              when-paid?
-              (radios
-               '(("high-number" . "If the number I report is higher than 4.")
-                 ("matching-number" . "If the number I report matches the one on the screen."))
-               "What is the answer to the comprehension test?"))
+  (define choices
+    '(("high-number" . "If the number I report is higher than 4.")
+      ("matching-number" . "If the number I report matches the one on the screen.")))
 
-            @(set!
-              some-other-var
-              (input-text "Please provide some text."))
-            @submit-button}})
+  (define-values (comprehension-form on-submit)
+    (form+submit
+     [when-paid?
+      (ensure
+       binding/text
+       (required)
+       (one-of (for/list ([choice (in-list choices)])
+                 (match-define (cons value _) choice)
+                 (cons value value))))]
+     [some-other-var
+      (ensure
+       binding/text
+       (required))]))
+
+  (define (render rw)
+    @md*{@rw["when-paid?" (radios choices "")]
+         @rw["some-other-var" @input-text{Please provide some text.}]
+         @|submit-button|})
+
+  @md{# Comprehension Test
+
+      @form[comprehension-form on-submit render]})
 
 (defstep (display-comprehension-test)
   @md{# Your answer
