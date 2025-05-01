@@ -1,4 +1,4 @@
-#lang conscript/with-require
+#lang conscript
 
 ;; For later (maybe):
 ;;
