@@ -1,8 +1,7 @@
 #lang racket/base
 
-(require congame/components/study
-         congame/components/formular
-         (submod congame/components/formular tools)
+(require congame/components/formular
+         congame/components/study
          koyo/haml)
 
 (provide
