@@ -1,10 +1,13 @@
 #lang conscript
 
+;; Shows that global vars can be reused across modules.
+
 (provide
  consent
  name)
 
-(defvar* name 0CxAvPwBJ3tgSUaZhAZeuH)
+(with-namespace xyz.trichotomy.conscript.conscript-defvar-consent
+  (defvar* name))
 
 (defstep (get-consent)
   @html{@h1{Consent}
