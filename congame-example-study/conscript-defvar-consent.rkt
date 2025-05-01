@@ -1,6 +1,8 @@
 #lang conscript
 
-;; Shows that global vars can be reused across modules.
+;; Shows that global vars can be reused across modules. Every use refers
+;; to the same global. See conscript/matchmaking for an example that
+;; uses units to have multiple matchmaking states.
 
 (provide
  consent
