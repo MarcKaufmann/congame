@@ -8,6 +8,11 @@
 (provide
  calibration)
 
+;; Interactively identifies the indifference point (calibrates) for one
+;; option versus the other. This was used in an unused pilot for the
+;; narrow bracketing study. The data-calibration attribute on the input
+;; fires the associated unpoly compiler in (calibration.ts), making the
+;; UI interactive.
 (define (calibration-form)
   (haml
    (.container
