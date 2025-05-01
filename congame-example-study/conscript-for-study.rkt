@@ -1,19 +1,28 @@
 #lang conscript
 
+(require conscript/form0)
+
 (provide
  conscript-for-study-example)
 
-(defvar* n i-swear-this-is-unique)
+(with-namespace xyz.trichotomy.congame-example-study.conscript-for-study
+  (defvar* n))
 
 (defstep (start)
-  (define (set-n #:n the-n)
-    (set! n the-n))
+  (define-values (f on-submit)
+    (form+submit
+     [n (ensure
+         binding/number
+         (required)
+         (range/inclusive 1 5))]))
+
+  (define (render rw)
+    @md*{@rw["n" @input-number[#:attributes `([min "1"] [max "5"])]{How many steps?}]
+         @|submit-button|})
+
   @md{# Start
 
-      @form[#:action set-n]{
-        @input-number[#:n #:min 1 #:max 5]{How many steps?}
-        @submit-button
-      }})
+      @form[f on-submit render]})
 
 (defstep (say-hi i)
   @md{# Hello
