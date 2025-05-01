@@ -2,22 +2,25 @@
 
 (require (for-syntax racket/base
                      syntax/parse/pre)
-         (only-in congame/components/study form)
+         (only-in congame/components/study form when-bot)
          (prefix-in dyn: forms)
          (except-in forms form)
          koyo/haml
          racket/format
-         racket/match)
+         racket/match
+         racket/port)
 
 (provide
  (rename-out [form+combine form])
  form+submit
  dyn:form
  (all-from-out forms)
+ make-autofill
 
  checkbox
  input-text
  input-number
+ textarea
  select
  radios
  checkboxes
@@ -44,6 +47,15 @@
                      (match-define (list tmp ...) data)
                      (set! id tmp) ...)))]))
 
+(define (make-autofill bots)
+  (haml
+   (:meta
+    ([:name "formular-autofill"]
+     [:content (when-bot
+                (call-with-output-string
+                 (lambda (out)
+                   (write bots out))))]))))
+
 (define (((make-input-widget widget)
           [label #f]
           #:attributes [attributes null])
@@ -58,6 +70,7 @@
 (define checkbox (make-input-widget widget-checkbox))
 (define input-text (make-input-widget widget-text))
 (define input-number (make-input-widget widget-number))
+(define textarea (make-input-widget widget-textarea))
 
 (define ((select options label) name value errors)
   (haml

@@ -1,6 +1,10 @@
 #lang conscript
 
-(require congame-web/components/study-bot)
+;; This tests the support for autofill in form0 and spawning.
+
+(require congame-web/components/study-bot
+         conscript/form0
+         racket/match)
 
 (provide
  conscript-bot-example
@@ -19,18 +23,36 @@
   (bot:autofill 'example))
 
 (defstep (the-form)
-  (define (on-submit #:name n #:text t)
+  (define f
+    (form*
+      ([name
+        (ensure
+         binding/text
+         (required))]
+       [text
+        (ensure
+         binding/text
+         (required))])
+      (list name text)))
+
+  (define (on-submit data)
+    (match-define (list n t) data)
     (when (equal? t "spawn")
       (spawn-bot (make-conscript-bot conscript-bot-model)))
     (eprintf "name: ~s text: ~s~n" n t))
 
+  (define (render rw)
+    @html*{@make-autofill[(hasheq
+                           'example
+                           (hasheq
+                            'name "Marc"
+                            'text "Hello"))]
+           @rw["name" @input-text{Name:}]
+           @rw["text" @textarea{Content:}]
+           @|submit-button|})
+
   @html{@h1{The Form}
-        @form[#:action on-submit
-              #:bot ([example (#:name "Marc")
-                              (#:text "Hello")])]{
-          @label{Name: @input-text[#:name] @~error[#:name]}
-          @textarea[#:text]{Content:}
-          @submit-button}})
+        @form[f on-submit render]})
 
 (defstep (end)
   @html{@h1{Done}
@@ -39,7 +61,7 @@
 (defstudy conscript-bot-example
   [{info (with-bot info info-bot)}
    --> {the-form (with-bot the-form autofill-the-form)}
-   --> end]
+   --> {end (with-bot end bot:completer)}]
   [end --> end])
 
 (define (conscript-bot-model _id bot)
