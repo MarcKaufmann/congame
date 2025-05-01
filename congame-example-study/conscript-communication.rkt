@@ -1,5 +1,9 @@
 #lang conscript
 
+;; The parent and the substudy are communicating via a namespaced
+;; global var. The parent increments the task number and the child
+;; displays it.
+
 (provide
  conscript-communication)
 
