@@ -18,12 +18,17 @@
  make-autofill
 
  checkbox
- input-text
- input-number
- textarea
- select
- radios
  checkboxes
+ input-date
+ input-datetime
+ input-email
+ input-number
+ input-range
+ input-text
+ input-time
+ radios
+ select
+ textarea
 
  required-unless)
 
@@ -67,9 +72,21 @@
      ((widget #:attributes attributes) name value errors)
      ,@((widget-errors) name value errors)))))
 
+(define (make-typed-input-widget type)
+  (make-input-widget
+   (lambda (#:attributes [attributes null])
+     (widget-input
+      #:type type
+      #:attributes attributes))))
+
 (define checkbox (make-input-widget widget-checkbox))
+(define input-date (make-typed-input-widget "date"))
+(define input-datetime (make-typed-input-widget "datetime"))
+(define input-email (make-input-widget widget-email))
 (define input-text (make-input-widget widget-text))
+(define input-time (make-typed-input-widget "time"))
 (define input-number (make-input-widget widget-number))
+(define input-range (make-typed-input-widget "range"))
 (define textarea (make-input-widget widget-textarea))
 
 (define ((select options label) name value errors)

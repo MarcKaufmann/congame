@@ -278,7 +278,7 @@ top):
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
 (define (slider-with-value-displayed)
-  @md{@slider-js
+  @md{@(slider-js)
       # Slider with Value Displayed
 
       @form{
@@ -597,7 +597,7 @@ is $1 by default.
   (define s
     (number->string (random 100)))
 
-  @md{@slider-js
+  @md{@(slider-js)
       # Do @n Slider Tasks
 
       @form{
@@ -1008,7 +1008,7 @@ Suppose that we want to let a person move on only once some condition is met, su
           old-answers)))
 
   @md{# Do a Task
-      @slider-js
+      @(slider-js)
 
       @timer[seconds-remaining]
 
