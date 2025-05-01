@@ -1,5 +1,7 @@
 #lang conscript
 
+;; TODO: Move to funarch talk repo.
+
 (require racket/list
          racket/random)
 
