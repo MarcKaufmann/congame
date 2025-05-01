@@ -36,7 +36,6 @@
 
 (require conscript/form0
          conscript/game-theory
-         conscript/survey-tools
          racket/format
          racket/match
          threading)
@@ -323,9 +322,8 @@
 
       @rw["prisoners-dilemma?"
           @radios['(("yes" . "Yes")
-                          ("no"  . "No"))
-                        ""]]
-
+                    ("no"  . "No"))
+                  ""]]
 
       #### 3. What are the pure-strategy Nash equilibria (if any) of the game?
 
@@ -912,8 +910,8 @@
 
 (defstep (ms3-question)
   (define comp-opts
-    `(("" . " ")
-      ("=" . "=")
+    `((""   . " ")
+      ("="  . "=")
       (">=" . ">=")
       ("<=" . "<=")))
   (define comp-formlet
