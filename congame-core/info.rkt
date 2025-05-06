@@ -2,14 +2,13 @@
 
 (define collection "congame")
 (define deps '("base"
-               "at-exp-lib"
+               "conscript"
                "db-lib"
                "deta-lib"
-               ["forms-lib" #:version "0.6.1"]
+               ["forms-lib" #:version "0.8"]
                "gregor-lib"
                "koyo-lib"
                ["marionette-lib" #:version "1.4"]
-               "sentry-lib"
                "threading-lib"
                "web-server-lib"))
 (define build-deps '("rackunit-lib"))

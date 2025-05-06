@@ -27,33 +27,30 @@
  reproducible-bug-study)
 
 (define (stake-distributes)
-  (page
-   (haml
-    (.container
-     (formular
-      (haml
-       (:div
-        (#:dist (input-number "number"))
-        (:button.button.next-button ((:type "submit")) "Next"))))))))
+  (haml
+   (.container
+    (formular
+     (haml
+      (:div
+       (#:dist (input-number "number"))
+       (:button.button.next-button ((:type "submit")) "Next")))))))
 
 (define (make-investment)
-  (page
-   (haml
-    (.container
-     (formular
-      (haml
-       (:div
-        (#:inv (input-number "number"))
-        (:button.button.next-button ((:type "submit")) "Next"))))))))
+  (haml
+   (.container
+    (formular
+     (haml
+      (:div
+       (#:inv (input-number "number"))
+       (:button.button.next-button ((:type "submit")) "Next")))))))
 
 (define (update-data-distribution)
   (void))
 
 (define (save-dist-choice)
-  (page
-   (haml
-    (.container
-     (button update-data-distribution "Continue")))))
+  (haml
+   (.container
+    (button update-data-distribution "Continue"))))
 
 (define (set-outcome)
   (skip))
@@ -85,10 +82,9 @@
     (make-step 'save-dist-choice save-dist-choice))))
 
 (define (end)
-  (page
-   (haml
-    (.container
-     (:h1 "The end")))))
+  (haml
+   (.container
+    (:h1 "The end"))))
 
 (define reproducible-bug-study
   (make-study

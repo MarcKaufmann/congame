@@ -12,27 +12,26 @@
 
 @racket[formular] provides a simpler way to generate basic forms than @racket[forms], but it is not powerful enough to create more complicated forms. Moreover, while it is possible to use forms in one page and formular in another, it is not possible to compose the two on the same page.
 
-The following is an example of a complete form used within a page:
+The following is an example of a complete form:
 
 @racketblock[
-(page
-  (haml
-    (.container
-      (formular
-        (haml
-          (:div
-            (#:age (input-number "How old are you?")))
-          (:div
-            (#:name (input-text "What is your name?"))
-          (:div
-            (#:opinion (textarea "What is your opinion about this form?"))))
-          (:button.button.next-button ([:type "submit"]) "Submit"))
-        (λ (#:age age
-            #:name name
-            #:opinion opinion)
-          (put 'age age)
-          (put 'name name)
-          (put 'opinion opinion))))))
+(haml
+  (.container
+    (formular
+      (haml
+        (:div
+          (#:age (input-number "How old are you?")))
+        (:div
+          (#:name (input-text "What is your name?"))
+        (:div
+          (#:opinion (textarea "What is your opinion about this form?"))))
+        (:button.button.next-button ([:type "submit"]) "Submit"))
+      (λ (#:age age
+          #:name name
+          #:opinion opinion)
+        (put 'age age)
+        (put 'name name)
+        (put 'opinion opinion)))))
 ]
 
 @defform[(formular formular-expr)]{

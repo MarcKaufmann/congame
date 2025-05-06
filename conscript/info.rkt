@@ -7,9 +7,10 @@
     "buid-lib"
     "commonmark-lib"
     "congame-core"
-    "forms-lib"
-    "hash-view"
+    ["forms-lib" #:version "0.10"]
+    "hash-view-lib"
     "koyo-lib"
+    "monocle-lib"
     "threading-lib"
     "web-server-lib"))
 (define build-deps

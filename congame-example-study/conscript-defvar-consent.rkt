@@ -1,10 +1,15 @@
 #lang conscript
 
+;; Shows that global vars can be reused across modules. Every use refers
+;; to the same global. See conscript/matchmaking for an example that
+;; uses units to have multiple matchmaking states.
+
 (provide
  consent
  name)
 
-(defvar* name 0CxAvPwBJ3tgSUaZhAZeuH)
+(with-namespace xyz.trichotomy.conscript.conscript-defvar-consent
+  (defvar* name))
 
 (defstep (get-consent)
   @html{@h1{Consent}

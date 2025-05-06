@@ -1,5 +1,8 @@
 #lang conscript
 
+;; DEPRECATED: Seems to do nothing interesting compared to other
+;; examples. @Joel please check.
+
 (require racket/format) ; -> provides ~r
 
 ; Notes for fixing:

@@ -1,6 +1,7 @@
 #lang conscript
 
-(require conscript/survey-tools
+(require conscript/form0
+         conscript/survey-tools
          racket/list
          racket/random)
 
@@ -26,22 +27,34 @@
       @button[initialize]{Next}})
 
 (defstep (how-many-tasks)
+  (define f
+    (form*
+      ([n-tasks
+        (ensure
+         binding/number
+         (required)
+         (range/inclusive 0 40))])
+      n-tasks))
+
   (define payment
     (first payments))
-  (define (on-submit #:n-tasks n-tasks)
+
+  (define (on-submit n-tasks)
     (set! answers
           (cons
            (list payment n-tasks)
            (if-undefined answers null)))
     (set! payments (rest payments)))
 
+  (define (render rw)
+    @md*{@rw["n-tasks" (input-number
+                        #:attributes `((min "0") (max "40"))
+                        @~a{How many tasks are you willing to do for @~a[payment]?})]
+         @|submit-button|})
+
   @md{# Tasks
 
-      @form[#:action on-submit]{
-        @input-number[#:n-tasks #:min 0 #:max 40]{@md*{How many tasks are you willing
-        to do for @(~a payment)?}}
-
-        @submit-button}})
+      @form[f on-submit render]})
 
 (define (initialize-tasks)
   (set! remaining-tasks tasks-that-count))
@@ -71,20 +84,26 @@
   (define s
     (number->string (random 100)))
 
-  @md{@slider-js
-      # Do @tasks-that-count Slider Tasks
+  (define-values (f on-submit)
+    (form+submit
+     [slider
+      (ensure
+       binding/number
+       (required)
+       (range/inclusive 0 100))]))
 
-      @form{
-        @div[#:class "slider"]{
-          @input-range[
-            #:slider
-            #:attributes `([value ,s])
-          ] @span{Value: @output{}}
-        }
-        @submit-button
-      }
+  (define (render rw)
+    @md*{@div[#:class "slider"]{
+           @rw["slider" @input-range[#:attributes `([value ,s])]]
+           @span{Value: @output{}}
+         }
+         @|submit-button|})
 
-      @button[process-submission]{Next}})
+  @md{@(slider-js)
+
+      # Do @~a[tasks-that-count] Slider Tasks
+
+      @form[f on-submit render]})
 
 (define (process-submission)
   (when (= slider 50)

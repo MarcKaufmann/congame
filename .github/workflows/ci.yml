@@ -166,7 +166,9 @@ jobs:
         raco koyo dist \
           -t build/web \
           ++lang conscript \
+          ++lang conscript/with-require \
           ++lib conscript/admin \
+          ++lib conscript/form0 \
           ++lib conscript/game-theory \
           ++lib conscript/survey-tools \
           ++lang north \

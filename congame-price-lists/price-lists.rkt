@@ -247,12 +247,11 @@
               (hash)))
 
 (define ((price-list-step pl #:title title #:pl-name [pl-name #f]))
-  (page
-   (haml
-    (.container
-     (:h1 title)
-     (:p "In each row, choose which option you prefer.")
-     (render-pl pl #:pl-name pl-name)))))
+  (haml
+   (.container
+    (:h1 title)
+    (:p "In each row, choose which option you prefer.")
+    (render-pl pl #:pl-name pl-name))))
 
 (define (price-list-step/bot n-fixed)
   (define elts-to-click

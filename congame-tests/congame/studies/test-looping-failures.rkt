@@ -14,17 +14,17 @@
  make-test-looping-failures-bot)
 
 (define (cont)
-  (page (button void "Continue")))
+  (button void "Continue"))
 
 (define (done)
-  (page (haml (:p "Done."))))
+  (haml (:p "Done.")))
 
 (define fail-count 0)
 (define (maybe-fail)
   (when (< fail-count 2)
     (set! fail-count (add1 fail-count))
     (fail 'expected-failure))
-  (page (button void "Continue")))
+  (button void "Continue"))
 
 (define test-looping-failures-child
   (make-study

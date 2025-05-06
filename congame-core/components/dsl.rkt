@@ -6,6 +6,7 @@
          racket/lazy-require
          racket/match
          racket/port
+         racket/runtime-path
          racket/string)
 
 (lazy-require
@@ -15,6 +16,11 @@
  dsl-require)
 
 (define-logger dsl)
+
+;; XXX: Introduce dependency on conscript package without requiring it
+;; until it's needed.
+(define-runtime-module-path _conscript
+  conscript)
 
 (define (dsl-require src id [owner-is-admin? #f])
   (match src
@@ -45,8 +51,7 @@
         '(conscript conscript/with-require)
         '(conscript)))
   (match-define (list _ (app (compose1 string->symbol string-trim) src-lang))
-    (regexp-match #rx"^#lang ([^ ]+) *\r?\n" src))
-  (eprintf "src-lang: ~s~n" src-lang)
+    (regexp-match #rx"^#lang ([^ \r\n]+)" src))
   (unless (memq src-lang allowed-langs)
     (error 'dsl-require "#lang may only be one of: ~a" (string-join (map ~a allowed-langs) ", ")))
   (define path #f)

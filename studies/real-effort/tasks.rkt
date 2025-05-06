@@ -112,19 +112,18 @@
   (define task-string
     (if (= n 1) "task" "tasks"))
   (define hide-description? (get 'hide-description?))
-  (page
-   (haml
-    (.container
-     (:h1 title)
-     (:p "You now have to do " n-string " tasks successfully, and you can get at most " n-string " tasks wrong. Whenever you get a task wrong, you will be given a new task to try. If you get " n+1-string " or more wrong, you automatically fail and drop out of the study.")
-     (toggleable-xexpr "Show/Hide Task Description" (task-description) #:hidden? hide-description?)
-     (button
-      (λ ()
-        (put 'remaining-tasks (get 'n))
-        (put 'correct-answers 0)
-        (put 'wrong-answers 0)
-        (put 'current-matrix (random-matrix)))
-      "Start Tasks")))))
+  (haml
+   (.container
+    (:h1 title)
+    (:p "You now have to do " n-string " tasks successfully, and you can get at most " n-string " tasks wrong. Whenever you get a task wrong, you will be given a new task to try. If you get " n+1-string " or more wrong, you automatically fail and drop out of the study.")
+    (toggleable-xexpr "Show/Hide Task Description" (task-description) #:hidden? hide-description?)
+    (button
+     (λ ()
+       (put 'remaining-tasks (get 'n))
+       (put 'correct-answers 0)
+       (put 'wrong-answers 0)
+       (put 'current-matrix (random-matrix)))
+     "Start Tasks"))))
 
 (define (task)
   (define m (get 'current-matrix))
@@ -152,42 +151,41 @@
              (put 'correct-answers (add1 (get 'correct-answers)))]
             [else
              (put 'wrong-answers (add1 (get 'wrong-answers)))])))
-  (page
-   (form
-    task-form
-    submit-action
-    (λ (rw)
-      (define tasks-remaining (get 'remaining-tasks))
-      (define tasks-correct (get 'correct-answers))
-      (define tasks-wrong (get 'wrong-answers))
-      (define max-tasks-wrong (get 'max-wrong-tasks))
-      (define tasks-total
-        (+ tasks-remaining tasks-correct))
-      (haml
+  (form
+   task-form
+   submit-action
+   (λ (rw)
+     (define tasks-remaining (get 'remaining-tasks))
+     (define tasks-correct (get 'correct-answers))
+     (define tasks-wrong (get 'wrong-answers))
+     (define max-tasks-wrong (get 'max-wrong-tasks))
+     (define tasks-total
+       (+ tasks-remaining tasks-correct))
+     (haml
+      (.container
        (.container
-        (.container
-         (:h1 "Count the cells with 1's in them")
-         (:p (format "You completed ~a out of ~a tasks (~a wrong guesses out of at most ~a)"
-                     tasks-correct
-                     tasks-total
-                     tasks-wrong
-                     max-tasks-wrong))
-         (:p (format "If you get more than ~a wrong guesses, you drop out of the study." max-tasks-wrong))
-         (.matrix
-          (:img.matrix ([:src (resource-uri matrix-dir (matrix-file m))])))
-         (:label
-          "How many cells with the number 1 are in the matrix? (Note: cells with 01, 10, or 11 do not count.)"
-          (rw "number-of-ones" (widget-number)))
-         ,@(rw "number-of-ones" (widget-errors))
-         (:button.button ([:type "submit"]) "Submit"))
-        (when config:debug
-          (haml
-           (.container.debug
-            (:p "Answer: " (number->string (matrix-answer m))))))
-        (when (current-user-bot?)
-          (haml
-           (.container
-            (:p ([:data-answer (number->string (matrix-answer m))]) ""))))))))))
+        (:h1 "Count the cells with 1's in them")
+        (:p (format "You completed ~a out of ~a tasks (~a wrong guesses out of at most ~a)"
+                    tasks-correct
+                    tasks-total
+                    tasks-wrong
+                    max-tasks-wrong))
+        (:p (format "If you get more than ~a wrong guesses, you drop out of the study." max-tasks-wrong))
+        (.matrix
+         (:img.matrix ([:src (resource-uri matrix-dir (matrix-file m))])))
+        (:label
+         "How many cells with the number 1 are in the matrix? (Note: cells with 01, 10, or 11 do not count.)"
+         (rw "number-of-ones" (widget-number)))
+        ,@(rw "number-of-ones" (widget-errors))
+        (:button.button ([:type "submit"]) "Submit"))
+       (when config:debug
+         (haml
+          (.container.debug
+           (:p "Answer: " (number->string (matrix-answer m))))))
+       (when (current-user-bot?)
+         (haml
+          (.container
+           (:p ([:data-answer (number->string (matrix-answer m))]) "")))))))))
 
 (define (task/bot correct?)
   (define answer (bot:find-attribute "data-answer"))
@@ -225,19 +223,18 @@
   (define n+1-string (number->string (add1 n)))
   (define n-string (number->string n))
   (put 'max-wrong-tasks n)
-  (page
-   (haml
-    (.container
-     (:h1 title)
-     (:p "You now have to do " n-string " tasks successfully, and you can get at most " n-string " tasks wrong. Whenever you get a task wrong, you will be given a new task to try. If you get " n+1-string " or more wrong, you automatically fail and drop out of the study.")
-     (toggleable-xexpr "Show/Hide Task Description" (task-description) #:hidden? hide-description?)
-     (button
-      (λ ()
-        (put 'remaining-tasks n)
-        (put 'correct-answers 0)
-        (put 'wrong-answers 0)
-        (put 'current-matrix (random-matrix)))
-      "Start Tasks")))))
+  (haml
+   (.container
+    (:h1 title)
+    (:p "You now have to do " n-string " tasks successfully, and you can get at most " n-string " tasks wrong. Whenever you get a task wrong, you will be given a new task to try. If you get " n+1-string " or more wrong, you automatically fail and drop out of the study.")
+    (toggleable-xexpr "Show/Hide Task Description" (task-description) #:hidden? hide-description?)
+    (button
+     (λ ()
+       (put 'remaining-tasks n)
+       (put 'correct-answers 0)
+       (put 'wrong-answers 0)
+       (put 'current-matrix (random-matrix)))
+     "Start Tasks"))))
 
 (define (simple-task-study n title [hide-description? #f])
   (make-study

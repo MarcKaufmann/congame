@@ -14,7 +14,7 @@
 (define-syntax (html stx)
   (syntax-parse stx
     [(_ elt ...)
-     #'(page `(div ([class "container"]) ,(html* elt ...)))]))
+     #'`(div ([class "container"]) ,(html* elt ...))]))
 
 (define-syntax (html* stx)
   (syntax-parse stx

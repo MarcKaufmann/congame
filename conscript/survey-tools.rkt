@@ -65,11 +65,11 @@
 (define-static-resource slider.js
   "resources/js/slider.js")
 
-(define slider-js
+(define (slider-js)
   (haml
-    (:script
-     ([:defer ""]
-      [:src (resource-uri slider.js)]))))
+   (:script
+    ([:defer ""]
+     [:src (resource-uri slider.js)]))))
 
 (define-syntax (make-sliders stx)
   (syntax-parse stx
@@ -83,7 +83,7 @@
            (congame:formular
             (haml
              (:div
-              slider-js
+              (slider-js)
               (:div
                (:div
                 ([:class "slider"])

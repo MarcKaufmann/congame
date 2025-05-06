@@ -50,7 +50,7 @@
  unquote-splicing
  provide
 
- begin begin0 let
+ begin begin0 let letrec let*
  if case cond else unless when
  or and not
  set!
@@ -62,23 +62,25 @@
  ;; Racket Runtime
  lambda λ case-lambda identity
  void sleep
- for for/fold for/hash for/list in-range in-inclusive-range in-list
+ for for/fold for/hash for/list in-range in-inclusive-range in-list in-indexed
  for* for*/fold for*/hash for*/list
  for/and for/or for/sum for/product
  for*/and for*/or for*/sum for*/product
  ormap andmap
  sort remove-duplicates
- build-list
- list list? list* null null? cons pair? car cdr map member for-each shuffle length findf filter rest reverse
+ build-list list-ref make-list
+ list list? list* null null? cons pair? car cdr cadr map member for-each shuffle length findf filter rest reverse
  first second third fourth fifth sixth seventh eighth ninth tenth
  display displayln print println printf eprintf write writeln
  take drop
  current-seconds
+ error
 
- vector vector-ref vector-length
+ list->vector vector vector-ref vector-length
+ append assq
 
  in-hash
- hash hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys hash-has-key?
+ hash hasheq hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys hash-has-key?
 
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling truncate
  = < > <= >= equal? eq?
@@ -90,6 +92,7 @@
 
  string? symbol?
  format ~a string number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
+ inexact->exact
  string-split string-join string-append
  bytes? bytes->string/utf-8 char?
 
@@ -166,6 +169,7 @@
       congame-web/components/study-bot
       congame-web/components/uploaded-file
       conscript/admin
+      conscript/form0
       conscript/game-theory
       conscript/game-theory-sig
       conscript/game-theory-unit
@@ -360,10 +364,7 @@
 
 (provide
  (contract-out
-  [~current-view-uri (-> string?)]
-  [~url (->* [string?]
-             [#:params (listof (cons/c symbol? string?))]
-             string?)]))
+  [~current-view-uri (-> string?)]))
 
 (define (~current-view-uri)
   (format "/study/~a/view/~a"
@@ -374,14 +375,6 @@
                                     (list (step-id (current-step)))))])
              (symbol->string id))
            "/")))
-
-(define (~url urlish #:params [params null])
-  (define u
-    (string->url
-     (if (not (regexp-match? #rx"^[^:]+?://" urlish))
-         (string-append "https://" urlish)
-         urlish)))
-  (url->string (struct-copy url u [query params])))
 
 
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

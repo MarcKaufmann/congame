@@ -5,15 +5,13 @@
                "base"
                "component-lib"
                "congame-core"
-               "conscript"
-               "crypto-lib"
                "db-lib"
                "dbg"
                "deta-lib"
-               "forms-lib"
+               ["forms-lib" #:version "0.8"]
                "gregor-lib"
                "hash-view-lib"
-               "http-easy"
+               "http-easy-lib"
                ["koyo-lib" #:version "0.23.1"]
                "koyo-north"
                "koyo-postmark"

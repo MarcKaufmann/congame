@@ -67,40 +67,39 @@
 (define (sleep-question)
   (schedule-question-email
    (current-participant-id))
-  (page
-   (haml
-    (.container
-     (:h1 "Sleep Times Last Night")
+  (haml
+   (.container
+    (:h1 "Sleep Times Last Night")
 
-     (formular
-      (haml
+    (formular
+     (haml
+      (:div
        (:div
-        (:div
-         (#:fall-asleep-time (input-time "When did you fall asleep last night?"))
-         (#:fall-asleep-date (input-date "")))
-        (:div
-         (#:wake-up-time (input-time "When did you wake up last night?"))
-         (#:wake-up-date (input-date "")))
-        (:div
-         (#:awake-in-between (input-number "How long were you awake in between (in hours)?" #:min 0)))
-        (:button.button.next-button ([:type "submit"]) "Submit")))
-      (λ (#:fall-asleep-time fall-asleep-time
-          #:fall-asleep-date fall-asleep-date
-          #:wake-up-time wake-up-time
-          #:wake-up-date wake-up-date
-          #:awake-in-between awake-in-between)
-        (define fall-asleep
-          (combine-date+time
-           (parse-date fall-asleep-date "yyyy-MM-dd")
-           (parse-time fall-asleep-time "HH:mm")))
-        (define wake-up
-          (combine-date+time
-           (parse-date wake-up-date "yyyy-MM-dd")
-           (parse-time wake-up-time "HH:mm")))
-        (put 'sleep-records
-             (cons (sleep fall-asleep wake-up awake-in-between (/ (seconds-between fall-asleep wake-up) 3600.0))
-                   (get 'sleep-records '())))
-        (put 'fall-asleep-date fall-asleep-date)))))))
+        (#:fall-asleep-time (input-time "When did you fall asleep last night?"))
+        (#:fall-asleep-date (input-date "")))
+       (:div
+        (#:wake-up-time (input-time "When did you wake up last night?"))
+        (#:wake-up-date (input-date "")))
+       (:div
+        (#:awake-in-between (input-number "How long were you awake in between (in hours)?" #:min 0)))
+       (:button.button.next-button ([:type "submit"]) "Submit")))
+     (λ (#:fall-asleep-time fall-asleep-time
+         #:fall-asleep-date fall-asleep-date
+         #:wake-up-time wake-up-time
+         #:wake-up-date wake-up-date
+         #:awake-in-between awake-in-between)
+       (define fall-asleep
+         (combine-date+time
+          (parse-date fall-asleep-date "yyyy-MM-dd")
+          (parse-time fall-asleep-time "HH:mm")))
+       (define wake-up
+         (combine-date+time
+          (parse-date wake-up-date "yyyy-MM-dd")
+          (parse-time wake-up-time "HH:mm")))
+       (put 'sleep-records
+            (cons (sleep fall-asleep wake-up awake-in-between (/ (seconds-between fall-asleep wake-up) 3600.0))
+                  (get 'sleep-records '())))
+       (put 'fall-asleep-date fall-asleep-date))))))
 
 (define (send-email-reminder pid nonce)
   ; FIXME
@@ -128,26 +127,25 @@
 (define (overview-page)
   (define subscribed?
     (get 'subscribed #f))
-  (page
-   (haml
-    (.container
-     (:h1 "Overview Page")
-     (unless subscribed?
-       (button
-        (λ ()
-          (with-study-transaction
-            (put 'subscribed #t)
-            (parameterize ([current-study-stack '(*root*)])
-              (define nonce (generate-random-string))
-              (define nonces (get/instance 'nonces (hasheqv)))
-              (put/instance 'nonces (hash-set nonces (current-participant-id) nonce))
-              (schedule-at
-               (+minutes (now/moment) 1)
-               (request-update
-                (current-participant-id)
-                nonce)))))
+  (haml
+   (.container
+    (:h1 "Overview Page")
+    (unless subscribed?
+      (button
+       (λ ()
+         (with-study-transaction
+           (put 'subscribed #t)
+           (parameterize ([current-study-stack '(*root*)])
+             (define nonce (generate-random-string))
+             (define nonces (get/instance 'nonces (hasheqv)))
+             (put/instance 'nonces (hash-set nonces (current-participant-id) nonce))
+             (schedule-at
+              (+minutes (now/moment) 1)
+              (request-update
+               (current-participant-id)
+               nonce)))))
        "Subscribe to daily tracking reminders" #:to-step-id 'overview-page))
-     (button void "Enter Sleep Data" #:to-step-id 'sleep-question)))))
+    (button void "Enter Sleep Data" #:to-step-id 'sleep-question))))
 
 (define sleep-tracker
   (make-study

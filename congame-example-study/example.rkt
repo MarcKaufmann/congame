@@ -25,41 +25,39 @@
 ;; Steps manage optional transitions, the default being `(next)'.
 
 (define (info)
-  (page
-   `(div
-     (h1 "Welcome to the study.")
-     ,(attachment
-       "Download CSV"
-       #:filename "example.csv"
-       #:content-type "application/csv"
-       (lambda (out)
-         (fprintf out "name,age~n")
-         (fprintf out "Bogdan,31~n")))
-     ,(button/confirm
-       "Continue with confirmation"
+  `(div
+    (h1 "Welcome to the study.")
+    ,(attachment
+      "Download CSV"
+      #:filename "example.csv"
+      #:content-type "application/csv"
+      (lambda (out)
+        (fprintf out "name,age~n")
+        (fprintf out "Bogdan,31~n")))
+    ,(button/confirm
+      "Continue with confirmation"
+      (button/confirm
+       "Layer 2"
        (button/confirm
-        "Layer 2"
-        (button/confirm
-         "Layer 3")))
-     ,(button void "Continue"))))
+        "Layer 3")))
+    ,(button void "Continue")))
 
 ;; Steps wrap an id, a handler and a transition function.  The handler
 ;; must always produce an xexpression.  Actions within a handler are
 ;; powered by widgets, which themselves produce xexprs, but that have
 ;; arbitrary code which runs following user interaction.
 (define (give-consent)
-  (page
-   (haml
-    (:div
-     (:h1 "Hi " (get 'name) "! Do you consent?")
-     (button
-      (lambda ()
-        (put 'consented? #t))
-      "Yes")
-     (button
-      (lambda ()
-        (put 'consented? #f))
-      "No")))))
+  (haml
+   (:div
+    (:h1 "Hi " (get 'name) "! Do you consent?")
+    (button
+     (lambda ()
+       (put 'consented? #t))
+     "Yes")
+    (button
+     (lambda ()
+       (put 'consented? #f))
+     "No"))))
 
 (define name-form
   (form* ([name (ensure binding/text (required))])
@@ -75,30 +73,28 @@
     [else '(h1 "Come back later")]))
 
 (define (tell-name)
-  (page
-   (haml
-    (:div
-     (:h1 "Tell us your name!")
-     (form
-      name-form
-      (lambda (name)
-        (put 'name name))
-      (lambda (rw)
-        (haml
-         (:div
-          (rw "name" (widget-text))
-          ,@(rw "name" (widget-errors))
-          (:button ([:type "submit"]) "Continue")))))))))
+  (haml
+   (:div
+    (:h1 "Tell us your name!")
+    (form
+     name-form
+     (lambda (name)
+       (put 'name name))
+     (lambda (rw)
+       (haml
+        (:div
+         (rw "name" (widget-text))
+         ,@(rw "name" (widget-errors))
+         (:button ([:type "submit"]) "Continue"))))))))
 
 (define (deep-info)
-  (page
-   (haml
-    (:div
-     (:h1 "You are in the deep study")
-     (button
-      (lambda ()
-        (put 'clicked? #t))
-      "Continue")))))
+  (haml
+   (:div
+    (:h1 "You are in the deep study")
+    (button
+     (lambda ()
+       (put 'clicked? #t))
+     "Continue"))))
 
 (define deep-study
   (make-study
@@ -107,37 +103,33 @@
     (make-step 'deep-info deep-info))))
 
 (define (simple-info-1)
-  (page
-   (haml
-    (:div
-     (:h1 "You are in the simple study")
-     (button void "Continue")))))
+  (haml
+   (:div
+    (:h1 "You are in the simple study")
+    (button void "Continue"))))
 
 (define (listen-to-some-music)
-  (page
-   (haml
-    (:div
-     (:h1 "Relax and listen to some music")
-     (:audio
-      ([:controls ""]
-       [:src (resource-uri christmas-song)]))
-     (:audio
-      ([:controls ""]
-       [:src (resource-uri songs "christmas.ogg")]))
-     (:br)
-     (button void "Continue")))))
+  (haml
+   (:div
+    (:h1 "Relax and listen to some music")
+    (:audio
+     ([:controls ""]
+      [:src (resource-uri christmas-song)]))
+    (:audio
+     ([:controls ""]
+      [:src (resource-uri songs "christmas.ogg")]))
+    (:br)
+    (button void "Continue"))))
 
 (define (simple-info-2)
-  (page
-   (haml
-    (:div
-     (:h1 "You are still in the simple study")
-     (button void "Continue")))))
+  (haml
+   (:div
+    (:h1 "You are still in the simple study")
+    (button void "Continue"))))
 
 (define (done-step)
-  (page
-   (haml
-    (:h1 "Yer done."))))
+  (haml
+   (:h1 "Yer done.")))
 
 (define ((echo-wrapper s))
   (printf "echo-wrapper: ~.s~n" s)
@@ -165,11 +157,10 @@
      (lambda ()
        (define the-page-thunk
          (hdl))
-       (page
-        `(div
-          (h1 "This is our wrapper!")
-          ,(the-page-thunk)
-          ,(button void #:to-step-id 'done "End")))))))
+       `(div
+         (h1 "This is our wrapper!")
+         ,(the-page-thunk)
+         ,(button void #:to-step-id 'done "End"))))))
 
 (define consent-study
   (make-study

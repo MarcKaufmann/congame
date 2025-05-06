@@ -21,112 +21,107 @@
 
 (define (info)
   (start-timer)
-  (page
-   (haml
-    (.container
-     (formular
-      #:bot
-      ([ok (#:emissions 42)
-           (#:location "Cluj-Napoca")])
-      (haml
-       (:div
-        "I emit "
-        (#:emissions (input-number #:required? "You need to specify emissions."))
-        " per year. And I live in "
-        (#:location (input-text #:required? "You need to specify a location."))
-        "."
-        ,@(~all-errors)
-        (:button ([:type "submit"]) "Submit"))))))))
+  (haml
+   (.container
+    (formular
+     #:bot
+     ([ok (#:emissions 42)
+          (#:location "Cluj-Napoca")])
+     (haml
+      (:div
+       "I emit "
+       (#:emissions (input-number #:required? "You need to specify emissions."))
+       " per year. And I live in "
+       (#:location (input-text #:required? "You need to specify a location."))
+       "."
+       ,@(~all-errors)
+       (:button ([:type "submit"]) "Submit")))))))
 
 (define (info/bot)
   (formular-autofill 'ok))
 
 (define (dynamic)
-  (page
-   (haml
-    (.container
-     (formular
-      #:bot
-      ([ok (#:a "field a")
-           (#:b "field b")])
-      #:fields
-      ([a (input-text "field a")]
-       [b (input-text "field b")])
-      (match (shuffle (list a b))
-        [(list f1 f2)
-         (haml
-          (:div
-           (:ul
-            (:li "F1: " f1)
-            (:li "F2: " f2))
-           (:button ([:type "submit"]) "Submit")))]))))))
+  (haml
+   (.container
+    (formular
+     #:bot
+     ([ok (#:a "field a")
+          (#:b "field b")])
+     #:fields
+     ([a (input-text "field a")]
+      [b (input-text "field b")])
+     (match (shuffle (list a b))
+       [(list f1 f2)
+        (haml
+         (:div
+          (:ul
+           (:li "F1: " f1)
+           (:li "F2: " f2))
+          (:button ([:type "submit"]) "Submit")))])))))
 
 (define (dynamic/bot)
   (formular-autofill 'ok))
 
 (define (matrix)
-  (page
-   (haml
-    (.container
-     (formular
-      #:bot
-      ([ok (#:computer "mac1")])
-      (haml
-       (:div
-        (#:computer
-         (make-radios
-          '((mac1 . ("Apple Mac" "White"))
-            (mac2 . ("Apple Mac" "Gray"))
-            (dell1 . ("Dell" "Blue"))
-            (dell2 . ("Dell" "Navy")))
-          (lambda (options make-radio)
-            (haml
-             (:table
-              (:thead
-               (:tr
-                (:th "")
-                (:th "Brand")
-                (:th "Color")))
-              (:tbody
-               ,@(for/list ([pair (in-list options)])
-                   (define option (car pair))
-                   (define data (cdr pair))
-                   (haml
-                    (:tr
-                     (:td (make-radio option))
-                     (:td (car data))
-                     (:td (cadr data))))))))))
-         {#:default "mac2"})
-        (:button ([:type "submit"]) "Submit"))))))))
+  (haml
+   (.container
+    (formular
+     #:bot
+     ([ok (#:computer "mac1")])
+     (haml
+      (:div
+       (#:computer
+        (make-radios
+         '((mac1 . ("Apple Mac" "White"))
+           (mac2 . ("Apple Mac" "Gray"))
+           (dell1 . ("Dell" "Blue"))
+           (dell2 . ("Dell" "Navy")))
+         (lambda (options make-radio)
+           (haml
+            (:table
+             (:thead
+              (:tr
+               (:th "")
+               (:th "Brand")
+               (:th "Color")))
+             (:tbody
+              ,@(for/list ([pair (in-list options)])
+                  (define option (car pair))
+                  (define data (cdr pair))
+                  (haml
+                   (:tr
+                    (:td (make-radio option))
+                    (:td (car data))
+                    (:td (cadr data))))))))))
+        {#:default "mac2"})
+       (:button ([:type "submit"]) "Submit")))))))
 
 (define (matrix/bot)
   (formular-autofill 'ok))
 
 (define (select-step)
   (put 'duration (end-timer))
-  (page
-   (haml
-    (.container
-     (formular
-      #:bot
-      ([ok (#:brands "apple")])
-      (haml
-       (:div
-        (#:brands
-         (select "Pick a brand:"
-                 `(("apple" . "Apple")
-                   ("dell"  . "Dell")))
-         {#:default "dell"})
-        (:button ([:type "submit"]) "Submit"))))))))
+  (haml
+   (.container
+    (formular
+     #:bot
+     ([ok (#:brands "apple")])
+     (haml
+      (:div
+       (#:brands
+        (select "Pick a brand:"
+                `(("apple" . "Apple")
+                  ("dell"  . "Dell")))
+        {#:default "dell"})
+       (:button ([:type "submit"]) "Submit")))))))
 
 (define (select-step/bot)
   (formular-autofill 'ok))
 
 (define (done)
-  (page
-   (haml
-    (.container
-     (:h1 "Byeee")))))
+  (haml
+   (.container
+    (:h1 "Byeee"))))
 
 (define inline-study
   (make-study

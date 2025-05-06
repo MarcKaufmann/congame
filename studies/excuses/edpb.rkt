@@ -213,29 +213,27 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (define (final)
-  (page
-   (haml
-    (.container
-     (:h1 "Thank you for participating")))))
+  (haml
+   (.container
+    (:h1 "Thank you for participating"))))
 
 
 (define (consent)
-  (page
-   (haml
-    (.container
-     (:h1 "Consent")
+  (haml
+   (.container
+    (:h1 "Consent")
 
-     @:p{You have now completed the introduction to the study: you have read the instructions, the task description, and the payment conditions. Based on this, you can now decide whether to participate in the study and continue, or whether to stop after the introduction ends.}
+    @:p{You have now completed the introduction to the study: you have read the instructions, the task description, and the payment conditions. Based on this, you can now decide whether to participate in the study and continue, or whether to stop after the introduction ends.}
 
-     (formular
-      (haml
-       (:div
-        (#:consent-given?
-         (radios "" '(("agree"    . "I agree to participate in the study")
-                      ("disagree" . "I do not agree to participate in the study and stop here"))))
-        submit-button))
-      (lambda (#:consent-given? consent?)
-        (put 'consent-given? (string=? consent? "agree"))))))))
+    (formular
+     (haml
+      (:div
+       (#:consent-given?
+        (radios "" '(("agree"    . "I agree to participate in the study")
+                     ("disagree" . "I do not agree to participate in the study and stop here"))))
+       submit-button))
+     (lambda (#:consent-given? consent?)
+       (put 'consent-given? (string=? consent? "agree")))))))
 
 (define (comprehension-test)
   (define attempt
@@ -252,161 +250,155 @@
           (format "' you picked option ~a, which is ~a."
                   option
                   (if correct-answer? "true." "false.")))))
-  (page
-   (haml
-    (.container
-     (:h1 (format "Comprehension Test (~a attempt)"
-                  (case attempt
-                    [(1) "first"]
-                    [(2) "second"]
-                    [(3) "third"]
-                    [(4) "fourth"])))
+  (haml
+   (.container
+    (:h1 (format "Comprehension Test (~a attempt)"
+                 (case attempt
+                   [(1) "first"]
+                   [(2) "second"]
+                   [(3) "third"]
+                   [(4) "fourth"])))
 
-     (when last-attempt
-       (let ([when-paid (hash-ref last-attempt 'when-paid)]
-             [session1 (hash-ref last-attempt 'session1)]
-             [how-many-abstracts (hash-ref last-attempt 'how-many-abstracts)])
-       (haml
-        (:div
-         (:h4 "Your answers and Score from the previous attempt")
+    (when last-attempt
+      (let ([when-paid (hash-ref last-attempt 'when-paid)]
+            [session1 (hash-ref last-attempt 'session1)]
+            [how-many-abstracts (hash-ref last-attempt 'how-many-abstracts)])
+        (haml
+         (:div
+          (:h4 "Your answers and Score from the previous attempt")
 
-         (:ol
-          (answer-feedback "When will you receive the payments" (car when-paid) (cdr when-paid))
-          (answer-feedback "Will you receive any payment if you only complete the first session"
-                           (car session1) (cdr session1))
-          (answer-feedback "how many abstracts do you have to do in each session including the baseline abstracts"
-                           (car how-many-abstracts) (cdr how-many-abstracts)))))))
+          (:ol
+           (answer-feedback "When will you receive the payments" (car when-paid) (cdr when-paid))
+           (answer-feedback "Will you receive any payment if you only complete the first session"
+                            (car session1) (cdr session1))
+           (answer-feedback "how many abstracts do you have to do in each session including the baseline abstracts"
+                            (car how-many-abstracts) (cdr how-many-abstracts)))))))
 
-     (formular
-      (haml
+    (formular
+     (haml
+      (:div
        (:div
-        (:div
-         (#:when-paid
-          (radios
-           "When will you receive the payments?"
-           '(("1" . "Immediately after the first session.")
-             ("2" . "Immediately after the second session.")
-             ("3" . "Within three days after the second session.")))))
-        (:div
-         (#:session1-payment
-          (radios
-           "Will you receive any payment if you only complete the first session?"
-           '(("1" . "No, only if I complete both sessions.")
-             ("2" . "Yes, I receive a completion bonus for the first session within three days after the corresponding second session.")
-             ("3" . "Yes, I receive a completion bonus for the first session immediately after the first session.")
-             ("4" . "Yes, I receive a completion bonus for the first session and extra payment if I choose to work in the first session within three days after the corresponding second session.")))))
-        (:div
-         (#:how-many-abstracts
-          (radios
-           "If the decision to implement is '25 abstracts as animal rights vs. other in the second session', how many abstracts do you have to do in each session including the baseline abstracts?"
-           '(("1" . "0 today and 25 in the second session.")
-             ("2" . "15 today and 25 in the second session.")
-             ("3" . "15 today and 40 in the second session.")
-             ("4" . "25 today and 25 in the second session.")))))
-        submit-button))
-        (lambda (#:when-paid when-paid
-                 #:session1-payment session1-payment
-                 #:how-many-abstracts how-many-abstracts)
-          (define score
-            (apply
-             +
-             (map
-              (λ (b) (if b 1 0))
-              (list
-               (string=? when-paid "3")
-               (string=? session1-payment "2")
-               (string=? how-many-abstracts "3")))))
-          (put 'attempt (add1 (get 'attempt)))
-          (put 'last-attempt
-               (hash 'when-paid (cons when-paid (string=? when-paid "3"))
-                     'session1-payment (cons session1-payment (string=? session1-payment "2"))
-                     'how-many-abstracts (cons how-many-abstracts (string=? how-many-abstracts "3"))))
-          (put 'comprehension-test-score score)))))))
+        (#:when-paid
+         (radios
+          "When will you receive the payments?"
+          '(("1" . "Immediately after the first session.")
+            ("2" . "Immediately after the second session.")
+            ("3" . "Within three days after the second session.")))))
+       (:div
+        (#:session1-payment
+         (radios
+          "Will you receive any payment if you only complete the first session?"
+          '(("1" . "No, only if I complete both sessions.")
+            ("2" . "Yes, I receive a completion bonus for the first session within three days after the corresponding second session.")
+            ("3" . "Yes, I receive a completion bonus for the first session immediately after the first session.")
+            ("4" . "Yes, I receive a completion bonus for the first session and extra payment if I choose to work in the first session within three days after the corresponding second session.")))))
+       (:div
+        (#:how-many-abstracts
+         (radios
+          "If the decision to implement is '25 abstracts as animal rights vs. other in the second session', how many abstracts do you have to do in each session including the baseline abstracts?"
+          '(("1" . "0 today and 25 in the second session.")
+            ("2" . "15 today and 25 in the second session.")
+            ("3" . "15 today and 40 in the second session.")
+            ("4" . "25 today and 25 in the second session.")))))
+       submit-button))
+     (lambda (#:when-paid when-paid
+              #:session1-payment session1-payment
+              #:how-many-abstracts how-many-abstracts)
+       (define score
+         (apply
+          +
+          (map
+           (λ (b) (if b 1 0))
+           (list
+            (string=? when-paid "3")
+            (string=? session1-payment "2")
+            (string=? how-many-abstracts "3")))))
+       (put 'attempt (add1 (get 'attempt)))
+       (put 'last-attempt
+            (hash 'when-paid (cons when-paid (string=? when-paid "3"))
+                  'session1-payment (cons session1-payment (string=? session1-payment "2"))
+                  'how-many-abstracts (cons how-many-abstracts (string=? how-many-abstracts "3"))))
+       (put 'comprehension-test-score score))))))
 
 (define max-attempts 4)
 
 
 (define (fail-comprehension-test)
-  (page
-   (haml
-    (.container
-     @:h1{You failed the comprehension test too many times}
+  (haml
+   (.container
+    @:h1{You failed the comprehension test too many times}
 
-     @:p{Unfortunately, you failed the comprehension test too many times, so you cannot continue with the main session.}
+    @:p{Unfortunately, you failed the comprehension test too many times, so you cannot continue with the main session.}
 
-     @:p{Provide the following completion code to receive @($conf 'pilot-tutorial-fee): @(conf 'pilot-code-for-failed-comprehension).}))))
+    @:p{Provide the following completion code to receive @($conf 'pilot-tutorial-fee): @(conf 'pilot-code-for-failed-comprehension).})))
 
 
 (define (no-consent)
-  (page
-   (haml
-    (.container
-     (:h1 "Thanks for considering the study")
+  (haml
+   (.container
+    (:h1 "Thanks for considering the study")
 
-     (:p "Please enter the following completion code on prolific:")
+    (:p "Please enter the following completion code on prolific:")
 
-     (:h4 (hash-ref edpb-config 'pilot-completion-code))
+    (:h4 (hash-ref edpb-config 'pilot-completion-code))
 
-     (:p "Since you did not agree to participate in the study, you are done.")))))
+    (:p "Since you did not agree to participate in the study, you are done."))))
 
 (define (thank-you)
-  (page
-   (haml
-    (.container
-     (:h1 "Thank you!")
+  (haml
+   (.container
+    (:h1 "Thank you!")
 
-     (:p "Thank you for having participated in the study.")))))
+    (:p "Thank you for having participated in the study."))))
 
 ;;;;;;;;;;;;;;;; INTRO STUDY
 
 (define (landing-page)
   (put 'time-enrolled (current-seconds))
-  (page
-   (haml
-    @.container{
-      @:h1{The Study}
+  (haml
+   @.container{
+               @:h1{The Study}
 
-      @:p{Thank you for participating in this study examining how people make decisions for work.}
+               @:p{Thank you for participating in this study examining how people make decisions for work.}
 
-      @:p{This study is conducted by Flora Drucker and Marc Kaufmann and financed by Central European University. Your participation is voluntary and if you accept to participate, you may withdraw at any time. However, please note that you will receive some bonuses if you complete specific parts of the study. This is described in more detail on the Instructions page.}
+               @:p{This study is conducted by Flora Drucker and Marc Kaufmann and financed by Central European University. Your participation is voluntary and if you accept to participate, you may withdraw at any time. However, please note that you will receive some bonuses if you complete specific parts of the study. This is described in more detail on the Instructions page.}
 
-      @:p{Participation in this study is not associated with any foreseeable risk or benefit. Your answers will be collected confidentially and anonymously (the researchers will not be able to link decisions and participants' identity beyond the Prolific ID provided). At the data analysis stage your Prolific ID will be changed to a random identifying number, and the Prolific IDs will be deleted. In case the results of the study are published, there can be no references to your identity. Data anonymity is guaranteed.}
+               @:p{Participation in this study is not associated with any foreseeable risk or benefit. Your answers will be collected confidentially and anonymously (the researchers will not be able to link decisions and participants' identity beyond the Prolific ID provided). At the data analysis stage your Prolific ID will be changed to a random identifying number, and the Prolific IDs will be deleted. In case the results of the study are published, there can be no references to your identity. Data anonymity is guaranteed.}
 
-      @:p{This study received a research ethics approval from the Ethical Research Committee of Central European University.}
+               @:p{This study received a research ethics approval from the Ethical Research Committee of Central European University.}
 
-      @:p{If you have any questions or concerns regarding this study, please contact us at @"admin@totalinsightmanagement.com" or @"lucafloradrucker.research@gmail.com".}
+               @:p{If you have any questions or concerns regarding this study, please contact us at @"admin@totalinsightmanagement.com" or @"lucafloradrucker.research@gmail.com".}
 
-      @(formular
-       (haml
-        (:div
-         (:div
-          (#:prolific-ID (input-text "What is your Prolific ID?")))
-         (:div
-          (#:patience
-           (input-patience)))
-         (:div
-          (#:risk
-           (input-risk)))
-         submit-button)))})))
+               @(formular
+                 (haml
+                  (:div
+                   (:div
+                    (#:prolific-ID (input-text "What is your Prolific ID?")))
+                   (:div
+                    (#:patience
+                     (input-patience)))
+                   (:div
+                    (#:risk
+                     (input-risk)))
+                   submit-button)))}))
 
 (define (signup)
-  (page
-   (haml
-    (.container
-     (:h1 "Sign up for Login")
+  (haml
+   (.container
+    (:h1 "Sign up for Login")
 
-     (:p "Since part of the study is today and some in the future, you will need to sign up with your Prolific email, so that you can resume the study at any time without losing your progress. To do so, please follow the following steps:")
+    (:p "Since part of the study is today and some in the future, you will need to sign up with your Prolific email, so that you can resume the study at any time without losing your progress. To do so, please follow the following steps:")
 
-     (:ul
-      (:li "Go to the " (:a ([:href "https://identity.totalinsightmanagement.com"]) "Signup Page"))
-      (:li "Sign up for an account with your prolific email Type in your prolific email (it is your Prolific ID followed by ...)")
-      (:li "Type in a password")
-      (:li "You will receive a validation email on Prolific. Click on or copy-paste the validation link therein to validate your account")
-      (:li "Log in to your account and start the study <study-name>"))
+    (:ul
+     (:li "Go to the " (:a ([:href "https://identity.totalinsightmanagement.com"]) "Signup Page"))
+     (:li "Sign up for an account with your prolific email Type in your prolific email (it is your Prolific ID followed by ...)")
+     (:li "Type in a password")
+     (:li "You will receive a validation email on Prolific. Click on or copy-paste the validation link therein to validate your account")
+     (:li "Log in to your account and start the study <study-name>"))
 
-     ; FIXME: Add an instructions video on how to do it.
+    ; FIXME: Add an instructions video on how to do it.
 
-     ))))
+    )))
 
 ; NOTE: This is for a version where we explain how to sign up which I might resuscitate later.
 (define edpb-intro
@@ -431,20 +423,19 @@
   (define (repeat-comprehension-test)
     (define next-attempt
       (get 'attempt))
-    (page
-     (haml
-      (.container
-       (:h1 (format
-             "You failed the comprehension times for the ~a time"
-             (case (sub1 next-attempt)
-               [(1) "first"]
-               [(2) "second"])))
+    (haml
+     (.container
+      (:h1 (format
+            "You failed the comprehension times for the ~a time"
+            (case (sub1 next-attempt)
+              [(1) "first"]
+              [(2) "second"])))
 
-       @:p.info{On your next attempt, make sure to read the feedback at the top, which tells you which questions you got right.}
+      @:p.info{On your next attempt, make sure to read the feedback at the top, which tells you which questions you got right.}
 
-       @:p{Remember: You can fail the test at most @(~a max-attempts) times, otherwise you cannot participate in the main session. And you have to use all your attempts to receive the completion code. Try again.}
+      @:p{Remember: You can fail the test at most @(~a max-attempts) times, otherwise you cannot participate in the main session. And you have to use all your attempts to receive the completion code. Try again.}
 
-       (button void "Try Again")))))
+      (button void "Try Again"))))
 
   (make-study
    "comprehension test"
@@ -617,43 +608,45 @@
         (ce-reason ce 'B)))
 
   (cond [reasons?
+         ;; FIXME: This and other timers should probably be started in a
+         ;; transition. Starting them here means they reset every time
+         ;; the step is reloaded.
          (start-timer)
-         (page
-          (haml
-           (.container
+         (haml
+          (.container
 
-            (:h2 (format "Choice ~a out of ~a" i total))
-            (:h3 "Description of Options")
+           (:h2 (format "Choice ~a out of ~a" i total))
+           (:h3 "Description of Options")
 
-            ,@(for/list ([label '(A B)])
-                (define r (ce-reason ce label))
-                (haml
-                 (:div
-                  (:h4 (format "Option ~a" label))
+           ,@(for/list ([label '(A B)])
+               (define r (ce-reason ce label))
+               (haml
+                (:div
+                 (:h4 (format "Option ~a" label))
 
-                  (:p (describe-abstracts ce label))
+                 (:p (describe-abstracts ce label))
 
-                  )))
+                 )))
 
-            (:h3 "Reveal a Reason")
+           (:h3 "Reveal a Reason")
 
-            ,@(for/list ([label '(A B)]
-                         #:when (ce-reason ce label))
-                (define r (ce-reason ce label))
-                (when (ce-reason ce label)
-                  (haml
-                   (.reveal-reasons
-                    (button
-                     (lambda ()
-                       (put* #:root '*timer*
-                             'reveal-reasons-durations
-                             (cons (end-timer)
-                                   (get* #:root '*timer* 'reveal-reasons-durations null)))
-                       (put/reason label (reason-text r))
-                       ; FIXME: Isn't this `skip` redundant?
-                       (skip))
-                     (format "Reveal a reason ~a Option ~a"
-                             (reason-dir r) label)))))))))]
+           ,@(for/list ([label '(A B)]
+                        #:when (ce-reason ce label))
+               (define r (ce-reason ce label))
+               (when (ce-reason ce label)
+                 (haml
+                  (.reveal-reasons
+                   (button
+                    (lambda ()
+                      (put* #:root '*timer*
+                            'reveal-reasons-durations
+                            (cons (end-timer)
+                                  (get* #:root '*timer* 'reveal-reasons-durations null)))
+                      (put/reason label (reason-text r))
+                      ; FIXME: Isn't this `skip` redundant?
+                      (skip))
+                    (format "Reveal a reason ~a Option ~a"
+                            (reason-dir r) label))))))))]
 
         [else
          (put/reason #f "")
@@ -674,41 +667,40 @@
   (define r-text
     (cdr last-reason))
   (start-timer)
-  (page
-   (haml
-    (.container
+  (haml
+   (.container
 
-     (:h2 (format "Choice ~a out of ~a" i total))
+    (:h2 (format "Choice ~a out of ~a" i total))
 
-     (:h3 "Description of Options")
+    (:h3 "Description of Options")
 
-     ,@(for/list ([label '(A B)])
-         (haml
-          (:div
-           (:h4 (format "Option ~a" label))
+    ,@(for/list ([label '(A B)])
+        (haml
+         (:div
+          (:h4 (format "Option ~a" label))
 
-           (:p (describe-abstracts ce label)))))
+          (:p (describe-abstracts ce label)))))
 
-     (when r-label
-       (haml
-        (.revealed-reason.info
-         (:h3 (format "Reason for ~a: " r-label))
-         (:p r-text))))
-
-     (formular
+    (when r-label
       (haml
-       (:div
-        (#:choice
-         (radios "Choose an option:"
-          `(("A" . "Option A")
-            ("B" . "Option B"))))
-        submit-button))
-      (lambda (#:choice choice)
-        (put* #:root '*timer*
-              'choice-durations
-              (cons (end-timer)
-                    (get* #:root '*timer* 'choice-durations null)))
-        (put/choice choice)))))))
+       (.revealed-reason.info
+        (:h3 (format "Reason for ~a: " r-label))
+        (:p r-text))))
+
+    (formular
+     (haml
+      (:div
+       (#:choice
+        (radios "Choose an option:"
+                `(("A" . "Option A")
+                  ("B" . "Option B"))))
+       submit-button))
+     (lambda (#:choice choice)
+       (put* #:root '*timer*
+             'choice-durations
+             (cons (end-timer)
+                   (get* #:root '*timer* 'choice-durations null)))
+       (put/choice choice))))))
 
 (define (bonus-for-switching total i)
   (define choice-number
@@ -729,56 +721,55 @@
     (cdr current-reason))
 
   (start-timer)
-  (page
-   (haml
-    (.container
+  (haml
+   (.container
 
-     (:h2 (format "Choice ~a out of ~a" i total))
-     (:h3 "Description of Options")
+    (:h2 (format "Choice ~a out of ~a" i total))
+    (:h3 "Description of Options")
 
-     ,@(for/list ([label '(A B)])
-         (define r (ce-reason current-ce label))
-         (haml
-          (:div
-           (:h4 (format "Option ~a" label))
+    ,@(for/list ([label '(A B)])
+        (define r (ce-reason current-ce label))
+        (haml
+         (:div
+          (:h4 (format "Option ~a" label))
 
-           (:p (describe-abstracts current-ce label)))))
+          (:p (describe-abstracts current-ce label)))))
 
-     (when r-label
-       (haml
-        (.revealed-reason
-         (:h3 (format "Reason for ~a: " r-label))
-         (:p r-text))))
-
-     (:h3 "Bonus needed for switching")
-
-     (:p (format "You just picked Option ~a in a direct choice between the above options. Now please pick the smallest amount of money you have to be paid to switch to Option ~a instead."
-                 chosen-option
-                 unchosen-option))
-
-     (formular
+    (when r-label
       (haml
-       (:div
-        (#:bonus
-         (input-number
-          "Switching Bonus"
-          #:min 0.1
-          #:max 1.1
-          #:step 0.1
-          #:attributes `([data-counter "counter"]
-                         [data-counter-prefix "$"])))
-        submit-button))
-      (lambda (#:bonus bonus)
-        (with-study-transaction
-          (put* #:root '*timer*
-                'switch-choice-durations
-                (cons (end-timer)
-                      (get* #:root '*timer* 'switch-choice-durations null)))
-          (define choice-number (get 'choice-number))
-          (define switching-bonuses
-            (get 'switching-bonuses (hash)))
-          (put 'switching-bonuses
-               (hash-set switching-bonuses choice-number bonus)))))))))
+       (.revealed-reason
+        (:h3 (format "Reason for ~a: " r-label))
+        (:p r-text))))
+
+    (:h3 "Bonus needed for switching")
+
+    (:p (format "You just picked Option ~a in a direct choice between the above options. Now please pick the smallest amount of money you have to be paid to switch to Option ~a instead."
+                chosen-option
+                unchosen-option))
+
+    (formular
+     (haml
+      (:div
+       (#:bonus
+        (input-number
+         "Switching Bonus"
+         #:min 0.1
+         #:max 1.1
+         #:step 0.1
+         #:attributes `([data-counter "counter"]
+                        [data-counter-prefix "$"])))
+       submit-button))
+     (lambda (#:bonus bonus)
+       (with-study-transaction
+         (put* #:root '*timer*
+               'switch-choice-durations
+               (cons (end-timer)
+                     (get* #:root '*timer* 'switch-choice-durations null)))
+         (define choice-number (get 'choice-number))
+         (define switching-bonuses
+           (get 'switching-bonuses (hash)))
+         (put 'switching-bonuses
+              (hash-set switching-bonuses choice-number bonus))))))))
 
 (define (work-choices)
   (define (initialize-work-choices)
@@ -910,13 +901,12 @@
          (skip)]
 
         [else
-         (page
-          (haml
-           (.container
-            (:h1 "The study is not yet open")
+         (haml
+          (.container
+           (:h1 "The study is not yet open")
 
-            (:p "The study is not yet open for participants. Please come back later.")
-            (:p "If you believe this is in error, please send an email to the study admin."))))]))
+           (:p "The study is not yet open for participants. Please come back later.")
+           (:p "If you believe this is in error, please send an email to the study admin.")))]))
 
 (define (compute-total-bonus progress)
   (match-define (hash-table ('completed-tutorial? tutorial?)
@@ -1003,174 +993,173 @@
   (define (~time t)
     (~t (posix->moment t) "yyyy-MM-dd"))
 
-  (page
-   (haml
-    (.container
-     (:h1 "Admin")
+  (haml
+   (.container
+    (:h1 "Admin")
 
-     (when (study-open?)
-       (haml
-        (:div
-         (:h3 "Participant Payments")
+    (when (study-open?)
+      (haml
+       (:div
+        (:h3 "Participant Payments")
 
-         #;(button (lambda ()
-                   (put/instance* 'progress (hash)))
-                 "Delete progress data"
-                 #:to-step-id 'admin)
+        #;(button (lambda ()
+                    (put/instance* 'progress (hash)))
+                  "Delete progress data"
+                  #:to-step-id 'admin)
 
-         (progress-table)
+        (progress-table)
 
-         (:table
-          (:thead
-           (:tr
-            (:td "Prolific ID")
-            (:td "Tutorial")
-            (:td "Comprehension Test")
-            (:td "Consented?")
-            (:td "Main Session")
-            (:td "Correct Abstracts")
-            (:td "Total Abstracts done")
-            (:td "Total Bonus")
-            (:td "Time taken for main session")
-            (:td "Avg hourly bonus")
-            (:td "Date enrolled")))
+        (:table
+         (:thead
+          (:tr
+           (:td "Prolific ID")
+           (:td "Tutorial")
+           (:td "Comprehension Test")
+           (:td "Consented?")
+           (:td "Main Session")
+           (:td "Correct Abstracts")
+           (:td "Total Abstracts done")
+           (:td "Total Bonus")
+           (:td "Time taken for main session")
+           (:td "Avg hourly bonus")
+           (:td "Date enrolled")))
 
-          (:tbody
-           ,@(for/list ([id&p (in-list (sort (hash->list progress-with-bonus) enroll>))])
-               (define id (car id&p))
-               (define p (cdr id&p))
-               (define bonus (hash-ref p 'bonus))
-               (define time-taken (hash-ref p 'main-session-time #f))
-               (define time-enrolled (hash-ref p 'time-enrolled #f))
-               (haml
-                (:tr
-                 (:td id)
-                 (:td (~a (hash-ref p 'completed-tutorial?)))
-                 (:td (~a (hash-ref p 'pass-comprehension-test?)))
-                 (:td (~a (hash-ref p 'consented?)))
-                 (:td (~a (hash-ref p 'completed-main-session?)))
-                 (:td (~a (hash-ref p 'correct-abstract-tasks)))
-                 (:td (~a (hash-ref p 'total-abstracts-done)))
-                 (:td (~r bonus #:precision 2))
-                 (:td (if time-taken (~r #:precision 1 (/ time-taken 60.0)) "NA"))
-                 (:td (if time-taken (~r #:precision 2 (* 3600 (/ bonus time-taken))) "NA"))
-                 (:td (if time-enrolled (~time time-enrolled) "NA")))))))
+         (:tbody
+          ,@(for/list ([id&p (in-list (sort (hash->list progress-with-bonus) enroll>))])
+              (define id (car id&p))
+              (define p (cdr id&p))
+              (define bonus (hash-ref p 'bonus))
+              (define time-taken (hash-ref p 'main-session-time #f))
+              (define time-enrolled (hash-ref p 'time-enrolled #f))
+              (haml
+               (:tr
+                (:td id)
+                (:td (~a (hash-ref p 'completed-tutorial?)))
+                (:td (~a (hash-ref p 'pass-comprehension-test?)))
+                (:td (~a (hash-ref p 'consented?)))
+                (:td (~a (hash-ref p 'completed-main-session?)))
+                (:td (~a (hash-ref p 'correct-abstract-tasks)))
+                (:td (~a (hash-ref p 'total-abstracts-done)))
+                (:td (~r bonus #:precision 2))
+                (:td (if time-taken (~r #:precision 1 (/ time-taken 60.0)) "NA"))
+                (:td (if time-taken (~r #:precision 2 (* 3600 (/ bonus time-taken))) "NA"))
+                (:td (if time-enrolled (~time time-enrolled) "NA")))))))
 
-         (:h4 "Participants who should be approved")
+        (:h4 "Participants who should be approved")
 
-         ;; A way to define "insert":
-         #;(with-study-transaction
-             (define maybe-v (get 'foo #f))
-             (when maybe-v
-               (error 'insert "foo is already set"))
-             (put 'foo 42))
+        ;; A way to define "insert":
+        #;(with-study-transaction
+            (define maybe-v (get 'foo #f))
+            (when maybe-v
+              (error 'insert "foo is already set"))
+            (put 'foo 42))
 
-         ;; FIXME(marc): Refactor table below and progress update.
-         #;(put-completed )
-         #;(display-to-approve)
+        ;; FIXME(marc): Refactor table below and progress update.
+        #;(put-completed )
+        #;(display-to-approve)
 
-         (:table
-          (:thead
-           (:tr
-            (:td "Id")))
-          (:tbody
-           ,@(for/list ([id&p (in-list (sort (hash->list progress) enroll>))]
-                        #:when (boolean? (hash-ref (cdr id&p) 'pass-comprehension-test?)))
-               (define time-enrolled (hash-ref (cdr id&p) 'time-enrolled #f))
-               (haml
-                (:tr
-                 (:td (car id&p)))))))
+        (:table
+         (:thead
+          (:tr
+           (:td "Id")))
+         (:tbody
+          ,@(for/list ([id&p (in-list (sort (hash->list progress) enroll>))]
+                       #:when (boolean? (hash-ref (cdr id&p) 'pass-comprehension-test?)))
+              (define time-enrolled (hash-ref (cdr id&p) 'time-enrolled #f))
+              (haml
+               (:tr
+                (:td (car id&p)))))))
 
-         (:h4 "Participants with Bonus in GBP in Format for Prolific")
+        (:h4 "Participants with Bonus in GBP in Format for Prolific")
 
-         (:table
-          (:thead
-           (:tr
-            (:td "Id,bonus")))
-          (:tbody
-           ,@(for/list ([id&p (in-list (sort (hash->list progress-with-bonus) enroll>))]
-                        #:when (> (hash-ref (cdr id&p) 'bonus) 0))
-               (haml
-                (:tr
-                 (:td
-                  (format "~a,~a" (car id&p) (~r #:precision 2 (* 0.83 (hash-ref (cdr id&p) 'bonus)))))))))))))
-
-
-     (cond [(get/instance* 'abstracts-set? #f)
-            (haml
-             (:div
-              (:h3 "Abstracts")
-
-              (:table
-               (:thead
-                (:tr
-                 (:th "Category")
-                 (:th "Abstracts in this category")
-                 (:th "Abstracts not in this category")))
-               (:tbody
-                ,@(for/list ([t (get-topics-stats)])
-                    (haml
-                     (:tr
-                      (:td (string-titlecase (car t)))
-                      (:td (number->string (cadr t)))
-                      (:td (number->string (caddr t))))))))
-
-              (unless (study-open?)
-                (button void "Update Abstrats" #:to-step-id 'abstracts-admin))))]
-
-           [else
-            (haml
-             (:div
-              (:h3 "Abstracts")
-              (button void "Setup abstracts" #:to-step-id 'abstracts-admin)))])
-
-     (cond [(get/instance* 'reasons-set? #f)
-
-            (haml
-             (:div
-              (:h3 "Reasons")
-
-              (:table
-               (:thead
-                (:tr
-                 (:th "Category")
-                 (:th "Reasons For")
-                 (:th "Reasons Against")))
-               (:tbody
-                ,@(for/list ([t (get-reasons-stats)])
-                    (haml
-                     (:tr
-                      (:td (string-titlecase (symbol->string (car t))))
-                      (:td (number->string (cadr t)))
-                      (:td (number->string (caddr t))))))))
-
-              (unless (study-open?)
-                (button void "Update Reasons" #:to-step-id 'reasons-admin))))]
-
-           [else
-            (haml
-             (:div
-              (:h3 "Reasons")
-
-              (button void "Setup Reasons" #:to-step-id 'reasons-admin)))])
+        (:table
+         (:thead
+          (:tr
+           (:td "Id,bonus")))
+         (:tbody
+          ,@(for/list ([id&p (in-list (sort (hash->list progress-with-bonus) enroll>))]
+                       #:when (> (hash-ref (cdr id&p) 'bonus) 0))
+              (haml
+               (:tr
+                (:td
+                 (format "~a,~a" (car id&p) (~r #:precision 2 (* 0.83 (hash-ref (cdr id&p) 'bonus)))))))))))))
 
 
-     (:h3 "Completion Code")
+    (cond [(get/instance* 'abstracts-set? #f)
+           (haml
+            (:div
+             (:h3 "Abstracts")
 
-     (cond [(get/instance* 'completion-code #f)
-            => (lambda (c)
-                 (haml
-                  (:div
-                   (:p "The completion code is set to " c)
+             (:table
+              (:thead
+               (:tr
+                (:th "Category")
+                (:th "Abstracts in this category")
+                (:th "Abstracts not in this category")))
+              (:tbody
+               ,@(for/list ([t (get-topics-stats)])
+                   (haml
+                    (:tr
+                     (:td (string-titlecase (car t)))
+                     (:td (number->string (cadr t)))
+                     (:td (number->string (caddr t))))))))
 
-                   (unless (study-open?)
-                     (button void "Update completion code" #:to-step-id 'completion-code-admin)))))]
+             (unless (study-open?)
+               (button void "Update Abstrats" #:to-step-id 'abstracts-admin))))]
 
-           [else
-            (haml
-             (:div
-              (:p "No completion code is set.")
-              (button void "Change Completion Code" #:to-step-id 'completion-code-admin)))])))))
+          [else
+           (haml
+            (:div
+             (:h3 "Abstracts")
+             (button void "Setup abstracts" #:to-step-id 'abstracts-admin)))])
+
+    (cond [(get/instance* 'reasons-set? #f)
+
+           (haml
+            (:div
+             (:h3 "Reasons")
+
+             (:table
+              (:thead
+               (:tr
+                (:th "Category")
+                (:th "Reasons For")
+                (:th "Reasons Against")))
+              (:tbody
+               ,@(for/list ([t (get-reasons-stats)])
+                   (haml
+                    (:tr
+                     (:td (string-titlecase (symbol->string (car t))))
+                     (:td (number->string (cadr t)))
+                     (:td (number->string (caddr t))))))))
+
+             (unless (study-open?)
+               (button void "Update Reasons" #:to-step-id 'reasons-admin))))]
+
+          [else
+           (haml
+            (:div
+             (:h3 "Reasons")
+
+             (button void "Setup Reasons" #:to-step-id 'reasons-admin)))])
+
+
+    (:h3 "Completion Code")
+
+    (cond [(get/instance* 'completion-code #f)
+           => (lambda (c)
+                (haml
+                 (:div
+                  (:p "The completion code is set to " c)
+
+                  (unless (study-open?)
+                    (button void "Update completion code" #:to-step-id 'completion-code-admin)))))]
+
+          [else
+           (haml
+            (:div
+             (:p "No completion code is set.")
+             (button void "Change Completion Code" #:to-step-id 'completion-code-admin)))]))))
 
 (define (progress-table)
   (define study-path
@@ -1209,18 +1198,17 @@
                             ,@(loop (cdr progress)))))))))))))))))))
 
 (define (completion-code/admin)
-  (page
-   (haml
-    (.container
-     (formular
-      (haml
-       (:div
-        (#:completion-code (input-text "What is the new completion code?"))
-        submit-button))
-      (lambda (#:completion-code completion-code)
-        (put/instance* 'completion-code completion-code)))
+  (haml
+   (.container
+    (formular
+     (haml
+      (:div
+       (#:completion-code (input-text "What is the new completion code?"))
+       submit-button))
+     (lambda (#:completion-code completion-code)
+       (put/instance* 'completion-code completion-code)))
 
-     (button void "Cancel")))))
+    (button void "Cancel"))))
 
 (define (switch-phase-to p #:check-current-phase [cp #f])
   (define old-phase (get/instance* 'phase #f))
@@ -1237,21 +1225,20 @@
     (switch-phase-to 'open #:check-current-phase #f)))
 
 (define (consent-end-introduction)
-  (page
-   (haml
-    (.container
-     (:h1 "Completion Code for Introduction")
+  (haml
+   (.container
+    (:h1 "Completion Code for Introduction")
 
-     (:p "You have completed the introduction. Please enter the following completion code on Prolific now before continuing:"
-         (get/instance* 'completion-code))
+    (:p "You have completed the introduction. Please enter the following completion code on Prolific now before continuing:"
+        (get/instance* 'completion-code))
 
-     (:p "Once you have done so, start the main study as soon as possible, if you wait too long, you may not be able to participate.")
+    (:p "Once you have done so, start the main study as soon as possible, if you wait too long, you may not be able to participate.")
 
-     (formular
-      (haml
-       (:div
-        (#:completion-code-entered (checkbox "I have entered my completion code on Prolific (required to continue)"))
-        submit-button)))))))
+    (formular
+     (haml
+      (:div
+       (#:completion-code-entered (checkbox "I have entered my completion code on Prolific (required to continue)"))
+       submit-button))))))
 
 (define admin-study
   (make-study
@@ -1295,12 +1282,11 @@
       [else 'error-page])))
 
 (define (error-page)
-  (page
-   (haml
-    (.container
-     (:h1 "An error occurred")
+  (haml
+   (.container
+    (:h1 "An error occurred")
 
-     (:p "We are sorry, but an error occurred. You can contact us to report the error.")))))
+    (:p "We are sorry, but an error occurred. You can contact us to report the error."))))
 
 ;;;;;;;;;; EDPB Pilot to calibrate choices, test reasons, etc
 
@@ -1335,13 +1321,12 @@
          (skip)]
 
         [else
-         (page
-          (haml
-           (.container
-            (:h1 "The study is not yet open")
+         (haml
+          (.container
+           (:h1 "The study is not yet open")
 
-            (:p "The study is not yet open for participants. Please come back later.")
-            (:p "If you believe this is in error, please send an email to the study admin."))))]))
+           (:p "The study is not yet open for participants. Please come back later.")
+           (:p "If you believe this is in error, please send an email to the study admin.")))]))
 
 (define (make-option category n [a-reason #f] [dir #f])
   (o+r (option 'session1 `(,category "other") n)
@@ -1425,47 +1410,46 @@
   (put 'additional-category category)
   (put 'additional-non-category non-category)
 
-  (page
-   (haml
-    (.container (:h1 "The choice that counts")
+  (haml
+   (.container (:h1 "The choice that counts")
 
-                (:p (format "The choice that matters was between these two options~a:"
-                            (if binary? "" " with a switching bonus")))
+               (:p (format "The choice that matters was between these two options~a:"
+                           (if binary? "" " with a switching bonus")))
 
-                (:ul
-                 (:li "Option A: " (describe-abstracts ce 'A))
-                 (:li "Option B: " (describe-abstracts ce 'B)))
+               (:ul
+                (:li "Option A: " (describe-abstracts ce 'A))
+                (:li "Option B: " (describe-abstracts ce 'B)))
 
 
-                (cond [binary?
+               (cond [binary?
 
-                       (haml
-                        (:p (format "You chose Option ~a, so after doing the baseline tasks, you will do the work of Option ~a:" chosen-label chosen-label)))]
+                      (haml
+                       (:p (format "You chose Option ~a, so after doing the baseline tasks, you will do the work of Option ~a:" chosen-label chosen-label)))]
 
-                      [(< bonus-that-counts switching-bonus)
+                     [(< bonus-that-counts switching-bonus)
 
-                       (haml
-                        (:p (format "You chose Option ~a and stated a minimal switching bonus of $~a to switch. The random bonus that was picked is $~a, which is less than the minimal switching bonus. So you will do the work of Option ~a:"
-                                    chosen-label
-                                    (~r switching-bonus #:precision 2)
-                                    (~r bonus-that-counts #:precision 2)
-                                    chosen-label)))]
+                      (haml
+                       (:p (format "You chose Option ~a and stated a minimal switching bonus of $~a to switch. The random bonus that was picked is $~a, which is less than the minimal switching bonus. So you will do the work of Option ~a:"
+                                   chosen-label
+                                   (~r switching-bonus #:precision 2)
+                                   (~r bonus-that-counts #:precision 2)
+                                   chosen-label)))]
 
-                      [else
-                       (haml
-                        (:p (format "You chose Option ~a and stated a minimal switching bonus of $~a to switch. The random bonus that was picked is $~a, which is larger than or equal to the minimal switching bonus. So you will do the work of Option ~a and receive an extra bonus of $~a:"
-                                    chosen-label
-                                    (~r switching-bonus #:precision 2)
-                                    (~r bonus-that-counts #:precision 2)
-                                    unchosen-label
-                                    (~r bonus-that-counts #:precision 2))))])
+                     [else
+                      (haml
+                       (:p (format "You chose Option ~a and stated a minimal switching bonus of $~a to switch. The random bonus that was picked is $~a, which is larger than or equal to the minimal switching bonus. So you will do the work of Option ~a and receive an extra bonus of $~a:"
+                                   chosen-label
+                                   (~r switching-bonus #:precision 2)
+                                   (~r bonus-that-counts #:precision 2)
+                                   unchosen-label
+                                   (~r bonus-that-counts #:precision 2))))])
 
-                (:p (format "Categorize ~a additional abstracts based on whether they fit into '~a' or 'Other'."
-                            n
-                            (string-titlecase category)))
+               (:p (format "Categorize ~a additional abstracts based on whether they fit into '~a' or 'Other'."
+                           n
+                           (string-titlecase category)))
 
-                #;(button #:to-step-id 'determine-choice-that-counts void "Determine NEW choice that counts (DEBUG)")
-                (button void "Continue")))))
+               #;(button #:to-step-id 'determine-choice-that-counts void "Determine NEW choice that counts (DEBUG)")
+               (button void "Continue"))))
 
 ; NOTE: This assumes that all choices are of the form "Category" vs
 ; "Other" (i.e. "Not Category") Generalize if we ever need it.
@@ -1501,11 +1485,10 @@
       (get/abstracts* (string->symbol (format "~a-correct-answers" p)) 0)))
   (put* 'abstract-task-score score)
   (put* 'abstract-total-done n-total)
-  (page
-   (haml
-    (.container
-     (:h1 (format "You categorized ~a out of ~a abstracts correctly" score n-total))
-     (button void "Continue")))))
+  (haml
+   (.container
+    (:h1 (format "You categorized ~a out of ~a abstracts correctly" score n-total))
+    (button void "Continue"))))
 
 ;;;;;;;; PILOT
 
@@ -1515,41 +1498,39 @@
   (hash-ref edpb-config 'pilot-baseline-abstracts))
 
 (define (participant-took-study-already)
-  (page
-   (haml
-    (.container
-     (:h1 "You took the study already")
+  (haml
+   (.container
+    (:h1 "You took the study already")
 
-     (:p "It appears that you already took our study (or you entered your prolific ID wrongly), and you cannot retake this study. Please contact us if you believe this is wrong.")))))
+    (:p "It appears that you already took our study (or you entered your prolific ID wrongly), and you cannot retake this study. Please contact us if you believe this is wrong."))))
 
 (define (reasons-debrief)
-  (page
-   (haml
-    (.container
-     (:h1 "Feedback on Choices and Reasons")
-     (:p "Before you do the additional work, please answer the following questions on your decision-making process.")
+  (haml
+   (.container
+    (:h1 "Feedback on Choices and Reasons")
+    (:p "Before you do the additional work, please answer the following questions on your decision-making process.")
 
-     (formular
-      (haml
+    (formular
+     (haml
+      (:div
        (:div
-        (:div
-         (#:how-choose-reason
-          (textarea "Please explain how you decided which reasons to reveal.")))
-        (:div
-         (#:how-much-did-reasons-affect-choices
-          (input-likert "How much do you feel that the reasons affected your choices? (1: not at all, 4: somewhat, 7: extremely)")))
-        (:div
-         (#:how-meaningful-reasons
-          (input-likert "How meaningful did you find the reasons? (1: not at all, 4: somewhat, 7: extremely)")))
-        (:div
-         (#:how-long-abstracts
-          (input-number "How many minutes do you guess it would take you to categorize 20 abstracts for a random topic?"
-                        #:min 0
-                        #:max 75)))
-        (:div
-         (#:feedback
-          (textarea "Please provide some feedback on what kinds of reasons might have swayed your choice in the kind of situation we gave you, or what type of similar choice (where you are asked to do work for someone else) could sway you. This can include reasons relying brought forward by other people such as colleagues, friends, or spouses.")))
-        submit-button)))))))
+        (#:how-choose-reason
+         (textarea "Please explain how you decided which reasons to reveal.")))
+       (:div
+        (#:how-much-did-reasons-affect-choices
+         (input-likert "How much do you feel that the reasons affected your choices? (1: not at all, 4: somewhat, 7: extremely)")))
+       (:div
+        (#:how-meaningful-reasons
+         (input-likert "How meaningful did you find the reasons? (1: not at all, 4: somewhat, 7: extremely)")))
+       (:div
+        (#:how-long-abstracts
+         (input-number "How many minutes do you guess it would take you to categorize 20 abstracts for a random topic?"
+                       #:min 0
+                       #:max 75)))
+       (:div
+        (#:feedback
+         (textarea "Please provide some feedback on what kinds of reasons might have swayed your choice in the kind of situation we gave you, or what type of similar choice (where you are asked to do work for someone else) could sway you. This can include reasons relying brought forward by other people such as colleagues, friends, or spouses.")))
+       submit-button))))))
 
 (define (input-likert/how adjective)
   (input-likert
@@ -1557,22 +1538,21 @@
 
 (define (category-survey)
   (define category (get 'additional-category))
-  (page
-   (haml
-    (.container
-     (:h1 "Survey on Abstract Categorization")
+  (haml
+   (.container
+    (:h1 "Survey on Abstract Categorization")
 
-     (:p (format "Answer the following questions for the additional abstracts in ~a that you just categorized:" category))
-     (formular
-      (haml
+    (:p (format "Answer the following questions for the additional abstracts in ~a that you just categorized:" category))
+    (formular
+     (haml
+      (:div
        (:div
-        (:div
-         (#:boring (input-likert/how "boring")))
-        (:div
-         (#:understandable (input-likert/how "understandable")))
-        (:div
-         (#:careful (input-likert "How carefully did you read the abstracts? (1: not at all. 7: extremely.)")))
-        submit-button)))))))
+        (#:boring (input-likert/how "boring")))
+       (:div
+        (#:understandable (input-likert/how "understandable")))
+       (:div
+        (#:careful (input-likert "How carefully did you read the abstracts? (1: not at all. 7: extremely.)")))
+       submit-button))))))
 
 
 (define pilot-main
@@ -1627,14 +1607,13 @@
     (make-step 'category-survey category-survey))))
 
 (define (announce-tutorial-tasks)
-  (page
-   (haml
-    (.container
-     (:h1 "Do Two Practice Tasks")
+  (haml
+   (.container
+    (:h1 "Do Two Practice Tasks")
 
-     (:p "You will now be asked to categorize two abstracts.")
+    (:p "You will now be asked to categorize two abstracts.")
 
-     (button void "Start Practice Tasks")))))
+    (button void "Start Practice Tasks"))))
 
 (define (progress-update k v)
   (eprintf "progress-update: running with key ~a and value ~v~n~n" k v)
@@ -1704,46 +1683,45 @@
   (define last-attempt
     (get 'last-attempt #f))
 
-  (page
-   (haml
-    (.container
-     (:h1 (format "Comprehension Test (~a attempt)"
-                  (case attempt
-                    [(1) "first"]
-                    [(2) "second"]
-                    [(3) "third"]
-                    [(4) "fourth"])))
+  (haml
+   (.container
+    (:h1 (format "Comprehension Test (~a attempt)"
+                 (case attempt
+                   [(1) "first"]
+                   [(2) "second"]
+                   [(3) "third"]
+                   [(4) "fourth"])))
 
-     (:p (format "You can attempt the comprehension test ~a times. If you need help to answer the questions, reread the study instructions below the test." max-attempts))
+    (:p (format "You can attempt the comprehension test ~a times. If you need help to answer the questions, reread the study instructions below the test." max-attempts))
 
-     (when (> attempt 2)
+    (when (> attempt 2)
+      (haml
+       (.alert
+        (:h4 "Hints")
+        (:ul ,@(map ct-question-hint questions)))))
+
+    (form
+     (forms:form
+      list
+      (for/list ([q (in-list questions)])
+        (cons
+         (ct-question-key q)
+         (forms:ensure forms:binding/text (forms:required)))))
+     (lambda (answers)
+       (define-values (score last-attempt)
+         (ct-questions-score+feedback
+          (map cons questions answers)))
+       (put 'all-attempts (cons last-attempt (get 'all-attempts null)))
+       (put 'last-attempt last-attempt)
+       (put 'attempt (add1 (get 'attempt)))
+       (put 'comprehension-test-score score))
+     (lambda (rw)
        (haml
-        (.alert
-         (:h4 "Hints")
-         (:ul ,@(map ct-question-hint questions)))))
-
-     (form
-      (forms:form
-       list
-       (for/list ([q (in-list questions)])
-         (cons
-          (ct-question-key q)
-          (forms:ensure forms:binding/text (forms:required)))))
-      (lambda (answers)
-        (define-values (score last-attempt)
-          (ct-questions-score+feedback
-           (map cons questions answers)))
-        (put 'all-attempts (cons last-attempt (get 'all-attempts null)))
-        (put 'last-attempt last-attempt)
-        (put 'attempt (add1 (get 'attempt)))
-        (put 'comprehension-test-score score))
-      (lambda (rw)
-        (haml
-         (:div
-          ,@(for/list ([q (in-list questions)])
-              (render-ct-question q rw last-attempt))
-          submit-button))))
-     (epilog)))))
+        (:div
+         ,@(for/list ([q (in-list questions)])
+             (render-ct-question q rw last-attempt))
+         submit-button))))
+    (epilog))))
 
 (define (pilot-tutorial)
 
@@ -1787,16 +1765,15 @@
      pilot-instructions))
 
   (define (introduction)
-    (page
-     (haml
-      (.container
+    (haml
+     (.container
 
-       (:h2 "Tutorial")
+      (:h2 "Tutorial")
 
-       (:p (format "This study consists of a brief (about ~a mins) tutorial session followed by a comprehension test. Then you can decide whether to continue in a follow-up study (the main session) or not. But to complete the Prolific study that you started, you do not have to participate in the main session, you only have to complete the tutorial and comprehension test, which serve to familiarize you with the main session, so you can decide whether you want to participate."
-                   (conf 'pilot-tutorial-duration-estimate)))
+      (:p (format "This study consists of a brief (about ~a mins) tutorial session followed by a comprehension test. Then you can decide whether to continue in a follow-up study (the main session) or not. But to complete the Prolific study that you started, you do not have to participate in the main session, you only have to complete the tutorial and comprehension test, which serve to familiarize you with the main session, so you can decide whether you want to participate."
+                  (conf 'pilot-tutorial-duration-estimate)))
 
-       (button void "Continue")))))
+      (button void "Continue"))))
 
   (make-study
    "pilot tutorial"
@@ -1826,14 +1803,13 @@
     (make-step 'introduction introduction)
     (make-step 'instructions
                (lambda ()
-                 (page
-                  (haml
-                   (.container
+                 (haml
+                  (.container
 
-                    (:p.info "Please take your time to read these instructions carefully.")
+                   (:p.info "Please take your time to read these instructions carefully.")
 
-                    (pilot-instructions)
-                    (button void "Continue"))))))
+                   (pilot-instructions)
+                   (button void "Continue")))))
 
     (make-step 'initialize
                (lambda ()
@@ -1862,41 +1838,39 @@
 
 
 (define (consent-show-code)
-  (page
-   (haml
-    (.container
-     (:h1 "Enter Completion Code on Prolific")
+  (haml
+   (.container
+    (:h1 "Enter Completion Code on Prolific")
 
-     (:p.info "Since you agreed to participate in the main study, do not close this window.")
+    (:p.info "Since you agreed to participate in the main study, do not close this window.")
 
-     (:p "Before continuing, enter the completion code on prolific. This entitles you to the baseline fee, the payments for the main study will be paid out as bonuses later on.")
+    (:p "Before continuing, enter the completion code on prolific. This entitles you to the baseline fee, the payments for the main study will be paid out as bonuses later on.")
 
-     (:h4 "Completion Code: " (hash-ref edpb-config 'pilot-completion-code))
+    (:h4 "Completion Code: " (hash-ref edpb-config 'pilot-completion-code))
 
-     (formular
-      (haml
-       (:div
-        (#:entered-completion-code?
-         (checkbox "Did you enter the completion code on Prolific? You cannot proceed until you have done so."))
-        submit-button)))))))
+    (formular
+     (haml
+      (:div
+       (#:entered-completion-code?
+        (checkbox "Did you enter the completion code on Prolific? You cannot proceed until you have done so."))
+       submit-button))))))
 
 (define (debriefing)
-  (page
-   (haml
-    (.container
-     (:h1 "Final Survey")
+  (haml
+   (.container
+    (:h1 "Final Survey")
 
-     (formular
-      (haml
+    (formular
+     (haml
+      (:div
        (:div
-        (:div
-         (#:how-choose
-          (textarea "Please explain how you chose between the two options:")))
-        (:div
-         (#:feedback
-          (textarea "Please provide any feedback or comments you may have, in particular if there was something that become clear to you as you went through the study and that we should highlight earlier.")))
+        (#:how-choose
+         (textarea "Please explain how you chose between the two options:")))
+       (:div
+        (#:feedback
+         (textarea "Please provide any feedback or comments you may have, in particular if there was something that become clear to you as you went through the study and that we should highlight earlier.")))
 
-        submit-button)))))))
+       submit-button))))))
 
 
 (define (payment-page)
@@ -1908,23 +1882,22 @@
     (hash-ref edpb-config 'pilot-completion-fee))
   (define baseline-fee
     (hash-ref edpb-config 'pilot-tutorial-fee))
-  (page
-   (haml
-    (.container
-     (:h1 "Thank you for participating")
+  (haml
+   (.container
+    (:h1 "Thank you for participating")
 
-     (:p "You have completed the study.")
+    (:p "You have completed the study.")
 
-     (:h3 "Your Payment")
+    (:h3 "Your Payment")
 
-     (:ul
-      (:li (format "Baseline payment (for tutorial): $~a" (~r baseline-fee #:precision 2)))
-      (:li (format "Bonus payment (for main session): $~a" (~r (+ completion-bonus abstract-bonus) #:precision 2))
-           (:ul
-            (:li (format "This consists of a $~a completion bonus and of a $~a bonus for correctly categorizing ~a abstracts."
-                         completion-bonus
-                         (~r #:precision 2 abstract-bonus)
-                         score)))))))))
+    (:ul
+     (:li (format "Baseline payment (for tutorial): $~a" (~r baseline-fee #:precision 2)))
+     (:li (format "Bonus payment (for main session): $~a" (~r (+ completion-bonus abstract-bonus) #:precision 2))
+          (:ul
+           (:li (format "This consists of a $~a completion bonus and of a $~a bonus for correctly categorizing ~a abstracts."
+                        completion-bonus
+                        (~r #:precision 2 abstract-bonus)
+                        score))))))))
 
 
 

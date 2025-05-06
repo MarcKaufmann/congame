@@ -9,12 +9,11 @@
   (skip))
 
 (define (hello)
-  (page
-   (haml
-    (.container
-     (:h1 "Hello")
+  (haml
+   (.container
+    (:h1 "Hello")
 
-     (:p "You should not have been redirected here immediately.")))))
+    (:p "You should not have been redirected here immediately."))))
 
 (define prolific-redirect
   (make-study

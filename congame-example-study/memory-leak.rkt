@@ -13,31 +13,28 @@
  memory-leak)
 
 (define (start)
-  (page
-   (haml
-    (.container
-     (:h1 "Start")
-     (button void "Continue")))))
+  (haml
+   (.container
+    (:h1 "Start")
+    (button void "Continue"))))
 
 (define (end)
-  (page
-   (haml
-    (.container
-     (:h1 "End")))))
+  (haml
+   (.container
+    (:h1 "End"))))
 
 (define ((quiz i))
-  (page
-   (haml
-    (.container
-     (:h1 (format "Quiz ~a" i))
-     (formular
-      #:bot ([random (#:n (random 0 100))])
-      (haml
+  (haml
+   (.container
+    (:h1 (format "Quiz ~a" i))
+    (formular
+     #:bot ([random (#:n (random 0 100))])
+     (haml
+      (:div
        (:div
-        (:div
-         (#:n (input-number #:min 0 #:max 100 "Pick a random number between 0 and 100.")))
-        submit-button))
-      (make-put-form/cons))))))
+        (#:n (input-number #:min 0 #:max 100 "Pick a random number between 0 and 100.")))
+       submit-button))
+     (make-put-form/cons)))))
 
 (define (quiz/bot)
   (formular-autofill 'random))

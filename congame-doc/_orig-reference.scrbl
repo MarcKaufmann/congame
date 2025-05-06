@@ -14,7 +14,6 @@ Moved elsewhere
 
 @;|{ The content below is outdated and no longer belongs in the docs as far as I can tell.
 
-
 @section{Data Storage & Retrieval}
 
 A @deftech{step scope} represents the region of the database where

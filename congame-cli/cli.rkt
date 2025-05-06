@@ -118,7 +118,7 @@ HELP
 (define (upload-study id path)
   (match-define (cons server key)
     (get-key))
-  (define study-directory (path-only path))
+  (define study-directory (path-only (path->complete-path path)))
   (define tmp-dir (make-temporary-directory))
   (define tmp-path (make-temporary-file))
   (delete-file tmp-path)
