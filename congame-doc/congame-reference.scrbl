@@ -106,7 +106,7 @@ scope} --- that is, the stored value is shared by all participants in the study 
 }
 
 @defproc[(make-step [id symbol?]
-                    [handler (-> step-page?)]
+                    [handler (-> xexpr?)]
                     [transition transition/c (lambda () next)]
                     [#:view-handler view-handler (or/c #f (-> request? response?)) #f]
                     [#:for-bot bot-handler (or/c #f procedure?) #f]) step?]{
@@ -146,49 +146,6 @@ scope} --- that is, the stored value is shared by all participants in the study 
   Here, @racket[n] in @racket[task-study] will take on the value of
   @racket[task-treatment], and after running, @racket[root-success?]
   will be assigned the value of @racket[success?] in the parent.
-}
-
-@defproc[(step-page? [v any/c]) boolean?]{
-  Returns @racket[#t] when @racket[v] is a step page.
-}
-
-@defform[(page maybe-validator expr ...+)
-         #:grammar
-         [(maybe-validator (code:line)
-                           (code:line #:validator validator-expr))]
-         #:contracts
-         [(validator-expr (-> any/c xexpr?))]]{
-
-  Within a @tech{step}, @racket[page] ensures that the setup actions are not run
-  again in case the page contains a form that is submitted and fails validation.
-  Specifically, consider a page containing a form:
-
-  For example:
-
-  @codeblock|{
-    (define (step-with-setup-and-form)
-      (perform-a-once)
-      (perform-b-once)
-      (page
-       (begin
-         (perform-c-again)
-         (haml
-           (:h1 "The Form")
-           ;; some form
-           ;; ...
-           ))))
-  }|
-
-  When the user lands on @racket[step-with-setup-and-form] the first time,
-  resumes there, or refreshes the page, @racket[perform-a-once] and
-  @racket[perform-b-once] will be called. If the user submits the form and it
-  fails validation, the page will be reloaded showing the error messages and the
-  fields filled with the inputs that were valid. However, neither
-  @racket[perform-a-once] nor @racket[perform-b-once] will be run again, while
-  @racket[perform-c-again] will be run again.
-
-  It is possible to pass a custom validator for @racket[xexpr]s to @racket[page]
-  to provide better error messages.
 }
 
 @deftogether[(

@@ -288,7 +288,7 @@ A study @deftech{page} is a special structure representing a complete page of HT
 as a function, the study page's @racket[_renderer] is called, producing the page’s HTML as
 an X-expression.
 
-Any definition of a study @tech{step} must be a function that produces a @racket[study-page]. (or
+Any definition of a study @tech{step} must be a function that produces an x-expression (or
 another study, but we won’t go into that here). But you should never need to create these values
 directly; rather, you’ll typically use helper functions like @racket[md] and @racket[html] that do
 this for you.
@@ -296,7 +296,7 @@ this for you.
 @examples[#:eval e
   (define x (md "# Heading"))
   x
-  (x)]
+  ]
 
 }
 
