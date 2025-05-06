@@ -589,13 +589,15 @@ This module provides a combinator for wrapping a study in an admin
 section. The resulting study displays an admin area to the study owner
 and the passed-in study to other participants.
 
-@;{
-
 @defproc[(make-admin-study [s study?]
                            [#:models models (listof (cons/c symbol? model/c))]) study?]{
+
+@tktk{Remove?}
 
   Returns a new study by wrapping @racket[s] with admin functionality.
 
   The @racket[#:models] argument represents a list of bot models that
   can be run from the admin area.
 }
+
+
