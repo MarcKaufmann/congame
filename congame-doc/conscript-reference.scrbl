@@ -54,6 +54,8 @@ Defines a study step that runs @racket[_child-study-expr] when reached.
 The step @racket[_step-id] is said to be part of the “parent” study, of which
 @racket[_child-study-expr] becomes a “child” study.
 
+@;{Review below -- may be deprecated}
+
 The @racket[#:require-bindings] argument is used to map identifiers required by the child study to
 identifiers available in the current study context if their names differ. Any identifiers required
 by the child study that are not mapped here are assumed to be named identically to identifiers in
@@ -139,7 +141,7 @@ Returns a representation of an HTML @html-tag{a} element styled as a button that
 next step in the study when clicked.
 
 If @racket[_action-proc] is provided, it will be called when the button is clicked, just before the
-next step in the study is loaded.
+next step in the study is loaded. @mark{Rather: before the transition is run.}
 
 The @tt{href} attribute
 is dynamically set to the URL of a continuation that first calls @racket[_action] with no arguments,
@@ -446,7 +448,9 @@ form form
 
 @defmodule[conscript/resource]
 
-@tktk{...}
+@tktk{A way to access static resources that aren’t stored in the database. The files get uploaded
+automatically as long as they're linked using `define-static-resource`. (Or you can upload a zipped
+folder as long as the study is contained/provided from study.rkt}
 
 @; ==============================================
 
@@ -468,6 +472,8 @@ reload the current page every @racket[_n-seconds].
               @defproc[(~pound [n rational?]) string?])]{
 
 Returns a string representing @racket[_n] to two decimal places and prefixed with a currency symbol.
+
+@tktk{Should include a way to use something other than `.` for the decimal separator}
 
 @examples[#:eval e
 
@@ -506,7 +512,7 @@ Returns a string representing @racket[_n] to two decimal places and prefixed wit
 @defform[(assigning-treatments arg)
          #:contracts ([arg any/c])]{
 
-@tktk{assigning-treatments form}
+@tktk{assigning-treatments form --- probably deprecated (related to matchmaking)}
 
 }
 
@@ -582,6 +588,8 @@ participant is assigned to, or @racket[#f] if not currently assigned to any grou
 This module provides a combinator for wrapping a study in an admin
 section. The resulting study displays an admin area to the study owner
 and the passed-in study to other participants.
+
+@;{
 
 @defproc[(make-admin-study [s study?]
                            [#:models models (listof (cons/c symbol? model/c))]) study?]{
