@@ -1,10 +1,11 @@
 #lang conscript
 
 (provide
- conscript-reqprovide-example)
+ conscript-data-sharing-example)
 
-(defvar* name unique-id-for-name)
-(defvar* actually-their-name? unique-id-for-actually-their-name?)
+(with-namespace xyz.trichotomy.congame-example-study.conscript-data-sharing
+  (defvar* name)
+  (defvar* actually-their-name?))
 
 (defstep (intro-outer)
   @html{@h1{Hello}
@@ -38,7 +39,7 @@
 (defstudy inner-study
   [intro --> check-their-name --> ,(λ () done)])
 
-(defstudy conscript-reqprovide-example
+(defstudy conscript-data-sharing-example
   [intro-outer
    --> get-their-name
    --> inner-study
