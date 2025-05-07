@@ -19,7 +19,7 @@
   '((congame-example-study/calibration calibration)
     (congame-example-study/conscript conscript-example)
     (congame-example-study/conscript-bot conscript-bot-example)
-    (congame-example-study/conscript-data-sharing-example conscript-data-sharing-example)
+    (congame-example-study/conscript-data-sharing conscript-data-sharing-example)
     (congame-example-study/conscript-defvar conscript-defvar-example)
     (congame-example-study/conscript-for-study conscript-for-study-example)
     (congame-example-study/conscript-test-skip-after-refresh skip-after-refresh-study)
