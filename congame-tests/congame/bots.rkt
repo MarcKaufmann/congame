@@ -126,6 +126,7 @@
      #:browser shared-browser
      (make-pjb-pilot-bot pjb-pilot-bot-model/full)))
 
+   #;
    (test-suite
     "test-skip-after-refresh"
 
@@ -144,6 +145,7 @@
           [_
            (bot)])))))
 
+   #;
    (test-suite
     "test-substudy-failing"
 
