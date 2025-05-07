@@ -1,14 +1,14 @@
 #lang racket/base
 
 (require component
-         (only-in congame/components/study make-study-manager)
-         (only-in (submod congame/components/study private) current-study-manager)
-         (prefix-in bot: (submod congame/components/bot actions))
          congame-example-study/prisoners-dilemma
          congame-pjb-studies/pjb-pilot-bot
          congame-web/components/user
          congame-web/dynamic
+         (prefix-in bot: (submod congame/components/bot actions))
          (submod congame/components/bot actions)
+         (only-in congame/components/study make-study-manager)
+         (only-in (submod congame/components/study private) current-study-manager)
          (except-in congame/components/study fail)
          data/monocle
          db
@@ -113,7 +113,6 @@
          (browser-disconnect! shared-browser)
          (stop-shared-marionette))))
 
-   #;
    (test-suite
     "pjb-pilot-bot"
 
@@ -159,7 +158,6 @@
 
     (check-equal? (cdr (unbox test-substudy-failing-failed-step)) 'expected-failure))
 
-   #;
    (test-suite
     "test-looping-failures"
 
