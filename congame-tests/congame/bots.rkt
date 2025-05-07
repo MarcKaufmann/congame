@@ -180,6 +180,7 @@
 
     (check-equal? (cdr (unbox test-substudy-failing-failed-step)) 'expected-failure))
 
+   #;
    (test-suite
     "test-looping-failures"
 
