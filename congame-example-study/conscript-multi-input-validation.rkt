@@ -1,6 +1,6 @@
 #lang conscript
 
-;; TODO: Port to form0.
+(require conscript/form0)
 
 (provide
  sum-percentages)
@@ -8,30 +8,41 @@
 (defvar beliefs)
 
 (define (input-percent label)
-  (input-number label #:min 0 #:max 100))
+  (input-number label #:attributes '([min "0"] [max "100"])))
 
 (defstep (distribute-100)
+  (define-values (f on-submit)
+    (form+submit
+     [beliefs
+      (ensure
+       binding/list
+       (list-of-length 3)
+       (list-of
+        (ensure
+         binding/number
+         (required)
+         (range/inclusive 0 100)))
+       (lambda (vs)
+         (if (= (apply + vs) 100)
+             (ok vs)
+             (err (for/list ([_ (in-list vs)])
+                    "Your answers must sum to 100.")))))]))
+
+  (define (render rw)
+    @md*{@rw["beliefs"
+             (widget-list
+              (lambda (re)
+                @md*{@re[@input-percent{How likely is A?}]
+                     @re[@input-percent{How likely is B?}]
+                     @re[@input-percent{How likely is C?}]}))]
+
+         @|submit-button|})
+
   @md{# Distribute 100
 
       One of A, B, or C must happen, so the probabilities must sum to 100.
 
-      @form{
-
-            @div{
-                 @set![beliefs
-                       (map-validator
-                        (input-list
-                         (list
-                          (input-percent "How likely is A?")
-                          (input-percent "How likely is B?")
-                          (input-percent "How likely is C?")))
-                        (lambda (loa)
-                          (define total (apply + loa))
-                          (if (= total 100)
-                              `(ok loa)
-                              `(err ,@(for/list ([_ (in-list loa)])
-                                        "Your answers must sum to 100.")))))]}
-            @submit-button}})
+      @form[f on-submit render]})
 
 
 (defstep (display-answers)
