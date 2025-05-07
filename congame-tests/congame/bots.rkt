@@ -6,7 +6,8 @@
          congame-web/components/user
          congame-web/dynamic
          (prefix-in bot: (submod congame/components/bot actions))
-         (submod congame/components/bot actions)
+         (only-in (submod congame/components/bot actions) run-bot)
+         (only-in congame/components/bot-maker study->bot)
          (only-in congame/components/study make-study-manager)
          (only-in (submod congame/components/study private) current-study-manager)
          (except-in congame/components/study fail)
@@ -22,6 +23,7 @@
          threading
          "common.rkt"
          "studies/test-looping-failures.rkt"
+         "studies/test-skip-after-refresh.rkt"
          "studies/test-substudy-failing.rkt")
 
 ;; Adding new tests:
@@ -102,6 +104,7 @@
      (add-study&instance&enroll! 'pjb-pilot-study)
      (add-study&instance&enroll! 'prisoners-dilemma)
      (add-study&instance&enroll! 'test-looping-failures)
+     (add-study&instance&enroll! 'test-skip-after-refresh)
      (add-study&instance&enroll! 'test-substudy-failing))
    #:after
    (lambda ()
@@ -123,7 +126,24 @@
      #:browser shared-browser
      (make-pjb-pilot-bot pjb-pilot-bot-model/full)))
 
-   #;
+   (test-suite
+    "test-skip-after-refresh"
+
+    (run-bot
+     #:study-url "http://127.0.0.1:8000/study/test-skip-after-refresh"
+     #:username "bot1@example.com"
+     #:password "password"
+     #:browser shared-browser
+     ((study->bot test-skip-after-refresh)
+      (λ (id bot)
+        (match id
+          ['(*root* skip-after-refresh)
+           (sleep 5)]
+          ['(*root* end)
+           (bot:completer)]
+          [_
+           (bot)])))))
+
    (test-suite
     "test-substudy-failing"
 

@@ -24,4 +24,5 @@
 (define congame-studies
   '((tests/congame/studies/test-empty-study test-empty-study)
     (tests/congame/studies/test-looping-failures test-looping-failures)
+    (tests/congame/studies/test-skip-after-refresh test-skip-after-refresh)
     (tests/congame/studies/test-substudy-failing test-substudy-failing)))
