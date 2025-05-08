@@ -7,7 +7,7 @@ congame-doc/doc/
 congame-doc/*.html
 congame-doc/*.js
 congame-doc/*.css
-!congame-doc/aux.css
+!congame-doc/scrbl-aux.css
 coverage
 data-tools/*.RDS
 data-tools/*.csv
