@@ -37,4 +37,5 @@ GitHub repository}, and the authors will respond.
 @include-section["concepts.scrbl"]
 @include-section["conscript-section.scrbl"]
 @include-section["congame-section.scrbl"]
+@include-section["reference.scrbl"]
 @include-section["_orig-congame.scrbl"]

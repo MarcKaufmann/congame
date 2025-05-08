@@ -18,10 +18,7 @@
 
 @title[#:style 'toc]{Congame Reference}
 
-Here you can lookup individual Congame functions and macros to thoroughly
-understand their usage.
-
-@table-of-contents[]
+@local-table-of-contents[]
 
 
 @;===============================================

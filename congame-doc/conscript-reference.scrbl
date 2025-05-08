@@ -14,10 +14,7 @@
 
 @title[#:style 'toc]{Conscript Reference}
 
-Here you can lookup individual Conscript functions and macros to thoroughly
-understand their usage.
-
-@table-of-contents[]
+@local-table-of-contents[]
 
 @(define e (make-base-eval #:lang 'racket/base))
 @(e '(require (except-in conscript/base require) conscript/survey-tools))
