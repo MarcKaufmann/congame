@@ -2,7 +2,7 @@
 
 @(require "doc-util.rkt")
 
-@title[#:tag "congame-setup"]{Installing and Setting up Congame servers}
+@title[#:tag "congame-setup" #:style 'quiet]{Installing and Setting up Congame servers}
 
 Below are step-by-step instructions for installing Congame.
 

@@ -16,10 +16,12 @@
 (modules-to-check
  '(conscript/base
    conscript/form
+   conscript/game-theory
    conscript/html
    conscript/markdown
    conscript/matchmaking
    conscript/resource
+   conscript/survey-tools
    conscript/tasks
    conscript/tool))
 
@@ -31,8 +33,16 @@
 ;; Each element in the list is either: a module path (= ignore all bindings in that module)
 ;;                                     list of module path and ids (= ignore just those ids)
 (ignored-bindings
- '(conscript/html-element
-   (congame/components/transition-graph --> goto)))
+ '((conscript/base require)
+   (conscript/form map-validator
+                   ~all-errors
+                   ~error
+                   ~errors)
+   (congame/components/formular map-validator
+                                ~all-errors
+                                ~error
+                                ~errors)
+   (conscript/base ~url)))
 
 ;; Any bindings coming from racket/*, as well as those in the “ignore” list above,
 ;; are filtered out.
@@ -87,9 +97,9 @@
   (for ([section (in-list test-results)])
     (match-define (test mod total missing) section)
     (unless (null? missing)
-      (term-bytes color:red color:bold)
+      ;(term-bytes color:red color:bold)
       (write-string (scribble-module mod))
-      (term-bytes color:reset color:yellow)
+      ;(term-bytes color:reset color:yellow)
       (for ([b (in-list missing)])
         (write-string (stub-scribble-def b)))))
   (term-bytes color:reset))

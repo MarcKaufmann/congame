@@ -18,6 +18,8 @@
     "conscript"
     "debug"
     "forms-lib"
+    "koyo-lib"
+    "koyo-doc"
     "marionette-doc"
     "marionette-lib"
     "racket-doc"

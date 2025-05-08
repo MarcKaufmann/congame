@@ -11,5 +11,4 @@ for writing and testing @tech{studies}.
 @include-section["congame-install.scrbl"]
 @include-section["congame-arch.scrbl"]
 @include-section["congame-study-tutorial.scrbl"]
-@include-section["congame-reference.scrbl"]
 @include-section["congame-deployment.scrbl"]

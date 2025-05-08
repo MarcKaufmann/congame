@@ -3,6 +3,8 @@
 @(require [for-label buid
                      racket/contract
                      congame/components/bot-maker
+                     ;(except-in congame/components/study button)
+                     (only-in congame/components/formular formular-field?)
                      conscript/base
                      conscript/markdown
                      (only-in racket/base string?)
@@ -12,61 +14,55 @@
 
 @title[#:style 'toc]{Conscript Reference}
 
-Here you can lookup individual Conscript functions and macros to thoroughly
-understand their usage.
-
-@table-of-contents[]
+@local-table-of-contents[]
 
 @(define e (make-base-eval #:lang 'racket/base))
-@(e '(require conscript/base conscript/survey-tools))
+@(e '(require (except-in conscript/base require) conscript/survey-tools))
 
 @;===============================================
 
-@section{Core}
+@section[#:style 'quiet]{Core}
 
-@defmodule[conscript/base]
+@defmodule[conscript/base #:use-sources (conscript/var-box)]
 
 The bindings provided by this module are also provided by @code{#lang conscript}.
 
-@defform[(defstep ...)]{
-    @tktk{Defines a step.}
-}
+@defform[(defstep (step-id) step-body)]{
 
-@defform[(defstep/study ...)]{
-    @tktk{...}
-}
+@margin-note{For examples of @racket[defstep] in use, see @secref["intro"].}
 
-@deftogether[(
-
-@defform[(defvar ...)]
-
-@defform[(defvar* ...)])]{
-
-@tktk{Define a variable with some extra magic behind it. @racket[defvar] and @racket[defvar*] are both
-particiant scope; @racket[defvar*] scope across parent/child studies. ...}
+Defines a study @tech{step}. The @racket[_step-body] must be an expression that evaluates to a
+@racket[study-page] — usually @racket[md] or @racket[html].
 
 }
 
-@deftogether[(
+@defform[(defstep/study step-id #:study child-study-expr 
+                        maybe-require-bindings
+                        maybe-provide-bindings)
+         #:grammar
+         [(maybe-require-bindings (code:line)
+                                  (code:line #:require-bindings ([child-id parent-id] ...)))
+          (maybe-provide-bindings (code:line)
+                                  (code:line #:provide-bindings ([parent-id child-id] ...)))]]{
+    
 
-@defform[(defvar/instance ...)]
+Defines a study step that runs @racket[_child-study-expr] when reached. 
 
-@defform[(defvar*/instance ...)])]{
+The step @racket[_step-id] is said to be part of the “parent” study, of which
+@racket[_child-study-expr] becomes a “child” study.
 
-@tktk{Like @racket[defvar] and @racket[defvar*], but scoped to the current study @tech{instance} ---
-that is, the stored value is shared by all participants in the study instance.}
+@;{Review below -- may be deprecated}
+
+The @racket[#:require-bindings] argument is used to map identifiers required by the child study to
+identifiers available in the current study context if their names differ. Any identifiers required
+by the child study that are not mapped here are assumed to be named identically to identifiers in
+the parent study context, and @racket[defstep/study] will attempt to map them accordingly.
+
+The @racket[#:provide-bindings] argument can be used to map identifiers in the parent study to
+particular identifiers provided by @racket[_child-study-expr] upon completion. When
+@racket[#:provide-bindings] is not specified, no values are assigned.
 
 }
-
-@;{ Important anti-feature to document: for `defvar*`, we need to provide a unique id to track the
-variable in the DB. E.g., `(defvar* bla unique-id-for-bla)`. If any part of the same study uses the
-same `unique-id-for-bla`, say because we use `bla` as the id and lazily use the same elsewhere, then
-these two variables will overwrite each others values!
-
-We used to have a check that ensured that we had unique ids, but it was too strict and doesn't work
-with uploaded studies (as opposed to one's that are bundled in the source code), so we switched it
-off. Since these unique ids have to be provided statically, we have to develop some checks and
-debugging tools, but also just document this anti-feature. }
 
 @defform[(defview ...)]{
 
@@ -75,7 +71,10 @@ debugging tools, but also just document this anti-feature. }
 }
 
 @defform[#:literals (-->)
-         (defstudy maybe-requires maybe-provides step-transition ...)
+         (defstudy study-id
+                   maybe-requires
+                   maybe-provides 
+                   step-transition ...)
          #:grammar
          [(maybe-requires (code:line)
                           (code:line #:requires (value-id-sym ...)))
@@ -89,11 +88,42 @@ debugging tools, but also just document this anti-feature. }
          ([value-id-sym symbol?]
           [step step?])]{
 
-@tktk{More to come...}
+Defines a study in terms of steps joined by transitions. The transitions follow the same grammar as
+@racket[transition-graph].
 
-Defines a study.
+For any “final” step (that is, a step that marks the study’s end or one of the study’s endings) you
+must include a separate @racket[_step-transition] with the step at both ends.
 
-Any number of steps may be joined by transitions using @defidform/inline[-->].
+Example:
+
+@racketblock[
+(defstudy college-try
+  [attempt --> ,(lambda () (if success
+                               (goto good-ending)
+                               (goto bad-ending)))]
+  [bad-ending --> bad-ending]
+  [good-ending --> good-ending])
+]
+
+}
+
+@defproc[(put/identity [key symbol?] [value any/c]) void?]{
+
+If the user enrolled in the study via an identity server, stores @racket[_value] under @racket[_key]
+within their enrollment on that server; if the user did not enroll through an identity server, it
+stores the value under @racket[_key] directly on the Congame server.
+
+The point of enrolling via an identity server is to prevent the study author from connecting a
+participant’s answers with their identity --- but there are cases where a well-designed study will
+still need to attach some data to their identity. For example, at the end of a study you might call
+@racket[(put/identity 'payment-due pay-amount)] so that, despite not knowing the participant’s
+answers, you know how much you need to pay them.
+
+}
+
+@defproc[(~current-view-uri) string?]{
+
+Returns the URI of the current view handler page.
 
 }
 
@@ -108,7 +138,7 @@ Returns a representation of an HTML @html-tag{a} element styled as a button that
 next step in the study when clicked.
 
 If @racket[_action-proc] is provided, it will be called when the button is clicked, just before the
-next step in the study is loaded.
+next step in the study is loaded. @mark{Rather: before the transition is run.}
 
 The @tt{href} attribute
 is dynamically set to the URL of a continuation that first calls @racket[_action] with no arguments,
@@ -121,18 +151,10 @@ element.
 
 }
 
-
-@defform[(for/study ...)]{
-
-@tktk{See loops, definition of}
-
-}
-
 @defform[(with-bot step-expr bot-expr)]{
   Wraps @racket[step-expr] so that its default bot is @racket[bot-expr].
 
-  @examples[
-    (require conscript/base)
+  @racketblock[
     (defstep (hello)
       (button "Continue..."))
     (defstudy s
@@ -140,9 +162,107 @@ element.
   ]
 }
 
+@;------------------------------------------------
+
+@subsection{Boxes}
+
+
+@defform[(defbox id)]{
+
+Defines two functions, @racketkeywordfont{get-}@racket[_id] (which takes no arguments and returns
+the value of @racket[_id]) and @racketkeywordfont{set!-}@racket[_id] (which takes one argument and
+updates the value of @racket[_id]).
+
+@examples[#:eval e
+(define flux 81)
+(defbox flux)
+(get-flux)
+(set!-flux "new")
+(get-flux)
+flux
+
+]
+
+}
+
+@defform[(define-var-box id var)]{
+
+Binds @racket[_id] to a function that can take zero arguments or one argument. If given no
+arguments, the function returns the current value of @racket[_var] (which must already be defined
+elsewhere); if given a single argument, the function @racket[set!]s the value of @racket[_var] to
+that value.
+
+The function @racket[_id] can be passed to other functions, allowing them to access or update a
+local variable.
+
+@examples[#:eval e
+(define flux #f)
+(define-var-box get-or-set flux)
+
+(get-or-set)
+(get-or-set 'foo)
+(get-or-set)
+flux
+]
+
+}
+
+
+
+@;------------------------------------------------
+
+@subsection{Logging}
+
+@deftogether[(
+@defform*[[(log-conscript-debug string-expr)
+           (log-conscript-debug format-string-expr v ...)]]
+@defform*[[(log-conscript-info string-expr)
+           (log-conscript-info format-string-expr v ...)]]
+@defform*[[(log-conscript-warning string-expr)
+           (log-conscript-warning format-string-expr v ...)]]
+@defform*[[(log-conscript-error string-expr)
+           (log-conscript-error format-string-expr v ...)]]
+@defform*[[(log-conscript-fatal string-expr)
+           (log-conscript-fatal format-string-expr v ...)]])]{
+
+@margin-note{See @secref["logging" #:doc '(lib "scribblings/reference/reference.scrbl")] in the 
+@italic{Racket Reference} for more information on logging.}
+
+Logs an event with the Conscript logger, evaluating @racket[string-expr] or @racket[(format
+format-string-expr v ...)]. These forms are listed above in order of severity.
+
+Logging functions are useful for debugging: for example, when you want to capture and surface
+state information in the middle of a process, or extra context about possible causes of a problem.
+
+Logged events are printed on the console (@tt{stderr}) of a running Congame server.
+
+Note that since the result of a @racketkeywordfont{log-conscript-}@racket[_level] form is
+@|void-const|, you can't use it directly inside a study step. Instead, wrap it in a 
+@racket[begin] expression that returns an empty string:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (age-name-survey)
+  @md{
+    # Survey
+ 
+    @form{
+      What is your first name? @(set! first-name (input-text))
+ 
+      @(begin
+        (log-conscript-info "Hello")
+        "")
+      @submit-button
+  }})
+}|
+
+}
+
+@screenshot{ref-log-example-output.png}
+
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@subsection{Local Testing}
+@; @subsection{Local Testing}
 
 @; @defmodulelang[conscript/local]
 
@@ -154,18 +274,12 @@ element.
 
 @;===============================================
 
-@section{Page Content}
+@section[#:style 'quiet]{Page Content}
 
-@defmodule[conscript/struct]
+A study @deftech{page} is an @tech[#:doc '(lib "xml/xml.scrbl")]{X-expression} representing a
+complete page of HTML content.
 
-@defstruct[study-page ([renderer (-> xexpr?)]
-                       [xexpr-validator (-> any/c xexpr?)]) #:omit-constructor]{
-
-A study @deftech{page} is a special structure representing a complete page of HTML content. When used
-as a function, the study page's @racket[_renderer] is called, producing the page’s HTML as
-an X-expression.
-
-Any definition of a study @tech{step} must be a function that produces an x-expression. (or
+Any definition of a study @tech{step} must be a function that produces an x-expression (or
 another study, but we won’t go into that here). But you should never need to create these values
 directly; rather, you’ll typically use helper functions like @racket[md] and @racket[html] that do
 this for you.
@@ -174,8 +288,6 @@ this for you.
   (define x (md "# Heading"))
   x
   ]
-
-}
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -204,7 +316,7 @@ within another page (@racket[md*]).
 
 @subsection{HTML}
 
-@defmodule[conscript/html]
+@defmodule[conscript/html #:use-sources (conscript/html-element)]
 
 The bindings in this module are also provided by @racketmodname[conscript/base].
 
@@ -262,7 +374,7 @@ HTML suitable for use within another page (@racket[html*]).
 @defform[(video #:src src content ...) #:contracts ([content xexpr?])]
 )]{
 
-Return representations (X-expressions) of HTML tags of the same names.
+Return representations (X-expressions) of @tech{HTML} tags of the same names.
 
 Any keyword arguments supplied are converted attribute names/values in the resulting HTML
 representation. Keyword arguments specifically noted above are required for their respective
@@ -281,11 +393,43 @@ forms.
 
 @defmodule[conscript/form]
 
-The bindings in this module are also provided by @racketmodname[conscript/base].
+In addition to the bindings documented here, this module also reprovides most of the bindings in
+@racketmodname[congame/components/formular].
+
+The bindings provided by this module are also provided by @racketmodname[conscript/base].
+
+@defproc[(bot:autofill [arg any/c]) any/c]{
+
+@tktk{bot:autofill proc}
+
+}
 
 
+@defproc[(radios [arg any/c]) any/c]{
 
-@tktk{...}
+radios proc
+
+}
+
+@defproc[(select [arg any/c]) any/c]{
+
+select proc
+
+}
+
+@defform[(binding arg)
+         #:contracts ([arg any/c])]{
+
+binding form
+
+}
+
+@defform[(form arg)
+         #:contracts ([arg any/c])]{
+
+form form
+
+}
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -293,11 +437,13 @@ The bindings in this module are also provided by @racketmodname[conscript/base].
 
 @defmodule[conscript/resource]
 
-@tktk{...}
+@tktk{A way to access static resources that aren’t stored in the database. The files get uploaded
+automatically as long as they're linked using `define-static-resource`. (Or you can upload a zipped
+folder as long as the study is contained/provided from study.rkt}
 
 @; ==============================================
 
-@section{Survey Tools}
+@section[#:style 'quiet]{Survey Tools}
 
 @defmodule[conscript/survey-tools]
 
@@ -316,6 +462,8 @@ reload the current page every @racket[_n-seconds].
 
 Returns a string representing @racket[_n] to two decimal places and prefixed with a currency symbol.
 
+@tktk{Should include a way to use something other than `.` for the decimal separator}
+
 @examples[#:eval e
 
 (define price 1.045)
@@ -326,9 +474,79 @@ Returns a string representing @racket[_n] to two decimal places and prefixed wit
 
 }
 
+@defproc[(diceroll-js [arg any/c]) any/c]{
+
+@tktk{diceroll-js proc}
+
+}
+
+@defproc[(questions [arg any/c]) any/c]{
+
+@tktk{questions proc}
+
+}
+
+@defproc[(slider-js [arg any/c]) any/c]{
+
+@tktk{slider-js proc}
+
+}
+
+@defproc[(timer [arg any/c]) any/c]{
+
+@tktk{timer proc}
+
+}
+
+@defform[(assigning-treatments arg)
+         #:contracts ([arg any/c])]{
+
+@tktk{assigning-treatments form --- probably deprecated (related to matchmaking)}
+
+}
+
+@defform[(is-equal arg)
+         #:contracts ([arg any/c])]{
+
+@tktk{is-equal form}
+
+}
+
+@;Not documenting the optional render-proc argument because it's complicated, its default value
+@;is a binding that's not provided outside the module, and it appears to be for internal use only.
+@defproc[(make-multiple-checkboxes [options (listof (cons/c symbol? string?))]
+                                   [#:n num-required exact-nonnegative-integer? 0]
+                                   [#:message message (or/c #f string?)])
+          formular-field?]{ 
+
+@margin-note{See @secref["How_to_have_a_form_input_with_multiple_checkboxes"] for more examples of
+this function in use.}
+
+Returns a @tech{field} containing multiple checkboxes defined by the @racket[_options] list. The
+@racket[_num-required] argument specifies the minimum number of checkboxes the user must check
+before they can submit the form. If @racket[_message] is not @racket[#f], it will be shown to
+the participant @mark{if they don’t check at least @racket[_num-required] boxes.}
+
+}
+
+@defform[(make-sliders arg)
+         #:contracts ([arg any/c])]{
+
+make-sliders form
+
+}
+
+@defform[(toggleable-xexpr arg)
+         #:contracts ([arg any/c])]{
+
+toggleable-xexpr form
+
+}
+
+
 @;===============================================
 
-@section{Matchmaking}
+@section[#:style 'quiet]{Matchmaking}
 
 @defmodule[conscript/matchmaking]
 
@@ -352,7 +570,7 @@ participant is assigned to, or @racket[#f] if not currently assigned to any grou
 
 
 @;===============================================
-@section{Admin}
+@section[#:style 'quiet]{Admin}
 
 @defmodule[conscript/admin]
 
@@ -363,8 +581,12 @@ and the passed-in study to other participants.
 @defproc[(make-admin-study [s study?]
                            [#:models models (listof (cons/c symbol? model/c))]) study?]{
 
+@tktk{Remove?}
+
   Returns a new study by wrapping @racket[s] with admin functionality.
 
   The @racket[#:models] argument represents a list of bot models that
   can be run from the admin area.
 }
+
+

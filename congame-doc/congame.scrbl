@@ -18,9 +18,9 @@ Congame includes:
 
 @itemlist[ 
 
-@item{Libraries and a server application for hosting studies (@secref["The_Congame_Server"])}
-
 @item{@secref["Conscript"], a scripting environment for writing studies.}
+
+@item{Libraries and a server application for hosting studies (@secref["The_Congame_Server"])}
 
 ]
 
@@ -33,7 +33,9 @@ GitHub repository}, and the authors will respond.
 @table-of-contents[]
 
 @include-section["introduction.scrbl"]
+@include-section["install.scrbl"]
 @include-section["concepts.scrbl"]
 @include-section["conscript-section.scrbl"]
 @include-section["congame-section.scrbl"]
+@include-section["reference.scrbl"]
 @include-section["_orig-congame.scrbl"]
