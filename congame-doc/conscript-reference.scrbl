@@ -279,14 +279,8 @@ Note that since the result of a @racketkeywordfont{log-conscript-}@racket[_level
 
 @section[#:style 'quiet]{Page Content}
 
-@defmodule[conscript/struct]
-
-@defstruct[study-page ([renderer (-> xexpr?)]
-                       [xexpr-validator (-> any/c xexpr?)]) #:omit-constructor]{
-
-A study @deftech{page} is a special structure representing a complete page of HTML content. When used
-as a function, the study page's @racket[_renderer] is called, producing the page’s HTML as
-an X-expression.
+A study @deftech{page} is an @tech[#:doc '(lib "xml/xml.scrbl")]{X-expression} representing a
+complete page of HTML content.
 
 Any definition of a study @tech{step} must be a function that produces an x-expression (or
 another study, but we won’t go into that here). But you should never need to create these values
@@ -297,8 +291,6 @@ this for you.
   (define x (md "# Heading"))
   x
   ]
-
-}
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
