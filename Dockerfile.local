@@ -55,13 +55,9 @@ ADD ci/setup-catalogs.sh /opt/congame/ci/setup-catalogs.sh
 RUN PATH="$PATH:/opt/racket/bin" ci/setup-catalogs.sh
 
 ADD congame-core /opt/congame/congame-core
-RUN /opt/racket/bin/raco pkg install --auto -D congame-core/
-
-ADD conscript /opt/congame/conscript
-RUN /opt/racket/bin/raco pkg install --auto -D conscript/
-
 ADD congame-web /opt/congame/congame-web
 ADD congame-web-migrations /opt/congame/congame-web-migrations
-RUN /opt/racket/bin/raco pkg install --auto -D congame-web/
+ADD conscript /opt/congame/conscript
+RUN /opt/racket/bin/raco pkg install --auto -D conscript/ congame-core/ congame-web/
 
 CMD ["dumb-init", "/opt/racket/bin/racket", "congame-web/dynamic.rkt", "--mode", "local"]
