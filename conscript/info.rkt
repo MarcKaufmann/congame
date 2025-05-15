@@ -12,6 +12,7 @@
     "koyo-lib"
     "monocle-lib"
     "threading-lib"
+    "syntax-color-lib"
     "web-server-lib"))
 (define build-deps
   '("rackunit-lib"))
