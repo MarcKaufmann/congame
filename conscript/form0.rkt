@@ -6,6 +6,7 @@
          (prefix-in dyn: forms)
          (except-in forms form)
          koyo/haml
+         racket/format
          racket/match
          racket/port
          web-server/http)
@@ -113,14 +114,14 @@
         (haml
          (.div
           ,@(for/list ([opt (in-list options)])
-              (match-define (cons value label) opt)
+              (match-define (cons (app ~a value) label) opt)
               (haml
                (:label
                 (re
                  (lambda (name bindings _errors) ;; noqa
                    (define checked?
                      (and bindings
-                          (for/first ([bind (in-vector bindings)]
+                          (for/first ([bind (in-list bindings)]
                                       #:do [(define v (bytes->string/utf-8 (binding:form-value bind)))]
                                       #:when (equal? v value))
                             #t)))

@@ -483,18 +483,18 @@
        binding/symbol
        (required)
        (one-of (for/list ([opt (in-list gg-opts)])
-                       ;; gg1 and co expect a list of strings
-                       (match-define (cons value _) opt)
-                       (cons value (~a value))))))))
+                 ;; gg1 and co expect a list of strings
+                 (match-define (cons value _) opt)
+                 (cons value (~a value))))))))
 
   (define gg-form
     (form*
-     ([gg1 gg-formlet]
-      [gg2 gg-formlet]
-      [gg3 gg-formlet]
-      [gg4 gg-formlet]
-      [gg5 gg-formlet])
-     (list gg1 gg2 gg3 gg4 gg5)))
+      ([gg1 gg-formlet]
+       [gg2 gg-formlet]
+       [gg3 gg-formlet]
+       [gg4 gg-formlet]
+       [gg5 gg-formlet])
+      (list gg1 gg2 gg3 gg4 gg5)))
 
   (define (on-submit ggs)
     (cond [assignment-open?
