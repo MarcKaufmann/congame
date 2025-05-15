@@ -6,7 +6,7 @@
 (define (get-info key defval proc)
   (case key
     [(color-lexer)
-     (dynamic-require 'syntax-color/scribble-lexer 'scribble-lexer)]
+     (dynamic-require 'conscript/syntax-color 'conscript-lexer)]
     [(drracket:indentation)
      (dynamic-require 'scribble/private/indentation 'determine-spaces)]
     [(drracket:keystrokes)
