@@ -181,6 +181,7 @@
       (sleep (current-delay))
       (unless (sync/timeout 30 change-evt)
         (raise-bot-error "page did not change after 30 seconds"))
+      (abandon-page-change-evt change-evt)
       (execute! b (cons path previous-paths))))
 
   (define (count-path-run paths)
