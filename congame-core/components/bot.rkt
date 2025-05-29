@@ -95,6 +95,10 @@
   (define current-delay
     (make-parameter 0))
 
+  ;; NOTE: When using a shared browser, remember that marionette is
+  ;; not thread-safe so concurrent uses of the browser will lead to
+  ;; weird interactions. Always use separate marionette instances per
+  ;; bot to avoid this problem.
   (define/contract (run-bot b
                             #:study-url url
                             #:username username
