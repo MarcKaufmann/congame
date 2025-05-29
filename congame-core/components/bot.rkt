@@ -179,15 +179,14 @@
          #;fail-proc
          (lambda ()
            (raise-bot-error "no stepper for path ~s" path))))
-      (define change-evt
-        (page-change-evt (current-page)))
-      ((bot-stepper-action stepper))
-      (sleep (current-delay))
-      (unless (sync/timeout 30 change-evt)
-        (abandon-page-change-evt change-evt)
-        (raise-bot-error "page did not change after 30 seconds"))
-      (abandon-page-change-evt change-evt)
-      (execute! b (cons path previous-paths))))
+      (call-with-page-change-evt
+       (current-page)
+       (lambda (change-evt)
+         ((bot-stepper-action stepper))
+         (sleep (current-delay))
+         (unless (sync/timeout 30 change-evt)
+           (raise-bot-error "page did not change after 30 seconds"))
+         (execute! b (cons path previous-paths))))))
 
   (define (count-path-run paths)
     (cond
