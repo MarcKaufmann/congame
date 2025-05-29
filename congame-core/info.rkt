@@ -8,7 +8,7 @@
                ["forms-lib" #:version "0.8"]
                "gregor-lib"
                "koyo-lib"
-               ["marionette-lib" #:version "1.5"]
+               ["marionette-lib" #:version "1.6"]
                "threading-lib"
                "web-server-lib"))
 (define build-deps '("rackunit-lib"))
