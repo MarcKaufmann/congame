@@ -8,7 +8,7 @@
     [(color-lexer)
      (dynamic-require 'conscript/syntax-color 'conscript-lexer)]
     [(drracket:indentation)
-     (dynamic-require 'scribble/private/indentation 'determine-spaces)]
+     (dynamic-require 'conscript/indent 'indent)]
     [(drracket:keystrokes)
      (dynamic-require 'scribble/private/indentation 'keystrokes)]
     [else
