@@ -15,7 +15,7 @@
 ;; given as the module where it was originally defined.
 (modules-to-check
  '(conscript/base
-   conscript/form
+   conscript/form0
    conscript/game-theory
    conscript/html
    conscript/markdown
@@ -42,7 +42,8 @@
                                 ~all-errors
                                 ~error
                                 ~errors)
-   (conscript/base ~url)))
+   (conscript/base ~url)
+   forms))
 
 ;; Any bindings coming from racket/*, as well as those in the “ignore” list above,
 ;; are filtered out.
