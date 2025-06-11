@@ -1,13 +1,35 @@
 #lang scribble/manual
 
 @(require [for-label buid
-                     racket/contract
                      congame/components/bot-maker
-                     ;(except-in congame/components/study button)
-                     (only-in congame/components/formular formular-field?)
-                     conscript/base
+                     conscript/admin
+                     (only-in conscript/base
+                              defbox
+                              define-var-box
+                              defstep
+                              defstep/study
+                              defstudy
+                              defview
+                              button
+                              put/identity
+                              with-bot
+                              ~current-view-uri
+                              log-conscript-debug
+                              log-conscript-error
+                              log-conscript-fatal
+                              log-conscript-info
+                              log-conscript-warning)
+                     (prefix-in cgs: congame/components/study)
+                     conscript/form0
+                     conscript/html
+                     (except-in forms form)
                      conscript/markdown
-                     (only-in racket/base string?)
+                     conscript/matchmaking
+                     conscript/resource
+                     conscript/survey-tools
+                     (only-in congame/components/formular formular-field?)
+                     racket/base
+                     racket/contract
                      xml]
           scribble/examples
           "doc-util.rkt")
@@ -32,7 +54,7 @@ The bindings provided by this module are also provided by @code{#lang conscript}
 @margin-note{For examples of @racket[defstep] in use, see @secref["intro"].}
 
 Defines a study @tech{step}. The @racket[_step-body] must be an expression that evaluates to a
-@racket[study-page] — usually @racket[md] or @racket[html].
+study @tech{page} — usually @racket[md] or @racket[html].
 
 }
 
@@ -325,7 +347,7 @@ The bindings in this module are also provided by @racketmodname[conscript/base].
 @defform[(html element ...) #:contracts ([element xexpr?])]
 @defform[(html* element ...) #:contracts ([element xexpr?])])]{
 
-Returns a complete @tech{page} of HTML content (@racket[html]) or a representation of a fragment of
+Returns a complete @tech{page} of HTML content (@racket[html]), or a representation of a fragment of
 HTML suitable for use within another page (@racket[html*]).
 
 @examples[#:eval e
@@ -376,7 +398,7 @@ HTML suitable for use within another page (@racket[html*]).
 
 Return representations (X-expressions) of @tech{HTML} tags of the same names.
 
-Any keyword arguments supplied are converted attribute names/values in the resulting HTML
+Any keyword arguments supplied are converted to attribute names/values in the resulting HTML
 representation. Keyword arguments specifically noted above are required for their respective
 forms.
 
@@ -387,49 +409,127 @@ forms.
 
 }
 
+
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-@subsection{Forms}
+@subsection{Form0}
 
-@defmodule[conscript/form]
+@defmodule[conscript/form0]
 
-In addition to the bindings documented here, this module also reprovides most of the bindings in
-@racketmodname[congame/components/formular].
+@(define formform @racketlink[dyn:form]{@racketidfont{form}})
+@(define cgs/form @racketlink[cgs:form]{@racketidfont{form}})
 
-The bindings provided by this module are also provided by @racketmodname[conscript/base].
+@(e '(require conscript/form0))
 
-@defproc[(bot:autofill [arg any/c]) any/c]{
+This module reprovides nearly all the bindings in the @racketmodname[forms] library for creating
+forms in your study pages, as well as some additional conveniences for using that library.
 
-@tktk{bot:autofill proc}
+In addition to the tutorials in this documentation, see @other-doc['(lib "forms/forms.scrbl")] for
+a tutorial that walks through the functionality of Forms.
 
-}
+@defform[(form+submit [id formlet-expr] ...)]{
 
-
-@defproc[(radios [arg any/c]) any/c]{
-
-radios proc
-
-}
-
-@defproc[(select [arg any/c]) any/c]{
-
-select proc
+Returns two values: a @formform value and a procedure that is called when the form is submitted.
 
 }
 
-@defform[(binding arg)
-         #:contracts ([arg any/c])]{
 
-binding form
+@defproc[(form [f form?]
+               [action (-> void?)]
+               [render (-> (widget-renderer/c) xexpr?)]
+               [#:id id string? ""]
+               [#:enctype enctype string? "multipart/form-data"]
+               [#:combine combine-proc (-> any/c any/c any/c any/c)
+                                       (λ (k v1 v2)
+                                         (if (pair? v1)
+                                             (append v1 (list v2))
+                                             (list v1 v2)))]
+               [#:defaults defaults hash? (hash)]) xexpr?]{
+
+Renders the form represented by @racket[f] (created using @racket[form+submit] or @racket[form*])
+using @racket[render] and executes @racket[action] on successful submission, then continues to the
+next step in the study.
+                                                           
+Identical to the @cgs/form from @racketmodname[congame/components/study] except for the default
+@racket[combine-proc]: when there are multiple bindings for the same field, this procedure’s default
+@racket[combine-proc] combines all the bindings for that field into a list (as described in the
+documentation for @racket[form-run]).                                                           
+                                                                          
+}
+
+@defproc[(required-unless [pred (-> any/c)])
+         (-> (or/c string? #f)
+             (or/c (cons/c 'ok any/c)
+                   (cons/c 'err string?)))]{
+
+Similar to @racket[required], produces a validator procedure that ensures a value is present (i.e.
+not @racket[#f]), except that if @racket[pred] produces a non-false value at validation time, then the
+value is allowed to be absent. Use inside @racket[ensure] when building forms.
+                                       
+}
+
+@deftogether[(
+
+@defproc[(checkbox [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
+@defproc[(input-date [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
+@defproc[(input-datetime [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
+@defproc[(input-email [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
+@defproc[(input-number [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
+@defproc[(input-range [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
+@defproc[(input-text [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
+@defproc[(input-time [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
+@defproc[(textarea [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
+)]{
+
+Returns a widget that can render the given input type.
+
+@examples[#:eval e
+  ((checkbox) "agree" #f null)
+  ((input-time) "arrived" #f null)
+]
 
 }
 
-@defform[(form arg)
-         #:contracts ([arg any/c])]{
+@deftogether[(
+@defproc[(radios [options radio-options/c]
+                 [label (or/c string? #f) #f]
+                 [#:attributes attrs null]) widget/c]
+@defproc[(select [options radio-options/c]
+                 [label string?]
+                 [#:attributes attrs null]) widget/c]
+@defproc[(checkboxes [options radio-options/c]
+                     [#:attributes attrs null]) widget/c]
+)]{
 
-form form
+Return a widget that can render @racket[options] in the given input type.
+
+@examples[#:eval e
+  (define opts
+    '(("high" . "Take the high road")
+      ("low" . "Go low")))
+  ((radios opts "Metaphorical highway selection") "road" #f null)
+  ((checkboxes opts) "roadboxen" #f null)
+]
 
 }
+
+@defproc[(make-autofill [v any/c]) xexpr?]{
+
+Renders a @racketresultfont{<meta>} element  whose @racketresultfont{content} attribute varies
+depending on the current user: when the current user is a @tech{bot}, it contains @racket[v]
+serialized via @racket[write]; otherwise the attribute is empty.
+
+Use this when rendering step @tech{pages} to instruct the bot how to fill in certain fields.
+
+@(e '(require congame/components/bot))
+@examples[#:eval e
+  (html* (make-autofill (hasheq 'example (hasheq 'name "Frank" 'mood "Delicate"))))
+  (parameterize ([current-user-bot? #t])
+    (html* (make-autofill (hasheq 'example (hasheq 'name "Frank" 'mood "Delicate")))))
+]
+
+}
+                                   
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

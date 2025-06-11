@@ -1,6 +1,7 @@
 #lang scribble/manual
 
-@(require (for-label marionette
+@(require (for-label (except-in forms form)
+                     marionette
                      racket/base
                      racket/contract
                      congame-web/components/study-bot
@@ -177,18 +178,28 @@ scope} --- that is, the stored value is shared by all participants in the study 
                [action (-> void?)]
                [render (-> (widget-renderer/c) xexpr?)]
                [#:id id string? ""]
-               [#:enctype enctype string? "multipart/form-data"]) xexpr?]{
+               [#:enctype enctype string? "multipart/form-data"]
+               [#:combine combine-proc (-> any/c any/c any/c any/c) (λ (k v1 v2) v2)]
+               [#:defaults defaults hash? (hash)]) xexpr?]{
 
   Renders the form represented by @racket[f] using @racket[render] and
   executes @racket[action] on successful submission, then continues to
   the next step in the study.
 
-  The @racket[#:id] argument is the same as for @racket[button].
+  The @racket[#:id] argument is useful for identifying the button
+  within @tech{bot handlers}.
 }
 
 @defproc[(skip [to-step-id symbol? #f]) void?]{
   Skips to the step named by @racket[to-step-id] or the next step in
   the study if @racket[to-step-id] is @racket[#f].
+}
+
+@defform[(when-bot expr)]{
+
+When the value of @racket[current-user-bot?] is not @racket[#f], returns the result of @racket[expr]
+converted to a string (in @racket[display] mode), otherwise returns @racket[""].
+
 }
 
 @;------------------------------------------------
@@ -499,6 +510,8 @@ steppers} and a @tech{bot model} is a mapping from locations in a study
 to bot behaviors. A @deftech{bot stepper} is an arbitrary procedure
 associated with a step that determines what the bot does when it reaches
 that step.
+
+@tktk{Need definition for @deftech{bot handlers}.}
 
 @defproc[(bot? [v any/c]) boolean?]{
   Returns @racket[#t] when @racket[v] is a @tech{bot}.
