@@ -15,7 +15,7 @@
  (rename-out [form+combine form])
  form+submit
  dyn:form
- (all-from-out forms)
+ (all-from-out forms) ;; all except form (exported as dyn:form avove)
  make-autofill
 
  checkbox
