@@ -1,17 +1,18 @@
 #lang racket/base
 
-(require racket/contract
+(require racket/contract/base
          sentry
          web-server/http
          "auth.rkt"
          "user.rkt")
 
 (provide
- wrap-current-sentry-user)
+ (contract-out
+  [wrap-current-sentry-user
+   (-> (-> request? response?)
+       (-> request? response?))]))
 
-(define/contract ((wrap-current-sentry-user hdl) req)
-  (-> (-> request? response?)
-      (-> request? response?))
+(define ((wrap-current-sentry-user hdl) req)
   (cond
     [(current-user)
      => (lambda (u)

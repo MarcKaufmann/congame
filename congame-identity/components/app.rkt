@@ -17,7 +17,6 @@
          (only-in web-server/http/response current-header-handler)
          web-server/managers/lru
          web-server/servlet-dispatch
-         (prefix-in config: "../config.rkt")
          "../pages/all.rkt"
          "auth.rkt"
          "mail.rkt"
@@ -54,14 +53,14 @@
                            (- (current-inexact-monotonic-milliseconds) start-ms)))))])
     (disp conn req)))
 
-(define/contract (make-app auth broker db flashes mailer _migrator sessions users
+(define/contract (make-app auth broker db flashes mailer _migrator sentry sessions users
                            #:debug? [debug? #f]
                            #:memory-threshold [memory-threshold (* 1 1024 1024 1024)]
                            #:static-path [static-path #f])
-  (->* (auth-manager? broker? database? flash-manager? mailer? migrator? session-manager? user-manager?)
-       (#:debug? boolean?
+  (->* [auth-manager? broker? database? flash-manager? mailer? migrator? (or/c #f sentry?) session-manager? user-manager?]
+       [#:debug? boolean?
         #:memory-threshold exact-positive-integer?
-        #:static-path (or/c #f path-string?))
+        #:static-path (or/c #f path-string?)]
        app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
@@ -116,16 +115,13 @@
       (put-instance-page db)]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
-  (define wrap-sentry
-    (make-sentry-wrapper #:client (current-sentry)))
-
   (define (stack handler)
     (~> handler
         (wrap-protect-continuations)
         (wrap-current-sentry-user)
         ((wrap-auth-required auth req-roles))
         ((wrap-browser-locale sessions))
-        (wrap-sentry)
+        ((wrap-sentry sentry))
         (wrap-prolific)
         ((wrap-flash flashes))
         ((wrap-session sessions))

@@ -23,6 +23,7 @@
          koyo/job
          koyo/logging
          koyo/mail/postmark
+         koyo/sentry
          koyo/server
          koyo/session
          racket/contract/base
@@ -30,6 +31,7 @@
          racket/file
          racket/runtime-path
          sentry
+         sentry/tracing/database
          setup/getinfo
          web-server/safety-limits)
 
@@ -44,7 +46,7 @@
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth bot-manager broker broker-admin db flashes mailer migrator params replications sessions uploader users) make-app]
+  [app (auth bot-manager broker broker-admin db flashes mailer migrator params replications sentry sessions uploader users) make-app]
   [auth (sessions users) make-auth-manager]
   [bot-manager (db users) make-bot-manager]
   ;; TODO: Check this still holds.
@@ -57,11 +59,13 @@
   [broker-admin (broker) (make-broker-admin-factory "/admin/jobs")]
   [db (make-database-factory
        (lambda ()
-         (postgresql-connect #:database config:db-name
-                             #:user     config:db-username
-                             #:password config:db-password
-                             #:server   config:db-host
-                             #:port     config:db-port)))]
+         (trace-connection
+          (postgresql-connect
+           #:database config:db-name
+           #:user     config:db-username
+           #:password config:db-password
+           #:server   config:db-host
+           #:port     config:db-port))))]
   [flashes (sessions) make-flash-manager]
   [hasher (make-argon2id-hasher-factory)]
   [mailer (make-mailer-factory #:adapter mail-adapter
@@ -74,6 +78,14 @@
                (void))]
   [replications (db hasher) (λ (db hasher)
                               (make-replication-manager db hasher migrations-path))]
+  [sentry (lambda ()
+            (make-sentry-component
+             (lambda ()
+               (and config:sentry-dsn
+                    (make-sentry
+                     config:sentry-dsn
+                     #:release config:version
+                     #:environment config:environment)))))]
   [server (app) (compose1
                  (make-server-factory #:host config:http-host
                                       #:port config:http-port
@@ -127,16 +139,10 @@
                 (system               . ,config:log-level)
                 (worker               . info))))
 
-  (when config:sentry-dsn
-    (current-sentry (make-sentry config:sentry-dsn
-                                 #:release config:version
-                                 #:environment config:environment)))
-
   (current-system prod-system)
   (with-handlers ([(λ (_) #t)
                    (λ (e)
                      (current-system #f)
-                     ;; FIXME: (current-sentry #f)
                      (stop-logger)
                      (raise e))])
     (system-start prod-system))

@@ -19,13 +19,13 @@
          koyo/error
          koyo/sentry
          net/url
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          racket/format
          racket/runtime-path
          racket/string
          sentry
          threading
-         (only-in xml current-unescaped-tags html-unescaped-tags)
          web-server/dispatch
          (prefix-in files: web-server/dispatchers/dispatch-files)
          (prefix-in filter: web-server/dispatchers/dispatch-filter)
@@ -34,7 +34,8 @@
          web-server/http
          (only-in web-server/http/response current-header-handler)
          web-server/managers/lru
-         web-server/servlet-dispatch)
+         web-server/servlet-dispatch
+         (only-in xml current-unescaped-tags html-unescaped-tags))
 
 (provide
  make-app
@@ -78,8 +79,9 @@
                            (- (current-inexact-monotonic-milliseconds) start-ms)))))])
     (disp conn req)))
 
-(define/contract (make-app auth bot-manager broker broker-admin db flashes mailer _migrator _params reps sessions uploads users)
-  (-> auth-manager? bot-manager? broker? broker-admin? database? flash-manager? mailer? migrator? void? replication-manager? session-manager? uploader? user-manager? app?)
+(define/contract (make-app auth bot-manager broker broker-admin db flashes mailer _migrator _params reps sentry sessions uploads users)
+  (-> auth-manager? bot-manager? broker? broker-admin? database? flash-manager? mailer? migrator? void?
+      replication-manager? (or/c #f sentry?) session-manager? uploader? user-manager? app?)
   (define-values (dispatch reverse-uri req-roles)
     (dispatch-rules+roles
      [("")
@@ -233,9 +235,6 @@
       (serve-dsl-resource-page db)]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
-  (define wrap-sentry
-    (make-sentry-wrapper #:client (current-sentry)))
-
   (define (stack handler)
     (~> handler
         (wrap-protect-continuations)
@@ -244,7 +243,7 @@
         (wrap-current-sentry-user)
         ((wrap-auth-required auth req-roles))
         ((wrap-browser-locale sessions))
-        (wrap-sentry)
+        ((wrap-sentry sentry))
         (wrap-prolific)
         ((wrap-memory-limit (* 64 1024 1024))) ;; memory leaks only guarded "up" from here
         ((wrap-errors config:debug))

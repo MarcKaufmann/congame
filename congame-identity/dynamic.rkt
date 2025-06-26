@@ -11,10 +11,12 @@
          koyo/job
          koyo/logging
          koyo/mail/postmark
+         koyo/sentry
          koyo/server
          koyo/session
-         racket/contract
          racket/runtime-path
+         sentry
+         sentry/tracing/database
          "components/app.rkt"
          "components/auth.rkt"
          "components/mail.rkt"
@@ -36,7 +38,7 @@
       (make-stub-mail-adapter)))
 
 (define-system prod
-  [app (auth broker db flashes mailer migrator sessions users)
+  [app (auth broker db flashes mailer migrator sentry sessions users)
        (lambda deps
          (apply make-app deps
                 #:debug? config:debug
@@ -46,12 +48,13 @@
   [broker (db) make-broker]
   [db (make-database-factory
        (lambda ()
-         (postgresql-connect
-          #:database config:db-name
-          #:user     config:db-username
-          #:password config:db-password
-          #:server   config:db-host
-          #:port     config:db-port)))]
+         (trace-connection
+          (postgresql-connect
+           #:database config:db-name
+           #:user     config:db-username
+           #:password config:db-password
+           #:server   config:db-host
+           #:port     config:db-port))))]
   [flashes (sessions) make-flash-manager]
   [hasher (make-argon2id-hasher-factory
            #:parallelism 2
@@ -63,6 +66,14 @@
            #:sender config:support-email
            #:common-variables config:common-mail-variables)]
   [migrator (db) (make-migrator-factory migrations-path)]
+  [sentry (lambda ()
+            (make-sentry-component
+             (lambda ()
+               (and config:sentry-dsn
+                    (make-sentry
+                     config:sentry-dsn
+                     #:release config:version
+                     #:environment config:environment)))))]
   [server (app) (compose1
                  (make-server-factory
                   #:host config:http-host
@@ -86,9 +97,7 @@
  start
  before-reload)
 
-(define/contract (start)
-  (-> (-> void?))
-
+(define (start)
   (define stop-logger
     (start-logger
      #:levels `((app                  . ,config:log-level)

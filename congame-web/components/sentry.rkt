@@ -2,13 +2,16 @@
 
 (require congame-web/components/auth
          congame-web/components/user
-         racket/contract
+         racket/contract/base
          sentry
          web-server/http)
 
 (provide
  with-sentry
- wrap-current-sentry-user)
+ (contract-out
+  [wrap-current-sentry-user
+   (-> (-> request? response?)
+       (-> request? response?))]))
 
 ;; For use outside of any http request handlers when we need to capture
 ;; exceptions (eg. study tasks). The body is _not_ in tail position with
@@ -21,9 +24,7 @@
     body0
     body ...))
 
-(define/contract ((wrap-current-sentry-user hdl) req)
-  (-> (-> request? response?)
-      (-> request? response?))
+(define ((wrap-current-sentry-user hdl) req)
   (cond
     [(current-user)
      => (lambda (u)

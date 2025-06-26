@@ -15,7 +15,7 @@
                ["koyo-lib" #:version "0.23.1"]
                "koyo-north"
                "koyo-postmark"
-               ["koyo-sentry" #:version "0.1.1"]
+               ["koyo-sentry" #:version "0.5.1"]
                ("libargon2-x86_64-linux" #:platform #rx"x86_64-linux")
                ("libargon2-x86_64-macosx" #:platform #rx"x86_64-macosx")
                "monocle-lib"
