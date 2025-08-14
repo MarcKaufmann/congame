@@ -26,6 +26,7 @@
          koyo/sentry
          koyo/server
          koyo/session
+         koyo/session/postgres
          racket/contract/base
          racket/contract/region
          racket/file
@@ -93,14 +94,15 @@
                                                 #:max-form-data-file-length config:http-max-file-size
                                                 #:form-data-file-memory-threshold (* 25 1024 1024)))
                  app-dispatcher)]
-  [sessions (make-session-manager-factory #:cookie-name config:session-cookie-name
-                                          #:cookie-secure? #f
-                                          #:cookie-same-site 'lax
-                                          #:shelf-life config:session-shelf-life
-                                          #:secret-key config:session-secret-key
-                                          #:store (make-memory-session-store
-                                                   #:ttl (* 1 86400)
-                                                   #:file-path config:session-path))]
+  [sessions (db)
+            (lambda (db)
+              ((make-session-manager-factory
+                #:cookie-name config:session-cookie-name
+                #:cookie-secure? #f
+                #:cookie-same-site 'lax
+                #:shelf-life config:session-shelf-life
+                #:secret-key config:session-secret-key
+                #:store (make-postgres-session-store db))))]
   [uploader () (λ () (make-uploader config:uploads-dir))]
   [users (db hasher) make-user-manager]
   [worker (broker) (make-worker-factory)])

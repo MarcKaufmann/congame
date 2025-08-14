@@ -9,7 +9,7 @@
                "forms-lib"
                "gregor-lib"
                "http-easy"
-               ["koyo-lib" #:version "0.23.1"]
+               ["koyo-lib" #:version "0.25"]
                "koyo-north"
                "koyo-postmark"
                ["koyo-sentry" #:version "0.1.1"]

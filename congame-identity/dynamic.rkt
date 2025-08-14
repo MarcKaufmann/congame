@@ -14,6 +14,7 @@
          koyo/sentry
          koyo/server
          koyo/session
+         koyo/session/postgres
          racket/runtime-path
          sentry
          sentry/tracing/database
@@ -79,13 +80,14 @@
                   #:host config:http-host
                   #:port config:http-port)
                  app-dispatcher)]
-  [sessions (make-session-manager-factory
-             #:cookie-name config:session-cookie-name
-             #:cookie-secure? #f
-             #:cookie-same-site 'lax
-             #:shelf-life config:session-shelf-life
-             #:secret-key config:session-secret-key
-             #:store (make-memory-session-store #:file-path "/tmp/congame-identity-session.rktd"))]
+  [sessions (lambda (db)
+              ((make-session-manager-factory
+                #:cookie-name config:session-cookie-name
+                #:cookie-secure? #f
+                #:cookie-same-site 'lax
+                #:shelf-life config:session-shelf-life
+                #:secret-key config:session-secret-key
+                #:store (make-postgres-session-store db))))]
   [users (db hasher) make-user-manager]
   [worker (broker) (make-worker-factory)])
 
