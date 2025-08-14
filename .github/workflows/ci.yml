@@ -210,7 +210,7 @@ jobs:
         version: '8.17'
 
     - name: Install koyo
-      run: raco pkg install -D koyo-lib
+      run: raco pkg install -D --auto koyo-lib
 
     # TODO: Drop PAT secret after we're done.
     - name: Deploy staging
