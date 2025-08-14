@@ -80,7 +80,8 @@
                   #:host config:http-host
                   #:port config:http-port)
                  app-dispatcher)]
-  [sessions (lambda (db)
+  [sessions (db)
+            (lambda (db)
               ((make-session-manager-factory
                 #:cookie-name config:session-cookie-name
                 #:cookie-secure? #f
