@@ -156,7 +156,7 @@ jobs:
     - name: Build Node assets
       run: npm run build
 
-    - name: Build executables
+    - name: Build distributions
       run: |
         raco scribble \
           +m \
@@ -195,7 +195,6 @@ jobs:
       uses: actions/checkout@master
 
     - name: Download distributions
-      uses: actions/checkout@master
       uses: actions/download-artifact@v4
       with:
         name: build
