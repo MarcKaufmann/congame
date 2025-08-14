@@ -189,6 +189,8 @@ jobs:
     name: "Deploy"
     needs: [test, build]
     runs-on: "ubuntu-22.04"
+    concurrency:
+      group: deploy
 
     steps:
     - name: Checkout
@@ -199,24 +201,34 @@ jobs:
       with:
         name: build
 
-  #   - name: Deploy staging
-  #     run: ./ci/deploy.sh STAGING
-  #     env:
-  #       PAT: ${{ secrets.PAT }}
-  #       DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-  #       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-  #       POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
-  #       SENTRY_DSN : ${{ secrets.SENTRY_DSN }}
-  #     if: >-
-  #       startsWith(github.ref, 'refs/heads/main')
+    - name: Install Racket
+      uses: Bogdanp/setup-racket@v1.14
+      with:
+        architecture: 'x64'
+        distribution: 'full'
+        variant: 'CS'
+        version: '8.17'
 
-  #   - name: Deploy production
-  #     run: ./ci/deploy.sh PRODUCTION
-  #     env:
-  #       PAT: ${{ secrets.PAT }}
-  #       DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
-  #       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-  #       POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
-  #       SENTRY_DSN : ${{ secrets.SENTRY_DSN }}
-  #     if: >-
-  #       startsWith(github.ref, 'refs/tags/v')
+    - name: Install koyo
+      run: raco pkg install -D koyo-lib
+
+    # TODO: Drop PAT secret after we're done.
+    - name: Deploy staging
+      run: ./ci/deploy.sh STAGING
+      env:
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
+        SENTRY_DSN : ${{ secrets.SENTRY_DSN }}
+      # if: >-
+      #   startsWith(github.ref, 'refs/heads/main')
+
+    - name: Deploy production
+      run: ./ci/deploy.sh PRODUCTION
+      env:
+        DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+        DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
+        SENTRY_DSN : ${{ secrets.SENTRY_DSN }}
+      if: >-
+        startsWith(github.ref, 'refs/tags/v')
