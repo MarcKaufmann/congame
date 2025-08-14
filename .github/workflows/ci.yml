@@ -182,16 +182,23 @@ jobs:
     - name: Upload distributions
       uses: actions/upload-artifact@v4
       with:
+        name: build
         path: build
 
-  # deploy:
-  #   name: "Deploy"
-  #   needs: [test, build]
-  #   runs-on: "ubuntu-22.04"
+  deploy:
+    name: "Deploy"
+    needs: [test, build]
+    runs-on: "ubuntu-22.04"
 
-  #   steps:
-  #   - name: Checkout
-  #     uses: actions/checkout@master
+    steps:
+    - name: Checkout
+      uses: actions/checkout@master
+
+    - name: Download distributions
+      uses: actions/checkout@master
+      uses: actions/download-artifact@v4
+      with:
+        name: build
 
   #   - name: Deploy staging
   #     run: ./ci/deploy.sh STAGING
