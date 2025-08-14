@@ -1,10 +1,11 @@
 #lang racket/base
 
-(require racket/contract
-         racket/format
-         racket/generic
+(require db
          gregor
          json
+         racket/contract/base
+         racket/format
+         racket/generic
          web-server/http)
 
 (provide
@@ -68,4 +69,5 @@
    [binding:file? (define ->jsexpr binding:file->jsexpr)]
    [moment?       (define ->jsexpr moment->jsexpr)]
    [date?         (define ->jsexpr date->jsexpr)]
-   [datetime?     (define ->jsexpr datetime->jsexpr)]))
+   [datetime?     (define ->jsexpr datetime->jsexpr)]
+   [sql-null?     (define (->jsexpr _) (json-null))]))
