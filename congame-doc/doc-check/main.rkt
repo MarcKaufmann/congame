@@ -15,15 +15,14 @@
 ;; given as the module where it was originally defined.
 (modules-to-check
  '(conscript/base
-   conscript/form
+   conscript/form0
    conscript/game-theory
    conscript/html
    conscript/markdown
    conscript/matchmaking
    conscript/resource
    conscript/survey-tools
-   conscript/tasks
-   conscript/tool))
+   conscript/tasks))
 
 ;; Some bindings only exist to provide better syntax errors when a form is used
 ;; outside its proper context. Others are defined in private-ish modules and
@@ -42,7 +41,8 @@
                                 ~all-errors
                                 ~error
                                 ~errors)
-   (conscript/base ~url)))
+   (conscript/base ~url)
+   forms))
 
 ;; Any bindings coming from racket/*, as well as those in the “ignore” list above,
 ;; are filtered out.
