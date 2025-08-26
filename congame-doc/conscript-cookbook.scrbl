@@ -3,6 +3,7 @@
 @(require [for-label (only-in racket/base require)
                      (except-in conscript/base require)
                      (except-in conscript/survey-tools make-sliders)
+                     racket/base
                      racket/contract]
           "doc-util.rkt")
 
@@ -338,6 +339,75 @@ and also varies the total range, which we use to also set the width of via the
 
 Note that the numbers in @racket[legs] have to be converted to strings, or else
 you will get errors.
+
+@;===============================================
+
+@section[#:tag "image-howto"]{How to add images}
+
+In order to make use of images and other files in a page, you must:
+
+@itemlist[
+
+@item{Bundle those images together with your study code in a @filepath{.zip} file.}
+
+@item{Declare them within your study code using @racket[define-static-resource].}
+
+]
+
+For example, to use an image file @filepath{test.png} in your study:
+
+@itemlist[#:style 'ordered
+
+@item{Create a new, empty folder — the name can be anything, but for this example let’s call it 
+@filepath{study-bundle}.}
+
+@item{Inside the @filepath{study-bundle/} folder, create a file
+@filepath{study.rkt}.@margin-note{When bundling like this, the study source code file @emph{must} be
+called @filepath{study.rkt} or it won’t work!}}
+
+@item{Also inside @filepath{study-bundle} --- and next to @filepath{study.rkt} create another folder
+@filepath{images}.}
+
+@item{Inside this @filepath{images} subfolder, place an image file named @filepath{test.png}.}
+
+]
+
+Ensure the @filepath{study.rkt} file contains this code:
+
+@filebox["study.rkt"
+
+@codeblock|{
+#lang conscript
+ 
+(provide image-study)
+ 
+; Create the resource that points at the image.
+(define-static-resource screenshot "images/test.png")
+ 
+(defstep (show-image)
+  @html{
+    @h1{A Page with an Image}
+     @img[
+      #:alt "Screenshot"
+      #:src (resource-uri screenshot)
+    ]})
+ 
+(defstudy image-study
+  [show-image --> show-image])
+}|]
+
+@itemlist[
+
+@item{Note in particular the use of @racket[define-static-resource]. This tells Conscript where to find
+that file (relative to @filepath{study.rkt}) and gives you a special binding
+(@racketidfont{screenshot}) to use when you need to refer to it.}
+
+@item{Then, inside the @racket[img]
+element, you use @racket[resource-uri] to generate the URL for that resource on the server where the
+study is running.}
+
+]
+
 
 @;===============================================
 

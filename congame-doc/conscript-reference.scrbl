@@ -230,7 +230,6 @@ flux
 }
 
 
-
 @;------------------------------------------------
 
 @subsection{Logging}
@@ -324,9 +323,9 @@ The bindings provided by this module are also provided by @racketmodname[conscri
 @defform[(md content-str ...) #:contracts ([content-str string?])]
 @defform[(md* content-str ...) #:contracts ([content-str string?])])]{
 
-Parses its contents as Markdown and produces a representation of a complete @tech{page}
-containing the resulting HTML content (@racket[md]) or of a fragment of HTML suitable for use
-within another page (@racket[md*]).
+Parses its contents as Markdown and produces an @tech[#:doc '(lib "xml/xml.scrbl")]{X-expression}
+representing a complete @tech{page} containing the resulting HTML content (@racket[md]) or of a
+fragment of HTML suitable for use within another page (@racket[md*]).
 
 @examples[#:eval e
   (md "# Heading")
@@ -406,6 +405,35 @@ forms.
   (a #:href "/" "a link")
   (eval:error (a "/" "a link"))
   (a #:class "my-style" #:href "/" "styled link")]
+
+}
+
+@;------------------------------------------------
+
+@subsection{Static Resources}
+
+@defmodule[conscript/resource]
+
+This module provides a way to access images and other static files that aren’t stored in the
+database. The files get uploaded automatically as long as they're linked using
+@racket[define-static-resource]. Or you can upload a zipped folder as long as the study is
+contained/provided from specifically named @filepath{study.rkt} inside that zip file.
+
+@defform[(define-static-resource name path-string)]{
+
+Registers the file at @racket[_path-string] as a static resource, and binds @racket[_id] to a
+@racketresultfont{#<resource>} struct value for that file.
+
+Use this in a @filepath{study.rkt} file and make @racket[_path-string] a path that is relative to
+that file. Then bundle the referenced files into a zip file before uploading to the Congame server.
+See @secref["image-howto"] for more details.
+
+}
+
+@defproc[(resource-uri [r resource?] [subr (or/c list? #f) #f]) string?]{
+
+Generates an absolute URL for the resource @racket[r] on the current study server. The value
+@racket[r] must be declared using @racket[define-static-resource].
 
 }
 
@@ -531,15 +559,6 @@ Use this when rendering step @tech{pages} to instruct the bot how to fill in cer
 }
                                    
 
-@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-@subsection{Resources}
-
-@defmodule[conscript/resource]
-
-@tktk{A way to access static resources that aren’t stored in the database. The files get uploaded
-automatically as long as they're linked using `define-static-resource`. (Or you can upload a zipped
-folder as long as the study is contained/provided from study.rkt}
 
 @; ==============================================
 

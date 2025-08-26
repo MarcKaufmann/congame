@@ -22,8 +22,7 @@
    conscript/matchmaking
    conscript/resource
    conscript/survey-tools
-   conscript/tasks
-   conscript/tool))
+   conscript/tasks))
 
 ;; Some bindings only exist to provide better syntax errors when a form is used
 ;; outside its proper context. Others are defined in private-ish modules and
