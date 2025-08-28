@@ -11,9 +11,6 @@ HERE="$(dirname "$0")"
 DEPLOY_USER="deepploy"
 TARGET_HOST="$DEPLOY_USER@$DEPLOY_HOST"
 
-IDENTITY_SMTP_PORT_PRODUCTION=8675
-IDENTITY_SMTP_PORT_STAGING=8676
-
 case "$1" in
     PRODUCTION)
         IDENTITY_SERVICE_NAME="congame-identity-production"
@@ -75,21 +72,6 @@ log "Loading the key..."
 echo "$DEPLOY_KEY" > /tmp/deploy-key
 chmod 0600 /tmp/deploy-key
 
-log "Deploying SMTP server..."
-raco koyo deploy \
-     --ssh-flags "-i /tmp/deploy-key" \
-     --user "root" \
-     --app-name "congame-smtp-proxy" \
-     --destination "/home/$DEPLOY_USER/congame-smtp-proxy" \
-     --exec-name "congame-smtp-proxy" \
-     --exec-flags "--host 0.0.0.0 \
---ssl-key /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001/privkey.pem \
---ssl-cert /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001/fullchain.pem \
---domain '@identity.totalinsightmanagement.com' 127.0.0.1 $IDENTITY_SMTP_PORT_PRODUCTION \
---domain '@identity-staging.totalinsightmanagement.com' 127.0.0.1 $IDENTITY_SMTP_PORT_STAGING" \
-     --user "$DEPLOY_USER" \
-     "build/smtp-proxy" "$GITHUB_SHA" "$TARGET_HOST"
-
 log "Deploying identity..."
 raco koyo deploy \
      --ssh-flags "-i /tmp/deploy-key" \
@@ -112,7 +94,6 @@ raco koyo deploy \
      -e "CONGAME_IDENTITY_PRODUCT_NAME" "$IDENTITY_HOST" \
      -e "CONGAME_IDENTITY_SENTRY_DSN" "$SENTRY_DSN" \
      -e "CONGAME_IDENTITY_SESSION_SECRET_KEY_PATH" "$IDENTITY_PATH/session-secret-key" \
-     -e "CONGAME_IDENTITY_SMTP_PORT" "$IDENTITY_SMTP_PORT" \
      -e "CONGAME_IDENTITY_SUPPORT_EMAIL" "admin@totalinsightmanagement.com" \
      -e "CONGAME_IDENTITY_SUPPORT_NAME" "Marc Kaufmann" \
      -e "CONGAME_IDENTITY_URL_HOST" "$IDENTITY_HOST" \
@@ -120,6 +101,21 @@ raco koyo deploy \
      -e "CONGAME_IDENTITY_URL_SCHEME" "https" \
      -e "VERSION" "$GITHUB_SHA" \
      "build/identity" "$GITHUB_SHA" "$TARGET_HOST"
+
+# log "Deploying SMTP server..."
+# raco koyo deploy \
+#      --ssh-flags "-i /tmp/deploy-key" \
+#      --user "root" \
+#      --app-name "congame-smtp-proxy" \
+#      --destination "/home/$DEPLOY_USER/congame-smtp-proxy" \
+#      --exec-name "congame-smtp-proxy" \
+#      --exec-flags "--host 0.0.0.0 \
+# --ssl-key /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001/privkey.pem \
+# --ssl-cert /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001/fullchain.pem \
+# --domain '@identity.totalinsightmanagement.com' 127.0.0.1 $IDENTITY_SMTP_PORT_PRODUCTION \
+# --domain '@identity-staging.totalinsightmanagement.com' 127.0.0.1 $IDENTITY_SMTP_PORT_STAGING" \
+#      --user "$DEPLOY_USER" \
+#      "build/smtp-proxy" "$GITHUB_SHA" "$TARGET_HOST"
 
 log "Deploying web..."
 raco koyo deploy \
