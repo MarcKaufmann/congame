@@ -7,6 +7,7 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
+HERE="$(dirname $0)"
 DEPLOY_USER="deepploy"
 TARGET_HOST="$DEPLOY_USER@$DEPLOY_HOST"
 
@@ -126,7 +127,7 @@ raco koyo deploy \
      --destination "$WEB_PATH" \
      --exec-name "congame-web" \
      --user "$DEPLOY_USER" \
-     --pre-script "web-pre-script.sh" \
+     --pre-script "$HERE/web-pre-script.sh" \
      --health-check \
      -p blue "$WEB_SERVICE_PORT_BLUE" \
      -p green "$WEB_SERVICE_PORT_GREEN" \
