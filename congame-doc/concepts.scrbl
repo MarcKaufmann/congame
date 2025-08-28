@@ -68,8 +68,8 @@ case, “steps” in Congame correspond to individual web pages.
 A @deftech{study} is a series of @tech{steps} and a transition graph that controls how
 study participants proceed through those steps.
 
-A study @deftech{instance} is a discrete time when a @tech{study} is run on a particular
-server. Congame keeps separate sets of results for each study instance.
+A study @deftech{instance} is a discrete set of participants and responses for a @tech{study} being
+run on a particular server. Congame keeps separate sets of results for each study instance.
 
 A @deftech{replication} is a duplicate of a study @tech{instance}, created specifically to test
 whether a study instance's results can be replicated — or, to run the study with new participants,
