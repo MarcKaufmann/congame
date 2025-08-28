@@ -206,8 +206,11 @@ jobs:
     - name: Fixup executable permissions
       run: |
         chmod +x build/identity/bin/congame-identity
+        chmod +x build/identity/lib/plt/racketcs-*
         chmod +x build/smtp-proxy/bin/congame-smtp-proxy
+        chmod +x build/smtp-proxy/lib/plt/racketcs-*
         chmod +x build/web/bin/congame-web
+        chmod +x build/web/lib/plt/racketcs-*
 
     - name: Install Racket
       uses: Bogdanp/setup-racket@v1.14
