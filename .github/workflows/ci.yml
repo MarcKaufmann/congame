@@ -202,7 +202,7 @@ jobs:
         name: build
         path: build
 
-    # Upload/download artifact loses executable permissions.
+    # {upload,download}-artifact loses executable permissions.
     - name: Fixup executable permissions
       run: |
         chmod +x build/identity/bin/congame-identity
