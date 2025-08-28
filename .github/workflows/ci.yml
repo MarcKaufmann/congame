@@ -202,6 +202,13 @@ jobs:
         name: build
         path: build
 
+    # Upload/download artifact loses executable permissions.
+    - name: Fixup executable permissions
+      run: |
+        chmod +x build/identity/bin/congame-identity
+        chmod +x build/smtp-proxy/bin/congame-smtp-proxy
+        chmod +x build/web/bin/congame-web
+
     - name: Install Racket
       uses: Bogdanp/setup-racket@v1.14
       with:
