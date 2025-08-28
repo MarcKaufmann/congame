@@ -61,6 +61,7 @@ log "Deploying identity..."
 raco koyo deploy \
      --ssh-flags "-i /tmp/deploy-key" \
      --app-name "$IDENTITY_SERVICE_NAME" \
+     --destination "/home/$DEPLOY_USER/$IDENTITY_SERVICE_NAME" \
      --exec-name "congame-identity" \
      --user "$DEPLOY_USER" \
      -p blue "$IDENTITY_SERVICE_PORT_BLUE" \
