@@ -59,28 +59,36 @@
       (command-line
        #:program "smtp-proxy"
        #:once-each
-       [("--ssl-key") KEY "the SSL key to use for encryption" (set! key KEY)]
-       [("--ssl-cert") CERT "the SSL cert to use for encryption" (set! cert CERT)]
-       [("--host") HOST "the host to bind to (default: 127.0.0.1)"
-                   (set! host HOST)]
-       [("--port") PORT "the port to listen on (default: 675)"
-                   (define port-num (string->number PORT))
-                   (unless port-num
-                     (eprintf "error: PORT must be a number~n")
-                     (exit 1))
-                   (set! port port-num)]
+       [("--ssl-key")
+        KEY "the SSL key to use for encryption"
+        (set! key KEY)]
+       [("--ssl-cert")
+        CERT "the SSL cert to use for encryption"
+        (set! cert CERT)]
+       [("--host")
+        HOST "the host to bind to (default: 127.0.0.1)"
+        (set! host HOST)]
+       [("--port")
+        PORT "the port to listen on (default: 675)"
+        (define port-num (string->number PORT))
+        (unless port-num
+          (eprintf "error: PORT must be a number~n")
+          (exit 1))
+        (set! port port-num)]
        #:multi
-       [("--domain") DOMAIN HOSTNAME PORT "a mapping from a TLD to the host & port of an SMTP server"
-                     (unless (string-prefix? DOMAIN "@")
-                       (eprintf "error: DOMAIN must start with '@'~n")
-                       (exit 1))
-                     (define port-num (string->number PORT))
-                     (unless port-num
-                       (eprintf "error: PORT must be a number~n")
-                       (exit 1))
-                     (define domain-re
-                       (byte-regexp (regexp-quote (string->bytes/utf-8 DOMAIN))))
-                     (hash-set! mapping domain-re (cons HOSTNAME port-num))]
+       [("--domain")
+        DOMAIN HOSTNAME PORT-PATH "a mapping from a TLD to the host & port (as a text file) of an SMTP server"
+        (unless (string-prefix? DOMAIN "@")
+          (eprintf "error: DOMAIN must start with '@'~n")
+          (exit 1))
+        (define port-num
+          (call-with-input-file PORT-PATH read))
+        (unless (and port-num (number? port-num))
+          (eprintf "error: PORT must be a number~n")
+          (exit 1))
+        (define domain-re
+          (byte-regexp (regexp-quote (string->bytes/utf-8 DOMAIN))))
+        (hash-set! mapping domain-re (cons HOSTNAME port-num))]
        #:args []
        (when (hash-empty? mapping)
          (eprintf "error: at least one --domain is required~n")
