@@ -70,12 +70,12 @@ log "Loading the key..."
 echo "$DEPLOY_KEY" > /tmp/deploy-key
 chmod 0600 /tmp/deploy-key
 
-# TODO: Bump snapshots and use the --env-var-prefix flag.
 log "Deploying identity..."
 raco koyo deploy \
      --ssh-flags "-i /tmp/deploy-key" \
      --app-name "$IDENTITY_SERVICE_NAME" \
      --destination "$IDENTITY_PATH" \
+     --env-var-prefix "CONGAME_IDENTITY" \
      --exec-name "congame-identity" \
      --user "$DEPLOY_USER" \
      --health-check \
@@ -104,9 +104,10 @@ raco koyo deploy \
 log "Deploying SMTP server..."
 raco koyo deploy \
      --ssh-flags "-i /tmp/deploy-key" \
-     --user "root" \
+     --user "$DEPLOY_USER" \
      --app-name "congame-smtp-proxy" \
      --destination "/home/$DEPLOY_USER/congame-smtp-proxy" \
+     --exec-user "root" \
      --exec-name "congame-smtp-proxy" \
      --exec-flags "--host 0.0.0.0 \
 --ssl-key /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001/privkey.pem \
@@ -115,12 +116,12 @@ raco koyo deploy \
 --domain '@identity-staging.totalinsightmanagement.com' 127.0.0.1 /home/$DEPLOY_USER/congame-identity-staging/smtp-server-port" \
      "build/smtp-proxy" "$GITHUB_SHA" "$TARGET_HOST"
 
-# TODO: Bump snapshots and use the --env-var-prefix flag.
 log "Deploying web..."
 raco koyo deploy \
      --ssh-flags "-i /tmp/deploy-key" \
      --app-name "$WEB_SERVICE_NAME" \
      --destination "$WEB_PATH" \
+     --env-var-prefix "CONGAME_WEB" \
      --exec-name "congame-web" \
      --user "$DEPLOY_USER" \
      --pre-script "$HERE/web-pre-script.sh" \
