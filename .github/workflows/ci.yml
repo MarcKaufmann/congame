@@ -180,7 +180,7 @@ jobs:
           congame-web/dynamic.rkt
 
     - name: Upload distributions
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: build
         path: build
@@ -197,9 +197,10 @@ jobs:
       uses: actions/checkout@master
 
     - name: Download distributions
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: build
+        path: build
 
     - name: Install Racket
       uses: Bogdanp/setup-racket@v1.14
