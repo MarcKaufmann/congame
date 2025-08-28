@@ -7,7 +7,7 @@ if [ "$#" -ne 1 ]; then
     exit 1
 fi
 
-HERE="$(dirname $0)"
+HERE="$(dirname "$0")"
 DEPLOY_USER="deepploy"
 TARGET_HOST="$DEPLOY_USER@$DEPLOY_HOST"
 
