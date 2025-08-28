@@ -78,6 +78,7 @@ chmod 0600 /tmp/deploy-key
 log "Deploying SMTP server..."
 raco koyo deploy \
      --ssh-flags "-i /tmp/deploy-key" \
+     --user "root" \
      --app-name "congame-smtp-proxy" \
      --destination "/home/$DEPLOY_USER/congame-smtp-proxy" \
      --exec-name "congame-smtp-proxy" \
