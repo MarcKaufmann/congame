@@ -70,6 +70,7 @@ log "Loading the key..."
 echo "$DEPLOY_KEY" > /tmp/deploy-key
 chmod 0600 /tmp/deploy-key
 
+# TODO: Bump snapshots and use the --env-var-prefix flag.
 log "Deploying identity..."
 raco koyo deploy \
      --ssh-flags "-i /tmp/deploy-key" \
@@ -112,9 +113,9 @@ raco koyo deploy \
 --ssl-cert /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001/fullchain.pem \
 --domain '@identity.totalinsightmanagement.com' 127.0.0.1 /home/$DEPLOY_USER/congame-identity-production/smtp-server-port \
 --domain '@identity-staging.totalinsightmanagement.com' 127.0.0.1 /home/$DEPLOY_USER/congame-identity-staging/smtp-server-port" \
-     --user "$DEPLOY_USER" \
      "build/smtp-proxy" "$GITHUB_SHA" "$TARGET_HOST"
 
+# TODO: Bump snapshots and use the --env-var-prefix flag.
 log "Deploying web..."
 raco koyo deploy \
      --ssh-flags "-i /tmp/deploy-key" \
