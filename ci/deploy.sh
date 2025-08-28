@@ -119,7 +119,6 @@ raco koyo deploy \
      -e "VERSION" "$GITHUB_SHA" \
      "build/identity" "$GITHUB_SHA" "$TARGET_HOST"
 
-# TODO: add health check
 log "Deploying web..."
 raco koyo deploy \
      --ssh-flags "-i /tmp/deploy-key" \
@@ -128,6 +127,7 @@ raco koyo deploy \
      --exec-name "congame-web" \
      --user "$DEPLOY_USER" \
      --pre-script "web-pre-script.sh" \
+     --health-check \
      -p blue "$WEB_SERVICE_PORT_BLUE" \
      -p green "$WEB_SERVICE_PORT_GREEN" \
      -e "CONGAME_WEB_DB_HOST" "127.0.0.1" \
