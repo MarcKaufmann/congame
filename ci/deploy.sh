@@ -84,7 +84,7 @@ raco koyo deploy \
      -e "CONGAME_IDENTITY_URL_PORT" "443" \
      -e "CONGAME_IDENTITY_URL_SCHEME" "https" \
      -e "VERSION" "$GITHUB_SHA" \
-     "$TARGET_HOST"
+     "build/identity" "$GITHUB_SHA" "$TARGET_HOST"
 
 # DOCS_IMAGE_NAME="ghcr.io/marckaufmann/congame-docs:$GITHUB_SHA"
 # IDENTITY_IMAGE_NAME="ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA"
