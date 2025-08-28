@@ -130,9 +130,24 @@
 (define (before-reload)
   (schema-registry-allow-conflicts? #t))
 
-
 (module+ main
-  (define stop (start))
-  (with-handlers ([exn:break? void])
-    (sync/enable-break never-evt))
-  (stop))
+  (require racket/cmdline
+           racket/match
+           "health-check.rkt")
+  (define mode 'server)
+  (command-line
+   #:once-each
+   [("-c")
+    PORT "run a health check on PORT"
+    (define port (string->number PORT))
+    (unless port
+      (error "PORT must be a number"))
+    (set! mode `(health-check ,PORT))])
+  (match mode
+    [`(health-check ,port)
+     (health-check port)]
+    [_
+     (define stop (start))
+     (with-handlers ([exn:break? void])
+       (sync/enable-break never-evt))
+     (stop)]))
