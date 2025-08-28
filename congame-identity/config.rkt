@@ -97,3 +97,9 @@
 ;; For Sentry error tracking
 (define-option environment #:default "dev")
 (define-option sentry-dsn)
+
+(define-option smtp-host
+  #:default "127.0.0.1")
+(define-option smtp-port
+  #:default "8675"
+  (string->number smtp-port))

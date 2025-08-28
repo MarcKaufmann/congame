@@ -9,6 +9,7 @@
          racket/contract
          racket/string
          threading
+         (prefix-in config: "../config.rkt")
          "mail.rkt"
          "message-struct.rkt"
          "user.rkt")
@@ -66,8 +67,8 @@
   [(define (component-start ms)
      (define stop
        (start-smtp-server
-        #:host "0.0.0.0"
-        #:port 8675
+        #:host config:smtp-host
+        #:port config:smtp-port
         (handle-envelope ms)))
      (struct-copy mail-server ms [stop stop]))
 
