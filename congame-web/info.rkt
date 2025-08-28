@@ -12,7 +12,7 @@
                "gregor-lib"
                "hash-view-lib"
                "http-easy-lib"
-               ["koyo-lib" #:version "0.40"]
+               ["koyo-lib" #:version "0.44"]
                "koyo-north"
                "koyo-postmark"
                ["koyo-sentry" #:version "0.5.1"]
