@@ -1,7 +1,9 @@
 #lang scribble/manual
 
 @(require "doc-util.rkt"
-        [for-label conscript/base
+        [for-label (except-in conscript/base checkbox textarea select form input-text input-time
+                                             input-range input-date input-number radios)
+                   conscript/form0 
                    conscript/markdown])
 
 @title[#:tag "intro" #:style 'quiet]{Introduction: a quick tour using Conscript}
@@ -178,12 +180,23 @@ file:
 @codeblock{
 #lang conscript
 
+(require conscript/form0)
+(provide simple-survey)
+
 (defvar first-name)
 (defvar age)
 }
 
-Here, we’ve introduced two @racket[defvar] expressions. Each one defines a new variable bound to an
-identifier, in this case @racket[_first-name] and @racket[_age].
+Conscript studies always start with @code{#lang conscript}.
+
+The @racket[require] statement makes the @racketmodname[conscript/form0] module available for use
+inside our study.
+
+The @racket[provide] statement is needed to make our study available to the Congame server (we’ll
+revisit this again below).
+
+After this, we’ve introduced two @racket[defvar] expressions. Each one defines a new study variable
+bound to an identifier, in this case @racket[_first-name] and @racket[_age].
 
 The @racket[defvar] expression looks similar to “declare a variable” expressions in Python,
 JavaScript, and other languages. Using @racket[defvar] tells Conscript that this variable is a key
@@ -212,7 +225,63 @@ first bit of interactivity: giving the participant a way to proceed to the next 
 @racket[button] generates a button that, when clicked, navigates to the next step in the study,
 whatever that is.
 
-Speaking of which, let’s write the next step! Add these lines to the end of your source file:
+Speaking of which, let’s write the next step! 
+
+We’re going to add a form with inputs to collect values. First, we define the structure of the form
+data itself. Add these lines to your study:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(define-values (survey-form on-submit)
+  (form+submit
+   [first-name (ensure binding/text (required))]
+   [age (ensure binding/number (required))]))
+}|
+
+Here we give @racket[form+submit] a list of variables --- the ones we declared with @racket[defvar]
+earlier --- and some requirements for each one. For example, @racket[first-name] must be a text
+value, and it is a @racket[required] field, so it cannot be left empty.
+
+As its name implies, @racket[form+submit] returns two values: a form data structure, and a procedure
+that is called when the form is submitted. All we need to do for now is capture both of these return
+values: the enclosing @racket[define-values] expression binds them to @racket[survey-form] and
+@racket[on-submit].
+
+Then, we define a helper function that “renders” the form. This function can be named whatever we
+want, but it must take one argument --- another procedure used to render individual form widgets:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(define (render-survey-form render-widget)
+  @html*{
+    @render-widget["first-name" @input-text{What is your first name?}]
+    @render-widget["age" @input-number{What is your age in years?}]
+    @|submit-button|})
+}|
+
+Working from the inside out:
+
+@itemlist[#:style 'ordered
+
+@item{The @racket[(input-text)] and @racket[(input-number)] expressions generate input boxes where
+the participant can enter data. There are other expressions that can be used to insert the various
+other form elements like checkboxes and dropdown lists.}
+
+@item{The @racket[render-widget] expressions (which call the procedure passed in as the first
+argument to our @racket[render-survey-form] function) determine how the input widgets will be
+depicted in the browser, and connects the widgets to the names used for the @racket[defvar] study
+variables.}
+
+@item{The @racket[submit-button] expression inserts the button the user can click to submit all the
+information they have entered into the form.}
+
+@item{All the interactive form elements are wrapped in a @racket[html*] expression to keep them
+grouped together.}
+
+]
+
+Finally we combine all these things --- the form data structures, the on-submit function, and the
+renderer function -- into a call to @racket[form] in our second study step:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -220,38 +289,8 @@ Speaking of which, let’s write the next step! Add these lines to the end of yo
   @md{
     # Survey
 
-    @form{
-      What is your first name? @(set! first-name (input-text))
-
-      What is your age in years? @(set! age (input-number))
-
-      @submit-button
-  }})
+    @form[survey-form on-submit render-survey-form]})
 }|
-
-Once again, we’re introducing new expressions inside the @racket[md] expression to provide
-functionality as well as explanatory text.
-
-Working from the inside out:
-
-@itemlist[#:style 'ordered
-
-@item{The @racket[(input-text)] and @racket[(input-number)] expressions (at the end of the sixth and
-eighth lines in the code above) generate input boxes where the participant can enter data. There
-are other expressions that can be used to insert the various other form elements like checkboxes and
-dropdown lists.}
-
-@item{The @racket[(set! first-name (input-text))] expression tells Conscript, “when this form is
-submitted, set the value in the @racket[_first-name] variable to the whatever the user has entered
-in @racket[(input-text)]. }
-
-@item{The @racket[submit-button] expression inserts the button the user can click to submit all the
-information they have entered into the form.}
-
-@item{All the interactive form elements are wrapped in a @racket[form] expression to keep them
-grouped together.}
-
-]
 
 Next, write the final step by adding these lines to the end of your file:
 
@@ -294,19 +333,28 @@ thank-you]] to tell Conscript that that step simply transitions to itself.
 
 @subsection{Being a good provider}
 
-There’s one more thing you need to do: Add a statement at the top of your file, just below the
-@code{#lang conscript} line, to @racket[provide] the study you just defined:
+Before moving on, let's revisit one small thing from the beginning of this study: the
+@racket[provide] statement we added at the beginning.
+
+We added this statement at the top of the file, providing an identifier called
+@racket[simple-survey] which hadn't been defined yet…until we added this @racket[defstudy] statement
+just now:
 
 @codeblock{
 #lang conscript
 
 (provide simple-survey)
 
-(defvar first-name) ; ...
+; …all the other code we added here…
+
+(defstudy simple-survey
+   ; …
+   )
 }
 
-@margin-note{It’s a good practice to add @racket[(provide _studyname ...)] at the top of your file,
-where @racket[_studyname] is the identifier used in your @racket[defstudy] expression.}
+The key point to remember: your Conscript study must always place a @racket[(provide _studyname
+...)] expression at the top of your file, where @racket[_studyname] is the identifier used in your
+eventual @racket[defstudy] expression.}
 
 This line will be needed later when we upload our study to a Congame server. Without it, the server
 will not be able to access the study bound to the @racket[simple-study] identifier.
@@ -322,8 +370,10 @@ Combining all these snippets, the code should look like the below example. Go ah
 @codeblock|{
 #lang conscript
 
-(provide simple-survey)
+(require conscript/form0)
 
+(provide simple-survey)
+ 
 (defvar first-name)
 (defvar age)
 
@@ -339,17 +389,22 @@ Combining all these snippets, the code should look like the below example. Go ah
     @button{Start Survey}
   })
 
+(define-values (survey-form on-submit)
+  (form+submit
+   [first-name (ensure binding/text (required))]
+   [age (ensure binding/number (required))]))
+
+(define (render-survey-form render-widget)
+  @html*{
+    @render-widget["first-name" @input-text{What is your first name?}]
+    @render-widget["age" @input-number{What is your age in years?}]
+    @|submit-button|})
+
 (defstep (age-name-survey)
   @md{
     # Survey
 
-    @form{
-      What is your first name? @(set! first-name (input-text))
-
-      What is your age in years? @(set! age (input-number))
-
-      @submit-button
-  }})
+    @form[survey-form on-submit render-survey-form]})
 
 (defstep (thank-you)
   @md{

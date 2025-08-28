@@ -16,6 +16,8 @@
 (define at "@")
 (define _at (litchar "@"))
 
+(define X-expression (tech #:doc '(lib "xml/xml.scrbl") "X-expression"))
+
 ;; Mark text as worthy of review for possible Congame improvements
 (define (mark . elems)
   (element (style "review" (list (css-style-addition congame-css)

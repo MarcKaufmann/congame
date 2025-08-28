@@ -1,9 +1,10 @@
 #lang scribble/manual
 
-@(require [for-label (only-in racket/base require)
-                     (except-in conscript/base require)
-                     (except-in conscript/survey-tools make-sliders)
-                     racket/base
+@(require [for-label (except-in conscript/survey-tools make-sliders)
+                     (except-in conscript/base checkbox textarea select form input-text input-time
+                                             input-range input-date input-number radios)
+                     (except-in racket/base require)
+                     conscript/form0
                      racket/contract]
           "doc-util.rkt")
 
@@ -17,7 +18,108 @@ including the links in the code samples themselves.
 
 @;===============================================
 
-@section{How to add links}
+@section{Basic Study Recipe}
+
+@tktk{Example of complete, basic study}
+
+@;===============================================
+
+@section[#:tag "forms-recipe"]{Forms Recipe}
+
+@itemlist[#:style 'ordered
+
+@item{Specify the form data and get an on-submit procedure using @racket[form+submit].}
+
+@item{Define a procedure to render the form. This procedure takes one argument, a widget renderer
+procedure, and returns an @X-expression .}
+
+@item{Supply these three values to @racket[form] inside a study step.}
+
+]
+
+@codeblock|{
+#lang conscript
+
+(require conscript/form0
+         racket/match)
+
+(provide example-form-study)
+
+(defstep (intro)
+  @md{# Forms
+
+      This study shows how to use `forms-lib` with conscript.
+
+      @button{Continue}})
+
+(defvar name)
+(defvar age)
+(defvar checkbox-choices)
+(defvar radio-choice)
+(defvar select-choice)
+
+(defstep (survey)
+  (define choices
+    '(("a" . "Choice A")
+      ("b" . "Choice B")))
+
+  ; Define once for easy reuse below
+  (define choice-formlet (ensure binding/text (one-of choices)))
+
+  (define-values (survey-form on-submit)
+    (form+submit
+     [name (ensure binding/text (required))]
+     [age  (ensure binding/number (required))]
+     [checkbox-choices (ensure binding/list (list-of choice-formlet))]
+     [radio-choice     (ensure choice-formlet (required))]
+     [select-choice    (ensure choice-formlet (required))]))
+
+  (define (render rw)
+    @md*{@rw["name" @input-text{Enter your name}]   ; Customized label
+         @rw["age" (input-number)]
+         @rw["checkbox-choices" (checkboxes choices)]
+         @rw["radio-choice" (radios choices)]
+         @rw["select-choice" (select (cons '("" . "Please select something") choices) "")]
+         @|submit-button|})
+
+  @md{# Survey
+
+      @form[survey-form on-submit render]})
+
+(defstep (display-info)
+  @md{# Thanks
+
+      * Name: @name
+      * Age: @~a[age]
+      * Checkbox choices: @(string-join checkbox-choices ", ")
+      * Radio choice: @radio-choice
+      * Select choice: @select-choice})
+
+(defstudy example-form-study
+  [intro --> survey --> display-info --> ,(λ () done)])
+}|
+
+
+@;===============================================
+
+@section{Multi-participant Study Recipe}
+
+@tktk{Example of multi-participant study}
+
+@;===============================================
+
+@section{Bots Recipe}
+
+@tktk{Example of how to use bots}
+
+
+@;===============================================
+
+@section[#:style 'quiet]{Miscellaneous Recipes}
+
+@;------------------------------------------------
+
+@subsection{How to add links}
 
 To provide a link on a study page, use the anchor tag @racket[a]:
 
@@ -36,9 +138,9 @@ To provide a link on a study page, use the anchor tag @racket[a]:
   }) 
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to display monetary amounts}
+@subsection{How to display monetary amounts}
 
 To display monetary amounts, first @racket[require] the module
 @racketmodname[conscript/survey-tools] which provides @racket[~$] for dollars, @racket[~euro] for
@@ -58,9 +160,9 @@ displayed to two decimal places:
 }|
 
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to add buttons to jump to various pages}
+@subsection{How to add buttons to jump to various pages}
 
 You may want to have buttons to allow participants to select which page to show next. For example,
 you might want to allow a participant to go back and change a choice; or while debugging you might
@@ -91,9 +193,9 @@ This page assumes that there are steps called @racket['multiple-checkboxes],
 @racket['generate-random-number], and so on.
 
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to have a form input with multiple checkboxes}
+@subsection{How to have a form input with multiple checkboxes}
 
 The default @racket[checkbox] provides a single checkbox. You may want to provide multiple options
 at once, allowing a person to choose one or more (or zero) options. You can do so with
@@ -131,9 +233,9 @@ then the list @racket['(a letter-d)] will be stored in the database --- so you
 can call the options any names that make sense to you, independent of the label
 that participants see.
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to add the @"@" sign on a page}
+@subsection{How to add the @"@" sign on a page}
 
 Write @"@\"@\"". For example:
 
@@ -154,9 +256,9 @@ to an error message unless you defined ceu.edu. By writing @"@\"@\"" you say
 that you want to include the code @"\"@\"", which is simply the string @"\"@\"",
 which is what you want.
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to add a CSS class to an HTML element}
+@subsection{How to add a CSS class to an HTML element}
 
 Example:
 
@@ -192,9 +294,9 @@ to apply to this class.
 Most formatting can be achieved with the right CSS with the help of Google,
 ChatGPT, or --- for classroom assignments --- Slack.
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to add a form with many sliders}
+@subsection{How to add a form with many sliders}
 
 A page with two sliders that don't display its value but can be dragged around
 --- the default range is from 0 to 100, but you can change it with the keyword
@@ -302,9 +404,9 @@ second version uses the index, using ten times the index as the starting value,
 and also varies the total range, which we use to also set the width of via the
 "style" attribute.
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to add a table to a page}
+@subsection{How to add a table to a page}
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -340,9 +442,9 @@ and also varies the total range, which we use to also set the width of via the
 Note that the numbers in @racket[legs] have to be converted to strings, or else
 you will get errors.
 
-@;===============================================
+@;------------------------------------------------
 
-@section[#:tag "image-howto"]{How to add images}
+@subsection[#:tag "image-howto"]{How to add images}
 
 In order to make use of images and other files in a page, you must:
 
@@ -409,9 +511,9 @@ study is running.}
 ]
 
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to customize the text of a submit button}
+@subsection{How to customize the text of a submit button}
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -425,9 +527,9 @@ study is running.}
       })
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to add blank lines}
+@subsection{How to add blank lines}
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -453,9 +555,9 @@ study is running.}
     @button{Back to Choice Page}})
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to provide error message when wrong radio button is chosen}
+@subsection{How to provide error message when wrong radio button is chosen}
 
 You will need to require @racket[conscript/survey-tools] to use
 @racket[is-equal].
@@ -481,9 +583,9 @@ You will need to require @racket[conscript/survey-tools] to use
 }})
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to display radio buttons on a single line}
+@subsection{How to display radio buttons on a single line}
 
 Wrap the @racket[radios] in a @racket[div] with class "radio-horizontal":
 
@@ -504,9 +606,9 @@ Wrap the @racket[radios] in a @racket[div] with class "radio-horizontal":
 }})
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{Page with dice roll button}
+@subsection{Page with dice roll button}
 
 Example with some custom CSS for the button:
 
@@ -532,9 +634,9 @@ Example with some custom CSS for the button:
       }})
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to select a random value from a list of items}
+@subsection{How to select a random value from a list of items}
 
 Consider the following study that elicits in steps 1, 2, and 3 how many tasks a
 participant is willing to do for $2, $3, and $4 and then on the final page we
@@ -698,9 +800,9 @@ is $1 by default.
   [end --> end])
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to generate a random number}
+@subsection{How to generate a random number}
 
 A naive way to generate a random number and display it to a user is by
 generating it at the start of the page and displaying it. The problem with this
@@ -762,9 +864,9 @@ refresh, one that gets generated once and stays constant across refreshes.
       })
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to have radio buttons with images}
+@subsection{How to have radio buttons with images}
 
 Suppose that you have two images in the folder @filepath{"img/"} and you upload
 a study as a zip file. Then the following code will add images next to the radio
@@ -828,9 +930,9 @@ buttons:
         @submit-button}})
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to add a Radio Button with a button for an Other option}
+@subsection{How to add a Radio Button with a button for an Other option}
 
 The following displays radio buttons for the options "A", "B", and "Other",
 providing a text-input for "Other". Moreover, if the input for "Other" is filled
@@ -847,9 +949,9 @@ in, then the radio button for "Other" is automatically selected.
             @submit-button}})
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to have a select button with a default option that cannot be
+@subsection{How to have a select button with a default option that cannot be
 submitted}
 
 To have a default option for a select button that cannot be selected, provide it
@@ -872,9 +974,9 @@ ct-with-default)
         @submit-button}})
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to add a timer to a page}
+@subsection{How to add a timer to a page}
 
 We can add a timer to a page by using @racket[timer] from the
 @racket[conscript/survey-tools] library. Once the timer ends, it automatically
@@ -921,9 +1023,9 @@ clicks the first next button.
       @button{Next}})
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to add a timer that spans multiple pages}
+@subsection{How to add a timer that spans multiple pages}
 
 The following timer will pick up where it left off on the previous page. To do
 so, we store the end time in the database and at the start of each page with a
@@ -985,11 +1087,14 @@ time-related functions.
                 --> final-page])
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to display a waiting page until some condition is met}
+@subsection{How to display a waiting page until some condition is met}
 
-Suppose that we want to let a person move on only once some condition is met, such as that the study is open. Here we will use the condition that the participant can move on only 10 seconds after landing on the page for the first time - until then, they simply see a waiting message. We use @racket[refresh-every] from @racket[survey-tools] for this:
+Suppose that we want to let a person move on only once some condition is met, such as that the study
+is open. Here we will use the condition that the participant can move on only 10 seconds after
+landing on the page for the first time - until then, they simply see a waiting message. We use
+@racket[refresh-every] from @racket[survey-tools] for this:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -1020,9 +1125,9 @@ Suppose that we want to let a person move on only once some condition is met, su
   [waiting --> wait-is-over])
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to repeat a task until a timer runs out}
+@subsection{How to repeat a task until a timer runs out}
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
@@ -1081,9 +1186,9 @@ Suppose that we want to let a person move on only once some condition is met, su
                                                'final]))])
 }|
 
-@;===============================================
+@;------------------------------------------------
 
-@section{How to reuse similar steps with different roles}
+@subsection{How to reuse similar steps with different roles}
 
 @codeblock[#:keep-lang-line? #t]|{
 #lang conscript

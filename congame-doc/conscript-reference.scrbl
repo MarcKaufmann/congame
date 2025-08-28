@@ -12,6 +12,7 @@
                               defview
                               button
                               put/identity
+                              require
                               with-bot
                               ~current-view-uri
                               log-conscript-debug
@@ -28,10 +29,12 @@
                      conscript/resource
                      conscript/survey-tools
                      (only-in congame/components/formular formular-field?)
-                     racket/base
+                     (except-in racket/base require)
+                     (rename-in racket/base (require rkt:require))
                      racket/contract
                      xml]
           scribble/examples
+          (only-in conscript/base %whitelist)
           "doc-util.rkt")
 
 @title[#:style 'toc]{Conscript Reference}
@@ -140,6 +143,19 @@ participant’s answers with their identity --- but there are cases where a well
 still need to attach some data to their identity. For example, at the end of a study you might call
 @racket[(put/identity 'payment-due pay-amount)] so that, despite not knowing the participant’s
 answers, you know how much you need to pay them.
+
+}
+
+@(define racketrequire @racketlink[rkt:require]{@racketidfont{require}})
+
+@defform[(require require-spec ...)]{
+
+Conscript provides its own binding for @racketrequire that only allows modules from the whitelist
+below. This prevents unsafe code from running on Congame servers.
+
+@(keyword-apply itemlist '(#:style) '(compact)
+  (for/list ([modname (in-list (%whitelist))])
+    @item{@racketmodname[#,modname]})) @; font[(symbol->string modname)]}))
 
 }
 
@@ -297,8 +313,7 @@ Note that since the result of a @racketkeywordfont{log-conscript-}@racket[_level
 
 @section[#:style 'quiet]{Page Content}
 
-A study @deftech{page} is an @tech[#:doc '(lib "xml/xml.scrbl")]{X-expression} representing a
-complete page of HTML content.
+A study @deftech{page} is an @X-expression representing a complete page of HTML content.
 
 Any definition of a study @tech{step} must be a function that produces an x-expression (or
 another study, but we won’t go into that here). But you should never need to create these values
@@ -438,9 +453,9 @@ Generates an absolute URL for the resource @racket[r] on the current study serve
 }
 
 
-@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+@;===============================================
 
-@subsection{Form0}
+@section{Form0}
 
 @defmodule[conscript/form0]
 
@@ -452,12 +467,31 @@ Generates an absolute URL for the resource @racket[r] on the current study serve
 This module reprovides nearly all the bindings in the @racketmodname[forms] library for creating
 forms in your study pages, as well as some additional conveniences for using that library.
 
+See the @seclink["forms-recipe"] for steps and examples to combine these procedures into working
+forms in your study steps.
+
 In addition to the tutorials in this documentation, see @other-doc['(lib "forms/forms.scrbl")] for
 a tutorial that walks through the functionality of Forms.
 
 @defform[(form+submit [id formlet-expr] ...)]{
 
 Returns two values: a @formform value and a procedure that is called when the form is submitted.
+
+Each @racket[_id] should be a variable declared with @racket[defvar] or similar, and each
+@racket[_formlet-expr] should be one of the values in @secref["formlets" #:doc '(lib
+"forms/forms.scrbl")], or an @racket[ensure] expression combining one of those formlets with one or
+more @secref["validators" #:doc '(lib "forms/forms.scrbl")].
+
+@examples[#:eval e
+(defvar my-name)
+(defvar my-middle-name)
+(defvar my-age)
+(define-values (form-data on-submit)
+  (form+submit
+    [my-name (ensure binding/text (required))]
+    [my-middle-name binding/text]
+    [my-age (ensure binding/number (required))]))
+]
 
 }
 
@@ -551,9 +585,9 @@ Use this when rendering step @tech{pages} to instruct the bot how to fill in cer
 
 @(e '(require congame/components/bot))
 @examples[#:eval e
-  (html* (make-autofill (hasheq 'example (hasheq 'name "Frank" 'mood "Delicate"))))
+  (make-autofill (hasheq 'example (hasheq 'name "Frank" 'mood "Delicate")))
   (parameterize ([current-user-bot? #t])
-    (html* (make-autofill (hasheq 'example (hasheq 'name "Frank" 'mood "Delicate")))))
+    (make-autofill (hasheq 'example (hasheq 'name "Frank" 'mood "Delicate"))))
 ]
 
 }
