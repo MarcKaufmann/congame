@@ -8,8 +8,8 @@
          net/smtp-server
          racket/contract
          racket/string
+         racket/tcp
          threading
-         (prefix-in config: "../config.rkt")
          "mail.rkt"
          "message-struct.rkt"
          "user.rkt")
@@ -58,6 +58,14 @@
 
 (define-logger mail-server)
 
+(define (get-ephemeral-port)
+  (define listener
+    (tcp-listen 0))
+  (define-values (_local-host local-port _remote-host _remote-port)
+    (tcp-addresses listener #t))
+  (tcp-close listener)
+  local-port)
+
 ;; NOTE: We're not going to validate the domain side of e-mail
 ;; addresses, which means collisions with multiple id servers are
 ;; possible, though very _very_ unlikely.
@@ -65,11 +73,16 @@
   #:transparent
   #:methods gen:component
   [(define (component-start ms)
+     (define port (get-ephemeral-port))
      (define stop
        (start-smtp-server
-        #:host config:smtp-host
-        #:port config:smtp-port
+        #:host "127.0.0.1"
+        #:port port
         (handle-envelope ms)))
+     (call-with-output-file "smtp-server-port"
+       #:exists 'truncate/replace
+       (lambda (out)
+         (write port out)))
      (struct-copy mail-server ms [stop stop]))
 
    (define (component-stop ms)
