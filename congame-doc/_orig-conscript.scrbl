@@ -6,25 +6,25 @@
 
 @section{Goals and Philosophy}
 
-@tech{conscript} aims to provide a simpler and streamlined syntax for
+Conscript aims to provide a simpler and streamlined syntax for
 writing studies compared to @tech{congame}. There are two dialects of
-@tech{conscript}:
+@racketmodfont{conscript}:
 
 @itemize[
-  @item{Plain @tech{conscript}, which cannot require @tech{Racket}
+  @item{Plain @racketmodfont{conscript}, which cannot require Racket
     functions that we are not providing by default.}
-  @item{@tech{conscript/with-require}, which allows the user to
+  @item{@racketmodfont{conscript/with-require}, which allows the user to
     require.}
 ]
 
-Since @tech{conscript/with-require} provides a mechanism to require
+Since @racketmodfont{conscript/with-require} provides a mechanism to require
 arbitrary Racket packages, it has essentially the same power as full
-@tech{congame}, while @tech{conscript} can only require a limited set
+@tech{congame}, while @racketmodfont{conscript} can only require a limited set
 of libraries and functionality of Racket. Due to these limitations, we
 can allow such studies to be uploaded to a congame server by users with
 ``researcher'' accounts, and be run without requiring access to the
 code repository. This is not possible (out of security concerns) with
-@tech{conscript/with-require} studies.
+@racketmodfont{conscript/with-require} studies.
 
 @section{Grammar}
 

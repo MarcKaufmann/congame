@@ -60,11 +60,11 @@ the url for the package source.
 
 @section{The first study}
 
-To start, note that @tech{conscript} is based on @tech{scribble} syntax:
+To start, note that @racketmodfont{conscript} is based on Scribble syntax:
 this means that all operators start with an @tt{@"@"}, followed by the
 name of the operator, followed either by square brackets (@tt{[]})
 or curly brackets (@tt{{}}) that contain additional content. To
-get started, let us create a @tech{conscript} study that displays a
+get started, let us create a @racketmodfont{conscript} study that displays a
 single page with some text. To do so, store the following text in
 @filepath{tutorial.rkt}:
 
@@ -307,12 +307,12 @@ additional data that you store explicitly, not implicit progress such as
 the current step you are on.)
 
 Now you can bo back to the dashboard and go through the study.
-Congratulations, this is your first survey in @tech{conscript}!
+Congratulations, this is your first survey in @racketmodfont{conscript}!
 
 
 @section{Using Racket functions}
 
-You can use a limited set of @tech{Racket} functions directly in @tech{conscript}.
+You can use a limited set of Racket functions directly in @racketmodfont{conscript}.
 
 To illustrate this, let us add a display of the person's age to the previous
 study. It may seem straightforward, and you might try to do change the code of
@@ -1121,7 +1121,7 @@ one image.
 
 @section{Basic Arithmetic}
 
-You can use basic arithmetic in @tech{Racket}, which is infix based:
+You can use basic arithmetic in Racket, which is infix based:
 
 @codeblock[#:keep-lang-line? #f]|{
 #lang conscript
