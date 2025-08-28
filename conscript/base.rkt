@@ -148,6 +148,7 @@
 
 (provide
  (rename-out [conscript-require require])
+ %whitelist
  only-in prefix-in rename-in
 
  (all-from-out "form.rkt")
@@ -193,6 +194,8 @@
   (define (check-module-whitelisted mod-stx)
     (unless (memq (syntax->datum mod-stx) whitelist)
       (raise-syntax-error 'require "required module not whitelisted" mod-stx))))
+
+(define-syntax %whitelist (λ (stx) #`'#,whitelist)) ; allows the whitelist to be referenced in docs
 
 (define-syntax (conscript-require stx)
   (define-syntax-class mod
