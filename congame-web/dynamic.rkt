@@ -120,9 +120,7 @@
 
   (define dbg:stop
     (dbg:serve
-     #:host (if (equal? config:environment "dev")
-                "127.0.0.1"
-                "0.0.0.0")))
+     #:port (add1 config:http-port)))
   (define stop-logger
     (start-logger
      #:levels `((app                  . ,config:log-level)
@@ -175,19 +173,29 @@
 
 (module+ main
   (require racket/cmdline
-           racket/lazy-require)
+           racket/lazy-require
+           racket/match
+           "health-check.rkt")
   (lazy-require
    ("local.rkt" [(setup local:setup)]))
   (define mode 'standard)
   (command-line
    #:once-each
+   [("-c")
+    PORT "run a health check on PORT"
+    (define port (string->number PORT))
+    (unless port
+      (error "PORT must be a number"))
+    (set! mode `(health-check ,port))]
    [("--mode" "-m")
     MODE "the mode the server is run in"
     (set! mode (string->symbol MODE))])
-  (define stop (start))
-  (case mode
-    [(local) (local:setup)]
-    [else (void)])
-  (with-handlers ([exn:break? void])
-    (sync/enable-break never-evt))
-  (stop))
+  (match mode
+    [`(health-check ,port)
+     (health-check port)]
+    [_ (define stop (start))
+       (when (eq? mode 'local)
+         (local:setup))
+       (with-handlers ([exn:break? void])
+         (sync/enable-break never-evt))
+       (stop)]))

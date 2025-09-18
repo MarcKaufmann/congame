@@ -3,11 +3,11 @@ on: [push]
 jobs:
   test:
     name: "Test"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-24.04"
 
     services:
       postgres:
-        image: postgres:12.3
+        image: postgres:16
         env:
           POSTGRES_USER: congame
           POSTGRES_PASSWORD: congame
@@ -36,7 +36,7 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('**/info.rkt') }}-${{ hashFiles('ci/setup-catalogs.sh') }}
 
     - name: Install Racket
-      uses: Bogdanp/setup-racket@v1.13
+      uses: Bogdanp/setup-racket@v1.14
       with:
         architecture: 'x64'
         distribution: 'full'
@@ -81,7 +81,7 @@ jobs:
 
   build:
     name: "Build"
-    runs-on: "ubuntu-22.04"
+    runs-on: "ubuntu-24.04"
 
     steps:
     - name: Checkout (+ fetch lfs)
@@ -109,12 +109,12 @@ jobs:
         key: ${{ runner.os }}-${{ hashFiles('**/info.rkt') }}-${{ hashFiles('ci/setup-catalogs.sh') }}
 
     - name: Install Racket
-      uses: Bogdanp/setup-racket@v1.11
+      uses: Bogdanp/setup-racket@v1.14
       with:
         architecture: 'x64'
         distribution: 'full'
         variant: 'CS'
-        version: '8.14'
+        version: '8.17'
 
     - name: Install Racket deps
       run: |
@@ -156,9 +156,14 @@ jobs:
     - name: Build Node assets
       run: npm run build
 
-    - name: Build executables
+    - name: Build distributions
       run: |
-        raco scribble +m --htmls --dest doc --redirect 'https://docs.racket-lang.org/local-redirect/index.html' congame-doc/congame.scrbl
+        raco scribble \
+          +m \
+          --htmls \
+          --dest doc \
+          --redirect 'https://docs.racket-lang.org/local-redirect/index.html' \
+          congame-doc/congame.scrbl
 
         mkdir build
         raco koyo dist -t build/identity ++lang north congame-identity/dynamic.rkt
@@ -174,39 +179,53 @@ jobs:
           ++lang north \
           congame-web/dynamic.rkt
 
-    - name: Log into GHCR
-      run: |
-        echo "$PAT" | docker login ghcr.io -u MarcKaufmann --password-stdin
-      env:
-        PAT: ${{ secrets.PAT }}
-
-    - name: Build docker images
-      run: |
-        docker build -t "ghcr.io/marckaufmann/congame-docs:$GITHUB_SHA" -f Dockerfile.docs .
-        docker build -t "ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA" -f Dockerfile.identity .
-        docker build -t "ghcr.io/marckaufmann/congame-smtp-proxy:$GITHUB_SHA" -f Dockerfile.smtp-proxy .
-        docker build -t "ghcr.io/marckaufmann/congame-web:$GITHUB_SHA" -f Dockerfile.web .
-
-    - name: Push docker images
-      run: |
-        docker push "ghcr.io/marckaufmann/congame-docs:$GITHUB_SHA"
-        docker push "ghcr.io/marckaufmann/congame-identity:$GITHUB_SHA"
-        docker push "ghcr.io/marckaufmann/congame-smtp-proxy:$GITHUB_SHA"
-        docker push "ghcr.io/marckaufmann/congame-web:$GITHUB_SHA"
+    - name: Upload distributions
+      uses: actions/upload-artifact@v4
+      with:
+        name: build
+        path: build
 
   deploy:
     name: "Deploy"
     needs: [test, build]
     runs-on: "ubuntu-22.04"
+    concurrency:
+      group: deploy
 
     steps:
     - name: Checkout
       uses: actions/checkout@master
 
+    - name: Download distributions
+      uses: actions/download-artifact@v4
+      with:
+        name: build
+        path: build
+
+    # {upload,download}-artifact loses executable permissions.
+    - name: Fixup executable permissions
+      run: |
+        chmod +x build/identity/bin/congame-identity
+        chmod +x build/identity/lib/plt/racketcs-*
+        chmod +x build/smtp-proxy/bin/congame-smtp-proxy
+        chmod +x build/smtp-proxy/lib/plt/racketcs-*
+        chmod +x build/web/bin/congame-web
+        chmod +x build/web/lib/plt/racketcs-*
+
+    - name: Install Racket
+      uses: Bogdanp/setup-racket@v1.14
+      with:
+        architecture: 'x64'
+        distribution: 'full'
+        variant: 'CS'
+        version: '8.17'
+
+    - name: Install koyo
+      run: raco pkg install -D --auto koyo-lib
+
     - name: Deploy staging
       run: ./ci/deploy.sh STAGING
       env:
-        PAT: ${{ secrets.PAT }}
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
@@ -217,7 +236,6 @@ jobs:
     - name: Deploy production
       run: ./ci/deploy.sh PRODUCTION
       env:
-        PAT: ${{ secrets.PAT }}
         DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
