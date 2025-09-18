@@ -2,5 +2,5 @@
 
 set -euo pipefail
 
-mkdir -p /home/deepploy/congame-web-production/uploads
-mkdir -p /home/deepploy/congame-web-staging/uploads
+mkdir -p /home/deepploy/congame-production/uploads
+mkdir -p /home/deepploy/congame-staging/uploads
