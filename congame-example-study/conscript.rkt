@@ -13,7 +13,7 @@
         Do you consent to join the study?
         @button{Give Consent}})
 
-(defstep (done)
+(defstep (final)
   @html{@h1{Done}
         You're done.
 
@@ -29,7 +29,7 @@
 (defstudy conscript-example
   [info --> {consent1 consent}
         --> {consent2 consent}
-        --> {done (make-step
+        --> {final (make-step
                    #:view-handler done-overlay
-                   'done done)}]
-  [done --> done])
+                   'final final)}]
+  [final --> final])
