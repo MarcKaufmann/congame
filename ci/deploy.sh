@@ -109,7 +109,8 @@ raco koyo deploy \
      --destination "/home/$DEPLOY_USER/congame-smtp-proxy" \
      --exec-user "root" \
      --exec-name "congame-smtp-proxy" \
-     --exec-flags "--host 0.0.0.0 \
+     --exec-flags "--port 587 \
+--host 0.0.0.0 \
 --ssl-key /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001/privkey.pem \
 --ssl-cert /etc/letsencrypt/live/identity-staging.totalinsightmanagement.com-0001/fullchain.pem \
 --domain '@identity.totalinsightmanagement.com' 127.0.0.1 /home/$DEPLOY_USER/congame-identity-production/versions/current/smtp-server-port \
