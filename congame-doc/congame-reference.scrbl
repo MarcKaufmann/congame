@@ -147,12 +147,27 @@ scope} --- that is, the stored value is shared by all participants in the study 
 }
 
 @deftogether[(
-  @defthing[#:kind "canary" next any/c]
-  @defthing[#:kind "canary" done any/c]
+  @defthing[#:kind "canary" next next?]
+  @defproc[(next? [v any/c]) boolean?]
 )]{
-  Special values that can be used as transition results to cause a
-  study to transition to the next step or to the end of the study,
-  respectively.
+  A special value that can be used as transition results to cause a
+  study to transition to the next step, whatever step that may be. 
+
+  The predicate @racket[next?] returns @racket[#t] if @racket[_v] is
+  identical to @racket[next], @racket[#f] otherwise.
+
+}
+
+@deftogether[(
+  @defthing[#:kind "canary" done done?]
+  @defproc[(done? [v any/c]) boolean?]
+)]{  
+  A special value that can be used as transition results to cause a
+  transition to the end of the study. 
+
+  The predicate @racket[done?] returns @racket[#t] if @racket[_v] is
+  identical to @racket[done], @racket[#f] otherwise.
+
 }
 
 @;------------------------------------------------
