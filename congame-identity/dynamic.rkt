@@ -75,11 +75,15 @@
                      config:sentry-dsn
                      #:release config:version
                      #:environment config:environment)))))]
-  [server (app) (compose1
-                 (make-server-factory
-                  #:host config:http-host
-                  #:port config:http-port)
-                 app-dispatcher)]
+  ;; Dummy dependency on mail-server in order to ensure that the
+  ;; smtp-server-port file gets created before health checks can pass on
+  ;; deployment.
+  [server (app mail-server)
+          (lambda (app _mail)
+            ((make-server-factory
+              #:host config:http-host
+              #:port config:http-port)
+             (app-dispatcher app)))]
   [sessions (db)
             (lambda (db)
               ((make-session-manager-factory
