@@ -223,7 +223,6 @@ jobs:
     - name: Install koyo
       run: raco pkg install -D --auto koyo-lib
 
-    # TODO: Drop PAT secret after we're done.
     - name: Deploy staging
       run: ./ci/deploy.sh STAGING
       env:
@@ -231,8 +230,8 @@ jobs:
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
         SENTRY_DSN : ${{ secrets.SENTRY_DSN }}
-      # if: >-
-      #   startsWith(github.ref, 'refs/heads/main')
+      if: >-
+        startsWith(github.ref, 'refs/heads/main')
 
     - name: Deploy production
       run: ./ci/deploy.sh PRODUCTION
@@ -241,5 +240,5 @@ jobs:
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
         SENTRY_DSN : ${{ secrets.SENTRY_DSN }}
-      # if: >-
-      #   startsWith(github.ref, 'refs/tags/v')
+      if: >-
+        startsWith(github.ref, 'refs/tags/v')
