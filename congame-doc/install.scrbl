@@ -2,7 +2,7 @@
 
 @(require "doc-util.rkt")
 
-@title[#:tag "install-congame" #:style 'quiet]{Installing Congame and Conscript}
+@title[#:tag "install-congame" #:style 'quiet]{Installing, Running, and Updating}
 
 Below are step-by-step instructions for installing Congame and Conscript on your personal computer.
 
