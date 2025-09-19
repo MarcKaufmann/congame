@@ -12,6 +12,7 @@
                      congame/components/formular
                      congame/components/study
                      congame/components/transition-graph
+                     (except-in conscript/base require button form select radios)
                      koyo/haml
                      (only-in xml xexpr?)))
 
@@ -465,18 +466,16 @@ is used as the button’s label.
 
 @defmodule[congame/components/transition-graph]
 
-@defform[#:literals (unquote lambda --> goto)
+@defform[#:literals (unquote lambda --> goto done fail)
          (transition-graph transition-clause ...+)
          #:grammar
-         [(transition-clause (code:line [id transition-entry ...+]))
+         [(transition-clause (code:line [id transition-entry ...+ maybe-lambda]))
 
-          (transition-entry (code:line --> transition-target))
+          (transition-entry (code:line --> id))
 
-          (transition-target (code:line id)
-                             (code:line (unquote transition-lambda)))
-
-          (transition-lambda (code:line (lambda () transition-expr ...+))
-                             (code:line (lambda name:id () transition-expr ...+)))
+          (maybe-lambda (code:line)
+                        (code:line (lambda () transition-expr ...+))
+                        (code:line (lambda name:id () transition-expr ...+)))
 
           (transition-expr (code:line (done))
                            (code:line (fail expr))
@@ -493,7 +492,7 @@ is used as the button’s label.
     #:transitions
     (transition-graph
       [a --> b --> ,(lambda ()
-                      (if succes-step-b?
+                      (if success-step-b?
                         (goto bad-ending)
                         (goto good-ending)))]
       [fail-ending --> fail-ending]
@@ -506,6 +505,7 @@ is used as the button’s label.
 }
 
 @deftogether[(@defidform[-->]
+              @defform[(fail expr)]
               @defform[(goto step-id)])]{
 
 Forms used in @racket[transition-graph]s to define transitions between study steps. Use of these

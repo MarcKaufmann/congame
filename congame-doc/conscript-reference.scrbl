@@ -20,7 +20,8 @@
                               log-conscript-fatal
                               log-conscript-info
                               log-conscript-warning)
-                     (prefix-in cgs: congame/components/study)
+                     (except-in congame/components/study button form)
+                     congame/components/transition-graph
                      conscript/form0
                      conscript/html
                      (except-in forms form)
@@ -95,42 +96,45 @@ particular identifiers provided by @racket[_child-study-expr] upon completion. W
 
 }
 
-@defform[#:literals (-->)
+@defform[#:literals (--> lambda unquote)
          (defstudy study-id
                    maybe-requires
                    maybe-provides 
-                   step-transition ...)
+                   transition-clause ...+)
          #:grammar
          [(maybe-requires (code:line)
                           (code:line #:requires (value-id-sym ...)))
           (maybe-provides (code:line)
                           (code:line #:provides (value-id-sym ...)))
-          (step-transition [step --> step maybe-more-steps])
-          (maybe-more-steps (code:line)
-                            (code:line --> step ...))
-         ]
-         #:contracts
-         ([value-id-sym symbol?]
-          [step step?])]{
+          (transition-clause [step --> transition ... maybe-lambda])
+          (transition [--> step])
+          (maybe-lambda (code:line)
+                        (code:line --> ,(lambda () expr)))
+          ]]{
 
-Defines a study in terms of steps joined by transitions. The transitions follow the same grammar as
-@racket[transition-graph].
+Defines a study in terms of steps joined by transitions. Each @racket[id] should be the identifier
+of a step defined with @racket[defstep] or @racket[defstep/study].
 
-For any “final” step (that is, a step that marks the study’s end or one of the study’s endings) you
-must include a separate @racket[_step-transition] with the step at both ends.
+The use of @racket[#:requires] and @racket[#:provides] arguments is deprecated and included for
+compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study variables between
+parent/child studies.
+
+The transitions follow the same grammar as @racket[transition-graph], @mark{except that you cannot
+use @racket[goto] or @racket[fail] expressions, and uses of @racket[next] and @racket[done] must be
+returned as the result of the body of a @racket[maybe-lambda] expression.}
+
+For any “final” step (that is, a step that, once reached, would prevent the participant from taking
+any further step) you need to include a separate @racket[_transition-clause] with the step at both
+ends, or a @racket[maybe-lambda] expression that returns @racket[done].
 
 Example:
 
 @racketblock[
-(defstudy college-try
-  [attempt --> ,(lambda () (if success
-                               (goto good-ending)
-                               (goto bad-ending)))]
-  [bad-ending --> bad-ending]
-  [good-ending --> good-ending])
-]
+(defstudy mystudy
+  [intro --> question --> final]
 
-}
+(code:comment @#,elem{OR:})
+(defstudy mystudy
 
 @defproc[(put/identity [key symbol?] [value any/c]) void?]{
 
