@@ -227,7 +227,7 @@ server when the view is accessed.
          #:contracts ([req request?])]{
 
 Defines a @tech{view handler}. When the @tech{view} is accessed, Congame will call the view handler,
-passing the HTTP @racket[request] as the sole argument.
+passing the HTTP @racket[request] as the @racket[_req] argument.
 
 As with @racket[defstep], the @racket[_body] of a @racket[defview] expression should evaluate to a
 study @tech{page}, usually using @racket[md] or @racket[html]. The @racket[defview] form takes care
@@ -247,7 +247,8 @@ Example:
 
 @defproc[(~current-view-uri) string?]{
 
-Returns the URI of the current view handler page.
+Returns the URI of the view handler page associated with the current step. Intended for use inside
+@racket[defstep].
 
 }
 
