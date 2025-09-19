@@ -150,7 +150,7 @@ scope} --- that is, the stored value is shared by all participants in the study 
   @defthing[#:kind "canary" next next?]
   @defproc[(next? [v any/c]) boolean?]
 )]{
-  A special value that can be used as transition results to cause a
+  A special value that can be used as a transition result to cause a
   study to transition to the next step, whatever step that may be. 
 
   The predicate @racket[next?] returns @racket[#t] if @racket[_v] is
@@ -162,7 +162,7 @@ scope} --- that is, the stored value is shared by all participants in the study 
   @defthing[#:kind "canary" done done?]
   @defproc[(done? [v any/c]) boolean?]
 )]{  
-  A special value that can be used as transition results to cause a
+  A special value that can be used as a transition result to cause a
   transition to the end of the study. 
 
   The predicate @racket[done?] returns @racket[#t] if @racket[_v] is
