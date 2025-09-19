@@ -102,18 +102,21 @@ particular identifiers provided by @racket[_child-study-expr] upon completion. W
           (maybe-provides (code:line)
                           (code:line #:provides (value-id-sym ...)))
           (transition-clause [step --> transition ... maybe-lambda])
-          (transition [--> step])
+          (transition (code:line --> step)
+                      (code:line --> {step-id step}))
           (maybe-lambda (code:line)
                         (code:line --> ,(lambda () expr)))
           ]]{
 
-Defines a study in terms of steps joined by transitions. Each @racket[id] should be the identifier
-of a step defined with @racket[defstep] or @racket[defstep/study].
+Defines a study in terms of steps joined by transitions. Each @racket[step] should be a step defined
+with @racket[defstep] or @racket[defstep/study].
 
 The use of @racket[#:requires] and @racket[#:provides] arguments is deprecated and included for
 compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study variables between
 parent/child studies.
 
+@;{Not sure if this paragraph is really needed, but want to flag the issues it raises for review at
+some point.}
 The transitions follow the same grammar as @racket[transition-graph], @mark{except that you cannot
 use @racket[goto] or @racket[fail] expressions, and uses of @racket[next] and @racket[done] must be
 returned as the result of the body of a @racket[maybe-lambda] expression.}
@@ -132,6 +135,17 @@ Example:
 (defstudy mystudy
   [intro --> question --> final --> ,(lambda () done)])
 
+]}
+
+You can reuse the same step function as separate steps with the @racket[--> {_step-id _step}] form of
+@racket[_transition]:
+
+@racketblock[
+(defstudy repeating-step-study
+  [intro --> {message1 message}
+         --> {message2 message}
+         --> final]
+  [final --> final])
 ]}
 
 @defproc[(put/identity [key symbol?] [value any/c]) void?]{
