@@ -33,6 +33,7 @@
                      (except-in racket/base require)
                      (rename-in racket/base (require rkt:require))
                      racket/contract
+                     web-server/servlet
                      xml]
           scribble/examples
           (only-in conscript/base %whitelist)
@@ -90,12 +91,6 @@ particular identifiers provided by @racket[_child-study-expr] upon completion. W
 
 }
 
-@defform[(defview ...)]{
-
-@tktk{...}
-
-}
-
 @defform[#:literals (--> lambda unquote)
          (defstudy study-id
                    maybe-requires
@@ -132,9 +127,12 @@ Example:
 @racketblock[
 (defstudy mystudy
   [intro --> question --> final]
-
+  [final --> final])
 (code:comment @#,elem{OR:})
 (defstudy mystudy
+  [intro --> question --> final --> ,(lambda () done)])
+
+]}
 
 @defproc[(put/identity [key symbol?] [value any/c]) void?]{
 
@@ -160,12 +158,6 @@ below. This prevents unsafe code from running on Congame servers.
 @(keyword-apply itemlist '(#:style) '(compact)
   (for/list ([modname (in-list (%whitelist))])
     @item{@racketmodname[#,modname]})) @; font[(symbol->string modname)]}))
-
-}
-
-@defproc[(~current-view-uri) string?]{
-
-Returns the URI of the current view handler page.
 
 }
 
@@ -203,6 +195,48 @@ element.
       [[hello (with-bot hello bot:continuer)] --> ,(lambda () done)])
   ]
 }
+
+@;------------------------------------------------
+
+@subsection{Views}
+
+A @deftech{view} is an additional set of content/functionality that can be associated with a
+@tech{step}. Views can be used to provide additional instructions for a step, or to give admins a
+customized display of study outcomes.
+
+The content of a @tech{view} is provided by a @deftech{view handler}, which is a function which
+takes a single @racket[request] argument (which can be inspected if the view needs to vary depending
+on the HTTP request) and returns a @racket[response]. This function will be called by the Congame
+server when the view is accessed.
+
+@defform[(defview (id req) body ...)
+         #:contracts ([req request?])]{
+
+Defines a @tech{view handler}. When the @tech{view} is accessed, Congame will call the view handler,
+passing the HTTP @racket[request] as the sole argument.
+
+As with @racket[defstep], the @racket[_body] of a @racket[defview] expression should evaluate to a
+study @tech{page}, usually using @racket[md] or @racket[html]. The @racket[defview] form takes care
+of converting the page to an HTTP @racket[response].
+
+Example:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defview (instructions-popup _request)
+  @md{#Instructions
+      
+      More detail.....})
+}|
+
+}
+
+@defproc[(~current-view-uri) string?]{
+
+Returns the URI of the current view handler page.
+
+}
+
 
 @;------------------------------------------------
 
