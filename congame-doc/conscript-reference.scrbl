@@ -91,7 +91,8 @@ particular identifiers provided by @racket[_child-study-expr] upon completion. W
 
 }
 
-@defform[#:literals (--> lambda unquote)
+
+@defform[#:literals (--> lambda unquote done goto quote)
          (defstudy study-id
                    maybe-requires
                    maybe-provides 
@@ -105,7 +106,12 @@ particular identifiers provided by @racket[_child-study-expr] upon completion. W
           (transition (code:line --> step)
                       (code:line --> {step-id step}))
           (maybe-lambda (code:line)
-                        (code:line --> ,(lambda () expr)))
+                        (code:line --> ,(lambda () transition-expr)))
+          (transition-expr (code:line done)
+                           (code:line (goto step))
+                           (code:line 'step-id)
+@;{Returning 'step-id from unquoted lambda also seems to work, but this appears redunant to goto}
+                           (code:line expr))
           ]]{
 
 Defines a study in terms of steps joined by transitions. Each @racket[step] should be a step defined
@@ -115,17 +121,24 @@ The use of @racket[#:requires] and @racket[#:provides] arguments is deprecated a
 compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study variables between
 parent/child studies.
 
-@;{Not sure if this paragraph is really needed, but want to flag the issues it raises for review at
-some point.}
-The transitions follow the same grammar as @racket[transition-graph], @mark{except that you cannot
-use @racket[goto] or @racket[fail] expressions, and uses of @racket[next] and @racket[done] must be
-returned as the result of the body of a @racket[maybe-lambda] expression.}
+@margin-note{The transitions follow the same grammar as @racket[transition-graph], @mark{except that
+you cannot use @racket[fail] expressions.}} 
 
-For any “final” step (that is, a step that, once reached, would prevent the participant from taking
+An unquoted lambda at the end of a @racket[transition-clause] can include arbitrary code
+(@racket[expr]) but must terminate in one of the other possible @racket[transition-expr]s:
+
+@racketblock[
+(defstudy college-try
+  [attempt --> ,(lambda () (if success
+                               (goto good-ending)
+                               (goto bad-ending)))]
+  [bad-ending --> bad-ending]
+  [good-ending --> good-ending])
+]
+
+For any “final” step (that is, a step that, once reached, should prevent the participant from taking
 any further step) you need to include a separate @racket[_transition-clause] with the step at both
-ends, or a @racket[maybe-lambda] expression that returns @racket[done].
-
-Example:
+ends, or a @racket[maybe-lambda] expression that returns @racket[done]:
 
 @racketblock[
 (defstudy mystudy
@@ -134,8 +147,7 @@ Example:
 (code:comment @#,elem{OR:})
 (defstudy mystudy
   [intro --> question --> final --> ,(lambda () done)])
-
-]}
+]
 
 You can reuse the same step function as separate steps with the @racket[--> {_step-id _step}] form of
 @racket[_transition]:
