@@ -477,7 +477,7 @@ is used as the button’s label.
                         (code:line (lambda () transition-expr ...+))
                         (code:line (lambda name:id () transition-expr ...+)))
 
-          (transition-expr (code:line (done))
+          (transition-expr (code:line done)
                            (code:line (fail expr))
                            (code:line (goto id:id))
                            (code:line expr))]
