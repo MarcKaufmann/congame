@@ -466,19 +466,19 @@ is used as the button’s label.
 
 @defmodule[congame/components/transition-graph]
 
-@defform[#:literals (unquote lambda --> goto done fail)
+@defform[#:literals (unquote lambda --> goto quote)
          (transition-graph transition-clause ...+)
          #:grammar
-         [(transition-clause (code:line [id transition-entry ...+ maybe-lambda]))
+         [(transition-clause (code:line [id transition-entry ...+ maybe-expr]))
 
           (transition-entry (code:line --> id))
 
-          (maybe-lambda (code:line)
-                        (code:line (lambda () transition-expr ...+))
-                        (code:line (lambda name:id () transition-expr ...+)))
+          (maybe-expr (code:line)
+                      (code:line ,(lambda () transition-expr ...+))
+                      (code:line ,(lambda name:id () transition-expr ...+)))
 
-          (transition-expr (code:line done)
-                           (code:line (fail expr))
+          (transition-expr (code:line '(done))
+                           (code:line '(fail _))
                            (code:line (goto id:id))
                            (code:line expr))]
          ]{
@@ -492,20 +492,20 @@ is used as the button’s label.
     #:transitions
     (transition-graph
       [a --> b --> ,(lambda ()
-                      (if success-step-b?
-                        (goto bad-ending)
-                        (goto good-ending)))]
-      [fail-ending --> fail-ending]
+                      (if (not success-step-b?)
+                          (goto bad-ending)
+                          (goto good-ending)))]
+      [fail-ending --> ,(lambda () '(fail 0))]
       [good-ending --> good-ending])
     (list
       (make-step 'a a)
       (make-step 'b b)
-      (make-step 'c c)))
+      (make-step 'good-ending good)
+      (make-step 'fail-ending failed)))
   ]
 }
 
 @deftogether[(@defidform[-->]
-              @defform[(fail expr)]
               @defform[(goto step-id)])]{
 
 Forms used in @racket[transition-graph]s to define transitions between study steps. Use of these

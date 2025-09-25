@@ -109,6 +109,7 @@ particular identifiers provided by @racket[_child-study-expr] upon completion. W
                         (code:line --> ,(lambda () transition-expr)))
           (transition-expr (code:line done)
                            (code:line (goto step))
+                           (code:line '(fail _))
                            (code:line 'step-id)
 @;{Returning 'step-id from unquoted lambda also seems to work, but this appears redunant to goto}
                            (code:line expr))
@@ -121,18 +122,15 @@ The use of @racket[#:requires] and @racket[#:provides] arguments is deprecated a
 compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study variables between
 parent/child studies.
 
-@margin-note{The transitions follow the same grammar as @racket[transition-graph], @mark{except that
-you cannot use @racket[fail] expressions.}} 
-
-An unquoted lambda at the end of a @racket[transition-clause] can include arbitrary code
-(@racket[expr]) but must terminate in one of the other possible @racket[transition-expr]s:
+An unquoted lambda at the end of a @racket[transition-clause] can include arbitrary @racket[expr],
+but this but must evaluate to one of the other possible @racket[transition-expr]s:
 
 @racketblock[
 (defstudy college-try
   [attempt --> ,(lambda () (if success
                                (goto good-ending)
                                (goto bad-ending)))]
-  [bad-ending --> bad-ending]
+  [bad-ending --> ,(lambda () '(fail 0))]
   [good-ending --> good-ending])
 ]
 
