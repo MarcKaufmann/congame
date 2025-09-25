@@ -20,7 +20,8 @@
                               log-conscript-fatal
                               log-conscript-info
                               log-conscript-warning)
-                     (prefix-in cgs: congame/components/study)
+                     (except-in congame/components/study button form)
+                     congame/components/transition-graph
                      conscript/form0
                      conscript/html
                      (except-in forms form)
@@ -32,6 +33,7 @@
                      (except-in racket/base require)
                      (rename-in racket/base (require rkt:require))
                      racket/contract
+                     web-server/servlet
                      xml]
           scribble/examples
           (only-in conscript/base %whitelist)
@@ -89,48 +91,72 @@ particular identifiers provided by @racket[_child-study-expr] upon completion. W
 
 }
 
-@defform[(defview ...)]{
 
-@tktk{...}
-
-}
-
-@defform[#:literals (-->)
+@defform[#:literals (--> lambda unquote done goto quote)
          (defstudy study-id
                    maybe-requires
                    maybe-provides 
-                   step-transition ...)
+                   transition-clause ...+)
          #:grammar
          [(maybe-requires (code:line)
                           (code:line #:requires (value-id-sym ...)))
           (maybe-provides (code:line)
                           (code:line #:provides (value-id-sym ...)))
-          (step-transition [step --> step maybe-more-steps])
-          (maybe-more-steps (code:line)
-                            (code:line --> step ...))
-         ]
-         #:contracts
-         ([value-id-sym symbol?]
-          [step step?])]{
+          (transition-clause [step --> transition ... maybe-lambda])
+          (transition (code:line --> step)
+                      (code:line --> {step-id step}))
+          (maybe-lambda (code:line)
+                        (code:line --> ,(lambda () transition-expr)))
+          (transition-expr (code:line done)
+                           (code:line (goto step))
+                           (code:line '(fail _))
+                           (code:line 'step-id)
+@;{Returning 'step-id from unquoted lambda also seems to work, but this appears redunant to goto}
+                           (code:line expr))
+          ]]{
 
-Defines a study in terms of steps joined by transitions. The transitions follow the same grammar as
-@racket[transition-graph].
+Defines a study in terms of steps joined by transitions. Each @racket[step] should be a step defined
+with @racket[defstep] or @racket[defstep/study].
 
-For any “final” step (that is, a step that marks the study’s end or one of the study’s endings) you
-must include a separate @racket[_step-transition] with the step at both ends.
+The use of @racket[#:requires] and @racket[#:provides] arguments is deprecated and included for
+compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study variables between
+parent/child studies.
 
-Example:
+An unquoted lambda at the end of a @racket[transition-clause] can include arbitrary @racket[expr],
+but this but must evaluate to one of the other possible @racket[transition-expr]s:
 
 @racketblock[
 (defstudy college-try
   [attempt --> ,(lambda () (if success
                                (goto good-ending)
                                (goto bad-ending)))]
-  [bad-ending --> bad-ending]
+  [bad-ending --> ,(lambda () '(fail 0))]
   [good-ending --> good-ending])
 ]
 
-}
+For any “final” step (that is, a step that, once reached, should prevent the participant from taking
+any further step) you need to include a separate @racket[_transition-clause] with the step at both
+ends, or a @racket[maybe-lambda] expression that returns @racket[done]:
+
+@racketblock[
+(defstudy mystudy
+  [intro --> question --> final]
+  [final --> final])
+(code:comment @#,elem{OR:})
+(defstudy mystudy
+  [intro --> question --> final --> ,(lambda () done)])
+]
+
+You can reuse the same step function as separate steps with the @racket[--> {_step-id _step}] form of
+@racket[_transition]:
+
+@racketblock[
+(defstudy repeating-step-study
+  [intro --> {message1 message}
+         --> {message2 message}
+         --> final]
+  [final --> final])
+]}
 
 @defproc[(put/identity [key symbol?] [value any/c]) void?]{
 
@@ -156,12 +182,6 @@ below. This prevents unsafe code from running on Congame servers.
 @(keyword-apply itemlist '(#:style) '(compact)
   (for/list ([modname (in-list (%whitelist))])
     @item{@racketmodname[#,modname]})) @; font[(symbol->string modname)]}))
-
-}
-
-@defproc[(~current-view-uri) string?]{
-
-Returns the URI of the current view handler page.
 
 }
 
@@ -199,6 +219,49 @@ element.
       [[hello (with-bot hello bot:continuer)] --> ,(lambda () done)])
   ]
 }
+
+@;------------------------------------------------
+
+@subsection{Views}
+
+A @deftech{view} is an additional set of content/functionality that can be associated with a
+@tech{step}. Views can be used to provide additional instructions for a step, or to give admins a
+customized display of study outcomes.
+
+The content of a @tech{view} is provided by a @deftech{view handler}, which is a function which
+takes a single @racket[request] argument (which can be inspected if the view needs to vary depending
+on the HTTP request) and returns a @racket[response]. This function will be called by the Congame
+server when the view is accessed.
+
+@defform[(defview (id req) body ...)
+         #:contracts ([req request?])]{
+
+Defines a @tech{view handler}. When the @tech{view} is accessed, Congame will call the view handler,
+passing the HTTP @racket[request] as the @racket[_req] argument.
+
+As with @racket[defstep], the @racket[_body] of a @racket[defview] expression should evaluate to a
+study @tech{page}, usually using @racket[md] or @racket[html]. The @racket[defview] form takes care
+of converting the page to an HTTP @racket[response].
+
+Example:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defview (instructions-popup _request)
+  @md{#Instructions
+      
+      More detail.....})
+}|
+
+}
+
+@defproc[(~current-view-uri) string?]{
+
+Returns the URI of the view handler page associated with the current step. Intended for use inside
+@racket[defstep].
+
+}
+
 
 @;------------------------------------------------
 

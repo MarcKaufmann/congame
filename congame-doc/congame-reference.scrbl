@@ -12,6 +12,7 @@
                      congame/components/formular
                      congame/components/study
                      congame/components/transition-graph
+                     (except-in conscript/base require button form select radios)
                      koyo/haml
                      (only-in xml xexpr?)))
 
@@ -147,12 +148,27 @@ scope} --- that is, the stored value is shared by all participants in the study 
 }
 
 @deftogether[(
-  @defthing[#:kind "canary" next any/c]
-  @defthing[#:kind "canary" done any/c]
+  @defthing[#:kind "canary" next next?]
+  @defproc[(next? [v any/c]) boolean?]
 )]{
-  Special values that can be used as transition results to cause a
-  study to transition to the next step or to the end of the study,
-  respectively.
+  A special value that can be used as a transition result to cause a
+  study to transition to the next step, whatever step that may be. 
+
+  The predicate @racket[next?] returns @racket[#t] if @racket[_v] is
+  identical to @racket[next], @racket[#f] otherwise.
+
+}
+
+@deftogether[(
+  @defthing[#:kind "canary" done done?]
+  @defproc[(done? [v any/c]) boolean?]
+)]{  
+  A special value that can be used as a transition result to cause a
+  transition to the end of the study. 
+
+  The predicate @racket[done?] returns @racket[#t] if @racket[_v] is
+  identical to @racket[done], @racket[#f] otherwise.
+
 }
 
 @;------------------------------------------------
@@ -450,21 +466,19 @@ is used as the button’s label.
 
 @defmodule[congame/components/transition-graph]
 
-@defform[#:literals (unquote lambda --> goto)
+@defform[#:literals (unquote lambda --> goto quote)
          (transition-graph transition-clause ...+)
          #:grammar
-         [(transition-clause (code:line [id transition-entry ...+]))
+         [(transition-clause (code:line [id transition-entry ...+ maybe-expr]))
 
-          (transition-entry (code:line --> transition-target))
+          (transition-entry (code:line --> id))
 
-          (transition-target (code:line id)
-                             (code:line (unquote transition-lambda)))
+          (maybe-expr (code:line)
+                      (code:line ,(lambda () transition-expr ...+))
+                      (code:line ,(lambda name:id () transition-expr ...+)))
 
-          (transition-lambda (code:line (lambda () transition-expr ...+))
-                             (code:line (lambda name:id () transition-expr ...+)))
-
-          (transition-expr (code:line (done))
-                           (code:line (fail expr))
+          (transition-expr (code:line '(done))
+                           (code:line '(fail _))
                            (code:line (goto id:id))
                            (code:line expr))]
          ]{
@@ -478,15 +492,16 @@ is used as the button’s label.
     #:transitions
     (transition-graph
       [a --> b --> ,(lambda ()
-                      (if succes-step-b?
-                        (goto bad-ending)
-                        (goto good-ending)))]
-      [fail-ending --> fail-ending]
+                      (if (not success-step-b?)
+                          (goto bad-ending)
+                          (goto good-ending)))]
+      [fail-ending --> ,(lambda () '(fail 0))]
       [good-ending --> good-ending])
     (list
       (make-step 'a a)
       (make-step 'b b)
-      (make-step 'c c)))
+      (make-step 'good-ending good)
+      (make-step 'fail-ending failed)))
   ]
 }
 
