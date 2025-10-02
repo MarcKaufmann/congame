@@ -245,10 +245,8 @@
   (syntax-parse stx
     [(_ (name:id req-name:id) body ...+)
      #'(define (name req-name)
-         (define responder
-           (let () body ...))
          (response/xexpr
-          (responder)))]))
+          (let () body ...)))]))
 
 (begin-for-syntax
   ;; Extends the regular transition graph syntax with support for
