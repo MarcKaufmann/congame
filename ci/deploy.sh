@@ -13,6 +13,7 @@ TARGET_HOST="$DEPLOY_USER@$DEPLOY_HOST"
 
 case "$1" in
     PRODUCTION)
+        DOCS_PATH="/home/$DEPLOY_USER/docs-production"
         IDENTITY_SERVICE_NAME="congame-identity-production"
         IDENTITY_SERVICE_PORT_BLUE="8200"
         IDENTITY_SERVICE_PORT_GREEN="8300"
@@ -35,6 +36,7 @@ case "$1" in
         WEB_UPLOADS_DIR="$WEB_PATH/uploads"
     ;;
     STAGING)
+        DOCS_PATH="/home/$DEPLOY_USER/docs-staging"
         IDENTITY_SERVICE_NAME="congame-identity-staging"
         IDENTITY_SERVICE_PORT_BLUE="9200"
         IDENTITY_SERVICE_PORT_GREEN="9300"
@@ -72,7 +74,7 @@ chmod 0600 /tmp/deploy-key
 
 log "Deploying docs..."
 rsync -e 'ssh -i /tmp/deploy-key' -avz \
-      build/docs "$TARGET_HOST":"/home/$DEPLOY_USER/docs"
+      build/docs "$TARGET_HOST":"$DOCS_PATH"
 
 log "Deploying identity..."
 raco koyo deploy \
