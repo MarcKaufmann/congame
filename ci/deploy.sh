@@ -70,6 +70,10 @@ log "Loading the key..."
 echo "$DEPLOY_KEY" > /tmp/deploy-key
 chmod 0600 /tmp/deploy-key
 
+log "Deploying docs..."
+rsync -e 'ssh -i /tmp/deploy-key' -avz \
+      build/docs "$TARGET_HOST":"/home/$DEPLOY_USER/docs"
+
 log "Deploying identity..."
 raco koyo deploy \
      --ssh-flags "-i /tmp/deploy-key" \
