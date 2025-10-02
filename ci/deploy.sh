@@ -73,7 +73,7 @@ echo "$DEPLOY_KEY" > /tmp/deploy-key
 chmod 0600 /tmp/deploy-key
 
 log "Deploying docs..."
-rsync -e 'ssh -i /tmp/deploy-key' -avz \
+rsync -e 'ssh -i /tmp/deploy-key -T -o StrictHostKeyChecking=accept-new' -avz \
       build/docs "$TARGET_HOST":"$DOCS_PATH"
 
 log "Deploying identity..."
