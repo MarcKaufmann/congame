@@ -217,7 +217,7 @@
 (define (rescale-score s)
   (+ (* 0.333 s) 100))
 
-(defstep ((chicken-summary [the-end #t]))
+(defstep ((chicken-summary [the-end? #t]))
     (define total-points
     (for/sum ([a answers])
       (hash-ref a 'own-payout))) 
@@ -237,7 +237,7 @@
                           (hash-ref a 'other-payout)
                           ))))
 
-      (if the-end? @div{} @button{Continue})})
+      @(if the-end? @div{} @button{Continue})})
 
 
 (defstep (store-score)
