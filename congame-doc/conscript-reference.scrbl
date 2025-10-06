@@ -764,16 +764,28 @@ toggleable-xexpr form
 
 @section[#:style 'quiet]{Matchmaking}
 
-@defmodule[conscript/matchmaking]
+@declare-exporting[conscript/matchmaking conscript/base]
+@defmodule[conscript/matchmaking #:no-declare]
 
 The bindings in this module are also provided by @racketmodname[conscript/base].
 
-@defproc[(make-matchmaker [group-size exact-positive-integer]) (-> (-> study-page?) any/c)]{
+@defproc[(make-matchmaker [group-size exact-positive-integer?]
+                          [group-ok? (-> buid/c boolean?) values]) (-> (-> xexpr?) any/c)]{
 
-Returns a function that accepts one argument (a study step function) and which adds the current
-participant to the current pending group (creating a new group if all other groups are full
-already), and then either skips to the next step in the study (if the current group has
-@racket[_group-size] members) or loads the step @tech{page} provided by the argument.
+Returns a @deftech{matchmaker function} that accepts one argument (that argument being a study step function)
+and which adds the current participant to the current pending group (creating a new group if all other
+groups are full already), and then either skips to the next step in the study (if the current group
+now has @racket[_group-size] members) or loads the step @tech{page} provided by the argument.
+
+@margin-note{@mark{You should avoid calling @racket[make-matchmaker] more than once with different
+values of @racket[group-size] in the same study.}}
+
+A @racket[group-ok?] procedure can be supplied in order to give the study author a way to prevent
+adding the participant to certain groups. The procedure will be called with the identifier of the
+candidate group, which can be used as a key to the hash returned by @racket[get-pending-groups]. The
+procedure must return @racket[#t] if the participant can be added to the candidate group or
+@racket[#f] if not. (During the body of the @racket[group-ok?] procedure, the hash table returned by
+@racket[get-pending-groups] will not yet include the @racket[current-participant-id].)
 
 }
 
@@ -782,7 +794,45 @@ already), and then either skips to the next step in the study (if the current gr
 Returns the @seclink["Spec" #:doc '(lib "buid/buid.scrbl")]{BUID} of the group the current
 participant is assigned to, or @racket[#f] if not currently assigned to any group.
 
+If the result is not @racket[#f], it can be used as a key for the hash returned by
+@racket[get-ready-groups] to get a list of participant IDs.
+
 }
+
+@defproc[(get-ready-groups) (hash/c buid/c (listof integer?))]{
+
+Returns a hash table of all groups that are currently “full” — that is, groups which, as of the last
+call to a @tech{matchmaker function}, have been assigned the number of
+participants given as @racket[_group-size] in the call to @racket[make-matchmaker] which produced the matchmaker.
+
+Each key in the hash table is a group ID and references a list of participant IDs assigned to that
+group.
+
+}
+
+@defproc[(get-pending-groups)  (hash/c buid/c (listof integer?))]{
+
+Returns a hash table of all groups that are only partially “full” — that is, groups which, as of the
+last call to a @tech{matchmaker function}, have been assigned one or more
+participants but still fewer than the number of participants given as @racket[_group-size] in the call
+ to @racket[make-matchmaker] which produced the matchmaker.
+
+Each key in the hash table is a group ID and references a list of participant IDs assigned to that
+group.
+
+}
+
+@defproc[(reset-current-group) void?]{
+
+Removes the participant from any group to which they have been assigned (whether it was filled or not).
+
+@mark{If, at the time the participant’s current group is reset, they were in a group that was only
+partially filled, then a subsequent call to a @tech{matchmaker function} may add them back to the same
+group (causing their ID to appear more than once in that group's member list). If they were in a filled
+group, the participant’s ID will remain among the list of the original group members.}
+
+}
+
 
 
 @;===============================================
