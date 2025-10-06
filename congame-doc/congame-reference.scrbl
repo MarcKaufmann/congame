@@ -111,6 +111,20 @@ scope} --- that is, the stored value is shared by all participants in the study 
 
 }
 
+@defproc[(undefined? [v any/c]) boolean?]{
+
+Returns @racket[#t] if @racket[v] is a @tech{study variable} which has been created but not yet given
+any value, @racket[#f] otherwise.
+
+}
+
+@defform[(if-undefined study-var alt)]{
+
+Returns the current value of @racket[study-var] if it has been given a value, or @racket[alt] if
+@racket[study-var] is @racket[undefined?].
+
+}
+
 
 @;------------------------------------------------
 
