@@ -12,9 +12,10 @@
                      congame/components/formular
                      congame/components/study
                      congame/components/transition-graph
-                     (except-in conscript/base require button form select radios)
+                     (except-in conscript/base require button form select radios study? step?)
                      koyo/haml
-                     (only-in xml xexpr?)))
+                     (only-in xml xexpr?))
+          scribble/examples)
 
 @(require "doc-util.rkt")
 
@@ -22,6 +23,8 @@
 
 @local-table-of-contents[]
 
+@(define e (make-base-eval #:lang 'racket/base))
+@(e '(require congame/components/study))
 
 @;===============================================
 
@@ -62,14 +65,27 @@
 
 @subsection{Study variables}
 
+A @deftech{study variable} is a variable whose value is recorded in the study server database.
+
+@itemlist[
+
+ @item{A variable with @tech{participant scope} will store/reference a separate value for each
+ participant in each separate @tech{instance}.}
+
+ @item{A variable with @tech{instance scope} will store/reference a separate value for each study
+ @tech{instance}, but the value is shared by all participants in a given study instance.}
+
+ ]
+
 @deftogether[(
 
 @defform[(defvar id)]
 
 @defform[(defvar* id global-id)])]{
 
-Defines a study variable with @tech{participant scope} bound to @racket[_id]. The study variable can
-be accessed inside the study steps using @racket[_id] and updated with @racket[(set! _id _expr)]. 
+Defines a @tech{study variable} with @tech{participant scope} bound to @racket[_id]. The study
+variable can be accessed inside the study steps using @racket[_id] and updated with
+@racket[(set! _id _expr)]. 
 
 The value of the study variable will be stored in the Congame server database under the current
 study → instance → participant. 
