@@ -1,6 +1,9 @@
 #lang conscript
 
-(require conscript/survey-tools
+;; TODO: Port? to form0
+
+(require (except-in conscript/form make-sliders)
+         conscript/survey-tools
          gregor
          racket/match)
 

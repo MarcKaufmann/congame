@@ -2,8 +2,9 @@
 
 ;; TODO: Port to form0
 
-(require gregor
-         congame-web/components/uploaded-file)
+(require congame-web/components/uploaded-file
+         conscript/form
+         gregor)
 
 (provide
  phd-survey

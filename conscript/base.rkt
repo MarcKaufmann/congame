@@ -149,9 +149,8 @@
 (provide
  (rename-out [conscript-require require])
  %whitelist
- only-in prefix-in rename-in
+ except-in only-in prefix-in rename-in
 
- (all-from-out "form.rkt")
  (all-from-out "html.rkt")
  (all-from-out "markdown.rkt")
  (all-from-out "resource.rkt")
@@ -170,6 +169,7 @@
       congame-web/components/study-bot
       congame-web/components/uploaded-file
       conscript/admin
+      conscript/form
       conscript/form0
       conscript/game-theory
       conscript/game-theory-sig
@@ -199,8 +199,9 @@
 
 (define-syntax (conscript-require stx)
   (define-syntax-class mod
-    #:literals (only-in prefix-in rename-in)
+    #:literals (except-in only-in prefix-in rename-in)
     (pattern id:id)
+    (pattern (except-in id:id bind ...))
     (pattern (only-in id:id bind ...))
     (pattern (prefix-in p:id id:id))
     (pattern (rename-in id:id bind ...)))

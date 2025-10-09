@@ -2,6 +2,8 @@
 
 (require (for-syntax racket/base
                      syntax/parse/pre)
+         (prefix-in congame: congame/components/formular)
+         (prefix-in congame: (submod congame/components/formular tools))
          (only-in congame/components/study form when-bot)
          (prefix-in dyn: forms)
          (except-in forms form)
@@ -12,7 +14,10 @@
          web-server/http)
 
 (provide
- (rename-out [form+combine form])
+ (rename-out
+  [form+combine form]
+  [congame:formular-autofill bot:autofill]
+  [congame:submit-button submit-button])
  form+submit
  dyn:form
  (all-from-out forms) ;; all except form (exported as dyn:form avove)

@@ -2,7 +2,8 @@
 
 ;; TODO: Port to form0
 
-(require conscript/survey-tools
+(require (except-in conscript/form make-sliders)
+         conscript/survey-tools
          data/monocle)
 
 (provide

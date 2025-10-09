@@ -1,7 +1,10 @@
 #lang conscript
 
+;; TODO: Port to form0.
+
 (require congame-web/components/study-bot
          conscript/admin
+         (except-in conscript/form make-sliders)
          conscript/game-theory
          conscript/survey-tools
          data/monocle
