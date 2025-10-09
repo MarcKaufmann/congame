@@ -81,6 +81,7 @@
     @form{
       @binding[#:multiple-checkboxes-1 @make-multiple-checkboxes[opts]]
       @binding[#:multiple-checkboxes-2 @make-multiple-checkboxes[opts #:n 2]]
+      @binding[#:multiple-checkboxes-3 @make-multiple-checkboxes[opts #:n 2 #:exactly-n? #t]]
       @submit-button}})
 
 (defstep (display-table)

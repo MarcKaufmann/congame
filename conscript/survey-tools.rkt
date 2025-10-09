@@ -108,12 +108,21 @@
 
 (define (make-multiple-checkboxes options [render-proc render-checkbox-list]
                                   #:n [n 0]
+                                  #:exactly-n? [exactly-n? #f]
                                   #:message [message #f])
   (congame:make-checkboxes
    options
    render-proc
    #:n n
-   #:message message))
+   #:message message
+   #:validators (if exactly-n?
+                    (list
+                     (lambda (xs)
+                       (let ([xs (or xs null)])
+                         (if (= (length xs) n)
+                             (ok n)
+                             (err (format "You must check exactly ~a boxes." n))))))
+                    null)))
 
 ;; radio-button validator
 

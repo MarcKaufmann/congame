@@ -662,7 +662,7 @@
      (drop vals n)
      (cons g groups))))
 
-(define ((list-longer-than [n 0] [message (format "You must select ~a or more items." n)]) xs)
+(define ((list-longer-than [n 0] [message (format "You must select at least ~a items." n)]) xs)
   (let ([xs (or xs null)])
     (if (>= (length xs) n)
         (ok xs)

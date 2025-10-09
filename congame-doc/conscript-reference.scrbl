@@ -63,7 +63,7 @@ study @tech{page} — usually @racket[md] or @racket[html].
 
 }
 
-@defform[(defstep/study step-id #:study child-study-expr 
+@defform[(defstep/study step-id #:study child-study-expr
                         maybe-require-bindings
                         maybe-provide-bindings)
          #:grammar
@@ -71,9 +71,9 @@ study @tech{page} — usually @racket[md] or @racket[html].
                                   (code:line #:require-bindings ([child-id parent-id] ...)))
           (maybe-provide-bindings (code:line)
                                   (code:line #:provide-bindings ([parent-id child-id] ...)))]]{
-    
 
-Defines a study step that runs @racket[_child-study-expr] when reached. 
+
+Defines a study step that runs @racket[_child-study-expr] when reached.
 
 The step @racket[_step-id] is said to be part of the “parent” study, of which
 @racket[_child-study-expr] becomes a “child” study.
@@ -95,7 +95,7 @@ particular identifiers provided by @racket[_child-study-expr] upon completion. W
 @defform[#:literals (--> lambda unquote done goto quote)
          (defstudy study-id
                    maybe-requires
-                   maybe-provides 
+                   maybe-provides
                    transition-clause ...+)
          #:grammar
          [(maybe-requires (code:line)
@@ -249,7 +249,7 @@ Example:
 #lang conscript
 (defview (instructions-popup _request)
   @md{#Instructions
-      
+
       More detail.....})
 }|
 
@@ -325,7 +325,7 @@ flux
 @defform*[[(log-conscript-fatal string-expr)
            (log-conscript-fatal format-string-expr v ...)]])]{
 
-@margin-note{See @secref["logging" #:doc '(lib "scribblings/reference/reference.scrbl")] in the 
+@margin-note{See @secref["logging" #:doc '(lib "scribblings/reference/reference.scrbl")] in the
 @italic{Racket Reference} for more information on logging.}
 
 Logs an event with the Conscript logger, evaluating @racket[string-expr] or @racket[(format
@@ -337,7 +337,7 @@ state information in the middle of a process, or extra context about possible ca
 Logged events are printed on the console (@tt{stderr}) of a running Congame server.
 
 Note that since the result of a @racketkeywordfont{log-conscript-}@racket[_level] form is
-@|void-const|, you can't use it directly inside a study step. Instead, wrap it in a 
+@|void-const|, you can't use it directly inside a study step. Instead, wrap it in a
 @racket[begin] expression that returns an empty string:
 
 @codeblock[#:keep-lang-line? #f]|{
@@ -345,10 +345,10 @@ Note that since the result of a @racketkeywordfont{log-conscript-}@racket[_level
 (defstep (age-name-survey)
   @md{
     # Survey
- 
+
     @form{
       What is your first name? @(set! first-name (input-text))
- 
+
       @(begin
         (log-conscript-info "Hello")
         "")
@@ -574,12 +574,12 @@ more @secref["validators" #:doc '(lib "forms/forms.scrbl")].
 Renders the form represented by @racket[f] (created using @racket[form+submit] or @racket[form*])
 using @racket[render] and executes @racket[action] on successful submission, then continues to the
 next step in the study.
-                                                           
+
 Identical to the @cgs/form from @racketmodname[congame/components/study] except for the default
 @racket[combine-proc]: when there are multiple bindings for the same field, this procedure’s default
 @racket[combine-proc] combines all the bindings for that field into a list (as described in the
-documentation for @racket[form-run]).                                                           
-                                                                          
+documentation for @racket[form-run]).
+
 }
 
 @defproc[(required-unless [pred (-> any/c)])
@@ -590,7 +590,7 @@ documentation for @racket[form-run]).
 Similar to @racket[required], produces a validator procedure that ensures a value is present (i.e.
 not @racket[#f]), except that if @racket[pred] produces a non-false value at validation time, then the
 value is allowed to be absent. Use inside @racket[ensure] when building forms.
-                                       
+
 }
 
 @deftogether[(
@@ -654,7 +654,7 @@ Use this when rendering step @tech{pages} to instruct the bot how to fill in cer
 ]
 
 }
-                                   
+
 
 
 @; ==============================================
@@ -732,8 +732,9 @@ Returns a string representing @racket[_n] to two decimal places and prefixed wit
 @;is a binding that's not provided outside the module, and it appears to be for internal use only.
 @defproc[(make-multiple-checkboxes [options (listof (cons/c symbol? string?))]
                                    [#:n num-required exact-nonnegative-integer? 0]
+                                   [#:exactly-n? exactly-n? boolean? #f]
                                    [#:message message (or/c #f string?)])
-          formular-field?]{ 
+          formular-field?]{
 
 @margin-note{See @secref["How_to_have_a_form_input_with_multiple_checkboxes"] for more examples of
 this function in use.}
@@ -742,6 +743,10 @@ Returns a @tech{field} containing multiple checkboxes defined by the @racket[_op
 @racket[_num-required] argument specifies the minimum number of checkboxes the user must check
 before they can submit the form. If @racket[_message] is not @racket[#f], it will be shown to
 the participant @mark{if they don’t check at least @racket[_num-required] boxes.}
+
+When @racket[#:exactly-n?] is @racket[#t], the user is expected to
+check exactly @racket[n] checkboxes, otherwise they get a validation
+error.
 
 }
 
@@ -804,5 +809,3 @@ and the passed-in study to other participants.
   The @racket[#:models] argument represents a list of bot models that
   can be run from the admin area.
 }
-
-
