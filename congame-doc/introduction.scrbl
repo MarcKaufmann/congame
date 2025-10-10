@@ -1,9 +1,8 @@
 #lang scribble/manual
 
 @(require "doc-util.rkt"
-        [for-label (except-in conscript/base checkbox textarea select form input-text input-time
-                                             input-range input-date input-number radios)
-                   conscript/form0 
+        [for-label conscript/base
+                   conscript/form0
                    conscript/markdown])
 
 @title[#:tag "intro" #:style 'quiet]{Introduction: a quick tour using Conscript}
@@ -119,7 +118,7 @@ in} button. Log in using the built-in user @tt{admin@"@"congame.local} with pass
 
 @margin-note{@mark{If you later want DrRacket to send uploads to a different server, too bad.}}
 
-Once the login is complete, DrRacket will ask you the name of your study: 
+Once the login is complete, DrRacket will ask you the name of your study:
 
 @margin-note{DrRacket keeps a cache matching your @filepath{.rkt} filenames to study names. You
 won’t have to re-enter the study name more than once for each file you upload --- until you close
@@ -225,7 +224,7 @@ first bit of interactivity: giving the participant a way to proceed to the next 
 @racket[button] generates a button that, when clicked, navigates to the next step in the study,
 whatever that is.
 
-Speaking of which, let’s write the next step! 
+Speaking of which, let’s write the next step!
 
 We’re going to add a form with inputs to collect values. First, we define the structure of the form
 data itself. Add these lines to your study:
@@ -373,7 +372,7 @@ Combining all these snippets, the code should look like the below example. Go ah
 (require conscript/form0)
 
 (provide simple-survey)
- 
+
 (defvar first-name)
 (defvar age)
 
@@ -436,12 +435,12 @@ If all goes well, you’ll be taken to a page titled @onscreen{Instances of simp
 @browser-screenshot{intro-empty-instancelist.png}
 
 As before, click on @onscreen{New Instance} and enter a name for the survey instance --- say,
-@racketvalfont{Age Instance 1}. 
+@racketvalfont{Age Instance 1}.
 
 Now that you’ve published your study and created an instance for it, you can click on the
 @onscreen{Dashboard} link and see the new instance listed there.
 
-You’ll also see a link titled @onscreen{Enroll} — click it! 
+You’ll also see a link titled @onscreen{Enroll} — click it!
 
 You should see your web browser open with a page that looks roughly like this:
 
