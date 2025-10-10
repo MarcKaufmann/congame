@@ -59,7 +59,7 @@
             (make-broker db))]
   [broker-admin (broker) (make-broker-admin-factory "/admin/jobs")]
   [db (make-database-factory
-       #:max-connections 100
+       #:max-connections 64
        (lambda ()
          (trace-connection
           (postgresql-connect

@@ -48,7 +48,7 @@
   [auth (sessions users) make-auth-manager]
   [broker (db) make-broker]
   [db (make-database-factory
-       #:max-connections 100
+       #:max-connections 64
        (lambda ()
          (trace-connection
           (postgresql-connect
