@@ -39,7 +39,9 @@
 
  required-unless
  at-least
- number-in-range)
+ number-in-range
+
+ make-autofill-meta)
 
 (define form+combine
   (make-keyword-procedure
@@ -167,3 +169,10 @@
           (<= v hi))
      (ok v)]
     [else (err (format "Must be in the range [~a, ~a]." lo hi))]))
+
+(define (make-autofill-meta ht)
+  `(meta
+    ([name "formular-autofill"]
+     [content (call-with-output-string
+               (lambda (out)
+                 (write ht out)))])))

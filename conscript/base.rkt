@@ -149,7 +149,7 @@
 (provide
  (rename-out [conscript-require require])
  %whitelist
- except-in only-in prefix-in rename-in
+ except-in only-in prefix-in rename-in submod
 
  (all-from-out "html.rkt")
  (all-from-out "markdown.rkt")
@@ -166,6 +166,7 @@
   ;; racket/system, ffi/unsafe or any system-level functionality.
   (define whitelist
     '(buid
+      congame/components/bot
       congame-web/components/study-bot
       congame-web/components/uploaded-file
       conscript/admin
@@ -199,12 +200,13 @@
 
 (define-syntax (conscript-require stx)
   (define-syntax-class mod
-    #:literals (except-in only-in prefix-in rename-in)
+    #:literals (except-in only-in prefix-in rename-in submod)
     (pattern id:id)
     (pattern (except-in id:id bind ...))
     (pattern (only-in id:id bind ...))
     (pattern (prefix-in p:id id:id))
-    (pattern (rename-in id:id bind ...)))
+    (pattern (rename-in id:id bind ...))
+    (pattern (submod id:id sub-id:id)))
 
   (syntax-parse stx
     [(_ m:mod ...+)
