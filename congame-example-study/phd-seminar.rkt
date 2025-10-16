@@ -1,9 +1,7 @@
 #lang conscript
 
-;; TODO: Port to form0
-
 (require congame-web/components/uploaded-file
-         conscript/form
+         conscript/form0
          gregor)
 
 (provide
@@ -35,7 +33,8 @@
    (date 2024 11 14)
    (date 2024 11 21)
    (date 2024 11 28)
-   (date 2024 12 5)))
+   (date 2024 12 5)
+   (date 2025 10 16)))
 
 (define (~ymd d)
   (~t d "EEEE, MMMM d"))
@@ -45,56 +44,54 @@
 ; Here our old way of passing things around was superior, given that now
 ; we fill the global namespace with variables like there's no tomorrow.
 (defstep (get-research-proposal)
+  (define the-form
+    (form* ([f (ensure
+                binding/file
+                (lambda (f)
+                  (if f
+                      (valid-pdf? f)
+                      (ok f))))])
+      f))
+  (define (on-submit f)
+    (when f
+      (upload-file! f)))
+  (define (render rw)
+    @div{@(rw "f" @input-file{Provide your research proposal as a pdf.})
+         @|submit-button|})
+
   @md{# Research Proposal
 
-      @form{
-            @div{
-                 @set![research-proposal
-                       (map-result
-                        (input-file
-                         "Provide your reseach proposal as a pdf."
-                         #:required? #f
-                         #:validators (list
-                                       (lambda (b)
-                                         (if b
-                                             (valid-pdf? b)
-                                             (cons 'ok b)))))
-                        (lambda (b)
-                          (if b
-                              (upload-file! b)
-                              b)))]}
-            @submit-button}})
+      @form[the-form on-submit render]})
 
 (defstep (get-research-ideas)
   ;(set! research-proposals (update-rps))
   ;(set! new-research-proposals (get-new-rps))
+  (define the-form
+    (dyn:form
+     list
+     (for/list ([i (in-range 5)])
+       (cons (string->symbol (format "ri~a" i))
+             (ensure binding/text (required))))))
+  (define (on-submit ideas)
+    (set! research-ideas (hash-set research-ideas next-survey-date ideas)))
+  (define (render rw)
+    @div{@apply[div (for/list ([i (in-range 5)])
+                      (rw (format "ri~a" i)
+                          (textarea (format "Research idea ~a:" i))))]
+         @|submit-button|})
   @md{# Research Ideas
 
       Deadline: @(~ymd next-survey-date)
-
-      @form{
-            @div{
-                 @set![research-ideas
-                       (map-result
-                        (input-list
-                         (for/list ([i (in-range 5)])
-                           (input-research-idea (add1 i))))
-                        (lambda (v)
-                          (hash-set
-                           research-ideas
-                           next-survey-date
-                           v)))]}
-
-            @submit-button}})
+      @form[the-form on-submit render]})
 
 (defstep (initialize-surveys)
   (define t (today))
   (set! surveys-answered '())
   (set! remaining-surveys
-    (filter
-     (lambda (d)
-       (date>=? d t))
-   survey-dates))
+        (filter
+         (lambda (d)
+           (date>=? d t))
+         survey-dates))
   (skip))
 
 (defstep (set-next-survey)
@@ -271,8 +268,8 @@
 
       @button{Next}})
 
-(define (input-percentage)
-  (input-number #:min 0 #:max 100))
+(define (input-percentage label)
+  (input-number #:attributes `((min "0") (max "100")) label))
 
 (defvar p-finish)
 (defvar p-4year)
@@ -283,42 +280,51 @@
 (defvar n-research-projects)
 
 (defstep (status)
+  (define-values (the-form on-submit)
+    (form+submit
+     [phd-year (ensure binding/number (required) (at-least 1))]))
+  (define (render rw)
+    @div{@rw["phd-year" @input-number{What year of the PhD program are you in?}]
+         @|submit-button|})
   @md{# Status
 
-      @form{
-            @div{
-                 What year of the PhD program are you in? @set![phd-year (input-number #:min 1)]}
-
-            @submit-button}})
+      @form[the-form on-submit render]})
 
 (defstep (research-status)
+  (define-values (the-form on-submit)
+    (form+submit
+     [n-research-projects (ensure binding/number (required) (at-least 0))]))
+  (define (render rw)
+    @div{@rw["n-research-projects" @input-number{How many active research projects do you have? An active research project is one with a reasonably well-defined research question, so that you could include it in a grant proposal, and one that you are working on or will be working on in the next year.}]
+         @|submit-button|})
   @md{# Research
 
-      @form{
-            @div{
-                 How many active research projects do you have? An active research project is one with a reasonably well-defined research question, so that you could include it in a grant proposal, and one that you are working on or will be working on in the next year.
-                 @set![n-research-projects (input-number #:min 0)]}
-            @submit-button}})
+      @form[the-form on-submit render]})
 
 (defstep (phd-expectations)
+  (define percentage
+    (ensure
+     binding/number
+     (required)
+     (number-in-range 0 100)))
+  (define-values (the-form on-submit)
+    (form+submit
+     [p-finish percentage]
+     [p-4year percentage]
+     [p-academic percentage]
+     [p-phd-job percentage]))
+  (define (render rw)
+    @div{
+      @div{For each of the statements below, report the probability in percentage points (%) that the event occurs.}
+      @br{}
+      @rw["p-finish" @input-percentage{You will finish your PhD:}]
+      @rw["p-4year" @input-percentage{You will graduate within 4 years or less:}]
+      @rw["p-academic" @input-percentage{You will get an academic job after your PhD (postdoc, tenure track, etc):}]
+      @rw["p-phd-job" @input-percentage{You will get a job that requires a PhD:}]
+      @|submit-button|})
+
   @md{# PhD Expectations
-
-      @form{
-            @div{For each of the statements below, report the probability in percentage points (%) that the event occurs.}
-            @br{}
-            @div{
-                You will finish your PhD: @set![p-finish (input-percentage)]%}
-
-            @div{
-                 You will graduate within 4 years or less: @set![p-4year (input-percentage)]%}
-
-            @div{
-                 You will get an academic job after your PhD (postdoc, tenure track, etc): @set![p-academic (input-percentage)]%}
-
-            @div{
-                 You will get a job that requires a PhD: @set![p-phd-job (input-percentage)]%}
-
-            @submit-button}})
+      @form[the-form on-submit render]})
 
 (defstep (past-work)
   ; FIXME: Fill in with questions about work life balance
@@ -327,13 +333,16 @@
 (defvar phd-goal)
 
 (defstep (phd-reasons)
+  (define-values (the-form on-submit)
+    (form+submit
+     [phd-goal (ensure binding/text (required))]))
+  (define (render rw)
+    @div{@rw["phd-goal" @textarea{What was your main reason for starting a PhD?}]
+         @|submit-button|})
+
   @md{# PhD Motivations
 
-      @form{
-            @div{
-              @set![phd-goal @textarea{What was your main reason for starting a PhD?}]}
-
-            @submit-button}})
+      @form[the-form on-submit render]})
 
 (defstudy phd-survey
   [welcome --> status
