@@ -91,7 +91,7 @@
  regexp-match?
 
  string? symbol?
- format ~a string string->keyword number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
+ format ~a ~r string string->keyword number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
  inexact->exact
  string-split string-join string-append
  bytes? bytes->string/utf-8 char?
