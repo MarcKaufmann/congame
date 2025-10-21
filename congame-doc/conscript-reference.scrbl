@@ -828,7 +828,7 @@ Removes the participant from any group to which they have been assigned (whether
 
 @mark{If, at the time the participant’s current group is reset, they were in a group that was only
 partially filled, then a subsequent call to a @tech{matchmaker function} may add them back to the same
-group (causing their ID to appear more than once in that group's member list). If they were in a filled
+group (causing their ID to appear more than once in that group’s member list). If they were in a filled
 group, the participant’s ID will remain among the list of the original group members.}
 
 }
