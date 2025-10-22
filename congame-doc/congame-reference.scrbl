@@ -61,6 +61,12 @@
   Runs the study @racket[s] under @racket[req] with @racket[bindings].
 }
 
+@defproc[(current-participant-id) integer?]{
+
+Returns the database ID of the current participant in the current study @tech{instance}.
+
+}
+
 @;------------------------------------------------
 
 @subsection{Study variables}
@@ -125,6 +131,55 @@ Returns the current value of @racket[study-var] if it has been given a value, or
 
 }
 
+@deftogether[(
+
+@defproc[(call-with-study-transaction [proc (-> any/c)]) any/c]
+
+@defform[(with-study-transaction expr ...)])]{
+
+Calls @racket[proc] (or evaluates @racket[expr ...] in such a way as to prevent any study variables
+from being updated by other participants until completed. The result of @racket[proc] (or 
+@racket[expr ...]) becomes the result of the expression.
+
+@bold{Important:} You should use one of these forms when you’re doing multiple operations that
+depend on each other and which involve instance-scoped variables (that is, variables with
+@tech{instance scope}, created with @racket[defvar/instance] or @racket[defvar*/instance]).
+Variables with instance scope can be updated by other participants at any time, so it is possible
+that the variable could change between the time when its value is read and when it is updated.
+
+Example:
+
+@racketblock[
+
+(defvar/instance group-score)
+
+(code:comment2 @#,elem{...})
+
+(define (bad-update)
+  (when (code:hilite (> score 100))
+    (code:comment2 @#,elem{Bad: another participant could change the score before the next line runs!})
+    (set! score (code:hilite (+ score 50))))) 
+
+(define (good-update)
+  (with-study-transaction (code:comment @#,elem{Prevents changes by anyone else during this code})
+    (when (code:hilite (> score 100))
+      (set! score (code:hilite (+ score 50))))))
+
+]
+
+Note that each highlighted expression above is a separate reference to the @racketvarfont{score}
+variable; without the use of a transaction, other study participants could change its value at any
+point between those expressions.
+
+You don’t need @racket[with-study-transaction] for single operations; a single read, or a single
+write of a literal value, is safe. But the moment you have a sequence of operations where later
+steps depend on earlier ones, and those steps touch instance variables, use
+@racket[with-study-transaction] to keep everything atomic and consistent.
+
+In concrete technical terms, @racket[call-with-study-transaction] enters a database transaction with
+an isolation level of @racket['serializable].
+
+}
 
 @;------------------------------------------------
 
