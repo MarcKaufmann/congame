@@ -12,9 +12,10 @@
                      congame/components/formular
                      congame/components/study
                      congame/components/transition-graph
-                     (except-in conscript/base require button)
+                     (except-in conscript/base require button study? step?)
                      koyo/haml
-                     (only-in xml xexpr?)))
+                     (only-in xml xexpr?))
+          scribble/examples)
 
 @(require "doc-util.rkt")
 
@@ -22,6 +23,8 @@
 
 @local-table-of-contents[]
 
+@(define e (make-base-eval #:lang 'racket/base))
+@(e '(require congame/components/study))
 
 @;===============================================
 
@@ -58,9 +61,27 @@
   Runs the study @racket[s] under @racket[req] with @racket[bindings].
 }
 
+@defproc[(current-participant-id) integer?]{
+
+Returns the database ID of the current participant in the current study @tech{instance}.
+
+}
+
 @;------------------------------------------------
 
 @subsection{Study variables}
+
+A @deftech{study variable} is a variable whose value is recorded in the study server database.
+
+@itemlist[
+
+ @item{A variable with @tech{participant scope} will store/reference a separate value for each
+ participant in each separate @tech{instance}.}
+
+ @item{A variable with @tech{instance scope} will store/reference a separate value for each study
+ @tech{instance}, but the value is shared by all participants in a given study instance.}
+
+ ]
 
 @deftogether[(
 
@@ -68,8 +89,9 @@
 
 @defform[(defvar* id global-id)])]{
 
-Defines a study variable with @tech{participant scope} bound to @racket[_id]. The study variable can
-be accessed inside the study steps using @racket[_id] and updated with @racket[(set! _id _expr)].
+Defines a @tech{study variable} with @tech{participant scope} bound to @racket[_id]. The study
+variable can be accessed inside the study steps using @racket[_id] and updated with
+@racket[(set! _id _expr)]. 
 
 The value of the study variable will be stored in the Congame server database under the current
 study → instance → participant.
@@ -95,6 +117,69 @@ scope} --- that is, the stored value is shared by all participants in the study 
 
 }
 
+@defproc[(undefined? [v any/c]) boolean?]{
+
+Returns @racket[#t] if @racket[v] is a @tech{study variable} which has been created but not yet given
+any value, @racket[#f] otherwise.
+
+}
+
+@defform[(if-undefined study-var alt)]{
+
+Returns the current value of @racket[study-var] if it has been given a value, or @racket[alt] if
+@racket[study-var] is @racket[undefined?].
+
+}
+
+@deftogether[(
+
+@defproc[(call-with-study-transaction [proc (-> any/c)]) any/c]
+
+@defform[(with-study-transaction expr ...)])]{
+
+Calls @racket[proc] (or evaluates @racket[expr ...] in such a way as to prevent any study variables
+from being updated by other participants until completed. The result of @racket[proc] (or 
+@racket[expr ...]) becomes the result of the expression.
+
+@bold{Important:} You should use one of these forms when you’re doing multiple operations that
+depend on each other and which involve instance-scoped variables (that is, variables with
+@tech{instance scope}, created with @racket[defvar/instance] or @racket[defvar*/instance]).
+Variables with instance scope can be updated by other participants at any time, so it is possible
+that the variable could change between the time when its value is read and when it is updated.
+
+Example:
+
+@racketblock[
+
+(defvar/instance group-score)
+
+(code:comment2 @#,elem{...})
+
+(define (bad-update)
+  (when (code:hilite (> score 100))
+    (code:comment2 @#,elem{Bad: another participant could change the score before the next line runs!})
+    (set! score (code:hilite (+ score 50))))) 
+
+(define (good-update)
+  (with-study-transaction (code:comment @#,elem{Prevents changes by anyone else during this code})
+    (when (code:hilite (> score 100))
+      (set! score (code:hilite (+ score 50))))))
+
+]
+
+Note that each highlighted expression above is a separate reference to the @racketvarfont{score}
+variable; without the use of a transaction, other study participants could change its value at any
+point between those expressions.
+
+You don’t need @racket[with-study-transaction] for single operations; a single read, or a single
+write of a literal value, is safe. But the moment you have a sequence of operations where later
+steps depend on earlier ones, and those steps touch instance variables, use
+@racket[with-study-transaction] to keep everything atomic and consistent.
+
+In concrete technical terms, @racket[call-with-study-transaction] enters a database transaction with
+an isolation level of @racket['serializable].
+
+}
 
 @;------------------------------------------------
 

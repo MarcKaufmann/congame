@@ -4,7 +4,11 @@
 
 @title[#:tag "install-congame" #:style 'quiet]{Installing, Running, and Updating}
 
-Below are step-by-step instructions for installing Congame and Conscript on your personal computer.
+Below are step-by-step instructions for installing Congame and Conscript on your personal computer, so
+you can develop and test studies.
+
+@margin-note{These instructions don’t cover the steps needed to run your studies on a server so others
+can participate; for that, see @secref["congame-setup"].}
 
 Conscript is not a distinct application. Rather, it’s a set of software packages that run on top of
 the Racket programming language environment.
@@ -161,10 +165,48 @@ home page.
 in the same terminal window to stop it. You’ll still need the Docker desktop app runnning in the
 background, however.}
 
-To log in, use the built-in user @tt{admin@"@"congame.local} with password @tt{admin}.
-
 When finished, you can stop the Congame server by pressing the stop ⏹️ button for the @tt{congame}
 container in the Docker desktop app.
+
+@;------------------------------------------------
+
+@subsection{Logging in}
+
+To log in as the server admin, use the built-in user @tt{admin@"@"congame.local} with password
+@tt{admin}.
+
+@subsubsection{Logging in anonymously}
+
+Sometimes you need to log in as an anonymous participant in order to test a study (for example, a study
+that coordinates results between participants).
+
+Here’s how (assuming you've already uploaded a study and created at least one @tech{instance} for it):
+
+@itemlist[#:style 'ordered
+
+@item{Open a new @emph{incognito} browser window (or use a different browser than the one you used to
+log in as admin).
+
+@itemlist[#:style 'compact
+@item{@bold{Chrome}: Click the menu icon (three dots) → Select @onscreen{New incognito window}}
+@item{@bold{Firefox}: Click the menu icon (three lines) → Select @onscreen{New Private Window}}
+@item{@bold{Safari}: Click @onscreen{File} menu → @onscreen{New Private Window}}
+@item{@bold{Edge}: Click the menu icon (three dots) → @onscreen{New InPrivate window}}
+
+]
+
+}
+
+@item{In the new browser window, open @racketresultfont{http://localhost:5100/_anon-login/[STUDY_INSTANCE]} —
+replacing the last part with the instance (or “slug”) of your study.
+
+@itemlist[#:style 'compact
+@item{You can find your study’s “slug” on the server by navigating to @onscreen{Admin} → click your
+study → click your study instance. The top of the study instance page will show the study
+@onscreen{Slug}.}]}
+
+]
+
 
 @;===============================================
 
