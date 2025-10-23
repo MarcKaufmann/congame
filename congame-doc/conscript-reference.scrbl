@@ -793,13 +793,22 @@ toggleable-xexpr form
 
 The bindings in this module are also provided by @racketmodname[conscript/base].
 
+These functions are used for matching participants into groups. Tehy take care of the mechanics of
+pausing the study until groups are full, and of sharing results between group members.
+
+A @deftech{matchmaker function} is used to collect participants into groups of a given size,
+displaying a “Please wait” @tech{step} until the group is full. A @deftech{pending group} is one
+that has one or more members but still needs more to meet its quota; a @deftech{ready group} has met
+its quota of assigned participants and is ready to proceed.
+
 @defproc[(make-matchmaker [group-size exact-positive-integer?]
                           [group-ok? (-> buid/c boolean?) values]) (-> (-> xexpr?) any/c)]{
 
-Returns a @deftech{matchmaker function} that accepts one argument (that argument being a study step function)
-and which adds the current participant to the current pending group (creating a new group if all other
-groups are full already), and then either skips to the next step in the study (if the current group
-now has @racket[_group-size] members) or loads the step @tech{page} provided by the argument.
+Returns a @tech{matchmaker function} that accepts one argument (that argument being a study step
+function) and which adds the current participant to the current pending group (creating a new group
+if all other groups are full already), and then either skips to the next step in the study (if the
+current group now has @racket[_group-size] members) or loads the step @tech{page} provided by the
+argument.
 
 @margin-note{@mark{You should avoid calling @racket[make-matchmaker] more than once with different
 values of @racket[group-size] in the same study.}}
@@ -818,16 +827,17 @@ procedure must return @racket[#t] if the participant can be added to the candida
 Returns the @seclink["Spec" #:doc '(lib "buid/buid.scrbl")]{BUID} of the group the current
 participant is assigned to, or @racket[#f] if not currently assigned to any group.
 
-If the result is not @racket[#f], it can be used as a key for the hash returned by
-@racket[get-ready-groups] to get a list of participant IDs.
+If the result is not @racket[#f], it can be used as a key for the hash returned by either
+@racket[get-ready-groups] or @racket[get-pending-groups] (depending on whether the current
+participant is in a @tech{ready group} or a @tech{pending group}) to get a list of participant IDs.
 
 }
 
 @defproc[(get-ready-groups) (hash/c buid/c (listof integer?))]{
 
-Returns a hash table of all groups that are currently “full” — that is, groups which, as of the last
-call to a @tech{matchmaker function}, have been assigned the number of
-participants given as @racket[_group-size] in the call to @racket[make-matchmaker] which produced the matchmaker.
+Returns a hash table of all currently @tech{ready groups}; that is, groups which, as of the last
+call to a @tech{matchmaker function}, have been assigned the number of participants given as
+@racket[_group-size] in the call to @racket[make-matchmaker] which produced the matchmaker.
 
 Each key in the hash table is a group ID and references a list of participant IDs assigned to that
 group.
@@ -836,10 +846,10 @@ group.
 
 @defproc[(get-pending-groups)  (hash/c buid/c (listof integer?))]{
 
-Returns a hash table of all groups that are only partially “full” — that is, groups which, as of the
-last call to a @tech{matchmaker function}, have been assigned one or more
-participants but still fewer than the number of participants given as @racket[_group-size] in the call
- to @racket[make-matchmaker] which produced the matchmaker.
+Returns a hash table of all currently @tech{pending groups}; that is, groups which, as of the last
+call to a @tech{matchmaker function}, have been assigned one or more participants but still fewer
+than the number of participants given as @racket[_group-size] in the call to
+@racket[make-matchmaker] which produced the matchmaker.
 
 Each key in the hash table is a group ID and references a list of participant IDs assigned to that
 group.
@@ -856,12 +866,13 @@ partially full}, an empty list is returned.
 
 @defproc[(reset-current-group) void?]{
 
-Removes the participant from any group to which they have been assigned (whether it was filled or not).
+Removes the participant from any group to which they have been assigned (whether it was filled or
+not).
 
 @mark{If, at the time the participant’s current group is reset, they were in a group that was only
-partially filled, then a subsequent call to a @tech{matchmaker function} may add them back to the same
-group (causing their ID to appear more than once in that group’s member list). If they were in a filled
-group, the participant’s ID will remain among the list of the original group members.}
+partially filled, then a subsequent call to a @tech{matchmaker function} may add them back to the
+same group (causing their ID to appear more than once in that group’s member list). If they were in
+a filled group, the participant’s ID will remain among the list of the original group members.}
 
 }
 
