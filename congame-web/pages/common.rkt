@@ -20,6 +20,7 @@
   (-> request? response?)
   (page
    #:subtitle (translate 'subtitle-not-found)
+   #:status-code 404
    (haml
     (.container
      (:h1 (translate 'subtitle-not-found))

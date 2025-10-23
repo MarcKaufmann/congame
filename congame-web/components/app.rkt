@@ -232,7 +232,10 @@
       serve-resource-page]
 
      [("dsl-resource" (integer-arg) (string-arg) ...)
-      (serve-dsl-resource-page db)]))
+      (serve-dsl-resource-page db)]
+
+     [else
+      not-found-page]))
 
   ;; Requests go up (starting from the last wrapper) and respones go down!
   (define (stack handler)

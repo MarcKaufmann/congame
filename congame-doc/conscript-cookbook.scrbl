@@ -1,8 +1,7 @@
 #lang scribble/manual
 
 @(require [for-label (except-in conscript/survey-tools make-sliders)
-                     (except-in conscript/base checkbox textarea select form input-text input-time
-                                             input-range input-date input-number radios)
+                     conscript/base
                      (except-in racket/base require)
                      conscript/form0
                      racket/contract]
@@ -171,7 +170,7 @@ To provide a link on a study page, use the anchor tag @racket[a]:
       attribute `target` with the value `"_blank"`:
 
       @a[#:href "https://example.com" #:target "_blank"]{Open in new tab}
-  }) 
+  })
 }|
 
 @;------------------------------------------------
@@ -202,7 +201,7 @@ displayed to two decimal places:
 
 You may want to have buttons to allow participants to select which page to show next. For example,
 you might want to allow a participant to go back and change a choice; or while debugging you might
-want to have a page that allows you to jump to specific parts for quick testing. 
+want to have a page that allows you to jump to specific parts for quick testing.
 
 @margin-note{Be careful with skipping to a specific page: jumping back to a form will, by default,
 overwrite the original answer; and skipping to a later part in the study may lead to errors. If you
@@ -496,7 +495,7 @@ For example, to use an image file @filepath{test.png} in your study:
 
 @itemlist[#:style 'ordered
 
-@item{Create a new, empty folder — the name can be anything, but for this example let’s call it 
+@item{Create a new, empty folder — the name can be anything, but for this example let’s call it
 @filepath{study-bundle}.}
 
 @item{Inside the @filepath{study-bundle/} folder, create a file
@@ -516,12 +515,12 @@ Ensure the @filepath{study.rkt} file contains this code:
 
 @codeblock|{
 #lang conscript
- 
+
 (provide image-study)
- 
+
 ; Create the resource that points at the image.
 (define-static-resource screenshot "images/test.png")
- 
+
 (defstep (show-image)
   @html{
     @h1{A Page with an Image}
@@ -529,7 +528,7 @@ Ensure the @filepath{study.rkt} file contains this code:
       #:alt "Screenshot"
       #:src (resource-uri screenshot)
     ]})
- 
+
 (defstudy image-study
   [show-image --> show-image])
 }|]
@@ -1288,4 +1287,3 @@ landing on the page for the first time - until then, they simply see a waiting m
 
   [final-page --> final-page])
 }|
-

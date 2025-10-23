@@ -2,6 +2,8 @@
 
 (require (for-syntax racket/base
                      syntax/parse/pre)
+         (prefix-in congame: congame/components/formular)
+         (prefix-in congame: (submod congame/components/formular tools))
          (only-in congame/components/study form when-bot)
          (prefix-in dyn: forms)
          (except-in forms form)
@@ -12,7 +14,10 @@
          web-server/http)
 
 (provide
- (rename-out [form+combine form])
+ (rename-out
+  [form+combine form]
+  [congame:formular-autofill bot:autofill]
+  [congame:submit-button submit-button])
  form+submit
  dyn:form
  (all-from-out forms) ;; all except form (exported as dyn:form avove)
@@ -23,6 +28,7 @@
  input-date
  input-datetime
  input-email
+ input-file
  input-number
  input-range
  input-text
@@ -31,7 +37,11 @@
  select
  textarea
 
- required-unless)
+ required-unless
+ at-least
+ number-in-range
+
+ make-autofill-meta)
 
 (define form+combine
   (make-keyword-procedure
@@ -90,6 +100,13 @@
 (define input-range (make-typed-input-widget "range"))
 (define textarea (make-input-widget widget-textarea))
 
+(define ((input-file label) name value errors)
+  (haml
+   (.field-group
+    (:label (or label (string-titlecase name))))
+   ((widget-file) name value errors)
+   ,@((widget-errors) name value errors)))
+
 (define ((select options label) name value errors)
   (haml
    (.field-group
@@ -138,3 +155,24 @@
   (cond [(pred) (ok v)]
         [((required) v)]
         [else (error 'required-unless "unreachable")]))
+
+(define ((at-least n) v)
+  (cond
+    [(not v) (ok #f)]
+    [(>= v n) (ok v)]
+    [else (err (format "Must be greater than or equal to ~s." n))]))
+
+(define ((number-in-range lo hi) v)
+  (cond
+    [(not v) (ok #f)]
+    [(and (>= v lo)
+          (<= v hi))
+     (ok v)]
+    [else (err (format "Must be in the range [~a, ~a]." lo hi))]))
+
+(define (make-autofill-meta ht)
+  `(meta
+    ([name "formular-autofill"]
+     [content (call-with-output-string
+               (lambda (out)
+                 (write ht out)))])))

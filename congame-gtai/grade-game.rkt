@@ -1,14 +1,16 @@
 #lang conscript
 
-(require congame-web/components/study-bot
-         conscript/admin
+;; TODO: Test that form0 works properly after fixing the study. The
+;; display-result procedure is busted.
+
+(require conscript/admin
+         conscript/form0
          conscript/game-theory
          conscript/survey-tools
          data/monocle
          racket/match
          racket/unit
-         threading
-         )
+         threading)
 
 (provide
  grade-game-lecture)
@@ -104,12 +106,20 @@
       (matchmaker match-waiter))))
 
 (defstep (ask-why)
+  (define-values (the-form on-submit)
+    (form+submit
+     [why (ensure binding/text (required))]))
+  (define (render rw)
+    @div{@make-autofill-meta[
+           (hasheq
+            'test
+            (hasheq
+             'why "Bot does what bot told"))]
+         @rw["why" @input-text{Why did you choose the way that you did?}]
+         @|submit-button|})
   @md{# Choice Explanation
 
-      @form[#:bot ([test (#:why "Bot does what bot told")])]{
-        @div{
-          @set![why (input-text "Why did you choose the way that you did?")]}
-        @submit-button}})
+      @form[the-form on-submit render]})
 
 (defstep (admin/lecture)
   (define (finish-current-phase)
@@ -437,6 +447,27 @@
 (defvar angel-vs-selfish)
 
 (defstep (mixed-game-questions)
+  (define choices
+    '(("α" . "α")
+      ("β" . "β")))
+  (define choice-field
+    (ensure binding/text (required) (one-of (map car choices))))
+  (define-values (the-form on-submit)
+    (form+submit
+     [selfish-vs-angel choice-field]
+     [angel-vs-selfish choice-field]))
+  (define (render rw)
+    @div{Suppose that you play in a mixed game.
+
+         @make-autofill-meta[
+           (hasheq
+            'test
+            (hasheq
+             'selfish-vs-angel "α"
+             'angel-vs-selfish "β"))]
+         @rw["selfish-vs-angel" @radios[choices]{You are a selfish player and your pair is an indignant angel. What do you choose?}]
+         @rw["angel-vs-selfish" @radios[choices]{You are an indignant angel and your pair is selfish. What do you choose?}]
+         @|submit-button|})
   @md{# Games with mixed players
 
       ## Reminder
@@ -451,23 +482,7 @@
 
       ## Questions
 
-      @form[#:bot ([test
-                     (#:selfish-vs-angel "α")
-                     (#:angel-vs-selfish "β")])]{
-            Suppose that you play in a mixed game.
-
-            @set![selfish-vs-angel @radios[
-                    '(("α" . "α")
-                      ("β" . "β"))
-            ]{You are a selfish player and your pair is an indignant angel. What do you choose?}]
-
-            @set![angel-vs-selfish @radios[
-                    '(("α" . "α")
-                      ("β" . "β"))
-            ]{You are an indignant angel and your pair is selfish. What do you choose?}]
-
-            @submit-button
-            }})
+      @form[the-form on-submit render]})
 
 (defstep (store-answers!)
   (define pid

@@ -1,5 +1,7 @@
 #lang conscript
 
+(require conscript/form0)
+
 (provide
  conscript-data-sharing-example)
 
@@ -18,9 +20,16 @@
         @button{Continue}})
 
 (defstep (get-their-name)
-  @html{@h1{What's your name?}
-        @form{@label{Name: @input-text[#:name]}
-              @submit-button}})
+  (define-values (the-form on-submit)
+    (form+submit
+     [name (ensure binding/text (required))]))
+  (define (render rw)
+    @md{
+      @input-text{Name:}
+      @|submit-button|})
+  @html{
+    @h1{What's your name?}
+    @form{the-form on-submit render}})
 
 (defstep (check-their-name)
   (define (yes)

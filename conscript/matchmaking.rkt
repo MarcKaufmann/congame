@@ -17,6 +17,8 @@
   [get-pending-groups (-> (hash/c buid/c (listof id/c)))]
   [reset-current-group (-> void?)]))
 
+;; TODO: Namespace these vars?
+
 ;; These are study-scoped in order for the parent and the child to be
 ;; able to do their own matchmaking. If a parent wants to share the
 ;; current group with a child, it needs to store it in a separate var*

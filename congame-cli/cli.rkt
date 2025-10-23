@@ -131,6 +131,12 @@ HELP
         (for ([dep (in-list (get-module-dependencies path (string->symbol id)))])
           (define dep-path (build-path study-directory dep))
           (define dst-path (build-path tmp-dir dep))
+          ;; Ensure that any intermediate directories required by the
+          ;; dep also exist.
+          (define-values (dst-dir _filename _must-be-dir?)
+            (split-path dst-path))
+          (unless (directory-exists? dst-dir)
+            (make-directory* dst-dir))
           (if (directory-exists? dep-path)
               (copy-directory/files dep-path dst-path)
               (copy-file dep-path dst-path))))

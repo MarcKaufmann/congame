@@ -94,7 +94,7 @@ variable can be accessed inside the study steps using @racket[_id] and updated w
 @racket[(set! _id _expr)]. 
 
 The value of the study variable will be stored in the Congame server database under the current
-study → instance → participant. 
+study → instance → participant.
 
 Study variables created with @racket[defvar*] will additionally be visible to any child studies (see
 @racket[defstep/study]).
@@ -237,7 +237,7 @@ an isolation level of @racket['serializable].
   @defproc[(next? [v any/c]) boolean?]
 )]{
   A special value that can be used as a transition result to cause a
-  study to transition to the next step, whatever step that may be. 
+  study to transition to the next step, whatever step that may be.
 
   The predicate @racket[next?] returns @racket[#t] if @racket[_v] is
   identical to @racket[next], @racket[#f] otherwise.
@@ -247,9 +247,9 @@ an isolation level of @racket['serializable].
 @deftogether[(
   @defthing[#:kind "canary" done done?]
   @defproc[(done? [v any/c]) boolean?]
-)]{  
+)]{
   A special value that can be used as a transition result to cause a
-  transition to the end of the study. 
+  transition to the end of the study.
 
   The predicate @racket[done?] returns @racket[#t] if @racket[_v] is
   identical to @racket[done], @racket[#f] otherwise.
@@ -348,7 +348,7 @@ When the user submits the form, the field yields whatever value the user has ent
 
 @defproc[(formular-field? [v any/c]) boolean?]{
   Returns @racket[#t] if @racket[_v] is a @tech{field}, @racket[#f] otherwise.
-  
+
 }
 
 @defproc[(formular-autofill [bot-id any/c]) void?]{
@@ -370,7 +370,7 @@ For example, the following code creates two @racket[input-number] fields:
 
 ]
 
-When the user enters two numeric values (say, @racket[-3] and @racket[9]) and submits the form, 
+When the user enters two numeric values (say, @racket[-3] and @racket[9]) and submits the form,
 @racketidfont{myvals} will contain @racket['(-3 9)].
 
 }
@@ -401,7 +401,7 @@ If @racket[_step] is provided, then using the stepper arrows or slider will incr
 value by that amount (though the value is not guaranteed to be a multiple of @racket[_step]).
 
 If @racket[required?] is not @racket[#f], the field must contain data before the form can be
-submitted. 
+submitted.
 
 }
 
@@ -426,7 +426,7 @@ the checkbox must be selected before the form can be submitted. Any @racket[_att
 Returns a field that renders as a single-line text input. If @racket[required?] is not @racket[#f],
 the checkbox must be selected before the form can be submitted. Any @racket[_attrs] will be used as
 @tech{HTML} attributes in the text box’s @racketresultfont{<input>} tag.
- 
+
 
 }
 
@@ -460,7 +460,7 @@ Use @racket[_attrs] to specify the size of the text box in rows and columns:
                      [#:attributes attrs (listof (list/c symbol? string?)) '()])
           formular-field?])]{
 
-Return fields for entering date and time values, respectively. 
+Return fields for entering date and time values, respectively.
 
 Date values are returned in strings of the form @racket{yyyy-mm-dd}. Time values are returned as
 strings of the form @racket{hh:mm} (24-hour format).

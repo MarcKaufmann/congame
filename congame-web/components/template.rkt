@@ -120,6 +120,7 @@ SCRIPT
 
 (define (page #:subtitle [subtitle #f]
               #:show-nav? [show-nav? #t]
+              #:status-code [status-code 200]
               . content)
 
   ;; profile-write is called inside a different thread so we have to
@@ -134,8 +135,11 @@ SCRIPT
              content))
 
     (response
-     200
-     #"OK"
+     status-code
+     (case status-code
+       [(200) #"OK"]
+       [(404) #"Not Found"]
+       [else (raise-argument-error 'page "(or/c 200 404)" status-code)])
      (current-seconds)
      #"text/html; charset=utf-8"
      (make-preload-headers)

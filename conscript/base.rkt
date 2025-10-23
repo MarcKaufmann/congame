@@ -91,7 +91,7 @@
  regexp-match?
 
  string? symbol?
- format ~a string number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
+ format ~a ~r string string->keyword number->string string->number symbol->string string->symbol string->list string->bytes/utf-8 string-upcase string-downcase string-titlecase string=? string>=? string<=? string>? string<?
  inexact->exact
  string-split string-join string-append
  bytes? bytes->string/utf-8 char?
@@ -149,9 +149,8 @@
 (provide
  (rename-out [conscript-require require])
  %whitelist
- only-in prefix-in rename-in
+ except-in only-in prefix-in rename-in submod
 
- (all-from-out "form.rkt")
  (all-from-out "html.rkt")
  (all-from-out "markdown.rkt")
  (all-from-out "resource.rkt")
@@ -167,9 +166,11 @@
   ;; racket/system, ffi/unsafe or any system-level functionality.
   (define whitelist
     '(buid
+      congame/components/bot
       congame-web/components/study-bot
       congame-web/components/uploaded-file
       conscript/admin
+      conscript/form
       conscript/form0
       conscript/game-theory
       conscript/game-theory-sig
@@ -199,11 +200,13 @@
 
 (define-syntax (conscript-require stx)
   (define-syntax-class mod
-    #:literals (only-in prefix-in rename-in)
+    #:literals (except-in only-in prefix-in rename-in submod)
     (pattern id:id)
+    (pattern (except-in id:id bind ...))
     (pattern (only-in id:id bind ...))
     (pattern (prefix-in p:id id:id))
-    (pattern (rename-in id:id bind ...)))
+    (pattern (rename-in id:id bind ...))
+    (pattern (submod id:id sub-id:id)))
 
   (syntax-parse stx
     [(_ m:mod ...+)

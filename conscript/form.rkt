@@ -87,6 +87,9 @@
              #:with form-e #'(set! id arg)}
     {pattern (binding name:keyword arg)
              #:with form-e #'(name arg)}
+    {pattern (binding . _)
+             #:do [(raise-syntax-error #f "must be called with exactly two arguments" this-syntax)]
+             #:with form-e this-syntax}
     {pattern (id:id name:keyword ...)
              #:when (error-binding? #'id)
              #:with form-e #'(splice (congame:~error name ...))}

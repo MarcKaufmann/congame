@@ -1,8 +1,7 @@
 #lang conscript
 
-;; TODO: Port to form0
-
-(require conscript/survey-tools
+(require conscript/form0
+         conscript/survey-tools
          data/monocle)
 
 (provide
@@ -86,11 +85,15 @@
         @button{Next}})
 
 (defstep (dictator)
+  (define-values (the-form on-submit)
+    (form+submit
+     [choice (ensure binding/number (number-in-range 0 10))]))
+  (define (render rw)
+    @div{@rw["choice" @input-number{How much do you take for yourself?}]
+         @|submit-button|})
   @md{# Dictator
 
-      @form{
-            @(set! choice (input-number #:min 0 #:max 10 "How much do you take for yourself?"))
-            @submit-button}})
+      @form[the-form on-submit render]})
 
 (defstep (store-choice)
   (set! choices
