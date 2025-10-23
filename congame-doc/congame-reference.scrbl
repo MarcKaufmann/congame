@@ -12,7 +12,7 @@
                      congame/components/formular
                      congame/components/study
                      congame/components/transition-graph
-                     (except-in conscript/base require button form select radios study? step?)
+                     (except-in conscript/base require button study? step?)
                      koyo/haml
                      (only-in xml xexpr?))
           scribble/examples)
