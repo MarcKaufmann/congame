@@ -15,7 +15,14 @@
   [get-ready-groups (-> (hash/c buid/c (listof id/c)))]
   [get-current-group (-> (or/c #f buid/c))]
   [get-pending-groups (-> (hash/c buid/c (listof id/c)))]
-  [reset-current-group (-> void?)]))
+  [reset-current-group (-> void?)]
+  
+  [get-other-group-members (-> (or/c #f (listof id/c)))]
+  [store-my-result-in-group! (-> any/c any/c void?)]
+  [get-my-result-in-group (-> any/c any/c)]
+  [group-results-count (-> any/c exact-nonnegative-integer?)]
+  [other-group-member-results (->* (any/c) (#:include-ids? any/c) (or/c (listof (cons/c id/c any/c))
+                                                                        (listof any/c)))]))
 
 ;; TODO: Namespace these vars?
 
@@ -35,6 +42,16 @@
 
 (define (reset-current-group)
   (set! current-group #f))
+
+(define (get-other-group-members)
+  (define my-group-id (get-current-group))
+  (define group-members
+    (and my-group-id
+         (hash-ref ready-groups my-group-id #f)))
+  (define others
+    (and group-members
+         (filter (λ (v) (not (equal? v (current-participant-id)))) group-members)))
+  (or others null))
 
 (define ((make-matchmaker group-size [group-ok? values]) page-proc)
   (if (hash-has-key? (get-ready-groups) current-group)
@@ -79,3 +96,38 @@
   (for/first ([(group-id participant-ids) (in-hash (get-pending-groups))]
               #:when (group-ok? group-id))
     (cons group-id participant-ids)))
+
+;;================================================
+;; Storing/retrieving results within groups
+(require data/monocle)
+
+;; (hash group-id . (hash participant-id . (hash key . val)))
+(defvar/instance _group-results)
+
+(define (results) (if-undefined _group-results (hash)))
+
+(define (&group-member-result participant-id key)
+  (parameterize ([current-hash-maker hash])
+    (&opt-hash-ref*
+     (get-current-group)
+     participant-id
+     key)))
+
+(define (store-my-result-in-group! key val)
+  (when (get-current-group)
+    (with-study-transaction
+        (set! _group-results
+              ((&group-member-result (current-participant-id) key) (results) val)))))
+
+(define (get-my-result-in-group key)
+  (when (get-current-group)
+    ((&group-member-result (current-participant-id) key) (results))))
+
+(define (other-group-member-results key #:include-ids? [ids #f])
+  (define results-table (results))
+  (for/list ([other-member (in-list (get-other-group-members))])
+    (define result ((&group-member-result other-member key) results-table))
+    (if ids (cons other-member result) result)))
+
+(define (group-results-count key)
+  (length (filter values (other-group-member-results key))))

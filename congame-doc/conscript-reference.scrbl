@@ -846,6 +846,14 @@ group.
 
 }
 
+@defproc[(get-other-group-members) (listof integer?)]{
+
+If the current participant is a member of a @tech{ready group}, returns a list of the other members
+in that group. If the current participant is not in a group @mark{or is in a group that is only
+partially full}, an empty list is returned.
+
+}
+
 @defproc[(reset-current-group) void?]{
 
 Removes the participant from any group to which they have been assigned (whether it was filled or not).
@@ -857,6 +865,40 @@ group, the participant’s ID will remain among the list of the original group m
 
 }
 
+@defproc[(store-my-result-in-group! [lookup-key any/c] [val any/c]) void?]{
+
+Records @racket[val] in a table of information within the current group so that it can be referenced
+with @racket[lookup-key] (see @racket[other-group-member-results]).
+
+If the current participant is not a member of a group, no data will be recorded.
+
+}
+
+@defproc[(get-my-result-in-group [lookup-key any/c]) any/c]{
+
+Retrieves the value stored under @racket[lookup-key] for the current participant within their
+currently assigned group. If the participant is not a member of a group, or if they have not
+previously stored a value under @racket[lookup-key] within the current group, @racket[#f] is
+returned.
+
+}
+
+@defproc[(other-group-member-results [lookup-key any/c] [#:include-ids? ids? #f])
+         (or/c (listof (cons/c id/c any/c))
+               (listof any/c))]{
+
+Returns a list containing the result stored under @racket[lookup-key] for each other members of the
+current group. For any member that has not yet stored a value under @racket[_lookup-key],
+@racket[#f] will be returned.
+
+If the current participant is not a member of a group, an empty list is returned.
+
+If @racket[ids?] is not @racket[#f], then each element the returned list will be a pair of the form
+@racket[(_id . _result)] where @racket[_id] is the ID of the participant that recorded the result.
+If @racket[ids?] is @racket[#f], the returned list will simply contain all the @racket[_result]
+values.
+
+}  
 
 
 @;===============================================
