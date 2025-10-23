@@ -690,6 +690,25 @@ Returns a string representing @racket[_n] to two decimal places and prefixed wit
 
 }
 
+@defproc[(round-to-places [num real?] [p real?]) real?]{
+
+Returns @racket[num] rounded to @racket[p] decimal places, resolving ties in favor of an even
+number. 
+
+If @racket[p] is not an exact integer, it will be rounded to an exact integer to determine the
+number of decimal places for rounding. If @racket[p] is zero, the result is the same as
+@racket[(round num)]. If it is less than zero, the result will be zero. 
+
+@examples[#:eval e
+
+(round-to-places 3.14159 2)
+(round-to-places 3.5 0)
+(round-to-places 4.5 0)
+(round-to-places 1.23 -1)
+]
+
+}
+
 @defproc[(diceroll-js [arg any/c]) any/c]{
 
 @tktk{diceroll-js proc}
