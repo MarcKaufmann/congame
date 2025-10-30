@@ -21,7 +21,7 @@
  ~$ ~pound ~euro round-to-places)
 
 (define ((~currency [currency "$"]) a)
-  (format "~a~a" currency (~r a #:precision 2)))
+  (format "~a~a" currency (~r a #:precision '(= 2))))
 
 (define ~$ (~currency "$"))
 (define ~pound (~currency "£"))
