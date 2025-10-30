@@ -173,6 +173,6 @@
 (define (make-autofill-meta ht)
   `(meta
     ([name "formular-autofill"]
-     [content (call-with-output-string
-               (lambda (out)
-                 (write ht out)))])))
+     [content ,(call-with-output-string
+                (lambda (out)
+                  (write ht out)))])))
