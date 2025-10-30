@@ -4,12 +4,13 @@
  volunteer-dilemma)
 
 (require conscript/admin
+         conscript/form0
          conscript/game-theory
          conscript/survey-tools
          racket/format
          racket/list
-         racket/unit
-         )
+         racket/match
+         racket/unit)
 
 (with-namespace xyz.trichotomy.congame.congame-gtai.volunteer-dilemma
   (defvar*/instance choices/rounds))
@@ -48,22 +49,22 @@
 (defstep (intro)
   @md{# Introduction
  This experiment is computerized. You make all your decisions at the computer.
- 
+
  In this experiment, you will be randomly matched into groups of three participants in each round. This means that the members of your group will change every round.
 
  In each round, you will make a decision about whether or not to volunteer. The outcomes are as follows:
- 
+
  - **If at least one group member volunteers:** Each group member receives 100, but the volunteer(s) pay 40.
  - **If no one volunteers:** No one receives anything.
- 
+
 @button{Continue}})
 
 (define instructions_template
   @md*{# Instructions
  The experiment will run over 3 different rounds. In each round:
- 
+
  * You will be randomly assigned to a new group of three participants.
- * You will decide whether to volunteer or not. 
+ * You will decide whether to volunteer or not.
  * Once all group members have made their decisions, you will see the results of the round, including:
    - Whether anyone volunteered.
    - Your individual payoff for the round.})
@@ -98,19 +99,30 @@
       (matchmaker match-waiter))))
 
 (defstep (decisionstep)
+  (define choices
+    '(("yes" . "Yes, I will volunteer")
+      ("no"  . "No, I will not volunteer")))
+  (define-values (f on-submit)
+    (form+submit
+     [decision (ensure
+                binding/text
+                (required)
+                (one-of
+                 (for/list ([p (in-list choices)])
+                   (match-define (cons choice _) p)
+                   (cons choice choice))))]))
+  (define (render rw)
+    @div{@rw["decision" @radios[choices]{Make your choice}]
+         @|submit-button|})
+
   @md{# Decision for This Round
-     
-     Will you volunteer in this round? 
-     
+
+     Will you volunteer in this round?
+
      If you volunteer, you pay E$40 but ensure that everyone, including yourself, gets E$100.
      If you don’t volunteer, you risk no one volunteering, in which case no one gets anything.
 
-     @form{
-       @(set! decision (radios
-             '(("yes" . "Yes, I will volunteer")
-               ("no" . "No, I will not volunteer"))
-             "Make your choice"))
-       @submit-button}
+     @form[f on-submit render]
      @instructions_template})
 
 (defstep (store-result!)
@@ -140,9 +152,9 @@
   @md{# Results for This Round
 
       Total volunteers in your group: @(~a volunteers)
-      
+
       Your payoff this round: @(~a payoff)
-      
+
       @button[(λ () (set! payoffs (cons payoff payoffs)))]{Continue}})
 
 (defstep (store-identity!)
