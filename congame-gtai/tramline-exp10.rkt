@@ -4,13 +4,13 @@
  tramline-exp10)
 
 (require conscript/admin
+         conscript/form0
          conscript/game-theory
          conscript/survey-tools
          data/monocle
          racket/format
          racket/unit
-         threading
-         )
+         threading)
 
 (with-namespace xyz.trichotomy.congame.congame-gtai.tramline-exp10
   (defvar*/instance choices/rounds)
@@ -42,13 +42,13 @@
 (defstep (intro)
   @md{# Introduction
  This experiment is computerized. You make all your decisions at the computer.
- 
- In this experiment, you represent the mayor of a suburb. There are three other mayors in your group, making a total of four. These four suburbs are connected by a tram line to the capital. 
+
+ In this experiment, you represent the mayor of a suburb. There are three other mayors in your group, making a total of four. These four suburbs are connected by a tram line to the capital.
 
  Each suburb benefits equally from the tram line, and the more funds are allocated to the tram, the greater the benefits for all suburbs. However, you must also decide how much to allocate to beautifying your own suburb’s streets.
 
  Each suburb has a transportation budget of 10. Your task is to decide how much of this budget to allocate to the tram line (“T”) and how much to keep for street beautification (“O”). Your suburb’s payoff is:
- 
+
  **Benefit (Bᵢ) = Oᵢ + 0.4(T₁ + T₂ + T₃ + T₄)**,
  where **Oᵢ = 10 – Tᵢ.**
 
@@ -57,14 +57,14 @@
 (define instructions_template
   @md*{# Instructions
   The experiment will run over 3 different rounds.
- 
+
   In each round:
   * You will interact with the same three participants throughout the experiment.
   * Each participant will decide how much of their 10 budget to allocate to the tram line. The remaining amount will automatically go to beautifying their own streets.
   * After all decisions are made, you will be informed of:
     - The total contributions to the tram line.
     - The benefit to your suburb for that round.
- 
+
   Your goal is to maximize your suburb’s benefit across all rounds.
 
   **Benefit (Bᵢ) = Oᵢ + 0.4(T₁ + T₂ + T₃ + T₄)**,
@@ -88,19 +88,26 @@
       (matchmaker waiter))))
 
 (defstep (decision)
+  (define-values (f on-submit)
+    (form+submit
+     [contribution
+      (ensure
+       binding/number
+       (required)
+       (number-in-range 0 10))]))
+  (define (render rw)
+    @div{@rw["contribution" @input-number{For the tram line I will allocate:}]
+         @|submit-button|})
   @md{# Contribution Decision
-     
-     How much of your 10 budget will you allocate to the tram line? 
 
-     The remaining amount will automatically go to street beautification. 
+     How much of your 10 budget will you allocate to the tram line?
+
+     The remaining amount will automatically go to street beautification.
 
      Enter the number between 0 and 10.
 
-     @form{
-      @(set! contribution (input-number #:min 0 #:max 10 "For the tram line I will allocate:"))
- 
-      @submit-button}
-      @toggleable-xexpr["Show/Hide Instructions" instructions_template]})
+     @form[f on-submit render]
+     @toggleable-xexpr["Show/Hide Instructions" instructions_template]})
 
 (defstep (store-choice/round!)
   (make-choice/rounds! contribution (- 4 counter))
@@ -141,11 +148,11 @@
   @md{# Results for This Round
 
       Your contribution to the tram line: @(~a own-tram)
-      
+
       Your contribution to the streets: @(~a own-beautification)
-      
+
       Total contributions to the tram line: @(~a tram-contributions)
-      
+
       Your payoff: @(~r #:precision 1 own-payoff)
 
       @button[(lambda () (set! payoffs (cons own-payoff payoffs)))]{Continue}})
