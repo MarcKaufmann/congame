@@ -143,11 +143,11 @@
  get-ready-groups
  get-current-group
  reset-current-group
- get-other-group-members
+ current-group-members
  store-my-result-in-group!
  get-my-result-in-group
- group-results-count
- other-group-member-results)
+ current-group-results-count
+ current-group-member-results)
 
 ;; syntax ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

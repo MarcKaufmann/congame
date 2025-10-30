@@ -858,11 +858,15 @@ group.
 
 }
 
-@defproc[(get-other-group-members) (listof integer?)]{
+@defproc[(current-group-members [#:include-self? include-self? #f]) (listof integer?)]{
 
-If the current participant is a member of a @tech{ready group}, returns a list of the other members
+If the current participant is a member of a @tech{ready group}, returns a list the members
 in that group. If the current participant is not in a group @mark{or is in a group that is only
 partially full}, an empty list is returned.
+
+By default, current participant’s own ID is @bold{not} included in the returned list, but if
+@racket[include-self?] is not @racket[#f] then the returned list will include all members of the
+group.
 
 }
 
@@ -885,6 +889,11 @@ with @racket[lookup-key] (see @racket[other-group-member-results]).
 
 If the current participant is not a member of a group, no data will be recorded.
 
+@mark{Note when reading group member results stored with this function, @racket[#f] is returned in
+cases where a group member has not recorded any response for the given @racket[lookup-key]. So
+storing a @racket[val] of @racket[#f] will make that response indistinguishable from cases where
+no response has been recorded.}
+
 }
 
 @defproc[(get-my-result-in-group [lookup-key any/c]) any/c]{
@@ -896,11 +905,13 @@ returned.
 
 }
 
-@defproc[(other-group-member-results [lookup-key any/c] [#:include-ids? ids? #f])
+@defproc[(current-group-member-results [lookup-key any/c] 
+                                       [#:include-ids? ids? #f]
+                                       [#:include-self? include-self? #f])
          (or/c (listof (cons/c id/c any/c))
                (listof any/c))]{
 
-Returns a list containing the result stored under @racket[lookup-key] for each other members of the
+Returns a list containing the result stored under @racket[lookup-key] for members of the
 current group. For any member that has not yet stored a value under @racket[_lookup-key],
 @racket[#f] will be returned.
 
@@ -911,8 +922,42 @@ If @racket[ids?] is not @racket[#f], then each element the returned list will be
 If @racket[ids?] is @racket[#f], the returned list will simply contain all the @racket[_result]
 values.
 
+By default, current participant’s own result is @bold{not} included in the returned list, but if
+@racket[include-self?] is not @racket[#f] then the returned list will include any responses recorded
+by the current participant under @racket[lookup-key], if any. 
+
+As an example, assume the current participant has an ID of @racket[100] and is paired with
+participant @racket[199]. If the current participant as recorded a response of @racket["no"] under
+lookup key @racket['has-eaten] and the other group member has not yet recorded a response under that
+key:
+
+@racketblock[
+
+(current-group-member-results 'has-eaten) (code:comment @#,elem{→ '(#f)})
+
+(current-group-member-results 'has-eaten #:include-ids? #t) (code:comment @#,elem{→ '((199 . #f))})
+(current-group-member-results 'has-eaten #:include-self? #t) (code:comment @#,elem{→ '("no" #f)})
+(current-group-member-results 'has-eaten 
+                              #:include-self? #t
+                              #:include-ids? #t) (code:comment @#,tt{→ '((100 . "no") (199 . #f))})
+
+]
+
 }  
 
+@defproc[(current-group-results-count [lookup-key any/c] 
+                                      [#:include-self? include-self #f])
+         exact-nonnegative-integer?]{
+
+Returns the count of results recorded under @racket[lookup-key] for members of the current group.
+
+If the current participant is not a member of a group, the result will be @racket[0].
+
+By default, current participant’s own result is @bold{not} counted, but if @racket[include-self?] is
+not @racket[#f] then the count will reflect any responses recorded by the current participant under
+@racket[lookup-key], if any. 
+
+}
 
 @;===============================================
 @section[#:style 'quiet]{Admin}

@@ -17,12 +17,15 @@
   [get-pending-groups (-> (hash/c buid/c (listof id/c)))]
   [reset-current-group (-> void?)]
   
-  [get-other-group-members (-> (or/c #f (listof id/c)))]
+  [current-group-members (->* () (#:include-self? any/c) (or/c #f (listof id/c)))]
+  
   [store-my-result-in-group! (-> any/c any/c void?)]
   [get-my-result-in-group (-> any/c any/c)]
-  [group-results-count (-> any/c exact-nonnegative-integer?)]
-  [other-group-member-results (->* (any/c) (#:include-ids? any/c) (or/c (listof (cons/c id/c any/c))
-                                                                        (listof any/c)))]))
+  [current-group-results-count (->* (any/c) (#:include-self? any/c) exact-nonnegative-integer?)]
+  [current-group-member-results (->* (any/c) (#:include-ids? any/c
+                                              #:include-self? any/c)
+                                     (or/c (listof (cons/c id/c any/c))
+                                           (listof any/c)))]))
 
 ;; TODO: Namespace these vars?
 
@@ -43,14 +46,15 @@
 (define (reset-current-group)
   (set! current-group #f))
 
-(define (get-other-group-members)
+(define (current-group-members #:include-self? [include-self? #f])
   (define my-group-id (get-current-group))
-  (define group-members
+  (define all-group-members
     (and my-group-id
-         (hash-ref ready-groups my-group-id #f)))
+         (hash-ref (get-ready-groups) my-group-id #f)))
   (define others
-    (and group-members
-         (filter (λ (v) (not (equal? v (current-participant-id)))) group-members)))
+    (and all-group-members
+         (or (and include-self? all-group-members)
+             (filter (λ (v) (not (equal? v (current-participant-id)))) all-group-members))))
   (or others null))
 
 (define ((make-matchmaker group-size [group-ok? values]) page-proc)
@@ -123,11 +127,12 @@
   (when (get-current-group)
     ((&group-member-result (current-participant-id) key) (results))))
 
-(define (other-group-member-results key #:include-ids? [ids #f])
-  (define results-table (results))
-  (for/list ([other-member (in-list (get-other-group-members))])
-    (define result ((&group-member-result other-member key) results-table))
-    (if ids (cons other-member result) result)))
+(define (current-group-member-results key
+                                      #:include-ids? [ids #f]
+                                      #:include-self? [include-self? #f])
+  (for/list ([member (in-list (current-group-members #:include-self? include-self?))])
+    (define result ((&group-member-result member key) (results)))
+    (if ids (cons member result) result)))
 
-(define (group-results-count key)
-  (length (filter values (other-group-member-results key))))
+(define (current-group-results-count key #:include-self? [include-self? #f])
+  (length (filter values (current-group-member-results key #:include-self? include-self?))))
