@@ -1,5 +1,8 @@
 #lang conscript
 
+(require conscript/form0
+         racket/match)
+
 (provide
  exit-survey)
 
@@ -19,15 +22,27 @@
     ("veggie"     . "Veggie")))
 
 (defstep (survey)
+  (define-values (f on-submit)
+    (form+submit
+     [attend (ensure binding/boolean)]
+     [pizza (ensure
+             binding/text
+             (required)
+             (one-of
+              (for/list ([p (in-list pizza-opts)])
+                (match-define (cons choice _) p)
+                (cons choice choice))))]
+     [comment (ensure binding/text)]))
+  (define (render rw)
+    @div{@rw["attend" @checkbox{Are you planning to attend?}]
+         @rw["pizza" @radios[pizza-opts]{Which pizza would you prefer?}]
+         @rw["comment" @input-text{Leave a comment if you have a special dietary requirement that is incompatible with any of the pizzas and you plan on attending.}]
+         @|submit-button|})
   @md{# Survey
 
       As you may remember, we will meet on Tuesday, February 25th, at 12:40 (room tbc) to use up the pizza budget that you collected via the in-class games.
 
-      @form{
-        @(set! attend @checkbox[#:required? #f]{Are you planning to attend?})
-        @(set! pizza @radios[pizza-opts]{Which pizza would you prefer?})
-        @(set! comment @input-text[#:required? #f]{Leave a comment if you have a special dietary requirement that is incompatible with any of the pizzas and you plan on attending.})
-        @submit-button}})
+      @form[f on-submit render]})
 
 (defstep (store-data)
   (with-study-transaction
