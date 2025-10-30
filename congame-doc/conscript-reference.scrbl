@@ -686,6 +686,7 @@ Returns a string representing @racket[_n] to two decimal places and prefixed wit
 (~$ price)
 (~euro price)
 (~pound price)
+(~$ 8)
 ]
 
 }
@@ -705,6 +706,7 @@ number of decimal places for rounding. If @racket[p] is zero, the result is the 
 (round-to-places 3.5 0)
 (round-to-places 4.5 0)
 (round-to-places 1.23 -1)
+(round-to-places 8 2)
 ]
 
 }
