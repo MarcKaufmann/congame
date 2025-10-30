@@ -4,15 +4,13 @@
                      racket/syntax
                      syntax/parse/pre)
          (prefix-in bot: congame/components/bot)
-         (prefix-in bot: congame/components/bot-maker)
          (prefix-in bot: (submod congame/components/bot actions))
+         (prefix-in bot: congame/components/bot-maker)
+         congame/components/for-study
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
-         (prefix-in congame: (submod congame/components/study accessors))
          (except-in congame/components/study button form)
-         congame/components/for-study
          congame/components/transition-graph
-         net/url
          racket/contract/base
          racket/format
          racket/function
@@ -20,8 +18,8 @@
          racket/list
          racket/random
          racket/string
-         threading
          (only-in web-server/http response/xexpr)
+         (only-in xml xexpr?)
          "form.rkt"
          "html.rkt"
          "markdown.rkt"
@@ -290,6 +288,7 @@
   (syntax-parse stx
     [(_ id:id
         {~alt
+         {~optional {~seq #:wrapper wrapper}}
          {~optional {~seq #:requires requires}}
          {~optional {~seq #:provides provides}}} ...
         transition-e:transition ...+)
@@ -323,14 +322,15 @@
            [binder? 'binder]
            [else 'id]))))
      #'(define id
-         (make-study
-          (symbol->string 'id)
-          #:requires {~? requires null}
-          #:provides {~? provides null}
-          #:transitions
-          (transition-graph
-           transition-e.tg-e ...)
-          (list (make-step* 'step-id step-expr) ...)))]))
+         ({~? wrapper values}
+          (make-study
+           (symbol->string 'id)
+           #:requires {~? requires null}
+           #:provides {~? provides null}
+           #:transitions
+           (transition-graph
+            transition-e.tg-e ...)
+           (list (make-step* 'step-id step-expr) ...))))]))
 
 (define-syntax (with-bot stx)
   (syntax-parse stx
@@ -406,3 +406,28 @@
  )
 
 (define-logger conscript)
+
+
+;; wrappers ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ (contract-out
+  [make-wrapper
+   (-> (-> (-> xexpr?) xexpr?)
+       (-> study? study?))]
+  [add-css
+   (-> string? (-> study? study?))]))
+
+(define ((make-wrapper proc) s)
+  (map-study s (lambda (original-handler)
+                 (lambda ()
+                   (proc original-handler)))))
+
+(define (add-css css)
+  (make-wrapper
+   (lambda (original-handler)
+     `(div
+       (style
+        ([type "text/css"])
+        ,css)
+       ,(original-handler)))))
