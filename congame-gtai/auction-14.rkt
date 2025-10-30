@@ -4,6 +4,7 @@
  auction-14)
 
 (require conscript/admin
+         conscript/form0
          conscript/survey-tools
          racket/match)
 
@@ -47,7 +48,7 @@
 
 (defstep (intro)
   @md{@instructions
-       
+
       @button{Continue}})
 
 (defstep (waiter)
@@ -119,18 +120,21 @@
   #;(define current-group-roles
     (hash-ref group-roles (get-current-group)))
   (set! certificate-value (+ 10 (random 41)))
+  (define-values (f on-submit)
+    (form+submit
+     [bid (ensure
+           binding/number
+           (required)
+           (number-in-range 0 +inf.0))]))
+  (define (render rw)
+    @div{@rw["bid" @input-number{Please submit your bid:}]
+         @|submit-button|})
   @md{# Auction
       You were randomly matched to a group of @(~a n) bidders.
       You are bidder number @(bidder-number role).
       Your randomly drawn value for the certificate is @(~a certificate-value) points.
 
-      @form{
-
-            Please submit your bid: @(set! bid (input-number #:min 0))
-
-            @submit-button
-            }
-
+      @form[f on-submit render]
       @toggleable-xexpr["Show/Hide Instructions"
                         instructions]})
 
@@ -162,7 +166,7 @@
 (defstep (the-end)
   (define bids-list (hash-values (hash-ref bids (get-current-group))))
   (eprintf "HERE bids: ~a; bids-list: ~a~n~n" bids bids-list)
-  
+
   (define highest-bid (apply max bids-list))
   (define winner-id
     (car
