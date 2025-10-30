@@ -107,7 +107,7 @@
    ((widget-file) name value errors)
    ,@((widget-errors) name value errors)))
 
-(define ((select options label) name value errors)
+(define ((select options [label #f]) name value errors)
   (haml
    (.field-group
     (:label

@@ -3,12 +3,11 @@
 (provide
  chicken)
 
-(require conscript/survey-tools
-         conscript/game-theory
+(require conscript/form0
+         conscript/survey-tools
          data/monocle
          racket/format
-         racket/match
-         )
+         racket/match)
 
 (defvar/instance choices)
 (defvar round_decision)
@@ -57,12 +56,12 @@
         @th{} @th{Driver 2 Swerve} @th{Driver 2 Straight}}}
     @tbody{
       @tr{
-        @th[#:class "driver-label"]{Driver 1 Swerve} 
-        @td{Driver 1: E$ 0, Driver 2: E$ 0} 
+        @th[#:class "driver-label"]{Driver 1 Swerve}
+        @td{Driver 1: E$ 0, Driver 2: E$ 0}
         @td{Driver 1: E$ -20, Driver 2: E$ 20}}
       @tr{
-        @th[#:class "driver-label"]{Driver 1 Straight} 
-        @td{Driver 1: E$ 20, Driver 2: E$ -20} 
+        @th[#:class "driver-label"]{Driver 1 Straight}
+        @td{Driver 1: E$ 20, Driver 2: E$ -20}
         @td{Driver 1: E$ -100, Driver 2: E$ -100}}}}
 
   If both swerve, none has a positive payoff. If one swerves and the other does not, the former loses face, while the latter gains reputation. If both go straight, they will definitely crash, with large costs for both.
@@ -98,6 +97,20 @@
       (matchmaker waiter))))
 
 (defstep (chicken_game)
+  (define choices
+    '(("Swerve" . "Swerve")
+      ("Straight" . "Straight")))
+  (define choices+empty
+    (cons '("" . "--Please choose an option--") choices))
+  (define-values (f on-submit)
+    (form+submit
+     [round_decision (ensure
+                      binding/text
+                      (required)
+                      (one-of choices))]))
+  (define (render rw)
+    @div{@rw["round_decision" @select[choices+empty]]
+         @|submit-button|})
   @md{
     @style{
       .form-container {
@@ -135,15 +148,7 @@
 
     @div[#:class "form-container"]{
       @span[#:class "form-label"]{Please select your choice in this round:}
-      @form{
-        @(set! round_decision (select
-                               '(
-                                 (""  . "--Please choose an option--")
-                                 ("Swerve" . "Swerve")
-                                 ("Straight" . "Straight"))
-                               ""))
-        @submit-button
-      }
+      @form[f on-submit render]
     }
 
     @toggleable-xexpr["Show/Hide Instructions" instructions]
@@ -186,10 +191,10 @@
   (define (payout c1 c2)
     (match* (c1 c2)
       [('Swerve 'Swerve) 0]
-      [('Swerve 'Straight) -20] 
+      [('Swerve 'Straight) -20]
       [('Straight 'Swerve) 20]
       [('Straight 'Straight) -100]))
-      
+
   (define own-payout (payout my-choice other-choice))
   (define other-payout (payout other-choice my-choice))
 
@@ -199,7 +204,7 @@
               'own-payout own-payout
               'other-payout other-payout ))
   @md{# The result
-      
+
       - Your choice: @(~a my-choice)
       - The other participant's choice: @(~a other-choice)
 
@@ -220,10 +225,10 @@
 (defstep ((chicken-summary [the-end? #t]))
     (define total-points
     (for/sum ([a answers])
-      (hash-ref a 'own-payout))) 
+      (hash-ref a 'own-payout)))
   (eprintf "Answers is ~a for participant ~a~n~n" answers (current-participant-id))
   @md{# Chicken Game Summary
-      
+
       Over the 3 rounds, you earned a total of @(~a total-points). This is equivalent to @(~r #:precision 0 (rescale-score total-points)) rescaled points.
 
       Here is the summary of your game:
