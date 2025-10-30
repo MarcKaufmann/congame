@@ -1,10 +1,14 @@
 #lang conscript
-(provide auction-15)
-(require conscript/survey-tools
-          data/monocle
-          racket/match)
+
+(provide
+ auction-15)
+
+(require conscript/form0
+         conscript/survey-tools
+         racket/match)
+
 (define n 3)
-;change the number of roles 
+;change the number of roles
 
 (define roles '(participant-1 participant-2 participant-3))
 
@@ -54,10 +58,10 @@ Thus, the payoff of the auction winner from this experiment will be her value fo
 (defstep (intro)
   (set!/if-undefined group-participants-box (hash))
   (set!/if-undefined group-roles-box (hash))
-  
+
   @md{
       @instructions
-       
+
       @button[initialize]{Continue}})
 
 (defstep (waiter)
@@ -127,28 +131,29 @@ Thus, the payoff of the auction winner from this experiment will be her value fo
   (define current-group-roles
     (hash-ref group-roles (get-current-group)))
   (set! certificate-value (+ 10 (random 41)))
-  @md{# Auction
-You were randomly matched to a group of 4 bidders.
-You are bidder number @(match role
-  ['participant-1 "1"]
-  ['participant-2 "2"]
-  ['participant-3 "3"]
-  [else "Unknown participant"]).
-Your randomly drawn value for the certificate is @(~a certificate-value) points.
+  (define-values (f on-submit)
+    (form+submit
+     [bid (ensure
+           binding/number
+           (required)
+           (number-in-range 0 +inf.0))]))
+  (define (render rw)
+    @div{
+      @rw["bid" @input-number{Please submit your bid:}]
+      @|submit-button|})
+  @md{
+    # Auction
+    You were randomly matched to a group of 4 bidders.
+    You are bidder number @(match role
+                             ['participant-1 "1"]
+                             ['participant-2 "2"]
+                             ['participant-3 "3"]
+                             [else "Unknown participant"]).
+    Your randomly drawn value for the certificate is @(~a certificate-value) points.
 
+    @form[f on-submit render]
 
-   @form{
- 
-      Please submit your bid: @(set! bid (input-number #:min 0))
- 
-      @submit-button
-   }
-
-   @toggleable-xexpr["Show/Hide Instructions"
-     instructions]})
-
-
-
+    @toggleable-xexpr["Show/Hide Instructions" instructions]})
 
 (defstep (store-bids)
   (with-study-transaction
@@ -181,14 +186,14 @@ Your randomly drawn value for the certificate is @(~a certificate-value) points.
 (defstep (the-end)
   (define bids-list (hash-values (hash-ref bids (get-current-group))))
   (eprintf "HERE bids: ~a; bids-list: ~a~n~n" bids bids-list)
-  
+
   (define bids-sorted (sort bids-list >))
   (define highest-bid (first bids-sorted))
   (define second-highest-bid (second bids-sorted))
 
   (define winner-id (car (filter (lambda (id) (equal? (hash-ref (hash-ref bids (get-current-group)) id) highest-bid))
                                  (hash-keys (hash-ref bids (get-current-group))))))
-  
+
   (define winner-role (hash-ref (hash-ref group-roles (get-current-group)) winner-id))
   (define payoff (if (equal? (current-participant-id) winner-id)
                     (- certificate-value second-highest-bid)
@@ -233,4 +238,3 @@ Your randomly drawn value for the certificate is @(~a certificate-value) points.
          --> wait-for-bids
          --> the-end]
   [the-end --> the-end])
-
