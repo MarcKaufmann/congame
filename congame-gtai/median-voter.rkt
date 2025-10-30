@@ -1,6 +1,7 @@
 #lang conscript
 
 (require conscript/admin
+         conscript/form0
          conscript/game-theory
          conscript/survey-tools
          data/monocle
@@ -54,14 +55,19 @@
 (defvar choice)
 
 (defstep (make-choice)
+  (define-values (f on-submit)
+    (form+submit
+     [choice (ensure
+              binding/number
+              (required)
+              (number-in-range 1 5))]))
+  (define (render rw)
+    @div{@rw["choice" @input-number{Where do you position yourself? (Range: 1 = "Strongly Left", 5 = "Strongly Right")}]
+         @|submit-button|})
+
   @md{# Choose your Position
 
-      @form{
-            @set![choice @input-number[#:min 1 #:max 5]{
-              @md*{Where do you position yourself? (Range: 1 = "Strongly Left", 5 = "Strongly Right")}
-            }]
-            @submit-button
-      }})
+      @form[f on-submit render]})
 
 (defstep (store-choice!)
   (make-choice! choice)
