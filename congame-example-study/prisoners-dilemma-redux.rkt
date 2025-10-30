@@ -12,29 +12,29 @@
 (defstep (intro)
   @md{# Prisoner's Dilemma
  
-  You are a suspect in a crime investigation. Your accomplice (another
-  study participant) has also been arrested and is being held separately.
-  Each of you has a choice: will you attempt to **cooperate** with your
-  accomplice by staying silent, or will you **defect** and admit everything
-  to the police, betraying your partner?
+    You are a suspect in a crime investigation. Your accomplice (another
+    study participant) has also been arrested and is being held separately.
+    Each of you has a choice: will you attempt to **cooperate** with your
+    accomplice by staying silent, or will you **defect** and admit everything
+    to the police, betraying your partner?
  
-  * If you both choose to cooperate with each other, you’ll each get a 1-year
+    * If you both choose to cooperate with each other, you’ll each get a 1-year
     prison sentence.
  
-  * If you choose to defect and your partner tries to cooperate, you’ll go free
+    * If you choose to defect and your partner tries to cooperate, you’ll go free
     and your partner will get a 20-year prison sentence.
  
-  * If you both try to betray each other, you’ll each receive a 5-year prison
+    * If you both try to betray each other, you’ll each receive a 5-year prison
     sentence.
  
-  @button{Continue...}})
+    @button{Continue...}})
 
 (defstep (waiter)
   @md{# Please Wait
  
-      Please wait while another participant joins the queue.
+    Please wait while another participant joins the queue.
  
-      @refresh-every[5]})
+    @refresh-every[5]})
  
 (define matchmaker (make-matchmaker 2))
  
@@ -52,20 +52,20 @@
  
   @md{# Make Your Choice
  
-      @button[#:id "cooperate" cooperate]{Cooperate}
-      @button[#:id "defect" defect]{Defect}})
+    @button[#:id "cooperate" cooperate]{Cooperate}
+    @button[#:id "defect" defect]{Defect}})
 
 (defstep (wait)
-  (if (= (group-results-count 'choice) 1)
+  (if (= (current-group-results-count 'choice) 0)
       @md{# Please Wait
  
-          Please wait for the other participant to make their choice...
+        Please wait for the other participant to make their choice...
  
-          @refresh-every[5]}
+        @refresh-every[5]}
       (skip)))
 
 (defstep (display-result)
-  (define their-choice (first (other-group-member-results 'choice)))
+  (define their-choice (first (current-group-member-results 'choice)))
   (set! prison-sentence
         (match* (my-choice their-choice)
           [('cooperate 'cooperate) 1]
@@ -74,8 +74,10 @@
           [('defect 'cooperate) 0]))
  
   @md{# Result
+
+    The other person chose to @~a[their-choice], while you chose to @~a[my-choice].
  
-      You get @~a[prison-sentence] years of prison.})
+    You get @~a[prison-sentence] years of prison.})
 
 (defstudy prisoners-dilemma
   [intro --> pair-with-someone --> make-choice --> wait --> display-result]

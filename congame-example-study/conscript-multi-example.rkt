@@ -79,6 +79,7 @@
 (defvar task1-response)
 (defvar task2-response)
 (defvar score)
+(defvar payment)
 
 (defstep (init-tasks)
   (set! score 0)
@@ -86,7 +87,7 @@
 
 (define-values (task1-form task1-onsubmit)
   (form+submit
-   [task1-response (ensure binding/text (required))]))
+   [task1-response (ensure binding/number (required))]))
 
 (define (render-task1 rw)
   @md*{@rw["task1-response" @input-number{Your answer}]
@@ -94,7 +95,7 @@
 
 (define-values (task2-form task2-onsubmit)
   (form+submit
-   [task2-response (ensure binding/text (required))]))
+   [task2-response (ensure binding/number (required))]))
 
 (define (render-task2 rw)
   @md*{@rw["task2-response" @input-number{Your answer}]
@@ -106,7 +107,7 @@
 
     What is 7 + 5?
 
-    @form[task1-form render-task1]})
+    @form[task1-form task1-onsubmit render-task1]})
 
 ;; Task 2: What is 15 - 6?
 (defstep (task2)
@@ -114,7 +115,7 @@
 
     What is 15 - 6?
 
-    @form[task2-form render-task2]})
+    @form[task2-form task2-onsubmit render-task2]})
 
 (defstep (show-score)
   (set! score (+ (if (= task1-response 12) 1 0)
@@ -131,7 +132,7 @@
 ;; =============================================================================
 
 (defstep (control-payment)
-  (define payment (+ 1.00 (* score 0.20)))
+  (set! payment (+ 1.00 (* score 0.20)))
   @md{# Your Payment
 
     Your payment is:
@@ -169,7 +170,7 @@
   (skip))
 
 (defstep (get-opponent-score)
-  (define other-score (first (other-group-member-results 'score)))
+  (define other-score (first (current-group-member-results 'score)))
   (cond
     [other-score
      (set! opponent-score other-score)
@@ -187,7 +188,7 @@
        @refresh-every[2]}]))
 
 (defstep (treatment-results)
-  (define payment (+ 1.0 (if did-win? 2.4 0)))
+  (set! payment (+ 1.0 (if did-win? 2.4 0)))
   
   @md{# Match Results
 
@@ -198,9 +199,9 @@
     
     Your payment is:
     - $1.00 base
-    - @(if did-win? "$2.40 for winning" "$0 (you lost)")
+    - @(if did-win? "$2.40 for winning" "$0.00 (you lost)")
     
-    **Total: $@(~$ payment)**
+    **Total: @(~$ payment)**
 
     Thank you for participating!})
 
@@ -221,5 +222,7 @@
   [control-payment --> control-payment]
   
   [pair-with-someone
+   --> record-score-for-group
    --> get-opponent-score
-   --> treatment-results])
+   --> treatment-results]
+  [treatment-results --> treatment-results])
