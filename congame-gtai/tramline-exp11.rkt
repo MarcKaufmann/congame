@@ -1,5 +1,7 @@
 #lang conscript
 
+(require conscript/form0)
+
 (provide
  tramline-exp11)
 
@@ -59,6 +61,16 @@
   (error 'not-implemented))
 
 (defstep (decision)
+  (define-values (f on-submit)
+    (form+submit
+     [contribution
+      (ensure
+       binding/number
+       (required)
+       (number-in-range 0 10))]))
+  (define (render rw)
+    @div{@rw["contribution" @input-number{For the tram line I will allocate:}]
+         @|submit-button|})
   @md{# Contribution Decision
 
      How much of your 10 budget will you allocate to the tram line?
@@ -67,10 +79,7 @@
 
      Enter the number between 0 and 10.
 
-     @form{
-      @(set! contribution (input-number #:min 0 #:max 10 "For the tram line I will allocate:"))
-
-      @submit-button}
+     @form[f on-submit render]
      @instructions_template})
 
 
@@ -92,35 +101,36 @@
 (defvar trucks)
 
 (define (input-trucks label)
-  (input-number label #:min 0 #:max 5))
+  (input-number label #:attributes `((min "0") (max "5"))))
 
 (defstep (truckschoice)
   ;;(define total-contributions (hash))
   ;; Total contributions to the tram line: @(~a total-contributions)
   ;; Your payoff:  @(~a (+ street-contribution (* 0.4 total-contributions)))
   (define street-contribution (- 10 contribution))
+  (define-values (f on-submit)
+    (form+submit
+     [trucks
+      (ensure
+       binding/list
+       (required)
+       (list-longer-than 3)
+       (lambda (loa)
+         (define total (apply + loa))
+         (if (<= total 5)
+             (ok loa)
+             (err (for/list ([_ (in-list loa)])
+                    "Your answers must be within the budget of 5")))))]))
+  (define (render rw)
+    @div[@rw["trucks" @input-trucks{I will send trucks to mayor 1:}]
+         @rw["trucks" @input-trucks{I will send trucks to mayor 2:}]
+         @rw["trucks" @input-trucks{I will send trucks to mayor 3:}]
+         @|submit-button|])
   @md{# Trucks Decision
 
       How much of your 5 budget will you allocate to sending trucks to other mayor's suburb's?
 
-      @form{
-
-            @div{
-                 @set![trucks
-                       (map-validator
-                        (input-list
-                         (list
-                          (input-trucks "I will send trucks to mayor 1:")
-                          (input-trucks "I will send trucks to mayor 2:")
-                          (input-trucks "I will send trucks to mayor 3:")))
-                        (lambda (loa)
-                          (define total (apply + loa))
-                          (if (<= total 5)
-                              `(ok loa)
-                              `(err ,@(for/list ([_ (in-list loa)])
-                                        "Your answers must be within the budget of 5.")))))]}
-            @submit-button}
-
+      @form[f on-submit render]
       @instructions_template})
 
 (defstep (results)

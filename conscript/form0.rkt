@@ -40,6 +40,7 @@
  required-unless
  at-least
  number-in-range
+ list-longer-than
 
  make-autofill-meta)
 
@@ -169,6 +170,11 @@
           (<= v hi))
      (ok v)]
     [else (err (format "Must be in the range [~a, ~a]." lo hi))]))
+
+(define ((list-longer-than n) v)
+  (if (and v (pair? v) (>= (length v) n))
+      (ok v)
+      (err (format "Expected at least ~a items." n))))
 
 (define (make-autofill-meta ht)
   `(meta
