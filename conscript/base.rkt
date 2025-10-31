@@ -140,7 +140,12 @@
  make-matchmaker
  get-ready-groups
  get-current-group
- reset-current-group)
+ reset-current-group
+ current-group-members
+ store-my-result-in-group!
+ get-my-result-in-group
+ current-group-results-count
+ current-group-member-results)
 
 ;; syntax ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

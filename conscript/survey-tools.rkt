@@ -18,14 +18,18 @@
 ;; Helper Functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- ~$ ~pound ~euro)
+ ~$ ~pound ~euro round-to-places)
 
 (define ((~currency [currency "$"]) a)
-  (format "~a~a" currency (~r a #:precision 2)))
+  (format "~a~a" currency (~r a #:precision '(= 2))))
 
 (define ~$ (~currency "$"))
 (define ~pound (~currency "£"))
 (define ~euro (~currency "€"))
+
+(define (round-to-places n p)
+  (define pow (expt 10 (inexact->exact (round p))))
+  (exact->inexact (/ (round (* n pow)) pow)))
 
 ;; Toggle some content's visibility via clicking on some link
 

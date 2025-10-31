@@ -686,6 +686,27 @@ Returns a string representing @racket[_n] to two decimal places and prefixed wit
 (~$ price)
 (~euro price)
 (~pound price)
+(~$ 8)
+]
+
+}
+
+@defproc[(round-to-places [num real?] [p real?]) real?]{
+
+Returns @racket[num] rounded to @racket[p] decimal places, resolving ties in favor of an even
+number. 
+
+If @racket[p] is not an exact integer, it will be rounded to an exact integer to determine the
+number of decimal places for rounding. If @racket[p] is zero, the result is the same as
+@racket[(round num)]. If it is less than zero, the result will be zero. 
+
+@examples[#:eval e
+
+(round-to-places 3.14159 2)
+(round-to-places 3.5 0)
+(round-to-places 4.5 0)
+(round-to-places 1.23 -1)
+(round-to-places 8 2)
 ]
 
 }
@@ -774,13 +795,22 @@ toggleable-xexpr form
 
 The bindings in this module are also provided by @racketmodname[conscript/base].
 
+These functions are used for matching participants into groups. Tehy take care of the mechanics of
+pausing the study until groups are full, and of sharing results between group members.
+
+A @deftech{matchmaker function} is used to collect participants into groups of a given size,
+displaying a “Please wait” @tech{step} until the group is full. A @deftech{pending group} is one
+that has one or more members but still needs more to meet its quota; a @deftech{ready group} has met
+its quota of assigned participants and is ready to proceed.
+
 @defproc[(make-matchmaker [group-size exact-positive-integer?]
                           [group-ok? (-> buid/c boolean?) values]) (-> (-> xexpr?) any/c)]{
 
-Returns a @deftech{matchmaker function} that accepts one argument (that argument being a study step function)
-and which adds the current participant to the current pending group (creating a new group if all other
-groups are full already), and then either skips to the next step in the study (if the current group
-now has @racket[_group-size] members) or loads the step @tech{page} provided by the argument.
+Returns a @tech{matchmaker function} that accepts one argument (that argument being a study step
+function) and which adds the current participant to the current pending group (creating a new group
+if all other groups are full already), and then either skips to the next step in the study (if the
+current group now has @racket[_group-size] members) or loads the step @tech{page} provided by the
+argument.
 
 @margin-note{@mark{You should avoid calling @racket[make-matchmaker] more than once with different
 values of @racket[group-size] in the same study.}}
@@ -799,16 +829,17 @@ procedure must return @racket[#t] if the participant can be added to the candida
 Returns the @seclink["Spec" #:doc '(lib "buid/buid.scrbl")]{BUID} of the group the current
 participant is assigned to, or @racket[#f] if not currently assigned to any group.
 
-If the result is not @racket[#f], it can be used as a key for the hash returned by
-@racket[get-ready-groups] to get a list of participant IDs.
+If the result is not @racket[#f], it can be used as a key for the hash returned by either
+@racket[get-ready-groups] or @racket[get-pending-groups] (depending on whether the current
+participant is in a @tech{ready group} or a @tech{pending group}) to get a list of participant IDs.
 
 }
 
 @defproc[(get-ready-groups) (hash/c buid/c (listof integer?))]{
 
-Returns a hash table of all groups that are currently “full” — that is, groups which, as of the last
-call to a @tech{matchmaker function}, have been assigned the number of
-participants given as @racket[_group-size] in the call to @racket[make-matchmaker] which produced the matchmaker.
+Returns a hash table of all currently @tech{ready groups}; that is, groups which, as of the last
+call to a @tech{matchmaker function}, have been assigned the number of participants given as
+@racket[_group-size] in the call to @racket[make-matchmaker] which produced the matchmaker.
 
 Each key in the hash table is a group ID and references a list of participant IDs assigned to that
 group.
@@ -817,28 +848,116 @@ group.
 
 @defproc[(get-pending-groups)  (hash/c buid/c (listof integer?))]{
 
-Returns a hash table of all groups that are only partially “full” — that is, groups which, as of the
-last call to a @tech{matchmaker function}, have been assigned one or more
-participants but still fewer than the number of participants given as @racket[_group-size] in the call
- to @racket[make-matchmaker] which produced the matchmaker.
+Returns a hash table of all currently @tech{pending groups}; that is, groups which, as of the last
+call to a @tech{matchmaker function}, have been assigned one or more participants but still fewer
+than the number of participants given as @racket[_group-size] in the call to
+@racket[make-matchmaker] which produced the matchmaker.
 
 Each key in the hash table is a group ID and references a list of participant IDs assigned to that
 group.
 
 }
 
-@defproc[(reset-current-group) void?]{
+@defproc[(current-group-members [#:include-self? include-self? #f]) (listof integer?)]{
 
-Removes the participant from any group to which they have been assigned (whether it was filled or not).
+If the current participant is a member of a @tech{ready group}, returns a list the members
+in that group. If the current participant is not in a group @mark{or is in a group that is only
+partially full}, an empty list is returned.
 
-@mark{If, at the time the participant’s current group is reset, they were in a group that was only
-partially filled, then a subsequent call to a @tech{matchmaker function} may add them back to the same
-group (causing their ID to appear more than once in that group’s member list). If they were in a filled
-group, the participant’s ID will remain among the list of the original group members.}
+By default, current participant’s own ID is @bold{not} included in the returned list, but if
+@racket[include-self?] is not @racket[#f] then the returned list will include all members of the
+group.
 
 }
 
+@defproc[(reset-current-group) void?]{
 
+Removes the participant from any group to which they have been assigned (whether it was filled or
+not).
+
+@mark{If, at the time the participant’s current group is reset, they were in a group that was only
+partially filled, then a subsequent call to a @tech{matchmaker function} may add them back to the
+same group (causing their ID to appear more than once in that group’s member list). If they were in
+a filled group, the participant’s ID will remain among the list of the original group members.}
+
+}
+
+@defproc[(store-my-result-in-group! [lookup-key any/c] [val any/c]) void?]{
+
+Records @racket[val] in a table of information within the current group so that it can be referenced
+with @racket[lookup-key] (see @racket[other-group-member-results]).
+
+If the current participant is not a member of a group, no data will be recorded.
+
+@mark{Note when reading group member results stored with this function, @racket[#f] is returned in
+cases where a group member has not recorded any response for the given @racket[lookup-key]. So
+storing a @racket[val] of @racket[#f] will make that response indistinguishable from cases where
+no response has been recorded.}
+
+}
+
+@defproc[(get-my-result-in-group [lookup-key any/c]) any/c]{
+
+Retrieves the value stored under @racket[lookup-key] for the current participant within their
+currently assigned group. If the participant is not a member of a group, or if they have not
+previously stored a value under @racket[lookup-key] within the current group, @racket[#f] is
+returned.
+
+}
+
+@defproc[(current-group-member-results [lookup-key any/c] 
+                                       [#:include-ids? ids? #f]
+                                       [#:include-self? include-self? #f])
+         (or/c (listof (cons/c id/c any/c))
+               (listof any/c))]{
+
+Returns a list containing the result stored under @racket[lookup-key] for members of the
+current group. For any member that has not yet stored a value under @racket[_lookup-key],
+@racket[#f] will be returned.
+
+If the current participant is not a member of a group, an empty list is returned.
+
+If @racket[ids?] is not @racket[#f], then each element the returned list will be a pair of the form
+@racket[(_id . _result)] where @racket[_id] is the ID of the participant that recorded the result.
+If @racket[ids?] is @racket[#f], the returned list will simply contain all the @racket[_result]
+values.
+
+By default, current participant’s own result is @bold{not} included in the returned list, but if
+@racket[include-self?] is not @racket[#f] then the returned list will include any responses recorded
+by the current participant under @racket[lookup-key], if any. 
+
+As an example, assume the current participant has an ID of @racket[100] and is paired with
+participant @racket[199]. If the current participant as recorded a response of @racket["no"] under
+lookup key @racket['has-eaten] and the other group member has not yet recorded a response under that
+key:
+
+@racketblock[
+
+(current-group-member-results 'has-eaten) (code:comment @#,elem{→ '(#f)})
+
+(current-group-member-results 'has-eaten #:include-ids? #t) (code:comment @#,elem{→ '((199 . #f))})
+(current-group-member-results 'has-eaten #:include-self? #t) (code:comment @#,elem{→ '("no" #f)})
+(current-group-member-results 'has-eaten 
+                              #:include-self? #t
+                              #:include-ids? #t) (code:comment @#,tt{→ '((100 . "no") (199 . #f))})
+
+]
+
+}  
+
+@defproc[(current-group-results-count [lookup-key any/c] 
+                                      [#:include-self? include-self #f])
+         exact-nonnegative-integer?]{
+
+Returns the count of results recorded under @racket[lookup-key] for members of the current group.
+
+If the current participant is not a member of a group, the result will be @racket[0].
+
+By default, current participant’s own result is @bold{not} counted, but if @racket[include-self?] is
+not @racket[#f] then the count will reflect any responses recorded by the current participant under
+@racket[lookup-key], if any. 
+
+}
 
 @;===============================================
 @section[#:style 'quiet]{Admin}
