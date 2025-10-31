@@ -923,8 +923,9 @@ If @racket[ids?] is @racket[#f], the returned list will simply contain all the @
 values.
 
 By default, current participant’s own result is @bold{not} included in the returned list, but if
-@racket[include-self?] is not @racket[#f] then the returned list will include any responses recorded
-by the current participant under @racket[lookup-key], if any. 
+@racket[include-self?] is not @racket[#f] then the returned list will include a response recorded
+by the current participant under @racket[lookup-key], if one exists, or @racket[#f] if it does not
+exist. 
 
 As an example, assume the current participant has an ID of @racket[100] and is paired with
 participant @racket[199]. If the current participant as recorded a response of @racket["no"] under

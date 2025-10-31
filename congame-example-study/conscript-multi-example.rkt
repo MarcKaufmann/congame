@@ -17,7 +17,8 @@
 
 (require conscript/form0
          conscript/survey-tools
-         racket/list)
+         racket/list
+         racket/match)
 
 (provide simple-treatment-study)
 
@@ -40,25 +41,32 @@
 ;; =============================================================================
 ;; INSTRUCTIONS
 ;; =============================================================================
+(define questions-and-answers
+  '(("What is 7 + 5?" "12")
+    ("What is six less than fifteen?" "9")
+    ("Which day is nine days after Tuesday?" "Thursday")
+    ("What word starts with “A” and is the enemy of a protagonist?" "Antagonist")))
+
+(define quiz-length (length questions-and-answers))
 
 (define instructions-control
   @md*{You are in the **control group**.
 
-    You will complete 2 simple arithmetic tasks. Your payment will be:
+    You will answer @(~a quiz-length) simple questions. Your payment will be:
     - $1 base payment
-    - $0.20 for each task you get correct
+    - $0.20 for each answer you get correct
 
     Good luck!})
 
 (define instructions-treatment
   @md*{You are in the **treatment group**.
 
-    You will complete 2 simple arithmetic tasks. After finishing, you will be matched 
+    You will answer @(~a quiz-length) simple questions. After finishing, you will be matched 
     with another participant in the treatment group. Your payment will depend on both 
     your scores:
 
     - **Winner** (higher score): $1 + $2.40 = $3.40
-    - **Loser** (lower score): $1
+    - **Loser** (lower score): $1.00
     - **Tie**: 50-50 chance of winning
 
     **Important:** After you complete the tasks, you may need to wait briefly while 
@@ -76,54 +84,57 @@
 ;; TASKS
 ;; =============================================================================
 
-(defvar task1-response)
-(defvar task2-response)
+(defvar task-responses)
+(defvar current-response)
+
 (defvar score)
 (defvar payment)
 
 (defstep (init-tasks)
   (set! score 0)
+  (set! payment 0)
+  (set! task-responses '())
   (skip))
 
-(define-values (task1-form task1-onsubmit)
-  (form+submit
-   [task1-response (ensure binding/number (required))]))
+;; Factory for making similar tasks
+(define quiz-task-funcs
+  (for/list ([task (in-list questions-and-answers)])
+    (match-define (list question answer) task)
+    (define-values (task-form task-onsubmit)
+      (form+submit
+       [current-response (ensure binding/text (required))]))
+    (define (renderer rw)
+      @md*{
+        @rw["current-response" @input-text{Your answer}]
 
-(define (render-task1 rw)
-  @md*{@rw["task1-response" @input-number{Your answer}]
-    @|submit-button|})
+        @submit-button})
+    (list task-form task-onsubmit renderer)))
 
-(define-values (task2-form task2-onsubmit)
-  (form+submit
-   [task2-response (ensure binding/number (required))]))
+(define (task-step-content task-n)
+  (define idx (sub1 task-n))
+  (match-define (list t-form t-onsubmit t-render) (list-ref quiz-task-funcs idx))
+  (match-define (list question _answer) (list-ref questions-and-answers idx))
+  @md{
+    # Task @(~a task-n)
 
-(define (render-task2 rw)
-  @md*{@rw["task2-response" @input-number{Your answer}]
-    @|submit-button|})
+    @question
 
-;; Task 1: What is 7 + 5?
-(defstep (task1)
-  @md{# Task 1
+    @form[t-form t-onsubmit t-render]})
 
-    What is 7 + 5?
-
-    @form[task1-form task1-onsubmit render-task1]})
-
-;; Task 2: What is 15 - 6?
-(defstep (task2)
-  @md{# Task 2
-
-    What is 15 - 6?
-
-    @form[task2-form task2-onsubmit render-task2]})
+(defstep (quiz-tasks)
+  (define task-number (add1 (length task-responses)))
+  (task-step-content task-number))
 
 (defstep (show-score)
-  (set! score (+ (if (= task1-response 12) 1 0)
-                 (if (= task2-response 9) 1 0)))
-
+  (set! score
+        (for/sum ([(answer idx) (in-indexed task-responses)])
+          (match-define (list _q correct-answer) (list-ref questions-and-answers idx))
+          (if (string=? (string-downcase answer)
+                        (string-downcase correct-answer)) 1 0)))
+  
   @md{# Your Score
 
-    You answered **@(~a score) out of 2** tasks correctly.
+    You answered **@(~a score) out of @(~a quiz-length) ** tasks correctly.
 
     @button{Continue}})
 
@@ -192,8 +203,8 @@
   
   @md{# Match Results
 
-    **Your score:** @(~a score) out of 2
-    **Opponent's score:** @(~a opponent-score) out of 2
+    **Your score:** @(~a score) out of @(~a quiz-length)
+    **Opponent's score:** @(~a opponent-score) out of @(~a quiz-length)
     
     **You @(if did-win? "🎉 WON!" "lost this round.")**
     
@@ -213,9 +224,13 @@
   [assign-treatment
    --> instructions
    --> init-tasks
-   --> task1
-   --> task2
-   --> show-score
+   --> quiz-tasks
+   --> ,(lambda ()
+          (set! task-responses (append task-responses (list current-response)))
+          (cond
+            [(= (length task-responses) quiz-length) 'show-score] ; finished the quiz!
+            [else 'quiz-tasks]))]
+  [show-score
    --> ,(lambda ()
           (if is-treatment? 'pair-with-someone 'control-payment))]
   

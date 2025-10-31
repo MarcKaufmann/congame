@@ -6,7 +6,7 @@
                      racket/match)
           "doc-util.rkt")
 
-@title[#:style 'quiet]{Conscript tutorial: the Prisoner’s Dilemma}
+@title[#:style 'quiet #:tag "prisoners-dilemma"]{Tutorial: the Prisoner’s Dilemma}
 
 The Prisoner’s Dilemma is a classic problem in game theory that demonstrates how two rational
 individuals might not cooperate, even if it is in their best interest to do so. In its standard

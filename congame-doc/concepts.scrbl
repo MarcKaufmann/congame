@@ -6,7 +6,7 @@
           "doc-util.rkt"
           scribble/bnf)
 
-@title{Overview}
+@title[#:tag "overview"]{Congame basics: An overview}
 
 What follows is a high-level overview of Congame's systems and how they all work together. If you've
 just finished the @seclink["intro"]{introductory tour} then this will give you some more context for
@@ -14,7 +14,7 @@ what you saw.
 
 @;===============================================
 
-@section{Help and Support}
+@section{Help and support}
 
 This documentation makes heavy use of links, both in the writing and in the code. You can click on
 any function used in a code example to view detailed documentation on that function and how it’s
@@ -59,7 +59,7 @@ Racket Reference}, to build up your vocabulary of the most common functions.
 
 @; ==============================================
 
-@section{Basic Congame Concepts}
+@section{Basic Congame concepts}
 
 A @deftech{step} is a point within a @tech{study} at which we provide information to
 a participant, and/or collect a response from them. In the simplest (and most common) 
@@ -77,7 +77,7 @@ or simply to keep a copy of the data.
 
 @; ==============================================
 
-@section{Web Pages}
+@section{Web pages}
 
 @tech{Studies} and study @tech{steps} eventually become web pages, so it helps to know a little
 about HTML and Markdown. This section provides a short introduction to each.
@@ -153,7 +153,7 @@ accept Markdown-formatted text and convert it to HTML for you.
 
 @; ==============================================
 
-@section[#:tag "scribble-in-conscript"]{“Scribble Syntax” in Conscript}
+@section[#:tag "scribble-in-conscript"]{“Scribble syntax” in Conscript}
 
 @margin-note{Racket’s advanced documentation system is called Scribble. The document you’re reading
 now was written as a Scribble program, using the syntax described here. See
