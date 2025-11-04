@@ -196,7 +196,7 @@ Returns a representation of an HTML @html-tag{a} element styled as a button that
 next step in the study when clicked.
 
 If @racket[_action-proc] is provided, it will be called when the button is clicked, just before the
-next step in the study is loaded. @mark{Rather: before the transition is run.}
+next transition to the next step in the study is run.
 
 The @tt{href} attribute
 is dynamically set to the URL of a continuation that first calls @racket[_action] with no arguments,
@@ -206,6 +206,8 @@ study if @racket[to-step-id] is @racket[#f]).
 If @racket[#:id] is provided, it sets the value of the @tt{data-widget-id} attribute for the
 element.
 
+@inline-note[#:type 'warning]{You must call @racket[button] from inside a function definition. If
+you call it from the “top level” of a study or module you will get an error.}
 
 }
 
