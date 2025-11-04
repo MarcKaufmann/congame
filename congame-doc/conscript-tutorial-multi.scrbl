@@ -112,11 +112,26 @@ condition. Here's the code:
   (skip))
 }|
 
+Let's start by looking at the variables created here. You’ll notice they are defined using different
+functions. This is because they have different @emph{scopes}.
+
+@itemlist[
+
+@item{A variable with @deftech{participant scope} records a unique value for each participant;
+when accessed, such a variable will return the value that was last set for the current participant.}
+
+@item{A variable with @deftech{instance scope} records a unique value for the current study
+@tech{instance} and is visible to all other participants enrolled in that instance of the study.
+When accessed, the variable will return the value that was last set by @emph{any participant} in the
+current study instance.}
+
+]
+
 @subsection{Instance-scoped Variables}
 
-@racket[(defvar/instance treatments)] creates a variable with @tech{instance scope}. Unlike
-regular @racket[defvar] variables (which store a separate value for each participant),
-instance-scoped variables are @emph{shared across all participants} in a study instance.
+@racket[(defvar/instance treatments)] creates a stored value with @tech{instance scope}. Unlike
+regular @racket[defvar] values (which store a separate value for each participant),
+instance-scoped values are @emph{shared across all participants} in a study instance.
 
 Here, @racket[treatments] holds a list of treatment assignments (@racket[#t] for treatment,
 @racket[#f] for control) that all participants will draw from. This is how we ensure balanced

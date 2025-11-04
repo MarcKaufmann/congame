@@ -891,10 +891,10 @@ with @racket[lookup-key] (see @racket[other-group-member-results]).
 
 If the current participant is not a member of a group, no data will be recorded.
 
-@mark{Note when reading group member results stored with this function, @racket[#f] is returned in
-cases where a group member has not recorded any response for the given @racket[lookup-key]. So
-storing a @racket[val] of @racket[#f] will make that response indistinguishable from cases where
-no response has been recorded.}
+@inline-note{Note when reading group member results stored with this function, @racket[#f] is
+returned in cases where a group member has not recorded any response for the given
+@racket[lookup-key]. So storing a @racket[val] of @racket[#f] will make that response
+indistinguishable from cases where no response has been recorded.}
 
 }
 
@@ -930,7 +930,7 @@ by the current participant under @racket[lookup-key], if one exists, or @racket[
 exist. 
 
 As an example, assume the current participant has an ID of @racket[100] and is paired with
-participant @racket[199]. If the current participant as recorded a response of @racket["no"] under
+participant @racket[199]. If the current participant has recorded a response of @racket["no"] under
 lookup key @racket['has-eaten] and the other group member has not yet recorded a response under that
 key:
 
