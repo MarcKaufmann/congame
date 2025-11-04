@@ -23,6 +23,13 @@
   (hyperlink (string-append "https://github.com/MarcKaufmann/congame/blob/main/" rel-path)
              (tt rel-path)))
 
+(define (inline-note #:type [type 'note] . elems)
+  (compound-paragraph
+   (style "inline-note" (list (css-style-addition congame-css)
+                          (attributes `((class . ,(format "refcontent ~a" type))))
+                          (alt-tag "aside")))
+   (decode-flow elems)))
+
 ;; Mark text as worthy of review for possible Congame improvements
 (define (mark . elems)
   (element (style "review" (list (css-style-addition congame-css)

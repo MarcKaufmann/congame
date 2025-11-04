@@ -9,6 +9,34 @@
     overflow-x: auto;
 }
 
+aside.inline-note {
+    border: 1px solid #ccb;
+    border-left: 0.4rem solid #ccb;
+    padding: 0.5em 0.5em 0.5em 3em;
+    display: block;
+    position: relative;
+    overflow: auto;
+    background-color: hsl(60, 29%, 94%);
+    margin-bottom: 1rem;
+}
+
+aside.inline-note:before {
+    content: "☞";
+    font-size: 1.4em;
+    width: 1.2em;
+    height: 1.2em;
+    left: .85rem;
+    top: .25rem;
+    display: inline-block;
+    position: absolute;
+}
+
+aside.inline-note.tip:before { content: "💡"; }
+aside.inline-note.warning:before { content: "⚠️"; }
+aside.inline-note.note:before { content: "☞"; }
+
+aside.inline-note > .SIntrapara:last-child { margin-bottom: 0; }
+
 .browser {
     font-family: system-ui, sans-serif;
     margin-bottom: 1em;
