@@ -37,6 +37,9 @@ understand what it does and why.
 @seclink["Multi-participant_Study_Recipe"]{Multi-participant Study Recipe} section of the Conscript
 cookbook. 
 
+@inline-note[#:type 'tip]{You can click on function identifiers in the code samples! They will link
+you to more detailed information about the use of each function.}
+
 @;===============================================
 
 @section{Study Overview}
@@ -131,7 +134,8 @@ The @racket[assign-treatment] step does three things:
 
 @item{Checks if the @racket[treatments] list is empty or undefined. If so, it creates a new shuffled
 list of assignments: @racket['(#t #t #f #f)]. The @racket[shuffle] function randomly reorders this
-list.}
+list. We do this because we don’t always want the assignment a person gets to be predictable based
+on when they arrived.}
 
 @item{Takes the first assignment from the list and stores it in @racket[is-treatment?] for the
 current participant.}
@@ -311,6 +315,9 @@ After both tasks are completed, we calculate the score by checking each answer a
 answer (12 for task 1, 9 for task 2). Each @racket[if] expression returns @racket[1] if the answer
 is correct and @racket[0] if not; we add these values together to get the total score.
 
+@inline-note{If it was time-consuming to compute the score, we might put that computation in its own
+separate step to ensure that it is only run once.}
+
 We then display the score to the participant using @racket[~a] to convert the number to a string for
 display in the Markdown text.
 
@@ -401,6 +408,10 @@ found.}
 automatically proceed to the next step.}
 
 ]
+
+@inline-note{In this example study, the participant might wait forever if no one else arrives. In
+production code we might want to avoid this by moving them along forcefully and/or matching them
+with a bot.}
 
 @subsection{Storing and Retrieving Group Results}
 
