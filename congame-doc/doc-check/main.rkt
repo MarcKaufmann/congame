@@ -32,7 +32,7 @@
 ;; Each element in the list is either: a module path (= ignore all bindings in that module)
 ;;                                     list of module path and ids (= ignore just those ids)
 (ignored-bindings
- '((conscript/base require)
+ '((conscript/base require %whitelist make-wrapper)
    (conscript/form map-validator
                    ~all-errors
                    ~error

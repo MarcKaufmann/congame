@@ -9,6 +9,21 @@
     overflow-x: auto;
 }
 
+.terminal .SIntrapara {
+    margin: 0 0 0 0;
+}
+
+.terminal .prompt {
+    margin-left: .5rem;
+}
+
+.terminal .prompt:before {
+    content: "❯";
+    float: left;
+    margin-top: -1px;
+    color: #aaaaaa;
+}
+
 aside.inline-note {
     border: 1px solid #ccb;
     border-left: 0.4rem solid #ccb;
@@ -61,10 +76,6 @@ aside.inline-note > .SIntrapara:last-child { margin-bottom: 0; }
 .browser>img {
     margin-top: -0.5rem;
     margin-left: -0.5rem
-}
-
-.terminal .SIntrapara {
-    margin: 0 0 0 0;
 }
 
 .dr-message {

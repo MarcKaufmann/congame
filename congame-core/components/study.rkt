@@ -388,10 +388,6 @@ QUERY
   (let ([tmp val-expr])
     (if (undefined? tmp) then-expr tmp)))
 
-;; TODO(doc): The reason defvar has no default is because, while we
-;; could give that reasonable semantics at the Racket level, that
-;; default is not going to be in the database so researchers could end
-;; up relying on data that doesn't make it into the final dataset.
 (define-syntax (defvar stx)
   (syntax-parse stx
     [(_ id:id)

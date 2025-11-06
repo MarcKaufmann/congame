@@ -251,11 +251,11 @@ Armed with the concepts explained in this chapter, you should be able to underst
 @item{All of this is Racket code. (@secref["congame-racket"])}
 
 @item{This code defines a @tech{step} called @racketidfont{start}, and then a @tech{study} that uses
-that step. (@secref["Basic_Congame_Concepts"]).}
+that step. (@secref["Basic_Congame_concepts"]).}
 
 @item{The @racketidfont{start} step uses the @racket[md] function to define some content using
 @tech{Markdown} formatting. This Markdown gets converted to @tech{HTML}, which is displayed in your
-web browser when you run the study. (@secref["Web_Pages"])}
+web browser when you run the study. (@secref["Web_pages"])}
 
 @item{The call to @racket[md] is written using Scribble-style syntax, purely for convenience, so
 that the string content can be written without quote marks and newline escapes (@litchar{"} and

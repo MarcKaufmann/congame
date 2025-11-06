@@ -540,5 +540,5 @@ a detailed listing of your responses to the study:
 At this point, you’ve seen all of the essential features of creating studies in Conscript, testing
 them on a Congame server, and collecting some sample responses.
 
-From here, you should check out the @secref["Overview"], and then, when you’re ready, dive into the
+From here, you should check out the @secref["overview"], and then, when you’re ready, dive into the
 more detailed @secref["Conscript"] guide.

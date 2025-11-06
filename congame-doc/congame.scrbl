@@ -1,7 +1,8 @@
 #lang scribble/manual
 
 @(require (for-label racket/base
-                     racket/contract))
+                     racket/contract)
+          "doc-util.rkt")
 
 @title[#:style 'toc]{Congame}
 @author[(author+email "Marc Kaufmann" "marc@trichotomy.xyz")]
@@ -24,11 +25,12 @@ Congame includes:
 
 ]
 
-@bold{Installation}: See @secref["install-congame"].
+@inline-note{@bold{Installation}: See @secref["install-congame"].
 
-@bold{Getting help}: If you have questions about Congame or about this documentation, create a post
-in @link["https://github.com/MarcKaufmann/congame/discussions"]{the Discussions area of Congame’s
-GitHub repository}, and the authors will respond.
+@bold{Getting help}: See @secref["Help_and_support"].}
+
+@inline-note{The canonical copy of this documentation lives at
+@url{https://docs.totalinsightmanagement.com}.}
 
 @table-of-contents[]
 
