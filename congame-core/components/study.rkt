@@ -499,7 +499,9 @@ QUERY
  attachment)
 
 (define current-embed/url
-  (make-parameter 'no-embed/url))
+  (make-parameter
+   (lambda _args
+     (error 'embed/url "missing~n  hint: did you use a widget like @button{...} outside of a step?"))))
 
 (define current-request
   (make-parameter 'no-request))
