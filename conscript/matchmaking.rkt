@@ -27,8 +27,6 @@
                                      (or/c (listof (cons/c id/c any/c))
                                            (listof any/c)))]))
 
-;; TODO: Namespace these vars?
-
 ;; These are study-scoped in order for the parent and the child to
 ;; be able to do their own matchmaking. If a parent wants to share
 ;; the current group with a child, it needs to store it in a separate
@@ -37,9 +35,10 @@
 ;; Do not use make-matchmaker more than once within one study since the
 ;; calls will operate on the same shared data structures, leading to
 ;; undefined behavior.
-(defvar/instance pending-groups)
-(defvar/instance ready-groups)
-(defvar current-group)
+(with-root *conscript/matchmaking*
+  (defvar/instance pending-groups)
+  (defvar/instance ready-groups)
+  (defvar current-group))
 
 (define (get-ready-groups)
   (if-undefined ready-groups (hash)))
@@ -110,9 +109,10 @@
 (require data/monocle)
 
 ;; (hash group-id . (hash participant-id . (hash key . val)))
-(defvar/instance _group-results)
+(with-root *conscript/matchmaking*
+  (defvar/instance group-results))
 
-(define (results) (if-undefined _group-results (hash)))
+(define (results) (if-undefined group-results (hash)))
 
 (define (&group-member-result participant-id key)
   (parameterize ([current-hash-maker hash])
@@ -124,7 +124,7 @@
 (define (store-my-result-in-group! key val)
   (when (get-current-group)
     (with-study-transaction
-        (set! _group-results
+        (set! group-results
               ((&group-member-result (current-participant-id) key) (results) val)))))
 
 (define (get-my-result-in-group key)
