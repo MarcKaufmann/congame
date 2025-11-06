@@ -4,6 +4,8 @@
                      congame/components/bot-maker
                      conscript/admin
                      (only-in conscript/base
+                              add-css
+                              add-css-resource
                               defbox
                               define-var-box
                               defstep
@@ -95,11 +97,14 @@ particular identifiers provided by @racket[_child-study-expr] upon completion. W
 
 @defform[#:literals (--> lambda unquote done goto quote)
          (defstudy study-id
+                   maybe-wrapper
                    maybe-requires
                    maybe-provides
                    transition-clause ...+)
          #:grammar
-         [(maybe-requires (code:line)
+         [(maybe-wrapper (code:line)
+                         (code:line #:wrapper wrapper-expr))
+          (maybe-requires (code:line)
                           (code:line #:requires (value-id-sym ...)))
           (maybe-provides (code:line)
                           (code:line #:provides (value-id-sym ...)))
@@ -119,9 +124,9 @@ particular identifiers provided by @racket[_child-study-expr] upon completion. W
 Defines a study in terms of steps joined by transitions. Each @racket[step] should be a step defined
 with @racket[defstep] or @racket[defstep/study].
 
-The use of @racket[#:requires] and @racket[#:provides] arguments is deprecated and included for
-compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study variables between
-parent/child studies.
+If @racket[#:wrapper] is supplied, @racket[wrapper-expr] must produce a function that takes a study
+as its only argument and returns a study. (See, for example, @racket[add-css] and
+@racket[add-css-resource].)
 
 An unquoted lambda at the end of a @racket[transition-clause] can include arbitrary @racket[expr],
 but this but must evaluate to one of the other possible @racket[transition-expr]s:
@@ -157,7 +162,13 @@ You can reuse the same step function as separate steps with the @racket[--> {_st
          --> {message2 message}
          --> final]
   [final --> final])
-]}
+]
+
+The use of @racket[#:requires] and @racket[#:provides] arguments is deprecated and included for
+compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study variables between
+parent/child studies.
+
+}
 
 @defproc[(put/identity [key symbol?] [value any/c]) void?]{
 
