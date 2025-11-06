@@ -93,16 +93,20 @@ Defines a @tech{study variable} with @tech{participant scope} bound to @racket[_
 variable can be accessed inside the study steps using @racket[_id] and updated with
 @racket[(set! _id _expr)]. 
 
-The value of the study variable will be stored in the Congame server database under the current
-study → instance → participant.
+When set, the value of the study variable will be stored in the Congame server database under the
+current study → instance → participant.
 
 Study variables created with @racket[defvar*] will additionally be visible to any child studies (see
 @racket[defstep/study]).
 
-@bold{Important:} when using @racket[defvar*], you must provide a second identifier
-@racket[_global-id] and manually ensure it is distinct from any identifiers that may be used in
-child studies. This prevents child studies that may be using the same identifier names from
-accidentally overwriting your parent study’s variable.
+@inline-note{Study variables have no default value (see @racket[undefined?]). This is intentional,
+because until you store a value using @racket[set!], no value has been stored in the study
+database.}
+
+@inline-note[#:type 'warning]{@bold{Important:} when using @racket[defvar*], you must provide a
+second identifier @racket[_global-id] and manually ensure it is distinct from any identifiers that
+may be used in child studies. This prevents child studies that may be using the same identifier
+names from accidentally overwriting your parent study’s variable.}
 
 }
 
