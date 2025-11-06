@@ -216,10 +216,20 @@ To update to a new version of Congame and Conscript:
 
 @itemlist[#:style 'ordered
 
-@item{Ensure your local Congame container isn’t running.}
+@item{Open a terminal window and go to the main @filepath{congame} folder.}
 
-@item{Update your local copy of the source code: go to the main @filepath{congame} folder and run
-these commands:
+@item{Stop and remove the existing container by running this command:
+
+@terminal{
+    @:>{docker compose down}
+}
+
+@inline-note{Simply stopping the container (e.g. with the stop ⏹️ button in Docker Desktop) is not
+enough. You must remove the old container so Docker can create a new one with your updates.}
+
+}
+
+@item{Update your local copy of the source code:
 
 @terminal{
     @:>{git pull}
@@ -237,5 +247,13 @@ additional commands in the terminal:
 }
 
 This will take much less time than the initial Docker setup.}
+
+@item{Recreate the container:
+
+@terminal{
+    @:>{docker compose up --no-start}
+}
+
+}
 
 ]
