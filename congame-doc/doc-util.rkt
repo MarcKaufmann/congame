@@ -55,10 +55,10 @@
                                               (tex-addition congame-tex)))
                       (list (apply verbatim args))))
 
-;; Simulate a command-line prompt
+;; Simulate a command-line prompt. Any prompt symbols/separators are handled in CSS.
 (define (:> . elems)
-  (element (style "prompt" (list (color-property (list #x66 #x66 #x66))))
-           (apply exec (cons "> " elems))))
+  (element (style "prompt" (list (color-property (list 0 0 0))))
+           (apply exec elems)))
 
 ;; Simulate a bash-style comment
 (define (rem . args)
