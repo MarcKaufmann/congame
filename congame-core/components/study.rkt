@@ -347,6 +347,7 @@ QUERY
 
 (provide
  with-namespace
+ with-root
  defvar
  defvar*
  defvar/instance
@@ -364,11 +365,19 @@ QUERY
  if-undefined)
 
 (define-syntax-parameter current-var-namespace #f)
+(define-syntax-parameter current-var-root #'*root*)
 
 (define-syntax (with-namespace stx)
   (syntax-parse stx
     [(_ namespace:id body ...+)
      #'(splicing-syntax-parameterize ([current-var-namespace 'namespace])
+         body ...)]))
+
+;; NOTE: Applies only to non-* vars.
+(define-syntax (with-root stx)
+  (syntax-parse stx
+    [(_ root:id body ...+)
+     #'(splicing-syntax-parameterize ([current-var-root 'root])
          body ...)]))
 
 (define undefined
@@ -386,36 +395,38 @@ QUERY
 (define-syntax (defvar stx)
   (syntax-parse stx
     [(_ id:id)
+     #:with root-id (syntax-parameter-value #'current-var-root)
      #'(begin
          (define-syntax id
            (make-set!-transformer
             (lambda (stx)
               (syntax-case stx (set!)
-                [(set! id v) #'(put-var 'id v)]
-                [id (identifier? #'id) #'(get-var 'id)])))))]))
+                [(set! id v) #'(put-var #:root 'root-id 'id v)]
+                [id (identifier? #'id) #'(get-var #:root 'root-id 'id)])))))]))
 
-(define (get-var k)
-  (get k undefined))
+(define (get-var k #:root [root-id '*root*])
+  (get #:root root-id k undefined))
 
-(define (put-var k v)
-  (put k v))
+(define (put-var k v #:root [root-id '*root*])
+  (put #:root root-id k v))
 
 (define-syntax (defvar/instance stx)
   (syntax-parse stx
     [(_ id:id)
+     #:with root-id (syntax-parameter-value #'current-var-root)
      #`(begin
          (define-syntax id
            (make-set!-transformer
             (lambda (stx)
               (syntax-case stx (set!)
-                [(set! id v) #'(put-var/instance 'id v)]
-                [id (identifier? #'id) #'(get-var/instance 'id)])))))]))
+                [(set! id v) #'(put-var/instance #:root 'root-id 'id v)]
+                [id (identifier? #'id) #'(get-var/instance #:root 'root-id 'id)])))))]))
 
-(define (put-var/instance k v)
-  (put/instance k v))
+(define (put-var/instance k v #:root [root-id '*root*])
+  (put/instance #:root root-id k v))
 
-(define (get-var/instance k)
-  (get/instance k undefined))
+(define (get-var/instance k #:root [root-id '*root*])
+  (get/instance #:root root-id k undefined))
 
 (define-syntax (defvar* stx)
   (syntax-parse stx

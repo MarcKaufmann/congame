@@ -116,6 +116,7 @@
   [congame:get/linked/instance get/linked/instance]
   [congame:skip skip]
   [congame:with-namespace with-namespace]
+  [congame:with-root with-root]
   [congame:defvar defvar]
   [congame:defvar* defvar*]
   [congame:defvar/instance defvar/instance]
