@@ -16,9 +16,9 @@
   [get-current-group (-> (or/c #f buid/c))]
   [get-pending-groups (-> (hash/c buid/c (listof id/c)))]
   [reset-current-group (-> void?)]
-  
+
   [current-group-members (->* () (#:include-self? any/c) (or/c #f (listof id/c)))]
-  
+
   [store-my-result-in-group! (-> any/c any/c void?)]
   [get-my-result-in-group (-> any/c any/c)]
   [current-group-results-count (->* (any/c) (#:include-self? any/c) exact-nonnegative-integer?)]
@@ -29,10 +29,14 @@
 
 ;; TODO: Namespace these vars?
 
-;; These are study-scoped in order for the parent and the child to be
-;; able to do their own matchmaking. If a parent wants to share the
-;; current group with a child, it needs to store it in a separate var*
-;; and share that with the child and vice-versa.
+;; These are study-scoped in order for the parent and the child to
+;; be able to do their own matchmaking. If a parent wants to share
+;; the current group with a child, it needs to store it in a separate
+;; var* and share that with the child and vice-versa.
+;;
+;; Do not use make-matchmaker more than once within one study since the
+;; calls will operate on the same shared data structures, leading to
+;; undefined behavior.
 (defvar/instance pending-groups)
 (defvar/instance ready-groups)
 (defvar current-group)
