@@ -7,6 +7,7 @@
          racket/format)
 
 (provide
+ resource?
  define-static-resource
  resource-uri)
 

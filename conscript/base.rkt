@@ -421,7 +421,9 @@
    (-> (-> (-> xexpr?) xexpr?)
        (-> study? study?))]
   [add-css
-   (-> string? (-> study? study?))]))
+   (-> string? (-> study? study?))]
+  [add-css-resource
+   (-> resource? (-> study? study?))]))
 
 (define ((make-wrapper proc) s)
   (map-study s (lambda (original-handler)
@@ -435,4 +437,14 @@
        (style
         ([type "text/css"])
         ,css)
+       ,(original-handler)))))
+
+(define (add-css-resource res)
+  (make-wrapper
+   (lambda (original-handler)
+     `(div
+       (link
+        ([rel "stylesheet"]
+         [type "text/css"]
+         [href ,(resource-uri res)]))
        ,(original-handler)))))
