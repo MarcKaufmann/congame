@@ -50,7 +50,8 @@
 
 @section[#:style 'quiet]{Core}
 
-@defmodule[conscript/base #:use-sources (conscript/var-box)]
+@declare-exporting[conscript/base]
+@defmodule[conscript/base #:no-declare]
 
 The bindings provided by this module are also provided by @code{#lang conscript}.
 
@@ -264,52 +265,26 @@ Returns the URI of the view handler page associated with the current step. Inten
 
 }
 
-
 @;------------------------------------------------
 
-@subsection{Boxes}
+@subsection{CSS}
 
+@defproc[(add-css [css-string string?]) (-> study? study?)]{
 
-@defform[(defbox id)]{
-
-Defines two functions, @racketkeywordfont{get-}@racket[_id] (which takes no arguments and returns
-the value of @racket[_id]) and @racketkeywordfont{set!-}@racket[_id] (which takes one argument and
-updates the value of @racket[_id]).
-
-@examples[#:eval e
-(define flux 81)
-(defbox flux)
-(get-flux)
-(set!-flux "new")
-(get-flux)
-flux
-
-]
+Returns a procedure, suitable for use with the @racket[#:wrapper] argument of @racket[defstudy],
+which adds the custom CSS contained in @racket[css-string] to each step in the study.
 
 }
 
-@defform[(define-var-box id var)]{
+@defproc[(add-css-resource [css-res resource?]) (-> study? study?)]{
 
-Binds @racket[_id] to a function that can take zero arguments or one argument. If given no
-arguments, the function returns the current value of @racket[_var] (which must already be defined
-elsewhere); if given a single argument, the function @racket[set!]s the value of @racket[_var] to
-that value.
+Returns a procedure, suitable for use with the @racket[#:wrapper] argument of @racket[defstudy],
+which adds the custom CSS @tech{resource} @racket[css-res] to each step in the study.
 
-The function @racket[_id] can be passed to other functions, allowing them to access or update a
-local variable.
-
-@examples[#:eval e
-(define flux #f)
-(define-var-box get-or-set flux)
-
-(get-or-set)
-(get-or-set 'foo)
-(get-or-set)
-flux
-]
+@inline-note{See @github-link{congame-example-study/conscript-css-resource.rkt} for an example of
+how to use this function.}
 
 }
-
 
 @;------------------------------------------------
 
@@ -361,6 +336,60 @@ Note that since the result of a @racketkeywordfont{log-conscript-}@racket[_level
 }
 
 @screenshot{ref-log-example-output.png}
+
+
+@;------------------------------------------------
+
+@subsection{Boxes}
+
+
+@defform[(defbox id)]{
+
+Defines two functions, @racketkeywordfont{get-}@racket[_id] (which takes no arguments and returns
+the value of @racket[_id]) and @racketkeywordfont{set!-}@racket[_id] (which takes one argument and
+updates the value of @racket[_id]).
+
+@examples[#:eval e
+(define flux 81)
+(defbox flux)
+(get-flux)
+(set!-flux "new")
+(get-flux)
+flux
+
+]
+
+}
+
+@subsubsection{Additional box functions}
+
+@declare-exporting[conscript/var-box conscript/base]
+@defmodule[conscript/var-box #:no-declare]
+
+The bindings from this module are also provided by @racketmodname[conscript/base].
+
+@defform[(define-var-box id var)]{
+
+Binds @racket[_id] to a function that can take zero arguments or one argument. If given no
+arguments, the function returns the current value of @racket[_var] (which must already be defined
+elsewhere); if given a single argument, the function @racket[set!]s the value of @racket[_var] to
+that value.
+
+The function @racket[_id] can be passed to other functions, allowing them to access or update a
+local variable.
+
+@examples[#:eval e
+(define flux #f)
+(define-var-box get-or-set flux)
+
+(get-or-set)
+(get-or-set 'foo)
+(get-or-set)
+flux
+]
+
+}
+
 
 @;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -494,10 +523,10 @@ forms.
 
 @defmodule[conscript/resource]
 
-This module provides a way to access images and other static files that aren’t stored in the
-database. The files get uploaded automatically as long as they're linked using
-@racket[define-static-resource]. Or you can upload a zipped folder as long as the study is
-contained/provided from specifically named @filepath{study.rkt} inside that zip file.
+This module provides a way to access @deftech{resources}: images and other static files that aren’t
+stored in the database. The files for linked resources get uploaded automatically as long as they're
+linked using @racket[define-static-resource]. Or you can upload a zipped folder as long as the study
+is contained/provided from specifically named @filepath{study.rkt} inside that zip file.
 
 @defform[(define-static-resource name path-string)]{
 
@@ -517,6 +546,13 @@ Generates an absolute URL for the resource @racket[r] on the current study serve
 
 }
 
+
+@defproc[(resource? [v any/c]) boolean?]{
+
+Returns @racket[#t] if @racket[v] is a @tech{resource} defined with @racket[define-static-resource],
+@racket[#f] otherwise.
+
+}
 
 @;===============================================
 
