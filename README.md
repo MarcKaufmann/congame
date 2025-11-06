@@ -19,6 +19,8 @@ Furthermore, congame has a few features that many will consider bugs:
 
 koyo is much less battle tested than [Django](https://www.djangoproject.com/), the Python framework on which oTree is built, and Racket is a very uncommon choice compared to Python. This means that at this stage, it is fairly unlikely that you will want to use congame.
 
+**Documentation can be read at <https://docs.totalinsightmanagement.com>.**
+
 ## Future Vision
 
 The vision is to develop congame further, in particular as follows:
