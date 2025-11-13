@@ -1067,53 +1067,43 @@ generated, which is often not what you want, since then users can refresh until
 they get the number they want.
 
 If we only want to generate the number once, we should generate it only the
-first time and then store it, say, with the key @racket['r-once]. If we do this,
-then every time we visit the page, we check whether the number already was
-stored. If so, then we display this value again; if not, then this is the first
-time the user visits this page, so we generate it randomly.
+first time and then store it in a variable declared with @racket[defvar]. If we do this,
+then every time we visit the page, we check whether the variable has already been
+set. If so, then we display this value again; if not, then this is the first
+time the user visits this page, so we generate it randomly and store it with @racket[set!].
 
-To do this, we use @code|{(get 'r-once (add1 (random 6)))}|. This attempts to
-get @racket['r-once], but if this is not found, then it returns a new random
-value instead. We then store this value, so that on the next refresh of the
-page, the call to @racket[get] is successful.
+To do this, we use @racket[undefined?] to check if the variable has been set yet.
+If @racket[undefined?] returns @racket[#t], we generate a new random value and store it
+using @racket[set!]. On subsequent page refreshes, @racket[undefined?] will return
+@racket[#f], so we skip the generation step and use the existing value.
 
-The study below generates two random numbers: one that changes upon every
+The study step below generates two random numbers: one that changes upon every
 refresh, one that gets generated once and stays constant across refreshes.
 
 @codeblock|{
 #lang conscript
 
-(require racket/random)
-
-(provide
-  generate-random)
+(defvar refreshed-random)
+(defvar r-once)
 
 (defstep (generate-random-number)
-  (define r
-    ; (random n) generates a random integer from 0 to n-1, so we need to `add1`
-    ; to get a random draw from 1 to 6 inclusive.
-    (add1 (random 6)))
-  ; This stores the new value in the DB and overwrites the old.
-  (put 'refreshed-random r)
+  ; (random n) generates a random integer from 0 to n-1, so we need to `add1`
+  ; to get a random draw from 1 to 6 inclusive.
+  ; This value is stored and will change on every page refresh.
+  (set! refreshed-random (add1 (random 6)))
 
-  (define maybe-value
-    (get 'r-once #f))
-
-  (define r-once
-    ; If maybe-value is not #f, then maybe-value is the random number.
-    ; Otherwise, generate a new one.
-    (if maybe-value maybe-value (add1 (random 6))))
-
-  (unless maybe-value
-    (put 'r-once r-once))
+  ; If r-once is undefined, generate a new random number and store it.
+  ; On subsequent refreshes, this will be skipped and the original value kept.
+  (when (undefined? r-once)
+    (set! r-once (add1 (random 6))))
 
   @md{
     # Generate a Random Number
 
-    - The value of `r` is: @(~a r)
+    - The value of `refreshed-random` is: @(~a refreshed-random)
     - The value of `r-once` is: @(~a r-once)
 
-    If you refresh the page, the value of `r` will change, while the value of
+    If you refresh the page, the value of `refreshed-random` will change, while the value of
     `r-once` will not. You usually don't want it to change based on the refresh.
 
     @button{Back to Choice}
