@@ -60,6 +60,8 @@
 ; TODO: update for lecture (not game) instructions.
 (defstep (instructions)
   (define actions (hash-ref grade-game-form 'actions1))
+  (define action1 (first actions))
+  (define action2 (second actions))
   (eprintf "form: ~s~n" grade-game-form)
   @md{# Grade Game
 
@@ -67,7 +69,7 @@
 
       You will first play multiple instances of the Grade Game. Each time, you will be paired with a random person from this class, and neither of you will find out with whom you were paired.
 
-      Both of you can take an action by choosing either @(~a (first actions)) or @(~a (second actions)), which determine the outcomes as follows:
+      Both of you can take an action by choosing either @~a[action1] or @~a[action2], which determine the outcomes as follows:
 
       @`(ul
          ,@(for*/list ([a1 actions]
