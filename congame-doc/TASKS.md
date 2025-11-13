@@ -2,6 +2,8 @@
 
 Current priorities, in time/importance order:
 
+## Add tutorial using `proposal-choice` example study
+
 ## Multi-participant parent/child studies
 
 A new tutorial written around a multi-participant study that uses parent/child
