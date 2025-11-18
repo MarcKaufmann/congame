@@ -642,12 +642,70 @@ value is allowed to be absent. Use inside @racket[ensure] when building forms.
 
 }
 
+@defproc[(at-least [n number?])
+         (-> (or/c number? #f)
+             (or/c (cons/c 'ok any/c)
+                   (cons/c 'err string?)))]{
+
+Produces a validator procedure that ensures a numeric value is greater than or equal to
+@racket[n]. If the value is @racket[#f] (indicating an empty field), validation passes.
+Use inside @racket[ensure] when building forms with numeric inputs.
+
+@examples[#:eval e
+(defvar contribution)
+(define-values (form-data on-submit)
+  (form+submit
+    [contribution (ensure binding/number (at-least 0))]))
+]
+
+}
+
+@defproc[(number-in-range [lo number?] [hi number?])
+         (-> (or/c number? #f)
+             (or/c (cons/c 'ok any/c)
+                   (cons/c 'err string?)))]{
+
+Produces a validator procedure that ensures a numeric value falls within the range
+[@racket[lo], @racket[hi]] (inclusive). If the value is @racket[#f] (indicating an empty field),
+validation passes. Use inside @racket[ensure] when building forms with numeric inputs that must
+stay within a specific range.
+
+@examples[#:eval e
+(defvar rating)
+(define-values (form-data on-submit)
+  (form+submit
+    [rating (ensure binding/number (number-in-range 1 10))]))
+]
+
+}
+
+@defproc[(list-longer-than [n exact-nonnegative-integer?])
+         (-> any/c
+             (or/c (cons/c 'ok any/c)
+                   (cons/c 'err string?)))]{
+
+Produces a validator procedure that ensures a value is a non-empty list containing at least
+@racket[n] items. Unlike @racket[at-least] and @racket[number-in-range], this validator
+requires the value to be present and will fail if the value is @racket[#f] or not a list.
+Use inside @racket[ensure] with @racket[binding/list] when building forms that collect multiple
+values from inputs sharing the same field name (such as multiple checkboxes or number inputs).
+
+@examples[#:eval e
+(defvar ratings)
+(define-values (form-data on-submit)
+  (form+submit
+    [ratings (ensure binding/list (list-longer-than 3))]))
+]
+
+}
+
 @deftogether[(
 
 @defproc[(checkbox [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
 @defproc[(input-date [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
 @defproc[(input-datetime [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
 @defproc[(input-email [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
+@defproc[(input-file [label (or/c string? #f)]) widget/c]
 @defproc[(input-number [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
 @defproc[(input-range [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
 @defproc[(input-text [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
@@ -656,6 +714,9 @@ value is allowed to be absent. Use inside @racket[ensure] when building forms.
 )]{
 
 Returns a widget that can render the given input type.
+
+Note: @racket[input-file] creates a file upload widget and does not accept the
+@racket[#:attributes] parameter.
 
 @examples[#:eval e
   ((checkbox) "agree" #f null)
@@ -700,6 +761,21 @@ Use this when rendering step @tech{pages} to instruct the bot how to fill in cer
   (make-autofill (hasheq 'example (hasheq 'name "Frank" 'mood "Delicate")))
   (parameterize ([current-user-bot? #t])
     (make-autofill (hasheq 'example (hasheq 'name "Frank" 'mood "Delicate"))))
+]
+
+}
+
+@defproc[(make-autofill-meta [ht hash?]) xexpr?]{
+
+Renders a @racketresultfont{<meta>} element with @racketresultfont{name="formular-autofill"}
+and a @racketresultfont{content} attribute containing @racket[ht] serialized via @racket[write].
+The autofill content is always included, regardless of the current user type.
+
+Use this when rendering step @tech{pages} to provide autofill instructions that should always
+be present in the page markup.
+
+@examples[#:eval e
+  (make-autofill-meta (hasheq 'example (hasheq 'name "Frank" 'mood "Delicate")))
 ]
 
 }
