@@ -262,7 +262,7 @@
 ;; =============================================================================
 
 (defstep (show-outcome-proposer)
-  (define decision-data (first (filter values (current-group-member-results 'decision #:include-self? #t))))
+  (define decision-data (first (filter values (current-group-member-results 'decision))))
   (define decision (first decision-data))
   (define chosen-pid (second decision-data))
 
