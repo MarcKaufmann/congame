@@ -19,6 +19,7 @@
     "debug"
     "forms-lib"
     "forms-doc"
+    "gregor-doc"
     "koyo-lib"
     "koyo-doc"
     "marionette-doc"
@@ -26,6 +27,8 @@
     "racket-doc"
     "scribble-lib"
     "threading-lib"
+    "threading-doc"
+    "web-server-doc"
     "web-server-lib"))
 (define scribblings
   '(("congame.scrbl" (multi-page))))
