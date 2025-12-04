@@ -13,6 +13,7 @@
                               defstudy
                               defview
                               button
+                              get-step-timings
                               put/identity
                               require
                               with-bot
@@ -294,6 +295,72 @@ which adds the custom CSS @tech{resource} @racket[css-res] to each step in the s
 
 @inline-note{See @github-link{congame-example-study/conscript-css-resource.rkt} for an example of
 how to use this function.}
+
+}
+
+@;------------------------------------------------
+
+@subsection[#:tag "conscript-step-timings"]{Step Timings}
+
+Congame automatically tracks timing information for each step in a study. This timing data measures
+how long participants spend on each page, including both total elapsed time and the time the page
+was actively in focus (visible to the participant).
+
+@defproc[(get-step-timings) (cons/c (or/c #f number?) (or/c #f number?))]{
+
+Returns a pair @racket[(cons _total-time _focus-time)] containing timing information for the current
+step, where both values are measured in milliseconds.
+
+The @racket[_total-time] is the total elapsed time since the participant loaded the page, including
+time spent with the page in the background (for example, if they switched to another browser tab).
+
+The @racket[_focus-time] is the total time the page was actually visible and in focus. This excludes
+time when the page was in a background tab or the browser window was minimized.
+
+Both values will be @racket[#f] if no timing data is available (for example, on the very first page
+load of a study).
+
+@inline-note{@bold{Important:} This function should @italic{only} be called within a
+@racket[button]'s action procedure or within code that runs after a form is submitted. Calling
+@racket[get-step-timings] directly within the body of a @racket[defstep] (outside of an action
+procedure) will return @racket[(cons #f #f)] because the timing data is only available when
+processing user actions like button clicks or form submissions.}
+
+@bold{Example:} Recording how long a participant spent on a task page:
+
+@codeblock[#:keep-lang-line? #t]|{
+#lang conscript
+
+(defvar task-total-time)
+(defvar task-focus-time)
+
+(defstep (task-page)
+  (define (on-submit)
+    (define timings (get-step-timings))
+    (set! task-total-time (car timings))
+    (set! task-focus-time (cdr timings)))
+
+  @md{
+    # Complete the Task
+
+    @button[on-submit]{Submit}})
+
+(defstep (results-page)
+  @md{
+    # Results
+
+    You spent @(~r (/ task-total-time 1000) #:precision 1) seconds on the task.
+
+    The page was in focus for @(~r (/ task-focus-time 1000) #:precision 1) seconds.})
+
+(defstudy timing-example
+  [task-page --> results-page]
+  [results-page --> results-page])
+}|
+
+The timing data is automatically collected by JavaScript running on each study page. When a
+participant clicks a button or submits a form, the timing values are included in the request and
+made available through @racket[get-step-timings].
 
 }
 
