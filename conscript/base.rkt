@@ -370,6 +370,15 @@
          (define (setter-id v) (set! var-id v)))]))
 
 
+;; timings ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(provide
+ get-step-timings)
+
+(define (get-step-timings)
+  (current-step-timings))
+
+
 ;; util ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
@@ -408,8 +417,7 @@
  log-conscript-error
  log-conscript-fatal
  log-conscript-info
- log-conscript-warning
- )
+ log-conscript-warning)
 
 (define-logger conscript)
 

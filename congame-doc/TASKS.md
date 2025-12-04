@@ -12,8 +12,8 @@ matchmaking functions work in the presence of parent/child studies.
 
 ## Misc reference additions
 
-* Document `current-step-timings` (need to resolve whether this should be added
-  to exports from `conscript/base` first).
+* Document `current-step-timings`. Exposed in `conscript/base` as
+  `get-step-timings`.
 
 * Document `dyn:form`
 
@@ -51,4 +51,3 @@ Precise contents/approach TBD
 ## Game theory/unit stuff
 
 Precise contents/approach TBD
-
