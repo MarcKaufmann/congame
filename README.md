@@ -40,7 +40,7 @@ Congame consists of:
 
 ## Setting up Conscript with local dev server
 
-You need [Racket] since this is a Racket application. 
+You need [Racket] since this is a Racket application.
 
 Clone this repository, then from its main folder, run:
 
@@ -99,7 +99,7 @@ postgres=# \q
 
     $ raco pkg install congame-core/         # install and build the core library and its deps
     $ raco pkg install congame-identity/     # install and build the application and its deps
-    $ raco pkg install congame-smtp-proxy    # install and build the smtp-proxy dispatching traffic 
+    $ raco pkg install congame-smtp-proxy    # install and build the smtp-proxy dispatching traffic
                                              # to the right identity server (staging or production)
     $ raco pkg install conscript/            # install and build #lang conscript and dialects
     $ raco pkg install congame-web/          # install and build the application and its deps

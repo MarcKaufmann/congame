@@ -17,9 +17,14 @@ the Racket programming language environment.
 
 @section{Prerequisites}
 
-@margin-note{Congame/Conscript have not yet been tested on Windows.}
+@(define git-crlf
+   "https://github.com/MarcKaufmann/congame/issues/168#issue-2706078344")
 
-You’ll need a computer running Linux, Mac OS, @mark{or Windows}.
+@margin-note{Congame/Conscript have not been thoroughly tested on
+Windows. Windows users should @hyperlink[git-crlf]{turn on auto CRLF
+conversion for Git}.}
+
+You’ll need a computer running Linux, Mac OS, or Windows.
 
 Ensure Git is installed.
 
