@@ -5,6 +5,7 @@
                      racket/base
                      racket/contract
                      congame-web/components/study-bot
+                     congame-web/components/uploaded-file
                      congame/components/for-study
                      congame/components/bot
                      (submod congame/components/bot actions)
@@ -14,6 +15,7 @@
                      congame/components/transition-graph
                      (except-in conscript/base require button study? step?)
                      koyo/haml
+                     web-server/http
                      (only-in xml xexpr?))
           scribble/examples)
 
@@ -1082,6 +1084,64 @@ is used as the button’s label.
 
 }
 
+@;===============================================
+
+@section[#:style 'quiet]{File Uploads}
+
+@defmodule[congame-web/components/uploaded-file]
+
+This module provides functions for handling file uploads in studies running on the Congame server.
+
+@defproc[(upload-file! [binding binding:file?]
+                       [#:prefix prefix (or/c #f string?) #f])
+         uploaded-file?]{
+
+Saves an uploaded file to the server and returns an @racket[uploaded-file] record containing
+metadata about the stored file.
+
+The @racket[_binding] argument should be a file binding from a form submission (typically
+obtained from an @racket[input-file] field).
+
+If @racket[_prefix] is provided, it is prepended to the original filename with a hyphen
+separator. This is useful for organizing uploaded files or adding participant identifiers.
+
+}
+
+@defstruct*[uploaded-file ([key string?]
+                           [filename string?]
+                           [content-type string?])]{
+
+A structure representing an uploaded file's metadata.
+
+The @racket[_key] field is a unique identifier used internally to retrieve the file.
+The @racket[_filename] field contains the original filename (potentially with a prefix added).
+The @racket[_content-type] field contains the MIME type of the uploaded file.
+
+}
+
+@defproc[(uploaded-file-attachment [file uploaded-file?]
+                                    [label string?])
+         xexpr?]{
+
+Creates an attachment X-expression from an uploaded file record.
+
+The @racket[_label] argument specifies the display text for the attachment link.
+
+}
+
+@defproc[(valid-pdf? [binding binding:file?])
+         (or/c (cons/c 'ok binding:file?)
+               (cons/c 'err string?))]{
+
+A validator function that checks if an uploaded file is a PDF.
+
+Returns @racket[(cons 'ok _binding)] if the file's content-type is @racket{application/pdf},
+or @racket[(cons 'err "the file must be a PDF")] otherwise.
+
+Use this with the @racket[#:validators] argument of @racket[input-file] to restrict uploads
+to PDF files only.
+
+}
 
 
 @;===============================================
