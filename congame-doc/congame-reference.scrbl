@@ -690,16 +690,20 @@ to be randomized or fields are computed at runtime.
 
 Within @racket[_form-body], you can use these special forms to display validation errors:
 
-@itemlist[
+@defsubform[(~error field-ref)
+            #:grammar [(field-ref field-id
+                                  (code:line #:field-name))]]{
+Displays validation errors for a specific field. Use the field's identifier or keyword name
+to specify which field's errors to display.
+}
 
-@item{@racket[(~error _field-id)] or @racket[(~error #:field-name)] — displays errors for a
-specific field}
+@defsubform[(~errors field-ref ...)]{
+Displays validation errors for multiple fields at once.
+}
 
-@item{@racket[(~errors _field-id ...)] — displays errors for multiple fields}
-
-@item{@racket[(~all-errors)] — displays all validation errors}
-
-]
+@defsubform[(~all-errors)]{
+Displays all validation errors from the form in a single list.
+}
 
 @racketblock[
 (formular
@@ -714,7 +718,7 @@ specific field}
    (:button ([:type "submit"]) "Submit"))))
 ]
 
-Using set! syntax with study variables:
+Using @racket[set!] syntax with study variables:
 
 @racketblock[
 (defvar participant-name)
@@ -988,9 +992,6 @@ This example renders radio buttons in a table format:
             (:td (cadr (cdr opt)))))))))))
 ]
 
-@inline-note{For standard vertical or horizontal radio layouts, consider using the simpler
-@racket[radios] field instead.}
-
 }
 
 @defproc[(make-radios-with-other [options (listof (cons/c symbol? string?))]
@@ -1063,10 +1064,8 @@ from @racketmodname[conscript/survey-tools], which provides a more convenient sy
                          [#:attributes attributes (listof (list/c symbol? string?)) null])
          formular-field?]{
 
-Returns a @tech{field} that renders as a dropdown select element without a label or wrapper.
-
-This is similar to @racket[select] but renders only the @tt{<select>} element itself, making
-it suitable for embedding inline within text or other custom layouts.
+Returns a @tech{field} that renders as a dropdown select element without a label or wrapper,
+suitable for embedding inline within text or other custom layouts.
 
 The @racket[_options] argument is a list of pairs where each pair contains a value string and
 a display label string.
