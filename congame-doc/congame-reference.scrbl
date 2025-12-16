@@ -345,6 +345,32 @@ primitives.}
                     [#:view-handler view-handler (or/c #f (-> request? response?)) #f]
                     [#:for-bot bot-handler (or/c #f procedure?) #f]) step?]{
 
+Creates a @tech{step} for use in a study.
+
+The @racket[_id] argument is a symbol that uniquely identifies this step within the study.
+
+The @racket[_handler] argument is a procedure that takes no arguments and returns an
+@tech[#:doc '(lib "xml/xml.scrbl")]{X-expression} representing the step's page content.
+
+The @racket[_transition] argument is a procedure that returns the next step to transition to
+after this step completes. It can return @racket[next] to proceed to the next step in the
+list, @racket[done] to end the study, or a symbol naming a specific step.
+
+The @racket[#:view-handler] argument, if provided, specifies a @tech{view handler} for this step.
+
+The @racket[#:for-bot] argument, if provided, specifies a @tech{bot handler} that determines
+what a @tech{bot} should do when it reaches this step. If not provided and the step has a
+custom transition, an error will be raised when a bot reaches the step.
+
+@racketblock[
+(make-step 'greeting
+           (lambda ()
+             (haml
+              (:div
+               (:h1 "Welcome!")
+               (button void "Continue")))))
+]
+
 }
 
 @defproc[(make-step/study [id symbol?]
@@ -567,14 +593,120 @@ places.
 A @deftech{field} is a special value that, when used inside a study form, renders as an input element.
 When the user submits the form, the field yields whatever value the user has entered as a Racket value.
 
+@defform[#:literals (set! ~error ~errors ~all-errors)
+         (formular maybe-bot maybe-fields form-body maybe-action)
+         #:grammar
+         [(maybe-bot (code:line)
+                     (code:line #:bot ([bot-id (field-kwd bot-value) ...] ...)))
+          (maybe-fields (code:line)
+                        (code:line #:fields ([field-id field-expr] ...)))
+          (form-body (code:line xexpr-with-fields))
+          (maybe-action (code:line)
+                        (code:line action-expr))]]{
+
+Creates a form from an X-expression template containing embedded @tech{field} declarations.
+
+Fields can be declared in two ways within @racket[_form-body]:
+
+@itemlist[
+
+@item{@bold{Keyword syntax}: @racket[(#:field-name _field-expr)] where @racket[_field-expr]
+produces a @tech{field}. The field's value will be passed to @racket[_action-expr] as a keyword
+argument.}
+
+@item{@bold{Set! syntax}: @racket[(set! _var-id _field-expr)] where @racket[_var-id] is a
+@tech{study variable}. When the form is submitted, the variable is automatically updated with
+the field's value. This syntax cannot be combined with a custom @racket[_action-expr].}
+
+]
+
+Optional default values can be specified using @racket[(#:field-name _field-expr {#:default _value})].
+
+The @racket[#:bot] clause defines autofill values for @tech{bots}. Each @racket[_bot-id] names
+a bot configuration, and the keyword/value pairs specify what values to fill in for each field.
+Use @racket[formular-autofill] in the step's bot handler to trigger the autofill.
+
+The @racket[#:fields] clause allows defining fields dynamically, useful when field order needs
+to be randomized or fields are computed at runtime.
+
+Within @racket[_form-body], you can use these special forms to display validation errors:
+
+@itemlist[
+
+@item{@racket[(~error _field-id)] or @racket[(~error #:field-name)] — displays errors for a
+specific field}
+
+@item{@racket[(~errors _field-id ...)] — displays errors for multiple fields}
+
+@item{@racket[(~all-errors)] — displays all validation errors}
+
+]
+
+@racketblock[
+(formular
+ #:bot
+ ([ok (#:name "Alice")
+      (#:age 30)])
+ (haml
+  (:div
+   (:p "Name: " (#:name (input-text)))
+   (:p "Age: " (#:age (input-number #:min 0 #:max 120)))
+   ,@(~all-errors)
+   (:button ([:type "submit"]) "Submit"))))
+]
+
+Using set! syntax with study variables:
+
+@racketblock[
+(defvar participant-name)
+(defvar participant-age)
+
+(formular
+ (haml
+  (:div
+   (:p "Name: " (set! participant-name (input-text)))
+   (:p "Age: " (set! participant-age (input-number)))
+   (:button ([:type "submit"]) "Submit"))))
+]
+
+}
+
 @defproc[(formular-field? [v any/c]) boolean?]{
   Returns @racket[#t] if @racket[_v] is a @tech{field}, @racket[#f] otherwise.
 
 }
 
-@defproc[(formular-autofill [bot-id any/c]) void?]{
+@defproc[(formular-autofill [bot-id symbol?]) void?]{
 
-@tktk{Autofills elements on the page for the bot with @racket[_bot-id].}
+Automatically fills in and submits a form created with @racket[formular] when running as a
+@tech{bot}.
+
+The @racket[_bot-id] argument must match one of the bot identifiers declared in the
+@racket[#:bot] clause of the @racket[formular] macro. The function reads autofill metadata
+embedded in the page by @racket[formular], fills in each form field with the corresponding
+value, and clicks the submit button.
+
+For example, given a form defined with:
+
+@racketblock[
+(formular
+ #:bot
+ ([ok (#:emissions 42)
+      (#:location "Cluj-Napoca")])
+ (haml
+  (:div
+   (#:emissions (input-number))
+   (#:location (input-text))
+   (:button ([:type "submit"]) "Submit"))))
+]
+
+The bot handler can use @racket[(formular-autofill 'ok)] to fill in @racket[42] for the
+@racketidfont{emissions} field, @racket["Cluj-Napoca"] for the @racketidfont{location} field,
+and submit the form.
+
+This function handles different input types appropriately: text and number fields are filled
+by typing, checkboxes and radio buttons are clicked, and select dropdowns have their values
+set directly.
 
 }
 
@@ -692,64 +824,250 @@ submitted. Any @racket[_attrs] will be used as @tech{HTML} attributes in the fie
 
 }
 
-@defform[(input-file arg)
-         #:contracts ([arg any/c])]{
+@defproc[(input-file [label (or/c #f string?) #f]
+                      [#:required? required? (or/c string? boolean?) #t]
+                      [#:validators validators (listof procedure?) null]
+                      [#:attributes attributes (listof (list/c symbol? string?)) null])
+         formular-field?]{
 
-input-file form
+Returns a @tech{field} that renders as a file upload input.
 
-}
+When the form is submitted, the field's value is a @racket[binding:file] struct containing the
+uploaded file's name, headers, and content.
 
-@defform[(make-checkboxes arg)
-         #:contracts ([arg any/c])]{
-
-make-checkboxes form
-
-}
-
-@defform[(make-radios arg)
-         #:contracts ([arg any/c])]{
-
-make-radios form
+If @racket[_label] is provided, the file input is wrapped in a label element displaying
+@racket[_label]. If @racket[_required?] is not @racket[#f], the user must select a file before
+the form can be submitted.
 
 }
 
-@defform[(make-radios-with-other arg)
-         #:contracts ([arg any/c])]{
+@defproc[(make-checkboxes [options (listof (cons/c symbol? any/c))]
+                           [render-proc (-> (listof (cons/c symbol? any/c))
+                                            (-> symbol? string? xexpr?)
+                                            xexpr?)]
+                           [#:n n exact-nonnegative-integer? 0]
+                           [#:message message (or/c #f string?) #f]
+                           [#:validators validators (listof procedure?) null]
+                           [#:attributes attributes (listof (list/c symbol? string?)) null])
+         formular-field?]{
 
-make-radios-with-other form
+Returns a @tech{field} containing multiple checkboxes with custom rendering.
+
+The @racket[_options] argument is a list of pairs, where each pair contains a symbol (the
+checkbox value) and associated data (typically a label string, but can be any value your
+render procedure uses).
+
+The @racket[_render-proc] argument is a procedure that controls how the checkboxes are
+rendered. It receives the @racket[_options] list and a @racketidfont{make-checkbox} function.
+The @racketidfont{make-checkbox} function takes a symbol (the checkbox value) and an optional
+label string, and returns an X-expression for a labeled checkbox input.
+
+When @racket[_n] is greater than 0, the user must check at least @racket[_n] boxes before the
+form can be submitted. If @racket[_message] is provided, it is shown when this validation
+fails.
+
+@racketblock[
+(make-checkboxes
+ '((apple . "Apple")
+   (banana . "Banana")
+   (cherry . "Cherry"))
+ (lambda (options make-checkbox)
+   (haml
+    (:ul
+     ,@(for/list ([opt (in-list options)])
+         (haml (:li (make-checkbox (car opt) (cdr opt))))))))
+ #:n 1
+ #:message "Please select at least one fruit.")
+]
+
+@inline-note{For simpler use cases where you don't need custom rendering, consider using
+@racket[make-multiple-checkboxes] from @racketmodname[conscript/survey-tools], which provides
+a default list-style rendering.}
 
 }
 
-@defform[(make-sliders arg)
-         #:contracts ([arg any/c])]{
+@defproc[(make-radios [options (listof (cons/c symbol? any/c))]
+                       [render-proc (-> (listof (cons/c symbol? any/c))
+                                        (-> symbol? string? xexpr?)
+                                        xexpr?)]
+                       [#:required? required? (or/c string? boolean?) #t]
+                       [#:validators validators (listof procedure?) null]
+                       [#:attributes attributes (listof (list/c symbol? string?)) null])
+         formular-field?]{
 
-make-sliders form
+Returns a @tech{field} containing radio buttons with custom rendering.
+
+The @racket[_options] argument is a list of pairs, where each pair contains a symbol (the
+radio button value) and associated data (which can be any value your render procedure uses).
+
+The @racket[_render-proc] argument is a procedure that controls how the radio buttons are
+rendered. It receives the @racket[_options] list and a @racketidfont{make-radio} function.
+The @racketidfont{make-radio} function takes a symbol (the radio value) and an optional
+label string, and returns an X-expression for a labeled radio input.
+
+If @racket[_required?] is not @racket[#f], the user must select one of the radio options
+before the form can be submitted.
+
+This example renders radio buttons in a table format:
+
+@racketblock[
+(make-radios
+ '((mac1 . ("Apple Mac" "White"))
+   (mac2 . ("Apple Mac" "Gray"))
+   (dell1 . ("Dell" "Blue")))
+ (lambda (options make-radio)
+   (haml
+    (:table
+     (:thead
+      (:tr (:th "") (:th "Brand") (:th "Color")))
+     (:tbody
+      ,@(for/list ([opt (in-list options)])
+          (haml
+           (:tr
+            (:td (make-radio (car opt)))
+            (:td (car (cdr opt)))
+            (:td (cadr (cdr opt)))))))))))
+]
+
+@inline-note{For standard vertical or horizontal radio layouts, consider using the simpler
+@racket[radios] field instead.}
+
+}
+
+@defproc[(make-radios-with-other [options (listof (cons/c symbol? string?))]
+                                  [#:required? required? (or/c string? boolean?) #t]
+                                  [#:validators validators (listof procedure?) null])
+         formular-field?]{
+
+Returns a @tech{field} containing radio buttons with an additional "Other" option that includes
+a text input field.
+
+The @racket[_options] argument is a list of pairs where each pair contains a symbol (the radio
+value) and a string (the displayed label).
+
+When the user selects one of the predefined options, the field's value is that option's symbol
+(as a string). When the user types text in the "Other" field, the field's value is whatever
+they typed.
+
+If @racket[_required?] is not @racket[#f], the user must either select one of the radio options
+or provide text in the "Other" field before the form can be submitted.
+
+@racketblock[
+(make-radios-with-other
+ '((often . "Often")
+   (sometimes . "Sometimes")
+   (rarely . "Rarely")))
+]
+
+}
+
+@defproc[(make-sliders [n exact-positive-integer?]
+                        [render-proc (-> exact-nonnegative-integer? string? (or/c number? #f) xexpr?)]
+                        [#:message message (or/c #f string?) #f]
+                        [#:validators validators (listof procedure?) null])
+         formular-field?]{
+
+Returns a @tech{field} containing @racket[_n] slider inputs with custom rendering.
+
+The @racket[_render-proc] argument is a procedure that renders a single slider. It receives
+three arguments: the slider's index (starting from 0), the field name (a string), and the
+current value (a number, or @racket[#f] if no value is set). It should return an X-expression
+containing an @tt{<input>} element with @tt{type="range"} and @tt{name} set to the provided
+field name.
+
+When the form is submitted, the field's value is a list of numbers corresponding to each
+slider's value.
+
+@racketblock[
+(make-sliders
+ 3
+ (lambda (idx name current-value)
+   (haml
+    (:div
+     (:label (format "Slider ~a: " (add1 idx))
+             (:input ([:type "range"]
+                      [:name name]
+                      [:min "0"]
+                      [:max "100"]
+                      [:value (or current-value "50")])))))))
+]
+
+@inline-note{For simpler slider usage in Conscript, consider the @racket[make-sliders] macro
+from @racketmodname[conscript/survey-tools], which provides a more convenient syntax.}
 
 }
 
 
-@defform[(select/inline arg)
-         #:contracts ([arg any/c])]{
+@defproc[(select/inline [options (listof (cons/c string? string?))]
+                         [#:required? required? (or/c string? boolean?) #t]
+                         [#:validators validators (listof procedure?) null]
+                         [#:attributes attributes (listof (list/c symbol? string?)) null])
+         formular-field?]{
 
-select/inline form
+Returns a @tech{field} that renders as a dropdown select element without a label or wrapper.
+
+This is similar to @racket[select] but renders only the @tt{<select>} element itself, making
+it suitable for embedding inline within text or other custom layouts.
+
+The @racket[_options] argument is a list of pairs where each pair contains a value string and
+a display label string.
+
+@racketblock[
+(haml
+ (:p "I prefer "
+     (#:color (select/inline '(("red" . "Red")
+                               ("blue" . "Blue")
+                               ("green" . "Green"))))
+     " as my favorite color."))
+]
 
 }
 
 
-@defproc[(map-result [arg any/c]) any/c]{
+@defproc[(map-result [field formular-field?]
+                      [proc (-> any/c any/c)])
+         formular-field?]{
 
-map-result proc
+Transforms the value of @racket[_field] by applying @racket[_proc] after validation succeeds.
+
+When the form is submitted and @racket[_field] passes validation, @racket[_proc] is called
+with the validated value. The result of @racket[_proc] becomes the field's final value.
+
+@racketblock[
+(code:comment @#,elem{Convert a text input to a symbol})
+(map-result (input-text) string->symbol)
+
+(code:comment @#,elem{Square a number input})
+(map-result (input-number) (λ (n) (* n n)))
+]
 
 }
 
-@defform[(map-result* arg)
-         #:contracts ([arg any/c])]{
+@defproc[(map-result* [field formular-field?]
+                       [proc (-> any/c any/c)]
+                       [#:exn-predicate exn-predicate (-> any/c boolean?) exn:fail?]
+                       [#:exn-handler exn-handler (-> exn? (cons/c 'err string?))
+                                      (λ (e) (cons 'err (exn-message e)))])
+         formular-field?]{
 
-map-result* form
+Like @racket[map-result], but catches exceptions raised by @racket[_proc] and converts them
+to validation errors.
+
+If @racket[_proc] raises an exception matching @racket[_exn-predicate], the exception is caught
+and @racket[_exn-handler] is called. The handler should return a pair @racket[(cons 'err _message)]
+where @racket[_message] is the error string to display to the user.
+
+This is useful when the transformation might fail on certain inputs:
+
+@racketblock[
+(code:comment @#,elem{Parse a number, showing a friendly error on failure})
+(map-result* (input-text)
+             string->number
+             #:exn-handler (λ (_) (cons 'err "Please enter a valid number")))
+]
 
 }
 
-}
 @;------------------------------------------------
 
 @subsection{Form tools}
@@ -832,7 +1150,14 @@ to bot behaviors. A @deftech{bot stepper} is an arbitrary procedure
 associated with a step that determines what the bot does when it reaches
 that step.
 
-@tktk{Need definition for @deftech{bot handlers}.}
+A @deftech{bot handler} is a procedure associated with a step that defines what a @tech{bot}
+should do when it reaches that step. Bot handlers typically interact with the page (clicking
+buttons, filling forms) and then trigger the transition to the next step.
+
+Bot handlers are specified using the @racket[#:for-bot] argument of @racket[make-step] or
+the @racket[#:bot] clause of @racket[formular]. Common bot actions include @racket[continuer]
+(to proceed to the next step), @racket[click] (to click a specific widget), and
+@racket[formular-autofill] (to fill in form fields automatically).
 
 @defproc[(bot? [v any/c]) boolean?]{
   Returns @racket[#t] when @racket[v] is a @tech{bot}.

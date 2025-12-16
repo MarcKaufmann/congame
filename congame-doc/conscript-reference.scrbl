@@ -866,9 +866,28 @@ number of decimal places for rounding. If @racket[p] is zero, the result is the 
 
 }
 
-@defproc[(diceroll-js [arg any/c]) any/c]{
+@defthing[diceroll-js xexpr?]{
 
-@tktk{diceroll-js proc}
+An X-expression containing a @tt{<script>} element that enables dice roll functionality.
+
+Include this in a step that has a container element with class @racketidfont{diceroll}. Inside
+that container, place an @tt{<a>} element with class @racketidfont{button} (the roll button)
+and an @tt{<output>} element (where the result will be displayed). When the button is clicked,
+a random number from 1 to 6 is generated and displayed in the output element.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (roll-dice)
+  @md{# Roll the Dice
+
+      @diceroll-js
+
+      @div[#:class "diceroll"]{
+        @a[#:class "button" #:href ""]{Roll}
+        @output{}}
+
+      @button{Continue}})
+}|
 
 }
 
@@ -878,15 +897,42 @@ number of decimal places for rounding. If @racket[p] is zero, the result is the 
 
 }
 
-@defproc[(slider-js [arg any/c]) any/c]{
+@defproc[(slider-js) xexpr?]{
 
-@tktk{slider-js proc}
+Returns an X-expression containing a @tt{<script>} element that enables real-time slider
+value display.
+
+Include the result of calling this function in a step that has one or more container elements
+with class @racketidfont{slider}. Each container should have an @tt{<input type="range">}
+element and an @tt{<output>} element. As the user moves the slider, the current value is
+automatically displayed in the output element.
+
+This function is typically used internally by the @racket[make-sliders] macro, but can be
+used directly when building custom slider interfaces.
 
 }
 
-@defproc[(timer [arg any/c]) any/c]{
+@defproc[(timer [n exact-positive-integer?]) xexpr?]{
 
-@tktk{timer proc}
+Returns an X-expression representing a countdown timer that displays @racket[_n] seconds
+remaining.
+
+The timer counts down and displays the remaining time as "@italic{X} seconds left" (or
+"@italic{Y} minutes and @italic{Z} seconds left" for times over 60 seconds). When the timer
+reaches zero, it automatically submits any form on the page, or clicks the next button if
+no form is present.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (timed-task)
+  @md{# Complete the task
+
+      You have 60 seconds to complete this task.
+
+      @timer[60]
+
+      @form{...}})
+}|
 
 }
 
@@ -897,10 +943,24 @@ number of decimal places for rounding. If @racket[p] is zero, the result is the 
 
 }
 
-@defform[(is-equal arg)
-         #:contracts ([arg any/c])]{
+@defproc[(is-equal [expected any/c]
+                    [#:message message (or/c #f string?) #f])
+         (-> any/c (or/c (cons/c 'ok any/c) (cons/c 'err string?)))]{
 
-@tktk{is-equal form}
+Returns a validator procedure that checks if a form field's value equals @racket[_expected].
+
+If the value equals @racket[_expected], validation passes. Otherwise, validation fails with
+@racket[_message] (or a default message like "Should be equal to @racket[_expected]" if
+@racket[_message] is @racket[#f]).
+
+This is useful for creating quiz-like forms where there's a specific correct answer:
+
+@racketblock[
+(radios '(("a" . "Option A")
+          ("b" . "Option B")
+          ("c" . "Option C"))
+        #:validators (list (is-equal "c" #:message "That's not correct, try again!")))
+]
 
 }
 
@@ -926,17 +986,61 @@ error.
 
 }
 
-@defform[(make-sliders arg)
-         #:contracts ([arg any/c])]{
+@defform[(make-sliders n maybe-widget-proc)
+         #:grammar
+         [(maybe-widget-proc (code:line)
+                             (code:line widget-proc-expr))]
+         #:contracts
+         ([n exact-positive-integer?]
+          [widget-proc-expr (-> exact-nonnegative-integer? formular-field?)])]{
 
-make-sliders form
+Creates a form containing @racket[_n] sliders with real-time value display.
+
+This macro generates a complete form with @racket[_n] range input sliders, each wrapped in
+a container with a live-updating value display. The form includes a submit button.
+
+If @racket[_widget-proc-expr] is provided, it should be a procedure that takes a slider
+index (starting from 0) and returns a @racket[formular-field?]. By default, each slider
+is created using @racket[input-range].
+
+@racketblock[
+(code:comment @#,elem{Create a form with 3 default sliders})
+(make-sliders 3)
+
+(code:comment @#,elem{Create a form with custom slider ranges})
+(make-sliders 5
+  (lambda (idx)
+    (input-range #:min 0 #:max 100 #:step 5)))
+]
 
 }
 
-@defform[(toggleable-xexpr arg)
-         #:contracts ([arg any/c])]{
+@defproc[(toggleable-xexpr [message string?]
+                            [xexpr xexpr?]
+                            [#:hidden? hidden? boolean? #t])
+         xexpr?]{
 
-toggleable-xexpr form
+Returns an X-expression representing a collapsible content section with a toggle button.
+
+The @racket[_message] argument is displayed as the button text. Clicking the button shows
+or hides the content specified by @racket[_xexpr].
+
+When @racket[_hidden?] is @racket[#t] (the default), the content starts hidden and must be
+clicked to reveal. When @racket[_hidden?] is @racket[#f], the content starts visible.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (instructions)
+  @md{# Task Overview
+
+      @toggleable-xexpr["Show/Hide Detailed Instructions"
+                        @md*{## Detailed Instructions
+
+                             1. First, do this...
+                             2. Then, do that...}]
+
+      @button{Continue}})
+}|
 
 }
 
