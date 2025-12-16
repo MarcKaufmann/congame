@@ -24,6 +24,7 @@
                               log-conscript-info
                               log-conscript-warning)
                      (except-in congame/components/study button form)
+                     (only-in congame/components/study (form cgs:form))
                      congame/components/transition-graph
                      conscript/form0
                      conscript/html
@@ -658,6 +659,77 @@ Identical to the @cgs/form from @racketmodname[congame/components/study] except 
 @racket[combine-proc]: when there are multiple bindings for the same field, this procedure’s default
 @racket[combine-proc] combines all the bindings for that field into a list (as described in the
 documentation for @racket[form-run]).
+
+}
+
+@defstruct*[dyn:form ([constructor any/c]
+                      [children (listof (cons/c symbol? (or/c formlet? dyn:form?)))])]{
+
+Creates a form value that can be passed to the @racket[form] procedure.
+
+Use @racket[dyn:form] when you need to construct forms dynamically at runtime, where the number or
+types of fields are determined by a computation rather than specified statically. For statically
+defined forms, prefer @racket[form+submit] or @racket[form*].
+
+The @racket[_constructor] is a function that receives the validated values from each field in
+order and returns the final result. The @racket[_children] is a list of pairs, where each pair
+contains a field name (as a symbol) and a formlet (or nested form) for that field.
+
+@codeblock[#:keep-lang-line? #t]|{
+#lang conscript
+
+(require conscript/form0
+         racket/match)
+
+(defvar taste)
+(defvar price)
+(defvar healthiness)
+
+(define range-formlet
+  (ensure
+   binding/number
+   (required)
+   (number-in-range 1 5)))
+
+(defstep (dynamic-form-example)
+  (define f
+    (dyn:form
+     list
+     (for/list ([k (in-list '(taste price healthiness))])
+       (cons k range-formlet))))
+
+  (define (on-submit vs)
+    (match-define (list t p h) vs)
+    (set! taste t)
+    (set! price p)
+    (set! healthiness h))
+
+  (define (render rw)
+    @md*{@rw["taste" (input-range "Taste")]
+         @rw["price" (input-range "Price")]
+         @rw["healthiness" (input-range "Healthiness")]
+         @|submit-button|})
+
+  @md{# Dynamic Form
+
+      @form[f on-submit render]})
+}|
+
+In this example, the @racket[list] constructor combines the validated values into a list. You can
+also use a custom constructor to bundle results into a hash or other data structure:
+
+@racketblock[
+(dyn:form
+ (lambda vs
+   (for/hash ([k (in-list '(taste price healthiness))]
+              [v (in-list vs)])
+     (values k v)))
+ (for/list ([k (in-list '(taste price healthiness))])
+   (cons k range-formlet)))
+]
+
+See the @seclink["forms" #:doc '(lib "forms/forms.scrbl")]{Forms reference} in the
+@racketmodname[forms] library documentation for more details on the underlying struct.
 
 }
 
