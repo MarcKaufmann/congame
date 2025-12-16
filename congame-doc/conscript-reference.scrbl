@@ -320,47 +320,13 @@ time when the page was in a background tab or the browser window was minimized.
 Both values will be @racket[#f] if no timing data is available (for example, on the very first page
 load of a study).
 
-@inline-note{@bold{Important:} This function should @italic{only} be called within a
-@racket[button]'s action procedure or within code that runs after a form is submitted. Calling
+See @secref["cookbook-step-timings"] for an example showing how to use @racket[get-step-timings].
+
+@inline-note[#:type 'warning]{@bold{Important:} This function should @italic{only} be called within
+a @racket[button]'s action procedure or within code that runs after a form is submitted. Calling
 @racket[get-step-timings] directly within the body of a @racket[defstep] (outside of an action
 procedure) will return @racket[(cons #f #f)] because the timing data is only available when
 processing user actions like button clicks or form submissions.}
-
-@bold{Example:} Recording how long a participant spent on a task page:
-
-@codeblock[#:keep-lang-line? #t]|{
-#lang conscript
-
-(defvar task-total-time)
-(defvar task-focus-time)
-
-(defstep (task-page)
-  (define (on-submit)
-    (define timings (get-step-timings))
-    (set! task-total-time (car timings))
-    (set! task-focus-time (cdr timings)))
-
-  @md{
-    # Complete the Task
-
-    @button[on-submit]{Submit}})
-
-(defstep (results-page)
-  @md{
-    # Results
-
-    You spent @(~r (/ task-total-time 1000) #:precision 1) seconds on the task.
-
-    The page was in focus for @(~r (/ task-focus-time 1000) #:precision 1) seconds.})
-
-(defstudy timing-example
-  [task-page --> results-page]
-  [results-page --> results-page])
-}|
-
-The timing data is automatically collected by JavaScript running on each study page. When a
-participant clicks a button or submits a form, the timing values are included in the request and
-made available through @racket[get-step-timings].
 
 }
 
