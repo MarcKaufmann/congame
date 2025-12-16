@@ -195,8 +195,9 @@ Conscript provides its own binding for @racketrequire that only allows modules f
 below. This prevents unsafe code from running on Congame servers.
 
 @(keyword-apply itemlist '(#:style) '(compact)
-  (for/list ([modname (in-list (%whitelist))])
-    @item{@racketmodname[#,modname]})) @; font[(symbol->string modname)]}))
+  (for/list ([modname (in-list (%whitelist))]
+             #:unless (equal? modname 'data/monocle))
+    @item{@racketmodname[#,modname]}))
 
 }
 
