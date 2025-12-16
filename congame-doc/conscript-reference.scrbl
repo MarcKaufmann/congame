@@ -86,14 +86,9 @@ generated studies using @racket[for/study].
 The step @racket[_step-id] is said to be part of the "parent" study, of which
 @racket[_child-study-expr] becomes a "child" study.
 
-The @racket[#:require-bindings] argument is used to map identifiers required by the child study to
-identifiers available in the current study context if their names differ. Any identifiers required
-by the child study that are not mapped here are assumed to be named identically to identifiers in
-the parent study context, and @racket[defstep/study] will attempt to map them accordingly.
-
-The @racket[#:provide-bindings] argument can be used to map identifiers in the parent study to
-particular identifiers provided by @racket[_child-study-expr] upon completion. When
-@racket[#:provide-bindings] is not specified, no values are assigned.
+The @racket[#:require-bindings] and @racket[#:provide-bindings] arguments are deprecated and
+included for compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study
+variables between parent and child studies.
 
 }
 

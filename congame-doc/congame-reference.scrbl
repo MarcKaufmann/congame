@@ -51,6 +51,10 @@
   The @racket[#:transitions] argument has to be a @racket[transition-graph] that
   provides all the transitions between the steps. See @racket[transition-graph]
   for details.
+
+  The @racket[#:requires] and @racket[#:provides] arguments are deprecated and included for
+  compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study variables between
+  parent and child studies.
 }
 
 
@@ -340,31 +344,9 @@ primitives.}
   depend on runtime values (such as participant responses from earlier steps). This is essential for
   dynamically generated studies using @racket[for/study].
 
-  The @racket[#:require-bindings] argument maps identifiers required
-  by @racket[s] to identifiers available in the current study context
-  if the name is different --- otherwise it assumes that required
-  identifiers share names and attempts to set them
-  accordingly.
-
-  The @racket[#:provide-bindings] argument maps identifiers in the
-  current study that should be mapped to some subset of the
-  identifiers provided by @racket[s] upon completion. When
-  @racket[#:provide-bindings] is @racket[null], no values are
-  assigned.
-
-  For example, embedding a fixed study:
-
-  @racketblock[
-  (make-step/study
-    'required-tasks
-    task-study
-    #:require-bindings '([n task-treatment])
-    #:provide-bindings '([root-success? success?]))
-  ]
-
-  Here, @racket[n] in @racket[task-study] will take on the value of
-  @racket[task-treatment], and after running, @racket[root-success?]
-  will be assigned the value of @racket[success?] in the parent.
+  The @racket[#:require-bindings] and @racket[#:provide-bindings] arguments are deprecated and
+  included for compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study
+  variables between parent and child studies.
 
   Embedding a dynamically generated study:
 
