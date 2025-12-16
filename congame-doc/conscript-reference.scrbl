@@ -27,6 +27,10 @@
                      (only-in congame/components/study (form cgs:form))
                      congame/components/transition-graph
                      conscript/form0
+                     conscript/game-theory
+                     conscript/game-theory-sig
+                     conscript/game-theory-vars-sig
+                     conscript/game-theory-unit
                      conscript/html
                      (except-in forms form)
                      conscript/markdown
@@ -1290,6 +1294,32 @@ not @racket[#f] then the count will reflect any responses recorded by the curren
 @racket[lookup-key], if any. 
 
 }
+
+@;===============================================
+@section[#:style 'quiet]{Game Theory}
+
+@defmodule[conscript/game-theory]
+
+This module provides functions for implementing two-player simultaneous-move games, such as the
+Prisoner's Dilemma or other strategic interactions between paired participants.
+
+The game theory framework manages choice storage and retrieval for participants in groups,
+tracking both single-round and multi-round games.
+
+@margin-note{These functions require participants to be matched into groups first (see
+@secref["Matchmaking"]).}
+
+@defmodule[conscript/game-theory-sig #:no-declare]
+
+Defines the @racketidfont{game-theory^} signature containing the core game operations.
+
+@defmodule[conscript/game-theory-vars-sig #:no-declare]
+
+Defines the @racketidfont{game-theory-vars^} signature for mutable game state variables.
+
+@defmodule[conscript/game-theory-unit #:no-declare]
+
+Provides the implementation unit for the game theory signature.
 
 @;===============================================
 @section[#:style 'quiet]{Admin}
