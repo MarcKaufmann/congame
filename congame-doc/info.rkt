@@ -8,7 +8,8 @@
     "scribble-lib"
     "threading-lib"))
 (define build-deps
-  '("buid"
+  '("hash-view"
+    "buid"
     "buid-lib"
     "drracket-core"
     "scribble-doc"
