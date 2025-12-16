@@ -67,6 +67,26 @@ Returns the database ID of the current participant in the current study @tech{in
 
 }
 
+@defproc[(current-participant-owner?) boolean?]{
+
+Returns @racket[#t] if the current participant is also the owner of the current study
+@tech{instance}, @racket[#f] otherwise.
+
+This is useful for conditionally displaying admin-only content or enabling special controls for
+study owners.
+
+}
+
+@defproc[(current-participant-identity-user?) (or/c string? #f)]{
+
+Returns the identity server URL if the current participant enrolled in the study through an
+identity server, @racket[#f] otherwise.
+
+Identity servers are used to decouple participant identity from their study responses, allowing
+researchers to pay participants without knowing their specific answers.
+
+}
+
 @;------------------------------------------------
 
 @subsection{Study variables}
@@ -121,6 +141,16 @@ scope} --- that is, the stored value is shared by all participants in the study 
 
 }
 
+@defthing[undefined undefined?]{
+
+A special value used internally to represent @tech{study variables} that have been created with
+@racket[defvar] but not yet assigned a value.
+
+You typically don't need to use @racket[undefined] directly. Instead, use @racket[undefined?] to
+check if a variable has been set, or @racket[if-undefined] to provide a fallback value.
+
+}
+
 @defproc[(undefined? [v any/c]) boolean?]{
 
 Returns @racket[#t] if @racket[v] is a @tech{study variable} which has been created but not yet given
@@ -132,6 +162,44 @@ any value, @racket[#f] otherwise.
 
 Returns the current value of @racket[study-var] if it has been given a value, or @racket[alt] if
 @racket[study-var] is @racket[undefined?].
+
+}
+
+@defform[(with-namespace namespace body ...+)]{
+
+Wraps one or more @racket[defvar*] or @racket[defvar*/instance] definitions so that each variable
+automatically receives a globally unique identifier based on @racket[_namespace].
+
+When using @racket[defvar*] (which creates variables visible to child studies), there is a risk
+that a child study could accidentally use the same variable name and overwrite the parent's data.
+The @racket[with-namespace] form prevents this by prefixing each variable's internal identifier
+with the namespace.
+
+@racketblock[
+(with-namespace my-study.variables
+  (defvar* score)
+  (defvar*/instance group-results))
+]
+
+In the example above, @racketidfont{score} will internally be stored as
+@racketidfont{my-study.variables:score}, preventing collisions with a child study that might also
+define a @racketidfont{score} variable.
+
+@inline-note{Always use @racket[with-namespace] when using @racket[defvar*] or
+@racket[defvar*/instance] to prevent accidental variable overwrites by child studies.}
+
+}
+
+@defform[(with-root root-id body ...+)]{
+
+Wraps @racket[defvar] and @racket[defvar/instance] definitions to store them under a custom root
+identifier @racket[_root-id] instead of the default @racketidfont{*root*}.
+
+This is primarily used internally by Congame (for example, by the matchmaking system) to create
+isolated variable storage namespaces. Most study authors do not need this form.
+
+@inline-note{This form only affects variables defined with @racket[defvar] and
+@racket[defvar/instance], not those defined with @racket[defvar*] or @racket[defvar*/instance].}
 
 }
 
@@ -185,6 +253,64 @@ an isolation level of @racket['serializable].
 
 }
 
+@defproc[(get/linked/instance [pseudonym symbol?]
+                              [key symbol?]
+                              [default any/c (lambda () (error ...))]
+                              [#:root root-id symbol? '*root*])
+         any/c]{
+
+Retrieves an instance-scoped @tech{study variable} from a @emph{linked} study instance identified
+by @racket[_pseudonym].
+
+This is an advanced feature used when multiple study instances are linked together (for example,
+when one study needs to access aggregate data from another). The @racket[_pseudonym] identifies
+the linked instance, and @racket[_key] specifies which variable to retrieve.
+
+If the variable is not found and @racket[_default] is a procedure, it is called and its result
+returned. Otherwise, @racket[_default] is returned directly.
+
+@inline-note{Study instance linking is typically configured at the server level and is used for
+cross-study data sharing. Most studies do not need this function.}
+
+}
+
+@;------------------------------------------------
+
+@subsection{Participant groups}
+
+Congame supports organizing participants into named groups within a study. This is useful for
+implementing group-based activities such as games or collaborative tasks. Group membership is
+tracked per participant.
+
+@deftogether[(
+
+@defproc[(get-current-group-name) string?]
+
+@defproc[(put-current-group-name [group-name string?]
+                                 [#:participant-id participant-id integer? (current-participant-id)])
+         void?])]{
+
+@racket[get-current-group-name] returns the current participant's group name. If the participant
+has not been assigned to a group, returns an empty string @racket[""].
+
+@racket[put-current-group-name] assigns the current participant (or the participant specified by
+@racket[_participant-id]) to the group named @racket[_group-name].
+
+These functions are typically used with matchmaking logic to pair participants. For example:
+
+@racketblock[
+(with-study-transaction
+  (when (string=? (get-current-group-name) "")
+    (code:comment @#,elem{Participant not yet in a group, assign them})
+    (put-current-group-name "group-1")))
+]
+
+@inline-note{For most use cases involving participant matching, consider using the higher-level
+matchmaking functions from @racketmodname[conscript/matchmaking] instead of these low-level
+primitives.}
+
+}
+
 @;------------------------------------------------
 
 @subsection{Steps}
@@ -234,6 +360,48 @@ an isolation level of @racket['serializable].
   Here, @racket[n] in @racket[task-study] will take on the value of
   @racket[task-treatment], and after running, @racket[root-success?]
   will be assigned the value of @racket[success?] in the parent.
+}
+
+@defproc[(map-step [s step?]
+                   [proc (-> handler/c handler/c)])
+         step?]{
+
+Transforms the step @racket[_s] by applying @racket[_proc] to its handler.
+
+The @racket[_proc] argument receives the step's current handler (a procedure that returns an
+X-expression) and should return a new handler. This allows wrapping or modifying step behavior
+without changing the original step definition.
+
+If @racket[_s] is a @racket[make-step/study] step containing a child study, @racket[map-step]
+recursively applies the transformation to all steps in that child study.
+
+See also @racket[map-study].
+
+}
+
+@defproc[(map-study [s study?]
+                    [proc (-> handler/c handler/c)])
+         study?]{
+
+Transforms every step in the study @racket[_s] by applying @racket[_proc] to each step's handler.
+
+This is useful for adding consistent behavior across all steps in a study, such as wrapping each
+page with common styling, adding logging, or injecting validation.
+
+@racketblock[
+(define (add-border handler)
+  (lambda ()
+    (haml
+     (:div ([:style "border: 1px solid black;"])
+       (handler)))))
+
+(define bordered-study
+  (map-study my-study add-border))
+]
+
+The transformation is applied recursively to any child studies contained within
+@racket[make-step/study] steps.
+
 }
 
 @deftogether[(
