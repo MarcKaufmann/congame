@@ -298,6 +298,63 @@ cross-study data sharing. Most studies do not need this function.}
 
 @;------------------------------------------------
 
+@subsection{Low-level data access}
+
+A @deftech{step scope} represents the region of the database where data for a study step is
+stored and retrieved. Step scope is determined by the combination of the current participant,
+the study stack, and optional round and group information. @tech{Instance scope} (used by
+@racket[defvar/instance]) is shared between all participants in a study @tech{instance}.
+
+The functions below provide direct access to the underlying data storage. In most cases, you
+should use @racket[defvar] and related forms instead, which provide a more convenient interface.
+
+@defproc[(put [key symbol?]
+              [value any/c]
+              [#:root root-id symbol? '*root*]
+              [#:round round-stack (listof string?) (list "")]
+              [#:group group-stack (listof string?) (list "")]
+              [#:participant-id participant-id integer? (current-participant-id)])
+         void?]{
+
+Stores @racket[_value] under the symbol @racket[_key] in the current @tech{step scope}.
+
+@inline-note{This is a low-level function. Use @racket[defvar] and @racket[set!] instead for
+most use cases.}
+
+The optional keyword arguments allow storing data in different scopes:
+
+@itemlist[
+@item{@racket[#:root] specifies the root namespace for storage (default @racket['*root*])}
+@item{@racket[#:round] and @racket[#:group] specify round and group context for the data}
+@item{@racket[#:participant-id] allows storing data for a different participant (must be in the
+same study instance)}
+]
+
+}
+
+@defproc[(get [key symbol?]
+              [default (or/c any/c (-> any/c))
+                       (lambda () (error 'get "value not found for key ~.s" key))]
+              [#:root root-id symbol? '*root*]
+              [#:round round-stack (listof string?) (list "")]
+              [#:group group-stack (listof string?) (list "")]
+              [#:participant-id participant-id integer? (current-participant-id)])
+         any/c]{
+
+Retrieves the value stored under the symbol @racket[_key] from the current @tech{step scope}.
+
+If no value exists for @racket[_key], @racket[_default] is called if it is a procedure, or
+returned directly otherwise.
+
+@inline-note{This is a low-level function. Use @racket[defvar] instead for most use cases.}
+
+The optional keyword arguments mirror those of @racket[put] and allow retrieving data from
+different scopes.
+
+}
+
+@;------------------------------------------------
+
 @subsection{Participant groups}
 
 Congame supports organizing participants into named groups within a study. This is useful for
