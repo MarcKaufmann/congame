@@ -107,41 +107,57 @@ A @deftech{study variable} is a variable whose value is recorded in the study se
 
  ]
 
-@deftogether[(
-
-@defform[(defvar id)]
-
-@defform[(defvar* id global-id)])]{
+@defform[(defvar id)]{
 
 Defines a @tech{study variable} with @tech{participant scope} bound to @racket[_id]. The study
 variable can be accessed inside the study steps using @racket[_id] and updated with
-@racket[(set! _id _expr)]. 
+@racket[(set! _id _expr)].
 
 When set, the value of the study variable will be stored in the Congame server database under the
-current study → instance → participant.
-
-Study variables created with @racket[defvar*] will additionally be visible to any child studies (see
-@racket[defstep/study]).
+current study, instance, and participant.
 
 @inline-note{Study variables have no default value (see @racket[undefined?]). This is intentional,
 because until you store a value using @racket[set!], no value has been stored in the study
 database.}
 
-@inline-note[#:type 'warning]{@bold{Important:} when using @racket[defvar*], you must provide a
-second identifier @racket[_global-id] and manually ensure it is distinct from any identifiers that
-may be used in child studies. This prevents child studies that may be using the same identifier
-names from accidentally overwriting your parent study’s variable.}
+}
+
+@defform*[((defvar* id)
+          (defvar* id global-id))]{
+
+Like @racket[defvar], but creates a variable that is additionally visible to any child studies (see
+@racket[make-step/study]).
+
+The single-argument form @racket[(defvar* _id)] must be used inside a @racket[with-namespace] block,
+which automatically generates a unique global identifier. This is the recommended usage:
+
+@racketblock[
+(with-namespace my-study.variables
+  (defvar* score))
+]
+
+The two-argument form @racket[(defvar* _id _global-id)] can be used outside of
+@racket[with-namespace], but you must manually ensure @racket[_global-id] is distinct from any
+identifiers that may be used in child studies.
 
 }
 
-@deftogether[(
+@defform[(defvar/instance id)]{
 
-@defform[(defvar/instance ...)]
+Like @racket[defvar], but creates a variable with @tech{instance scope} --- that is, the stored
+value is shared by all participants in the study instance.
 
-@defform[(defvar*/instance ...)])]{
+}
 
-Like @racket[defvar] and @racket[defvar*], but for creating study variables with @tech{instance
-scope} --- that is, the stored value is shared by all participants in the study instance.
+@defform*[((defvar*/instance id)
+          (defvar*/instance id global-id))]{
+
+Like @racket[defvar*], but creates a variable with @tech{instance scope} --- that is, the stored
+value is shared by all participants in the study instance, and is also visible to child studies.
+
+The single-argument form @racket[(defvar*/instance _id)] must be used inside a
+@racket[with-namespace] block. The two-argument form can be used outside of @racket[with-namespace]
+but requires manually ensuring the global identifier is unique.
 
 }
 
