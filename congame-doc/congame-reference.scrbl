@@ -328,26 +328,31 @@ primitives.}
 }
 
 @defproc[(make-step/study [id symbol?]
-                          [s study?]
+                          [s (or/c study? (-> study?))]
                           [transition transition/c (lambda () next)]
                           [#:require-bindings require-bindings (listof binding/c) null]
                           [#:provide-bindings provide-bindings (listof binding/c) null]) step?]{
 
-  Creates a @tech{step} that executes @racket[s] when reached.
+  Creates a @tech{step} that executes the child study @racket[s] when reached.
+
+  The @racket[s] argument can be either a study value or a procedure that returns a study. When
+  @racket[s] is a procedure, it is called when the step is reached, allowing the study structure to
+  depend on runtime values (such as participant responses from earlier steps). This is essential for
+  dynamically generated studies using @racket[for/study].
 
   The @racket[#:require-bindings] argument maps identifiers required
   by @racket[s] to identifiers available in the current study context
-  if the name is different -- otherwise it assumes that required
-  identifers share names and attempts to set them
+  if the name is different --- otherwise it assumes that required
+  identifiers share names and attempts to set them
   accordingly.
 
   The @racket[#:provide-bindings] argument maps identifiers in the
   current study that should be mapped to some subset of the
-  identifiers provided by @racket[s] upon completion.  When
-  @racket[#:provide-bindings] is @racket[null?], no values are
+  identifiers provided by @racket[s] upon completion. When
+  @racket[#:provide-bindings] is @racket[null], no values are
   assigned.
 
-  For example:
+  For example, embedding a fixed study:
 
   @racketblock[
   (make-step/study
@@ -360,6 +365,19 @@ primitives.}
   Here, @racket[n] in @racket[task-study] will take on the value of
   @racket[task-treatment], and after running, @racket[root-success?]
   will be assigned the value of @racket[success?] in the parent.
+
+  Embedding a dynamically generated study:
+
+  @racketblock[
+  (define (make-substudy)
+    (for/study ([i (in-range n)])
+      (question-step i)))
+
+  (make-step/study 'questions make-substudy)
+  ]
+
+  Here, @racket[make-substudy] is called when the step is reached, after @racket[n] has been set by
+  a previous step.
 }
 
 @defproc[(map-step [s step?]

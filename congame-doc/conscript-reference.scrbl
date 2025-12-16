@@ -76,13 +76,15 @@ study @tech{page} — usually @racket[md] or @racket[html].
           (maybe-provide-bindings (code:line)
                                   (code:line #:provide-bindings ([parent-id child-id] ...)))]]{
 
+Defines a study step named @racket[_step-id] that runs @racket[_child-study-expr] when reached.
 
-Defines a study step that runs @racket[_child-study-expr] when reached.
+The @racket[_child-study-expr] can be either a study value or a procedure that returns a study. When
+it is a procedure, it is called when the step is reached, allowing the study structure to depend on
+runtime values (such as participant responses from earlier steps). This is essential for dynamically
+generated studies using @racket[for/study].
 
-The step @racket[_step-id] is said to be part of the “parent” study, of which
-@racket[_child-study-expr] becomes a “child” study.
-
-@;{Review below -- may be deprecated}
+The step @racket[_step-id] is said to be part of the "parent" study, of which
+@racket[_child-study-expr] becomes a "child" study.
 
 The @racket[#:require-bindings] argument is used to map identifiers required by the child study to
 identifiers available in the current study context if their names differ. Any identifiers required
