@@ -1604,6 +1604,40 @@ ct-with-default)
 
 @;------------------------------------------------
 
+@subsection[#:tag "cookbook-step-timings"]{How to record time spent on a task}
+
+Recording how long a participant spent on a task page:
+
+@codeblock|{
+#lang conscript
+
+(defvar task-total-time)
+(defvar task-focus-time)
+
+(defstep (task-page)
+  (define (on-submit)
+    (define timings (get-step-timings))
+    (set! task-total-time (car timings))
+    (set! task-focus-time (cdr timings)))
+
+  @html{
+    @h1{Complete the Task}
+    @button[on-submit]{Submit}})
+
+(defstep (results-page)
+  @html{
+    @h1{Results}
+    @p{You spent @(~r (/ task-total-time 1000) #:precision 1) seconds on the task.}
+    @p{The page was in focus for @(~r (/ task-focus-time 1000) #:precision 1) seconds.}})
+}|
+
+The timing data is automatically collected by JavaScript running on each study page. When a participant
+clicks a button or submits a form, the timing values are included in the request and made available
+through @racket[get-step-timings].
+
+
+@;------------------------------------------------
+
 @subsection{How to add a timer to a page}
 
 We can add a timer to a page by using @racket[timer] from the

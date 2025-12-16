@@ -13,6 +13,7 @@
                               defstudy
                               defview
                               button
+                              get-step-timings
                               put/identity
                               require
                               with-bot
@@ -23,8 +24,13 @@
                               log-conscript-info
                               log-conscript-warning)
                      (except-in congame/components/study button form)
+                     (only-in congame/components/study (form cgs:form))
                      congame/components/transition-graph
                      conscript/form0
+                     conscript/game-theory
+                     conscript/game-theory-sig
+                     conscript/game-theory-vars-sig
+                     conscript/game-theory-unit
                      conscript/html
                      (except-in forms form)
                      conscript/markdown
@@ -75,22 +81,19 @@ study @tech{page} — usually @racket[md] or @racket[html].
           (maybe-provide-bindings (code:line)
                                   (code:line #:provide-bindings ([parent-id child-id] ...)))]]{
 
+Defines a study step named @racket[_step-id] that runs @racket[_child-study-expr] when reached.
 
-Defines a study step that runs @racket[_child-study-expr] when reached.
+The @racket[_child-study-expr] can be either a study value or a procedure that returns a study. When
+it is a procedure, it is called when the step is reached, allowing the study structure to depend on
+runtime values (such as participant responses from earlier steps). This is essential for dynamically
+generated studies using @racket[for/study].
 
-The step @racket[_step-id] is said to be part of the “parent” study, of which
-@racket[_child-study-expr] becomes a “child” study.
+The step @racket[_step-id] is said to be part of the "parent" study, of which
+@racket[_child-study-expr] becomes a "child" study.
 
-@;{Review below -- may be deprecated}
-
-The @racket[#:require-bindings] argument is used to map identifiers required by the child study to
-identifiers available in the current study context if their names differ. Any identifiers required
-by the child study that are not mapped here are assumed to be named identically to identifiers in
-the parent study context, and @racket[defstep/study] will attempt to map them accordingly.
-
-The @racket[#:provide-bindings] argument can be used to map identifiers in the parent study to
-particular identifiers provided by @racket[_child-study-expr] upon completion. When
-@racket[#:provide-bindings] is not specified, no values are assigned.
+The @racket[#:require-bindings] and @racket[#:provide-bindings] arguments are deprecated and
+included for compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study
+variables between parent and child studies.
 
 }
 
@@ -192,8 +195,9 @@ Conscript provides its own binding for @racketrequire that only allows modules f
 below. This prevents unsafe code from running on Congame servers.
 
 @(keyword-apply itemlist '(#:style) '(compact)
-  (for/list ([modname (in-list (%whitelist))])
-    @item{@racketmodname[#,modname]})) @; font[(symbol->string modname)]}))
+  (for/list ([modname (in-list (%whitelist))]
+             #:unless (equal? modname 'data/monocle))
+    @item{@racketmodname[#,modname]}))
 
 }
 
@@ -294,6 +298,38 @@ which adds the custom CSS @tech{resource} @racket[css-res] to each step in the s
 
 @inline-note{See @github-link{congame-example-study/conscript-css-resource.rkt} for an example of
 how to use this function.}
+
+}
+
+@;------------------------------------------------
+
+@subsection[#:tag "conscript-step-timings"]{Step Timings}
+
+Congame automatically tracks timing information for each step in a study. This timing data measures
+how long participants spend on each page, including both total elapsed time and the time the page
+was actively in focus (visible to the participant).
+
+@defproc[(get-step-timings) (cons/c (or/c #f number?) (or/c #f number?))]{
+
+Returns a pair @racket[(cons _total-time _focus-time)] containing timing information for the current
+step, where both values are measured in milliseconds.
+
+The @racket[_total-time] is the total elapsed time since the participant loaded the page, including
+time spent with the page in the background (for example, if they switched to another browser tab).
+
+The @racket[_focus-time] is the total time the page was actually visible and in focus. This excludes
+time when the page was in a background tab or the browser window was minimized.
+
+Both values will be @racket[#f] if no timing data is available (for example, on the very first page
+load of a study).
+
+See @secref["cookbook-step-timings"] for an example showing how to use @racket[get-step-timings].
+
+@inline-note[#:type 'warning]{@bold{Important:} This function should @italic{only} be called within
+a @racket[button]'s action procedure or within code that runs after a form is submitted. Calling
+@racket[get-step-timings] directly within the body of a @racket[defstep] (outside of an action
+procedure) will return @racket[(cons #f #f)] because the timing data is only available when
+processing user actions like button clicks or form submissions.}
 
 }
 
@@ -631,6 +667,77 @@ documentation for @racket[form-run]).
 
 }
 
+@defstruct*[dyn:form ([constructor any/c]
+                      [children (listof (cons/c symbol? (or/c formlet? dyn:form?)))])]{
+
+Creates a form value that can be passed to the @racket[form] procedure.
+
+Use @racket[dyn:form] when you need to construct forms dynamically at runtime, where the number or
+types of fields are determined by a computation rather than specified statically. For statically
+defined forms, prefer @racket[form+submit] or @racket[form*].
+
+The @racket[_constructor] is a function that receives the validated values from each field in
+order and returns the final result. The @racket[_children] is a list of pairs, where each pair
+contains a field name (as a symbol) and a formlet (or nested form) for that field.
+
+@codeblock[#:keep-lang-line? #t]|{
+#lang conscript
+
+(require conscript/form0
+         racket/match)
+
+(defvar taste)
+(defvar price)
+(defvar healthiness)
+
+(define range-formlet
+  (ensure
+   binding/number
+   (required)
+   (number-in-range 1 5)))
+
+(defstep (dynamic-form-example)
+  (define f
+    (dyn:form
+     list
+     (for/list ([k (in-list '(taste price healthiness))])
+       (cons k range-formlet))))
+
+  (define (on-submit vs)
+    (match-define (list t p h) vs)
+    (set! taste t)
+    (set! price p)
+    (set! healthiness h))
+
+  (define (render rw)
+    @md*{@rw["taste" (input-range "Taste")]
+         @rw["price" (input-range "Price")]
+         @rw["healthiness" (input-range "Healthiness")]
+         @|submit-button|})
+
+  @md{# Dynamic Form
+
+      @form[f on-submit render]})
+}|
+
+In this example, the @racket[list] constructor combines the validated values into a list. You can
+also use a custom constructor to bundle results into a hash or other data structure:
+
+@racketblock[
+(dyn:form
+ (lambda vs
+   (for/hash ([k (in-list '(taste price healthiness))]
+              [v (in-list vs)])
+     (values k v)))
+ (for/list ([k (in-list '(taste price healthiness))])
+   (cons k range-formlet)))
+]
+
+See the @seclink["forms" #:doc '(lib "forms/forms.scrbl")]{Forms reference} in the
+@racketmodname[forms] library documentation for more details on the underlying struct.
+
+}
+
 @defproc[(required-unless [pred (-> any/c)])
          (-> (or/c string? #f)
              (or/c (cons/c 'ok any/c)
@@ -836,9 +943,28 @@ number of decimal places for rounding. If @racket[p] is zero, the result is the 
 
 }
 
-@defproc[(diceroll-js [arg any/c]) any/c]{
+@defthing[diceroll-js xexpr?]{
 
-@tktk{diceroll-js proc}
+An X-expression containing a @tt{<script>} element that enables dice roll functionality.
+
+Include this in a step that has a container element with class @racketidfont{diceroll}. Inside
+that container, place an @tt{<a>} element with class @racketidfont{button} (the roll button)
+and an @tt{<output>} element (where the result will be displayed). When the button is clicked,
+a random number from 1 to 6 is generated and displayed in the output element.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (roll-dice)
+  @md{# Roll the Dice
+
+      @diceroll-js
+
+      @div[#:class "diceroll"]{
+        @a[#:class "button" #:href ""]{Roll}
+        @output{}}
+
+      @button{Continue}})
+}|
 
 }
 
@@ -848,15 +974,42 @@ number of decimal places for rounding. If @racket[p] is zero, the result is the 
 
 }
 
-@defproc[(slider-js [arg any/c]) any/c]{
+@defproc[(slider-js) xexpr?]{
 
-@tktk{slider-js proc}
+Returns an X-expression containing a @tt{<script>} element that enables real-time slider
+value display.
+
+Include the result of calling this function in a step that has one or more container elements
+with class @racketidfont{slider}. Each container should have an @tt{<input type="range">}
+element and an @tt{<output>} element. As the user moves the slider, the current value is
+automatically displayed in the output element.
+
+This function is typically used internally by the @racket[make-sliders] macro, but can be
+used directly when building custom slider interfaces.
 
 }
 
-@defproc[(timer [arg any/c]) any/c]{
+@defproc[(timer [n exact-positive-integer?]) xexpr?]{
 
-@tktk{timer proc}
+Returns an X-expression representing a countdown timer that displays @racket[_n] seconds
+remaining.
+
+The timer counts down and displays the remaining time as "@italic{X} seconds left" (or
+"@italic{Y} minutes and @italic{Z} seconds left" for times over 60 seconds). When the timer
+reaches zero, it automatically submits any form on the page, or clicks the next button if
+no form is present.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (timed-task)
+  @md{# Complete the task
+
+      You have 60 seconds to complete this task.
+
+      @timer[60]
+
+      @form{...}})
+}|
 
 }
 
@@ -867,10 +1020,24 @@ number of decimal places for rounding. If @racket[p] is zero, the result is the 
 
 }
 
-@defform[(is-equal arg)
-         #:contracts ([arg any/c])]{
+@defproc[(is-equal [expected any/c]
+                    [#:message message (or/c #f string?) #f])
+         (-> any/c (or/c (cons/c 'ok any/c) (cons/c 'err string?)))]{
 
-@tktk{is-equal form}
+Returns a validator procedure that checks if a form field's value equals @racket[_expected].
+
+If the value equals @racket[_expected], validation passes. Otherwise, validation fails with
+@racket[_message] (or a default message like "Should be equal to @racket[_expected]" if
+@racket[_message] is @racket[#f]).
+
+This is useful for creating quiz-like forms where there's a specific correct answer:
+
+@racketblock[
+(radios '(("a" . "Option A")
+          ("b" . "Option B")
+          ("c" . "Option C"))
+        #:validators (list (is-equal "c" #:message "That's not correct, try again!")))
+]
 
 }
 
@@ -896,17 +1063,61 @@ error.
 
 }
 
-@defform[(make-sliders arg)
-         #:contracts ([arg any/c])]{
+@defform[(make-sliders n maybe-widget-proc)
+         #:grammar
+         [(maybe-widget-proc (code:line)
+                             (code:line widget-proc-expr))]
+         #:contracts
+         ([n exact-positive-integer?]
+          [widget-proc-expr (-> exact-nonnegative-integer? formular-field?)])]{
 
-make-sliders form
+Creates a form containing @racket[_n] sliders with real-time value display.
+
+This macro generates a complete form with @racket[_n] range input sliders, each wrapped in
+a container with a live-updating value display. The form includes a submit button.
+
+If @racket[_widget-proc-expr] is provided, it should be a procedure that takes a slider
+index (starting from 0) and returns a @racket[formular-field?]. By default, each slider
+is created using @racket[input-range].
+
+@racketblock[
+(code:comment @#,elem{Create a form with 3 default sliders})
+(make-sliders 3)
+
+(code:comment @#,elem{Create a form with custom slider ranges})
+(make-sliders 5
+  (lambda (idx)
+    (input-range #:min 0 #:max 100 #:step 5)))
+]
 
 }
 
-@defform[(toggleable-xexpr arg)
-         #:contracts ([arg any/c])]{
+@defproc[(toggleable-xexpr [message string?]
+                            [xexpr xexpr?]
+                            [#:hidden? hidden? boolean? #t])
+         xexpr?]{
 
-toggleable-xexpr form
+Returns an X-expression representing a collapsible content section with a toggle button.
+
+The @racket[_message] argument is displayed as the button text. Clicking the button shows
+or hides the content specified by @racket[_xexpr].
+
+When @racket[_hidden?] is @racket[#t] (the default), the content starts hidden and must be
+clicked to reveal. When @racket[_hidden?] is @racket[#f], the content starts visible.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (instructions)
+  @md{# Task Overview
+
+      @toggleable-xexpr["Show/Hide Detailed Instructions"
+                        @md*{## Detailed Instructions
+
+                             1. First, do this...
+                             2. Then, do that...}]
+
+      @button{Continue}})
+}|
 
 }
 
@@ -1084,6 +1295,32 @@ not @racket[#f] then the count will reflect any responses recorded by the curren
 @racket[lookup-key], if any. 
 
 }
+
+@;===============================================
+@section[#:style 'quiet]{Game Theory}
+
+@defmodule[conscript/game-theory]
+
+This module provides functions for implementing two-player simultaneous-move games, such as the
+Prisoner's Dilemma or other strategic interactions between paired participants.
+
+The game theory framework manages choice storage and retrieval for participants in groups,
+tracking both single-round and multi-round games.
+
+@margin-note{These functions require participants to be matched into groups first (see
+@secref["Matchmaking"]).}
+
+@defmodule[conscript/game-theory-sig #:no-declare]
+
+Defines the @racketidfont{game-theory^} signature containing the core game operations.
+
+@defmodule[conscript/game-theory-vars-sig #:no-declare]
+
+Defines the @racketidfont{game-theory-vars^} signature for mutable game state variables.
+
+@defmodule[conscript/game-theory-unit #:no-declare]
+
+Provides the implementation unit for the game theory signature.
 
 @;===============================================
 @section[#:style 'quiet]{Admin}

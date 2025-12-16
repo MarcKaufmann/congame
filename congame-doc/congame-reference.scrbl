@@ -5,6 +5,7 @@
                      racket/base
                      racket/contract
                      congame-web/components/study-bot
+                     congame-web/components/uploaded-file
                      congame/components/for-study
                      congame/components/bot
                      (submod congame/components/bot actions)
@@ -14,6 +15,7 @@
                      congame/components/transition-graph
                      (except-in conscript/base require button study? step?)
                      koyo/haml
+                     web-server/http
                      (only-in xml xexpr?))
           scribble/examples)
 
@@ -51,6 +53,10 @@
   The @racket[#:transitions] argument has to be a @racket[transition-graph] that
   provides all the transitions between the steps. See @racket[transition-graph]
   for details.
+
+  The @racket[#:requires] and @racket[#:provides] arguments are deprecated and included for
+  compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study variables between
+  parent and child studies.
 }
 
 
@@ -64,6 +70,26 @@
 @defproc[(current-participant-id) integer?]{
 
 Returns the database ID of the current participant in the current study @tech{instance}.
+
+}
+
+@defproc[(current-participant-owner?) boolean?]{
+
+Returns @racket[#t] if the current participant is also the owner of the current study
+@tech{instance}, @racket[#f] otherwise.
+
+This is useful for conditionally displaying admin-only content or enabling special controls for
+study owners.
+
+}
+
+@defproc[(current-participant-identity-user?) (or/c string? #f)]{
+
+Returns the identity server URL if the current participant enrolled in the study through an
+identity server, @racket[#f] otherwise.
+
+Identity servers are used to decouple participant identity from their study responses, allowing
+researchers to pay participants without knowing their specific answers.
 
 }
 
@@ -83,41 +109,67 @@ A @deftech{study variable} is a variable whose value is recorded in the study se
 
  ]
 
-@deftogether[(
-
-@defform[(defvar id)]
-
-@defform[(defvar* id global-id)])]{
+@defform[(defvar id)]{
 
 Defines a @tech{study variable} with @tech{participant scope} bound to @racket[_id]. The study
 variable can be accessed inside the study steps using @racket[_id] and updated with
-@racket[(set! _id _expr)]. 
+@racket[(set! _id _expr)].
 
 When set, the value of the study variable will be stored in the Congame server database under the
-current study → instance → participant.
-
-Study variables created with @racket[defvar*] will additionally be visible to any child studies (see
-@racket[defstep/study]).
+current study, instance, and participant.
 
 @inline-note{Study variables have no default value (see @racket[undefined?]). This is intentional,
 because until you store a value using @racket[set!], no value has been stored in the study
 database.}
 
-@inline-note[#:type 'warning]{@bold{Important:} when using @racket[defvar*], you must provide a
-second identifier @racket[_global-id] and manually ensure it is distinct from any identifiers that
-may be used in child studies. This prevents child studies that may be using the same identifier
-names from accidentally overwriting your parent study’s variable.}
+}
+
+@defform*[((defvar* id)
+          (defvar* id global-id))]{
+
+Like @racket[defvar], but creates a variable that is additionally visible to any child studies (see
+@racket[make-step/study]).
+
+The single-argument form @racket[(defvar* _id)] must be used inside a @racket[with-namespace] block,
+which automatically generates a unique global identifier. This is the recommended usage:
+
+@racketblock[
+(with-namespace my-study.variables
+  (defvar* score))
+]
+
+The two-argument form @racket[(defvar* _id _global-id)] can be used outside of
+@racket[with-namespace], but you must manually ensure @racket[_global-id] is distinct from any
+identifiers that may be used in child studies.
 
 }
 
-@deftogether[(
+@defform[(defvar/instance id)]{
 
-@defform[(defvar/instance ...)]
+Like @racket[defvar], but creates a variable with @tech{instance scope} --- that is, the stored
+value is shared by all participants in the study instance.
 
-@defform[(defvar*/instance ...)])]{
+}
 
-Like @racket[defvar] and @racket[defvar*], but for creating study variables with @tech{instance
-scope} --- that is, the stored value is shared by all participants in the study instance.
+@defform*[((defvar*/instance id)
+          (defvar*/instance id global-id))]{
+
+Like @racket[defvar*], but creates a variable with @tech{instance scope} --- that is, the stored
+value is shared by all participants in the study instance, and is also visible to child studies.
+
+The single-argument form @racket[(defvar*/instance _id)] must be used inside a
+@racket[with-namespace] block. The two-argument form can be used outside of @racket[with-namespace]
+but requires manually ensuring the global identifier is unique.
+
+}
+
+@defthing[undefined undefined?]{
+
+A special value used internally to represent @tech{study variables} that have been created with
+@racket[defvar] but not yet assigned a value.
+
+You typically don't need to use @racket[undefined] directly. Instead, use @racket[undefined?] to
+check if a variable has been set, or @racket[if-undefined] to provide a fallback value.
 
 }
 
@@ -132,6 +184,44 @@ any value, @racket[#f] otherwise.
 
 Returns the current value of @racket[study-var] if it has been given a value, or @racket[alt] if
 @racket[study-var] is @racket[undefined?].
+
+}
+
+@defform[(with-namespace namespace body ...+)]{
+
+Wraps one or more @racket[defvar*] or @racket[defvar*/instance] definitions so that each variable
+automatically receives a globally unique identifier based on @racket[_namespace].
+
+When using @racket[defvar*] (which creates variables visible to child studies), there is a risk
+that a child study could accidentally use the same variable name and overwrite the parent's data.
+The @racket[with-namespace] form prevents this by prefixing each variable's internal identifier
+with the namespace.
+
+@racketblock[
+(with-namespace my-study.variables
+  (defvar* score)
+  (defvar*/instance group-results))
+]
+
+In the example above, @racketidfont{score} will internally be stored as
+@racketidfont{my-study.variables:score}, preventing collisions with a child study that might also
+define a @racketidfont{score} variable.
+
+@inline-note{Always use @racket[with-namespace] when using @racket[defvar*] or
+@racket[defvar*/instance] to prevent accidental variable overwrites by child studies.}
+
+}
+
+@defform[(with-root root-id body ...+)]{
+
+Wraps @racket[defvar] and @racket[defvar/instance] definitions to store them under a custom root
+identifier @racket[_root-id] instead of the default @racketidfont{*root*}.
+
+This is primarily used internally by Congame (for example, by the matchmaking system) to create
+isolated variable storage namespaces. Most study authors do not need this form.
+
+@inline-note{This form only affects variables defined with @racket[defvar] and
+@racket[defvar/instance], not those defined with @racket[defvar*] or @racket[defvar*/instance].}
 
 }
 
@@ -185,6 +275,121 @@ an isolation level of @racket['serializable].
 
 }
 
+@defproc[(get/linked/instance [pseudonym symbol?]
+                              [key symbol?]
+                              [default any/c (lambda () (error ...))]
+                              [#:root root-id symbol? '*root*])
+         any/c]{
+
+Retrieves an instance-scoped @tech{study variable} from a @emph{linked} study instance identified
+by @racket[_pseudonym].
+
+This is an advanced feature used when multiple study instances are linked together (for example,
+when one study needs to access aggregate data from another). The @racket[_pseudonym] identifies
+the linked instance, and @racket[_key] specifies which variable to retrieve.
+
+If the variable is not found and @racket[_default] is a procedure, it is called and its result
+returned. Otherwise, @racket[_default] is returned directly.
+
+@inline-note{Study instance linking is typically configured at the server level and is used for
+cross-study data sharing. Most studies do not need this function.}
+
+}
+
+@;------------------------------------------------
+
+@subsection{Low-level data access}
+
+A @deftech{step scope} represents the region of the database where data for a study step is
+stored and retrieved. Step scope is determined by the combination of the current participant,
+the study stack, and optional round and group information. @tech{Instance scope} (used by
+@racket[defvar/instance]) is shared between all participants in a study @tech{instance}.
+
+The functions below provide direct access to the underlying data storage. In most cases, you
+should use @racket[defvar] and related forms instead, which provide a more convenient interface.
+
+@defproc[(put [key symbol?]
+              [value any/c]
+              [#:root root-id symbol? '*root*]
+              [#:round round-stack (listof string?) (list "")]
+              [#:group group-stack (listof string?) (list "")]
+              [#:participant-id participant-id integer? (current-participant-id)])
+         void?]{
+
+Stores @racket[_value] under the symbol @racket[_key] in the current @tech{step scope}.
+
+@inline-note{This is a low-level function. Use @racket[defvar] and @racket[set!] instead for
+most use cases.}
+
+The optional keyword arguments allow storing data in different scopes:
+
+@itemlist[
+@item{@racket[#:root] specifies the root namespace for storage (default @racket['*root*])}
+@item{@racket[#:round] and @racket[#:group] specify round and group context for the data}
+@item{@racket[#:participant-id] allows storing data for a different participant (must be in the
+same study instance)}
+]
+
+}
+
+@defproc[(get [key symbol?]
+              [default (or/c any/c (-> any/c))
+                       (lambda () (error 'get "value not found for key ~.s" key))]
+              [#:root root-id symbol? '*root*]
+              [#:round round-stack (listof string?) (list "")]
+              [#:group group-stack (listof string?) (list "")]
+              [#:participant-id participant-id integer? (current-participant-id)])
+         any/c]{
+
+Retrieves the value stored under the symbol @racket[_key] from the current @tech{step scope}.
+
+If no value exists for @racket[_key], @racket[_default] is called if it is a procedure, or
+returned directly otherwise.
+
+@inline-note{This is a low-level function. Use @racket[defvar] instead for most use cases.}
+
+The optional keyword arguments mirror those of @racket[put] and allow retrieving data from
+different scopes.
+
+}
+
+@;------------------------------------------------
+
+@subsection{Participant groups}
+
+Congame supports organizing participants into named groups within a study. This is useful for
+implementing group-based activities such as games or collaborative tasks. Group membership is
+tracked per participant.
+
+@deftogether[(
+
+@defproc[(get-current-group-name) string?]
+
+@defproc[(put-current-group-name [group-name string?]
+                                 [#:participant-id participant-id integer? (current-participant-id)])
+         void?])]{
+
+@racket[get-current-group-name] returns the current participant's group name. If the participant
+has not been assigned to a group, returns an empty string @racket[""].
+
+@racket[put-current-group-name] assigns the current participant (or the participant specified by
+@racket[_participant-id]) to the group named @racket[_group-name].
+
+These functions are typically used with matchmaking logic to pair participants. For example:
+
+@racketblock[
+(with-study-transaction
+  (when (string=? (get-current-group-name) "")
+    (code:comment @#,elem{Participant not yet in a group, assign them})
+    (put-current-group-name "group-1")))
+]
+
+@inline-note{For most use cases involving participant matching, consider using the higher-level
+matchmaking functions from @racketmodname[conscript/matchmaking] instead of these low-level
+primitives.}
+
+}
+
 @;------------------------------------------------
 
 @subsection{Steps}
@@ -199,41 +404,105 @@ an isolation level of @racket['serializable].
                     [#:view-handler view-handler (or/c #f (-> request? response?)) #f]
                     [#:for-bot bot-handler (or/c #f procedure?) #f]) step?]{
 
+Creates a @tech{step} for use in a study.
+
+The @racket[_id] argument is a symbol that uniquely identifies this step within the study.
+
+The @racket[_handler] argument is a procedure that takes no arguments and returns an
+@tech[#:doc '(lib "xml/xml.scrbl")]{X-expression} representing the step's page content.
+
+The @racket[_transition] argument is a procedure that returns the next step to transition to
+after this step completes. It can return @racket[next] to proceed to the next step in the
+list, @racket[done] to end the study, or a symbol naming a specific step.
+
+The @racket[#:view-handler] argument, if provided, specifies a @tech{view handler} for this step.
+
+The @racket[#:for-bot] argument, if provided, specifies a @tech{bot handler} that determines
+what a @tech{bot} should do when it reaches this step. If not provided and the step has a
+custom transition, an error will be raised when a bot reaches the step.
+
+@racketblock[
+(make-step 'greeting
+           (lambda ()
+             (haml
+              (:div
+               (:h1 "Welcome!")
+               (button void "Continue")))))
+]
+
 }
 
 @defproc[(make-step/study [id symbol?]
-                          [s study?]
+                          [s (or/c study? (-> study?))]
                           [transition transition/c (lambda () next)]
                           [#:require-bindings require-bindings (listof binding/c) null]
                           [#:provide-bindings provide-bindings (listof binding/c) null]) step?]{
 
-  Creates a @tech{step} that executes @racket[s] when reached.
+  Creates a @tech{step} that executes the child study @racket[s] when reached.
 
-  The @racket[#:require-bindings] argument maps identifiers required
-  by @racket[s] to identifiers available in the current study context
-  if the name is different -- otherwise it assumes that required
-  identifers share names and attempts to set them
-  accordingly.
+  The @racket[s] argument can be either a study value or a procedure that returns a study. When
+  @racket[s] is a procedure, it is called when the step is reached, allowing the study structure to
+  depend on runtime values (such as participant responses from earlier steps). This is essential for
+  dynamically generated studies using @racket[for/study].
 
-  The @racket[#:provide-bindings] argument maps identifiers in the
-  current study that should be mapped to some subset of the
-  identifiers provided by @racket[s] upon completion.  When
-  @racket[#:provide-bindings] is @racket[null?], no values are
-  assigned.
+  The @racket[#:require-bindings] and @racket[#:provide-bindings] arguments are deprecated and
+  included for compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study
+  variables between parent and child studies.
 
-  For example:
+  Embedding a dynamically generated study:
 
   @racketblock[
-  (make-step/study
-    'required-tasks
-    task-study
-    #:require-bindings '([n task-treatment])
-    #:provide-bindings '([root-success? success?]))
+  (define (make-substudy)
+    (for/study ([i (in-range n)])
+      (question-step i)))
+
+  (make-step/study 'questions make-substudy)
   ]
 
-  Here, @racket[n] in @racket[task-study] will take on the value of
-  @racket[task-treatment], and after running, @racket[root-success?]
-  will be assigned the value of @racket[success?] in the parent.
+  Here, @racket[make-substudy] is called when the step is reached, after @racket[n] has been set by
+  a previous step.
+}
+
+@defproc[(map-step [s step?]
+                   [proc (-> handler/c handler/c)])
+         step?]{
+
+Transforms the step @racket[_s] by applying @racket[_proc] to its handler.
+
+The @racket[_proc] argument receives the step's current handler (a procedure that returns an
+X-expression) and should return a new handler. This allows wrapping or modifying step behavior
+without changing the original step definition.
+
+If @racket[_s] is a @racket[make-step/study] step containing a child study, @racket[map-step]
+recursively applies the transformation to all steps in that child study.
+
+See also @racket[map-study].
+
+}
+
+@defproc[(map-study [s study?]
+                    [proc (-> handler/c handler/c)])
+         study?]{
+
+Transforms every step in the study @racket[_s] by applying @racket[_proc] to each step's handler.
+
+This is useful for adding consistent behavior across all steps in a study, such as wrapping each
+page with common styling, adding logging, or injecting validation.
+
+@racketblock[
+(define (add-border handler)
+  (lambda ()
+    (haml
+     (:div ([:style "border: 1px solid black;"])
+       (handler)))))
+
+(define bordered-study
+  (map-study my-study add-border))
+]
+
+The transformation is applied recursively to any child studies contained within
+@racket[make-step/study] steps.
+
 }
 
 @deftogether[(
@@ -309,6 +578,39 @@ converted to a string (in @racket[display] mode), otherwise returns @racket[""].
 
 @;------------------------------------------------
 
+@subsection[#:tag "congame-step-timings"]{Step Timings}
+
+Congame automatically tracks timing information for each step in a study. This timing data
+measures how long participants spend on each page, including both total elapsed time and
+the time the page was actively in focus (visible to the participant).
+
+@defparam[current-step-timings timings (cons/c (or/c #f number?) (or/c #f number?))]{
+
+Returns a pair @racket[(cons _total-time _focus-time)] containing timing information for the current
+step, where both values are measured in milliseconds.
+
+The @racket[_total-time] is the total elapsed time since the participant first loaded the page,
+including time spent with the page in the background (for example, if they switched to another
+browser tab).
+
+The @racket[_focus-time] is the total time the page was actually visible and in focus. This excludes
+time when the page was in a background tab or the browser window was minimized.
+
+Both values will be @racket[#f] if no timing data is available (for example, on the very first page
+load of a study).
+
+In @hash-lang[] @racketmodname[conscript], this function is available as @racket[get-step-timings]. 
+
+@inline-note[#:type 'warning]{@bold{Important:} This parameter should @italic{only} be accessed
+within a widget's action procedure or during a step transition. Accessing
+@racket[current-step-timings] directly within a step’s handler (inside @racket[defstep]) will
+produce undefined behavior and unreliable values. The timing data is only properly set when
+processing user actions like button clicks or form submissions.}
+
+}
+
+@;------------------------------------------------
+
 @subsection{Study loops}
 
 @defmodule[congame/components/for-study]
@@ -350,14 +652,124 @@ places.
 A @deftech{field} is a special value that, when used inside a study form, renders as an input element.
 When the user submits the form, the field yields whatever value the user has entered as a Racket value.
 
+@defform[#:literals (set! ~error ~errors ~all-errors)
+         (formular maybe-bot maybe-fields form-body maybe-action)
+         #:grammar
+         [(maybe-bot (code:line)
+                     (code:line #:bot ([bot-id (field-kwd bot-value) ...] ...)))
+          (maybe-fields (code:line)
+                        (code:line #:fields ([field-id field-expr] ...)))
+          (form-body (code:line xexpr-with-fields))
+          (maybe-action (code:line)
+                        (code:line action-expr))]]{
+
+Creates a form from an X-expression template containing embedded @tech{field} declarations.
+
+Fields can be declared in two ways within @racket[_form-body]:
+
+@itemlist[
+
+@item{@bold{Keyword syntax}: @racket[(#:field-name _field-expr)] where @racket[_field-expr]
+produces a @tech{field}. The field's value will be passed to @racket[_action-expr] as a keyword
+argument.}
+
+@item{@bold{Set! syntax}: @racket[(set! _var-id _field-expr)] where @racket[_var-id] is a
+@tech{study variable}. When the form is submitted, the variable is automatically updated with
+the field's value. This syntax cannot be combined with a custom @racket[_action-expr].}
+
+]
+
+Optional default values can be specified using @racket[(#:field-name _field-expr {#:default _value})].
+
+The @racket[#:bot] clause defines autofill values for @tech{bots}. Each @racket[_bot-id] names
+a bot configuration, and the keyword/value pairs specify what values to fill in for each field.
+Use @racket[formular-autofill] in the step's bot handler to trigger the autofill.
+
+The @racket[#:fields] clause allows defining fields dynamically, useful when field order needs
+to be randomized or fields are computed at runtime.
+
+Within @racket[_form-body], you can use these special forms to display validation errors:
+
+@defsubform[(~error field-ref)
+            #:grammar [(field-ref field-id
+                                  (code:line #:field-name))]]{
+Displays validation errors for a specific field. Use the field's identifier or keyword name
+to specify which field's errors to display.
+}
+
+@defsubform[(~errors field-ref ...)]{
+Displays validation errors for multiple fields at once.
+}
+
+@defsubform[(~all-errors)]{
+Displays all validation errors from the form in a single list.
+}
+
+@racketblock[
+(formular
+ #:bot
+ ([ok (#:name "Alice")
+      (#:age 30)])
+ (haml
+  (:div
+   (:p "Name: " (#:name (input-text)))
+   (:p "Age: " (#:age (input-number #:min 0 #:max 120)))
+   ,@(~all-errors)
+   (:button ([:type "submit"]) "Submit"))))
+]
+
+Using @racket[set!] syntax with study variables:
+
+@racketblock[
+(defvar participant-name)
+(defvar participant-age)
+
+(formular
+ (haml
+  (:div
+   (:p "Name: " (set! participant-name (input-text)))
+   (:p "Age: " (set! participant-age (input-number)))
+   (:button ([:type "submit"]) "Submit"))))
+]
+
+}
+
 @defproc[(formular-field? [v any/c]) boolean?]{
   Returns @racket[#t] if @racket[_v] is a @tech{field}, @racket[#f] otherwise.
 
 }
 
-@defproc[(formular-autofill [bot-id any/c]) void?]{
+@defproc[(formular-autofill [bot-id symbol?]) void?]{
 
-@tktk{Autofills elements on the page for the bot with @racket[_bot-id].}
+Automatically fills in and submits a form created with @racket[formular] when running as a
+@tech{bot}.
+
+The @racket[_bot-id] argument must match one of the bot identifiers declared in the
+@racket[#:bot] clause of the @racket[formular] macro. The function reads autofill metadata
+embedded in the page by @racket[formular], fills in each form field with the corresponding
+value, and clicks the submit button.
+
+For example, given a form defined with:
+
+@racketblock[
+(formular
+ #:bot
+ ([ok (#:emissions 42)
+      (#:location "Cluj-Napoca")])
+ (haml
+  (:div
+   (#:emissions (input-number))
+   (#:location (input-text))
+   (:button ([:type "submit"]) "Submit"))))
+]
+
+The bot handler can use @racket[(formular-autofill 'ok)] to fill in @racket[42] for the
+@racketidfont{emissions} field, @racket["Cluj-Napoca"] for the @racketidfont{location} field,
+and submit the form.
+
+This function handles different input types appropriately: text and number fields are filled
+by typing, checkboxes and radio buttons are clicked, and select dropdowns have their values
+set directly.
 
 }
 
@@ -475,64 +887,245 @@ submitted. Any @racket[_attrs] will be used as @tech{HTML} attributes in the fie
 
 }
 
-@defform[(input-file arg)
-         #:contracts ([arg any/c])]{
+@defproc[(input-file [label (or/c #f string?) #f]
+                      [#:required? required? (or/c string? boolean?) #t]
+                      [#:validators validators (listof procedure?) null]
+                      [#:attributes attributes (listof (list/c symbol? string?)) null])
+         formular-field?]{
 
-input-file form
+Returns a @tech{field} that renders as a file upload input.
 
-}
+When the form is submitted, the field's value is a @racket[binding:file] struct containing the
+uploaded file's name, headers, and content.
 
-@defform[(make-checkboxes arg)
-         #:contracts ([arg any/c])]{
-
-make-checkboxes form
-
-}
-
-@defform[(make-radios arg)
-         #:contracts ([arg any/c])]{
-
-make-radios form
+If @racket[_label] is provided, the file input is wrapped in a label element displaying
+@racket[_label]. If @racket[_required?] is not @racket[#f], the user must select a file before
+the form can be submitted.
 
 }
 
-@defform[(make-radios-with-other arg)
-         #:contracts ([arg any/c])]{
+@defproc[(make-checkboxes [options (listof (cons/c symbol? any/c))]
+                           [render-proc (-> (listof (cons/c symbol? any/c))
+                                            (-> symbol? string? xexpr?)
+                                            xexpr?)]
+                           [#:n n exact-nonnegative-integer? 0]
+                           [#:message message (or/c #f string?) #f]
+                           [#:validators validators (listof procedure?) null]
+                           [#:attributes attributes (listof (list/c symbol? string?)) null])
+         formular-field?]{
 
-make-radios-with-other form
+Returns a @tech{field} containing multiple checkboxes with custom rendering.
+
+The @racket[_options] argument is a list of pairs, where each pair contains a symbol (the
+checkbox value) and associated data (typically a label string, but can be any value your
+render procedure uses).
+
+The @racket[_render-proc] argument is a procedure that controls how the checkboxes are
+rendered. It receives the @racket[_options] list and a @racketidfont{make-checkbox} function.
+The @racketidfont{make-checkbox} function takes a symbol (the checkbox value) and an optional
+label string, and returns an X-expression for a labeled checkbox input.
+
+When @racket[_n] is greater than 0, the user must check at least @racket[_n] boxes before the
+form can be submitted. If @racket[_message] is provided, it is shown when this validation
+fails.
+
+@racketblock[
+(make-checkboxes
+ '((apple . "Apple")
+   (banana . "Banana")
+   (cherry . "Cherry"))
+ (lambda (options make-checkbox)
+   (haml
+    (:ul
+     ,@(for/list ([opt (in-list options)])
+         (haml (:li (make-checkbox (car opt) (cdr opt))))))))
+ #:n 1
+ #:message "Please select at least one fruit.")
+]
+
+@inline-note{For simpler use cases where you don't need custom rendering, consider using
+@racket[make-multiple-checkboxes] from @racketmodname[conscript/survey-tools], which provides
+a default list-style rendering.}
 
 }
 
-@defform[(make-sliders arg)
-         #:contracts ([arg any/c])]{
+@defproc[(make-radios [options (listof (cons/c symbol? any/c))]
+                       [render-proc (-> (listof (cons/c symbol? any/c))
+                                        (-> symbol? string? xexpr?)
+                                        xexpr?)]
+                       [#:required? required? (or/c string? boolean?) #t]
+                       [#:validators validators (listof procedure?) null]
+                       [#:attributes attributes (listof (list/c symbol? string?)) null])
+         formular-field?]{
 
-make-sliders form
+Returns a @tech{field} containing radio buttons with custom rendering.
+
+The @racket[_options] argument is a list of pairs, where each pair contains a symbol (the
+radio button value) and associated data (which can be any value your render procedure uses).
+
+The @racket[_render-proc] argument is a procedure that controls how the radio buttons are
+rendered. It receives the @racket[_options] list and a @racketidfont{make-radio} function.
+The @racketidfont{make-radio} function takes a symbol (the radio value) and an optional
+label string, and returns an X-expression for a labeled radio input.
+
+If @racket[_required?] is not @racket[#f], the user must select one of the radio options
+before the form can be submitted.
+
+This example renders radio buttons in a table format:
+
+@racketblock[
+(make-radios
+ '((mac1 . ("Apple Mac" "White"))
+   (mac2 . ("Apple Mac" "Gray"))
+   (dell1 . ("Dell" "Blue")))
+ (lambda (options make-radio)
+   (haml
+    (:table
+     (:thead
+      (:tr (:th "") (:th "Brand") (:th "Color")))
+     (:tbody
+      ,@(for/list ([opt (in-list options)])
+          (haml
+           (:tr
+            (:td (make-radio (car opt)))
+            (:td (car (cdr opt)))
+            (:td (cadr (cdr opt)))))))))))
+]
+
+}
+
+@defproc[(make-radios-with-other [options (listof (cons/c symbol? string?))]
+                                  [#:required? required? (or/c string? boolean?) #t]
+                                  [#:validators validators (listof procedure?) null])
+         formular-field?]{
+
+Returns a @tech{field} containing radio buttons with an additional "Other" option that includes
+a text input field.
+
+The @racket[_options] argument is a list of pairs where each pair contains a symbol (the radio
+value) and a string (the displayed label).
+
+When the user selects one of the predefined options, the field's value is that option's symbol
+(as a string). When the user types text in the "Other" field, the field's value is whatever
+they typed.
+
+If @racket[_required?] is not @racket[#f], the user must either select one of the radio options
+or provide text in the "Other" field before the form can be submitted.
+
+@racketblock[
+(make-radios-with-other
+ '((often . "Often")
+   (sometimes . "Sometimes")
+   (rarely . "Rarely")))
+]
+
+}
+
+@defproc[(make-sliders [n exact-positive-integer?]
+                        [render-proc (-> exact-nonnegative-integer? string? (or/c number? #f) xexpr?)]
+                        [#:message message (or/c #f string?) #f]
+                        [#:validators validators (listof procedure?) null])
+         formular-field?]{
+
+Returns a @tech{field} containing @racket[_n] slider inputs with custom rendering.
+
+The @racket[_render-proc] argument is a procedure that renders a single slider. It receives
+three arguments: the slider's index (starting from 0), the field name (a string), and the
+current value (a number, or @racket[#f] if no value is set). It should return an X-expression
+containing an @tt{<input>} element with @tt{type="range"} and @tt{name} set to the provided
+field name.
+
+When the form is submitted, the field's value is a list of numbers corresponding to each
+slider's value.
+
+@racketblock[
+(make-sliders
+ 3
+ (lambda (idx name current-value)
+   (haml
+    (:div
+     (:label (format "Slider ~a: " (add1 idx))
+             (:input ([:type "range"]
+                      [:name name]
+                      [:min "0"]
+                      [:max "100"]
+                      [:value (or current-value "50")])))))))
+]
+
+@inline-note{For simpler slider usage in Conscript, consider the @racket[make-sliders] macro
+from @racketmodname[conscript/survey-tools], which provides a more convenient syntax.}
 
 }
 
 
-@defform[(select/inline arg)
-         #:contracts ([arg any/c])]{
+@defproc[(select/inline [options (listof (cons/c string? string?))]
+                         [#:required? required? (or/c string? boolean?) #t]
+                         [#:validators validators (listof procedure?) null]
+                         [#:attributes attributes (listof (list/c symbol? string?)) null])
+         formular-field?]{
 
-select/inline form
+Returns a @tech{field} that renders as a dropdown select element without a label or wrapper,
+suitable for embedding inline within text or other custom layouts.
+
+The @racket[_options] argument is a list of pairs where each pair contains a value string and
+a display label string.
+
+@racketblock[
+(haml
+ (:p "I prefer "
+     (#:color (select/inline '(("red" . "Red")
+                               ("blue" . "Blue")
+                               ("green" . "Green"))))
+     " as my favorite color."))
+]
 
 }
 
 
-@defproc[(map-result [arg any/c]) any/c]{
+@defproc[(map-result [field formular-field?]
+                      [proc (-> any/c any/c)])
+         formular-field?]{
 
-map-result proc
+Transforms the value of @racket[_field] by applying @racket[_proc] after validation succeeds.
+
+When the form is submitted and @racket[_field] passes validation, @racket[_proc] is called
+with the validated value. The result of @racket[_proc] becomes the field's final value.
+
+@racketblock[
+(code:comment @#,elem{Convert a text input to a symbol})
+(map-result (input-text) string->symbol)
+
+(code:comment @#,elem{Square a number input})
+(map-result (input-number) (λ (n) (* n n)))
+]
 
 }
 
-@defform[(map-result* arg)
-         #:contracts ([arg any/c])]{
+@defproc[(map-result* [field formular-field?]
+                       [proc (-> any/c any/c)]
+                       [#:exn-predicate exn-predicate (-> any/c boolean?) exn:fail?]
+                       [#:exn-handler exn-handler (-> exn? (cons/c 'err string?))
+                                      (λ (e) (cons 'err (exn-message e)))])
+         formular-field?]{
 
-map-result* form
+Like @racket[map-result], but catches exceptions raised by @racket[_proc] and converts them
+to validation errors.
+
+If @racket[_proc] raises an exception matching @racket[_exn-predicate], the exception is caught
+and @racket[_exn-handler] is called. The handler should return a pair @racket[(cons 'err _message)]
+where @racket[_message] is the error string to display to the user.
+
+This is useful when the transformation might fail on certain inputs:
+
+@racketblock[
+(code:comment @#,elem{Parse a number, showing a friendly error on failure})
+(map-result* (input-text)
+             string->number
+             #:exn-handler (λ (_) (cons 'err "Please enter a valid number")))
+]
 
 }
 
-}
 @;------------------------------------------------
 
 @subsection{Form tools}
@@ -547,6 +1140,64 @@ is used as the button’s label.
 
 }
 
+@;===============================================
+
+@section[#:style 'quiet]{File Uploads}
+
+@defmodule[congame-web/components/uploaded-file]
+
+This module provides functions for handling file uploads in studies running on the Congame server.
+
+@defproc[(upload-file! [binding binding:file?]
+                       [#:prefix prefix (or/c #f string?) #f])
+         uploaded-file?]{
+
+Saves an uploaded file to the server and returns an @racket[uploaded-file] record containing
+metadata about the stored file.
+
+The @racket[_binding] argument should be a file binding from a form submission (typically
+obtained from an @racket[input-file] field).
+
+If @racket[_prefix] is provided, it is prepended to the original filename with a hyphen
+separator. This is useful for organizing uploaded files or adding participant identifiers.
+
+}
+
+@defstruct*[uploaded-file ([key string?]
+                           [filename string?]
+                           [content-type string?])]{
+
+A structure representing an uploaded file's metadata.
+
+The @racket[_key] field is a unique identifier used internally to retrieve the file.
+The @racket[_filename] field contains the original filename (potentially with a prefix added).
+The @racket[_content-type] field contains the MIME type of the uploaded file.
+
+}
+
+@defproc[(uploaded-file-attachment [file uploaded-file?]
+                                    [label string?])
+         xexpr?]{
+
+Creates an attachment X-expression from an uploaded file record.
+
+The @racket[_label] argument specifies the display text for the attachment link.
+
+}
+
+@defproc[(valid-pdf? [binding binding:file?])
+         (or/c (cons/c 'ok binding:file?)
+               (cons/c 'err string?))]{
+
+A validator function that checks if an uploaded file is a PDF.
+
+Returns @racket[(cons 'ok _binding)] if the file's content-type is @racket{application/pdf},
+or @racket[(cons 'err "the file must be a PDF")] otherwise.
+
+Use this with the @racket[#:validators] argument of @racket[input-file] to restrict uploads
+to PDF files only.
+
+}
 
 
 @;===============================================
@@ -615,7 +1266,14 @@ to bot behaviors. A @deftech{bot stepper} is an arbitrary procedure
 associated with a step that determines what the bot does when it reaches
 that step.
 
-@tktk{Need definition for @deftech{bot handlers}.}
+A @deftech{bot handler} is a procedure associated with a step that defines what a @tech{bot}
+should do when it reaches that step. Bot handlers typically interact with the page (clicking
+buttons, filling forms) and then trigger the transition to the next step.
+
+Bot handlers are specified using the @racket[#:for-bot] argument of @racket[make-step] or
+the @racket[#:bot] clause of @racket[formular]. Common bot actions include @racket[continuer]
+(to proceed to the next step), @racket[click] (to click a specific widget), and
+@racket[formular-autofill] (to fill in form fields automatically).
 
 @defproc[(bot? [v any/c]) boolean?]{
   Returns @racket[#t] when @racket[v] is a @tech{bot}.

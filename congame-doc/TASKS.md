@@ -2,8 +2,6 @@
 
 Current priorities, in time/importance order:
 
-## Add tutorial using `proposal-choice` example study
-
 ## Multi-participant parent/child studies
 
 A new tutorial written around a multi-participant study that uses parent/child
@@ -12,18 +10,7 @@ matchmaking functions work in the presence of parent/child studies.
 
 ## Misc reference additions
 
-* Document `current-step-timings`. Exposed in `conscript/base` as
-  `get-step-timings`.
-
 * Document `dyn:form`
-
-* Document new additions to `form0`:
-
-    * `at-least`
-    * `input-file`
-    * `list-longer-than`
-    * `make-autofill-meta`
-    * `number-in-range`
 
 * Document remaining forms from `congame/components/study`
 

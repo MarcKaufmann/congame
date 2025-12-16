@@ -8,7 +8,8 @@
     "scribble-lib"
     "threading-lib"))
 (define build-deps
-  '("buid"
+  '("hash-view"
+    "buid"
     "buid-lib"
     "drracket-core"
     "scribble-doc"
@@ -19,6 +20,7 @@
     "debug"
     "forms-lib"
     "forms-doc"
+    "gregor-doc"
     "koyo-lib"
     "koyo-doc"
     "marionette-doc"
@@ -26,6 +28,8 @@
     "racket-doc"
     "scribble-lib"
     "threading-lib"
+    "threading-doc"
+    "web-server-doc"
     "web-server-lib"))
 (define scribblings
   '(("congame.scrbl" (multi-page))))

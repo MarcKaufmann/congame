@@ -8,6 +8,7 @@ Conscript provides a simpler syntax and a more streamlined development environme
 for writing and testing @tech{studies}.
 
 @table-of-contents[]
+@include-section["conscript-tutorial-parent-child.scrbl"]
 @include-section["conscript-tutorial-multi.scrbl"]
 @include-section["conscript-tutorial-proposal.scrbl"]
 @include-section["conscript-tutorial-pd.scrbl"]
