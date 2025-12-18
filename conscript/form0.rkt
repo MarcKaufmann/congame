@@ -33,6 +33,7 @@
  input-range
  input-text
  input-time
+ radio
  radios
  select
  textarea
@@ -115,6 +116,11 @@
      (or label (string-titlecase name)))
     ((widget-select options) name value errors)
     ,@((widget-errors) name value errors))))
+
+(define ((radio option [label #f] #:attributes [attributes null]) name value errors)
+  (let ([label (or label (string-titlecase name))])
+    (define options `((,option . ,label)))
+    ((widget-radio-group #:attributes attributes options) name value errors)))
 
 (define ((radios options [label #f] #:attributes [attributes null]) name value errors)
   (haml
