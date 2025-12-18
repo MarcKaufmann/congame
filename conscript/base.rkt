@@ -240,12 +240,12 @@
     [(_ id:id
         {~alt
          {~seq #:study study-expr}
-         {~optional {~seq #:require-bindings (require-binder ...)}}
-         {~optional {~seq #:provide-bindings (provide-binder ...)}}} ...)
+         {~optional {~seq #:requires (require-binder ...)}}
+         {~optional {~seq #:provides (provide-binder ...)}}} ...)
      #'(define id
          (make-step/study
-          #:require-bindings `(require-binder ...)
-          #:provide-bindings `(provide-binder ...)
+          #:require-bindings {~? `(require-binder ...) null}
+          #:provide-bindings {~? `(provide-binder ...) null}
           'id study-expr ...))]))
 
 (define-syntax (defview stx)
@@ -318,7 +318,7 @@
            (define binder-stx
              (syntax/loc step-id-stx
                [step-id step-expr]))
-           (raise-syntax-error 'defstudy "step already has a binding expression" stx binder-stx)))
+           (raise-syntax-error #f "step already has a binding expression" stx binder-stx)))
        (values
         (if seen? stxs (cons (list step-id-stx step-expr-stx) stxs))
         (hash-set
