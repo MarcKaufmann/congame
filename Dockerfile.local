@@ -30,9 +30,9 @@ RUN (cd /tmp && tar -xvf firefox.tar) \
     && ln -s /opt/firefox/firefox /usr/bin/firefox \
     && rm /tmp/firefox.tar
 
-ADD https://download.racket-lang.org/installers/8.18/racket-8.18-src-builtpkgs.tgz /tmp/racket.tar.gz
+ADD https://download.racket-lang.org/installers/9.0/racket-9.0-src-builtpkgs.tgz /tmp/racket.tar.gz
 RUN (cd /tmp && tar -xzf racket.tar.gz) \
-    && mv /tmp/racket-8.18 /opt/racket \
+    && mv /tmp/racket-9.0 /opt/racket \
     && cd /opt/racket/src \
     && ./configure \
     && make \
