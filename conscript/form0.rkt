@@ -23,6 +23,7 @@
  (all-from-out forms) ;; all except form (exported as dyn:form avove)
  make-autofill
 
+ errors
  checkbox
  checkboxes
  input-date
@@ -101,6 +102,9 @@
 (define input-number (make-input-widget widget-number))
 (define input-range (make-typed-input-widget "range"))
 (define textarea (make-input-widget widget-textarea))
+
+(define (errors name value errors)
+  (haml (.div ,@((widget-errors) name value errors))))
 
 (define ((input-file label) name value errors)
   (haml
