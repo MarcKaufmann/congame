@@ -2,6 +2,7 @@
 
 (require racket/class
          racket/file
+         racket/path
          racket/runtime-path
          scribble/base-render
          (prefix-in html: scribble/html-render)
@@ -34,10 +35,10 @@
   (define renderer
     (new (multi-html:render-mixin render%)
          [dest-dir dest]
-         [root-path dest]
          [style-file (collection-file-path "manual-style.css" "scribble")]
          [extra-files (list (collection-file-path "manual-fonts.css" "scribble"))]
-         [search-box? #t]))
+         [search-box? #t]
+         [search-up-path #t]))
   (send renderer report-output!)
   (send renderer set-external-tag-path "https://docs.racket-lang.org/local-redirect/index.html")
   (send renderer set-external-root-url "https://docs.racket-lang.org")
@@ -54,11 +55,11 @@
    (list
     (dynamic-require `(file ,(path->string congame.scrbl)) 'doc)
     (dynamic-require `(file ,(path->string search.scrbl)) 'doc))
-   (list dest (build-path dest "search")))
-  ;; HACK: the shared styles and scripts get put in a doc subfolder
-  ;; for some reason. So, just copy them into the right places later.
-  (for ([path (in-directory (build-path dest "docs"))])
+   (list
+    (build-path dest "congame")
+    (build-path dest "search")))
+  (for ([path (in-directory (build-path dest "congame"))]
+        #:when (member (path-get-extension path) '(#".css" #".js")))
     (define-values (_dir name _is-dir?)
       (split-path path))
-    (copy-file #:exists-ok? #t path (build-path dest name))
     (copy-file #:exists-ok? #t path (build-path dest "search" name))))
