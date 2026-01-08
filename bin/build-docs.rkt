@@ -37,8 +37,7 @@
          [root-path dest]
          [style-file (collection-file-path "manual-style.css" "scribble")]
          [extra-files (list (collection-file-path "manual-fonts.css" "scribble"))]
-         [search-box? #t]
-         [search-up-path #f]))
+         [search-box? #t]))
   (send renderer report-output!)
   (send renderer set-external-tag-path "https://docs.racket-lang.org/local-redirect/index.html")
   (send renderer set-external-root-url "https://docs.racket-lang.org")
