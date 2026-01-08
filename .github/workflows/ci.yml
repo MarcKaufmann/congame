@@ -159,13 +159,7 @@ jobs:
     - name: Build distributions
       run: |
         mkdir build
-        raco scribble \
-          +m \
-          --htmls \
-          --dest build/docs \
-          --redirect 'https://docs.racket-lang.org/local-redirect/index.html' \
-          congame-doc/congame.scrbl
-
+        racket bin/build-docs.rkt
         raco koyo dist -t build/identity ++lang north congame-identity/dynamic.rkt
         raco koyo dist -t build/smtp-proxy congame-smtp-proxy/main.rkt
         raco koyo dist \
