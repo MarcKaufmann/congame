@@ -2,7 +2,6 @@
 
 (require conscript/base
          data/monocle
-         threading
          "game-theory-sig.rkt"
          "game-theory-vars-sig.rkt")
 
