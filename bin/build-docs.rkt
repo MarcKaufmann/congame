@@ -1,8 +1,10 @@
 #lang racket/base
 
-(require racket/runtime-path
+(require racket/class
+         racket/file
+         racket/runtime-path
+         scribble/base-render
          (prefix-in html: scribble/html-render)
-         scribble/render
          scribble/xref)
 
 (define-runtime-path dest
@@ -26,16 +28,27 @@
      (html:render-mixin %))))
 
 (define (build-docs docs files)
-  (render
-   docs
-   (for/list ([fn (in-list files)])
-     (define-values (_base name _dir?)
-       (split-path fn))
-     name)
-   #:dest-dir dest
-   #:render-mixin multi-html:render-mixin
-   #:redirect "https://docs.racket-lang.org/local-redirect/index.html"
-   #:xrefs xrefs))
+  (make-directory* dest)
+  (define renderer
+    (new (multi-html:render-mixin render%)
+         [dest-dir dest]
+         [search-box? #t]))
+  (send renderer report-output!)
+  (send renderer set-external-tag-path "https://docs.racket-lang.org/local-redirect/index.html")
+  (define suffix
+    (send renderer get-suffix))
+  (define filenames
+    (for/list ([fn (in-list files)])
+      (define-values (_base name _dir?)
+        (split-path fn))
+      (build-path dest (path-replace-suffix name suffix))))
+  (define fp (send renderer traverse docs filenames))
+  (define ci (send renderer collect docs filenames fp))
+  (for ([xr (in-list xrefs)])
+    (xref-transfer-info renderer ci xr))
+  (define ri (send renderer resolve docs filenames ci))
+  (send renderer render docs filenames ri)
+  (void))
 
 (module+ main
   (build-docs
