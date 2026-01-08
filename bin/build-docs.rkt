@@ -11,6 +11,8 @@
   "../build/docs")
 (define-runtime-path congame.scrbl
   "../congame-doc/congame.scrbl")
+(define-runtime-path search.scrbl
+  "../congame-doc/search.scrbl")
 
 (define xrefs
   (for/list ([mod+id (in-list `((setup/xref . load-collections-xref)))])
@@ -27,21 +29,19 @@
     (html:render-multi-mixin
      (html:render-mixin %))))
 
-(define (build-docs docs files)
+(define (build-docs docs filenames)
   (make-directory* dest)
   (define renderer
     (new (multi-html:render-mixin render%)
          [dest-dir dest]
-         [search-box? #t]))
+         [root-path dest]
+         [style-file (collection-file-path "manual-style.css" "scribble")]
+         [extra-files (list (collection-file-path "manual-fonts.css" "scribble"))]
+         [search-box? #t]
+         [search-up-path #f]))
   (send renderer report-output!)
   (send renderer set-external-tag-path "https://docs.racket-lang.org/local-redirect/index.html")
-  (define suffix
-    (send renderer get-suffix))
-  (define filenames
-    (for/list ([fn (in-list files)])
-      (define-values (_base name _dir?)
-        (split-path fn))
-      (build-path dest (path-replace-suffix name suffix))))
+  (send renderer set-external-root-url "https://docs.racket-lang.org")
   (define fp (send renderer traverse docs filenames))
   (define ci (send renderer collect docs filenames fp))
   (for ([xr (in-list xrefs)])
@@ -52,5 +52,14 @@
 
 (module+ main
   (build-docs
-   (list (dynamic-require `(file ,(path->string congame.scrbl)) 'doc))
-   (list (path->string congame.scrbl))))
+   (list
+    (dynamic-require `(file ,(path->string congame.scrbl)) 'doc)
+    (dynamic-require `(file ,(path->string search.scrbl)) 'doc))
+   (list dest (build-path dest "search")))
+  ;; HACK: the shared styles and scripts get put in a doc subfolder
+  ;; for some reason. So, just copy them into the right places later.
+  (for ([path (in-directory (build-path dest "docs"))])
+    (define-values (_dir name _is-dir?)
+      (split-path path))
+    (copy-file #:exists-ok? #t path (build-path dest name))
+    (copy-file #:exists-ok? #t path (build-path dest "search" name))))
