@@ -141,6 +141,7 @@ jobs:
           congame-smtp-proxy \
           congame-tests \
           congame-web
+        raco setup --doc-index
 
     - name: Install Node
       uses: actions/setup-node@v1
