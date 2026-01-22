@@ -6,5 +6,6 @@ echo "Setting up user catalogs..."
 raco pkg config \
      --user \
      --set catalogs \
-     https://download.racket-lang.org/releases/9.0/catalog/ \
+     "$(raco pkg config catalogs | head -1)" \
      https://racksnaps.defn.io/snapshots/2025/12/18/catalog/
+raco pkg config catalogs
