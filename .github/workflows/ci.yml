@@ -129,7 +129,8 @@ jobs:
           congame-price-lists/ \
           congame-smtp-proxy/ \
           congame-tests/ \
-          congame-web/
+          congame-web/ \
+          congame-doc/
         raco setup --pkgs \
           congame-core \
           conscript \
@@ -140,8 +141,8 @@ jobs:
           congame-price-lists \
           congame-smtp-proxy \
           congame-tests \
-          congame-web
-        raco setup --doc-index
+          congame-web \
+          congame-doc
 
     - name: Install Node
       uses: actions/setup-node@v1
