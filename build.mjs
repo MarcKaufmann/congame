@@ -6,7 +6,10 @@ import { sassPlugin } from "esbuild-sass-plugin";
 const production = process.env.NODE_ENV === "production";
 
 const ctx = await esbuild.context({
-  entryPoints: ["resources/js/app.ts"],
+  entryPoints: [
+    "resources/js/app.ts",
+    { in: "resources/js/push/worker.ts", out: "push-worker" },
+  ],
   outdir: "static",
   target: ["es2020"],
   bundle: true,

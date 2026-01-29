@@ -37,7 +37,7 @@
 (define session-impersonator-key 'session-impersonator-uid)
 
 (define/contract current-user
-  (parameter/c (or/c false/c user?))
+  (parameter/c (or/c #f user?))
   (make-parameter #f))
 
 (struct exn:fail:auth-manager exn:fail ())
