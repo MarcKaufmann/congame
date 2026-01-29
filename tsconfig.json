@@ -1,5 +1,6 @@
 {
   "include": ["resources/js/**/*"],
+  "exclude": ["resources/js/push/worker.ts"],
   "compilerOptions": {
     "experimentalDecorators": true,
     "module": "commonjs",
