@@ -5,6 +5,7 @@
                "base"
                "component-lib"
                "congame-core"
+               "crypto-lib"
                "db-lib"
                "dbg"
                "deta-lib"

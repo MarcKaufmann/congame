@@ -1,0 +1,8 @@
+{
+  "include": ["resources/js/push/worker.ts"],
+  "compilerOptions": {
+    "lib": ["ES2020", "WebWorker"],
+    "module": "commonjs",
+    "target": "es2020"
+  }
+}

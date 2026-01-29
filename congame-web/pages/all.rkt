@@ -15,12 +15,12 @@
     (require (prefix-in api: mod) ...)
     (provide (all-from-out mod) ...)))
 
-
 (reprovide
  congame-web/pages/auth
  congame-web/pages/common
  congame-web/pages/dashboard
  congame-web/pages/error
+ congame-web/pages/push
  congame-web/pages/resource
  congame-web/pages/study)
 
