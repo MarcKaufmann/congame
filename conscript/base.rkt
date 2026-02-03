@@ -186,6 +186,7 @@
       gregor
       hash-view
       koyo/haml
+      math
       racket/contract/base
       racket/format
       racket/list

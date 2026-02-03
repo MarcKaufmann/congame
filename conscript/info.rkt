@@ -10,6 +10,7 @@
     ["forms-lib" #:version "0.10"]
     "hash-view-lib"
     "koyo-lib"
+    "math-lib"
     "monocle-lib"
     "threading-lib"
     "syntax-color-lib"
