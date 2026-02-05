@@ -186,7 +186,7 @@
       gregor
       hash-view
       koyo/haml
-      math
+      math/distributions
       racket/contract/base
       racket/format
       racket/list
