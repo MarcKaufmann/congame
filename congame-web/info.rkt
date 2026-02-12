@@ -22,5 +22,6 @@
                "monocle-lib"
                "sentry-lib"
                "threading-lib"
+               "web-push-lib"
                "web-server-lib"))
 (define build-deps '())
