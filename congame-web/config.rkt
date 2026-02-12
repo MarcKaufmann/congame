@@ -109,4 +109,5 @@
 (define-option uploads-dir
   #:default (simplify-path (build-path this-dir 'up "uploads")))
 
-(define-option vapid-private-key #:default "changeme")
+(define-option vapid-public-key)
+(define-option vapid-private-key)
