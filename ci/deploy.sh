@@ -154,6 +154,8 @@ raco koyo deploy \
      -e "CONGAME_WEB_URL_HOST" "$WEB_HOST" \
      -e "CONGAME_WEB_URL_PORT" "443" \
      -e "CONGAME_WEB_URL_SCHEME" "https" \
+     -e "CONGAME_WEB_VAPID_PUBLIC_KEY" "$VAPID_PUBLIC_KEY" \
+     -e "CONGAME_WEB_VAPID_PRIVATE_KEY" "$VAPID_PRIVATE_KEY" \
      -e "PLTSTDERR" "error debug@GC" \
      -e "VERSION" "$GITHUB_SHA" \
      "build/web" "$GITHUB_SHA" "$TARGET_HOST"
