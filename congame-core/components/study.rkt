@@ -39,7 +39,7 @@
          "xexpr.rkt")
 
 (lazy-require
- [congame-web/components/user (user-admin-like?)]
+ [congame-web/components/user (user? user-admin-like?)]
  ["dsl.rkt" (dsl-require)])
 
 
@@ -1222,6 +1222,7 @@ QUERY
  clear-study-instance-vars!
  bulk-archive-study-instances!
  current-participant-id
+ lookup-participant-user
  lookup-participant-email
  lookup-participant-identity-url
  current-participant-owner?
@@ -1660,6 +1661,15 @@ QUERY
   (with-database-connection [conn db]
     (lookup conn (~> (from study-participant #:as p)
                      (where (= p.id ,participant-id))))))
+
+(define/contract (lookup-participant-user pid)
+  (-> id/c user?)
+  (with-database-connection [conn (study-manager-db (current-study-manager))]
+    (~> (from user #:as u)
+        (join study-participant #:as p #:on (= u.id p.user-id))
+        (where (and (= p.id ,pid)
+                    (= p.instance-id ,(current-study-instance-id))))
+        (lookup conn _))))
 
 (define/contract (lookup-participant-email pid)
   (-> id/c string?)

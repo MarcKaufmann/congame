@@ -5,6 +5,7 @@
                "base"
                "component-lib"
                "congame-core"
+               "crypto-lib"
                "db-lib"
                "dbg"
                "deta-lib"
@@ -21,5 +22,6 @@
                "monocle-lib"
                "sentry-lib"
                "threading-lib"
+               "web-push-lib"
                "web-server-lib"))
 (define build-deps '())

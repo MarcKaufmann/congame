@@ -7,6 +7,7 @@
          (prefix-in bot: (submod congame/components/bot actions))
          (prefix-in bot: congame/components/bot-maker)
          congame/components/for-study
+         (prefix-in congame: congame/components/push-notification)
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
          (except-in congame/components/study button form)
@@ -129,7 +130,8 @@
   [congame:map-step map-step]
   [congame:map-study map-study]
   [congame:study? study?]
-  [congame:step? step?])
+  [congame:step? step?]
+  [congame:send-push-notification send-push-notification])
  make-step make-step/study
  put/identity
  done

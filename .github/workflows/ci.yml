@@ -226,6 +226,8 @@ jobs:
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
         SENTRY_DSN : ${{ secrets.SENTRY_DSN }}
+        VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+        VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
       if: >-
         startsWith(github.ref, 'refs/heads/main')
 
@@ -236,5 +238,7 @@ jobs:
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         POSTMARK_TOKEN: ${{ secrets.POSTMARK_TOKEN }}
         SENTRY_DSN : ${{ secrets.SENTRY_DSN }}
+        VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
+        VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
       if: >-
         startsWith(github.ref, 'refs/tags/v')

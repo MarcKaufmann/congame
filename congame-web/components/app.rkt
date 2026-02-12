@@ -22,6 +22,7 @@
          racket/contract/base
          racket/contract/region
          racket/format
+         racket/port
          racket/runtime-path
          racket/string
          sentry
@@ -189,6 +190,11 @@
      [("errors" "file-too-large")
       (error-413-page)]
 
+     [("me" "push")
+      #:roles (user)
+      #:method "patch"
+      (register-push-subscription-page db)]
+
      [("study" (string-arg))
       #:roles (user)
       (study-page db)]
@@ -233,6 +239,15 @@
 
      [("dsl-resource" (integer-arg) (string-arg) ...)
       (serve-dsl-resource-page db)]
+
+     [("push-worker.js")
+      (lambda (_req)
+        (response/output
+         #:mime-type #"application/javascript"
+         (lambda (out)
+           (call-with-input-file (build-path static-path "push-worker.js")
+             (lambda (in)
+               (copy-port in out))))))]
 
      [else
       not-found-page]))
