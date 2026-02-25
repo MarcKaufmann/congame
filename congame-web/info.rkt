@@ -3,6 +3,7 @@
 (define collection "congame-web")
 (define deps '("actor-lib"
                "base"
+               "base64-lib"
                "component-lib"
                "congame-core"
                "crypto-lib"
