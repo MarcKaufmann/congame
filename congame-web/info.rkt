@@ -7,6 +7,7 @@
                "component-lib"
                "congame-core"
                "crypto-lib"
+               "csv-writing"
                "db-lib"
                "dbg"
                "deta-lib"
