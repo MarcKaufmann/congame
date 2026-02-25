@@ -19,6 +19,8 @@
         @|submit-button|})
   @md{# Start
 
+      @request-push-permissions-button{Enable Push Notifications}
+
       @form[f on-submit render]})
 
 (defstep (send-notification)

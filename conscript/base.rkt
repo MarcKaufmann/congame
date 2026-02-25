@@ -402,7 +402,8 @@
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
- button)
+ button
+ request-push-permissions-button)
 
 (define button
   (make-keyword-procedure
@@ -412,6 +413,11 @@
            (values void action-or-label null)
            (values action-or-label (car args) (cdr args))))
      (keyword-apply congame:button kws kw-args action label args*))))
+
+(define (request-push-permissions-button label)
+  `(button
+    ([data-request-push-permissions ""])
+    ,label))
 
 ;; logger ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
