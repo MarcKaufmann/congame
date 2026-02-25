@@ -1217,6 +1217,7 @@ QUERY
  list-active-study-instances/by-owner
  list-study-instance-participants/admin
  list-study-instance-vars
+ list-study-vars
  clear-study-instance-data!
  clear-study-instance-data-for-user!
  clear-study-instance-vars!
@@ -1315,7 +1316,8 @@ QUERY
 
 (define-schema study-var
   #:virtual
-  ([stack (array/f string/f)]
+  ([participant-id id/f]
+   [stack (array/f string/f)]
    [round-stack (array/f string/f)]
    [group-stack (array/f string/f)]
    [id symbol/f]
@@ -1326,7 +1328,7 @@ QUERY
   #:methods gen:jsexprable
   [(define/generic ->jsexpr/super ->jsexpr)
    (define (->jsexpr v)
-     (match-define (study-var _ stack round-stack group-stack id _ git-sha first-put-at last-put-at) v)
+     (match-define (study-var _ _ stack round-stack group-stack id _ git-sha first-put-at last-put-at) v)
      (hash 'stack (vector->list stack)
            'round (vector->list round-stack)
            'group (vector->list group-stack)
@@ -1467,10 +1469,10 @@ QUERY
 (define/contract (list-study-instance-vars db instance-id)
   (-> database? id/c (listof study-instance-var?))
   (with-database-connection [conn db]
-    (sequence->list
-     (in-entities conn (~> (from study-instance-var #:as v)
-                           (where (= v.instance-id ,instance-id))
-                           (order-by ([v.first-put-at #:asc])))))))
+    (~> (from study-instance-var #:as v)
+        (where (= v.instance-id ,instance-id))
+        (order-by ([v.first-put-at #:asc]))
+        (query-entities conn _))))
 
 (define/contract (list-study-instance-participants/admin db instance-id [for-bot-set #f])
   (->* (database? id/c) ((or/c #f id/c)) (listof study-participant/admin?))
@@ -1489,6 +1491,16 @@ QUERY
                            (where q (or (not (array-contains? u.roles (array "bot")))
                                         (and (array-contains? u.roles (array "bot"))
                                              (is u.bot-set-id null)))))))))
+
+(define/contract (list-study-vars db instance-id)
+  (-> database? id/c (listof study-var?))
+  (with-database-connection [conn db]
+    (~> (from "study_data" #:as d)
+        (join "study_participants" #:as p #:on (= p.id d.participant-id))
+        (select d.participant-id d.study-stack d.round-stack d.group-stack d.key d.value d.git-sha d.first-put-at d.last-put-at)
+        (project-onto study-var-schema)
+        (where (= p.instance-id ,instance-id))
+        (query-entities conn _))))
 
 (define/contract (clear-study-instance-data! db instance-id)
   (-> database? id/c void?)
@@ -1703,12 +1715,12 @@ QUERY
 (define/contract (lookup-study-vars db participant-id)
   (-> database? id/c (listof study-var?))
   (with-database-connection [conn db]
-    (sequence->list
-     (in-entities conn (~> (from "study_data" #:as d)
-                           (select d.study-stack d.round-stack d.group-stack d.key d.value d.git-sha d.first-put-at d.last-put-at)
-                           (project-onto study-var-schema)
-                           (where (= d.participant-id ,participant-id))
-                           (order-by ([d.first-put-at #:asc])))))))
+    (~> (from "study_data" #:as d)
+        (select d.participant-id d.study-stack d.round-stack d.group-stack d.key d.value d.git-sha d.first-put-at d.last-put-at)
+        (project-onto study-var-schema)
+        (where (= d.participant-id ,participant-id))
+        (order-by ([d.first-put-at #:asc]))
+        (query-entities conn _))))
 
 (define/contract (clear-participant-progress! db participant-id)
   (-> database? id/c void?)

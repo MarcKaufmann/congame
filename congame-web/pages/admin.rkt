@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require db
+(require csv-writing
+         db
          (submod congame/components/bot actions)
          congame-web/components/auth
          congame-web/components/bot-set
@@ -656,6 +657,98 @@
                 (response/jsexpr
                  (study-instance->jsexpr db study-id study-instance-id vars participants))))])
            "Export JSON"))
+         (:h4
+          (:a
+           ([:href
+             (embed/url
+              (lambda (req)
+                (define vars ;; noqa
+                  (list-study-vars db study-instance-id))
+                (define vars-by-stack
+                  (for/fold ([vars-by-stack (hash)])
+                            ([v (in-list vars)])
+                    (hash-update
+                     #;ht vars-by-stack
+                     #;key (study-var-stack v)
+                     #;updater (lambda (ids)
+                                 (define id (study-var-id v))
+                                 (if (memq id ids) ids (cons id ids)))
+                     #;failure-result null)))
+                (define sorted-stacks
+                  (sort (hash-keys vars-by-stack) stack<))
+                (define csv-export-form
+                  (form* ([paths (ensure binding/list (list-of binding/text))])
+                    (for/list ([path (in-list paths)])
+                      (call-with-input-string path read))))
+                (let loop ([req req])
+                  (match (form-run
+                          #:combine (λ (_k v1 v2)
+                                      (if (pair? v1)
+                                          (append v1 (list v2))
+                                          (list v1 v2)))
+                          csv-export-form req)
+                    [`(passed ,paths ,_)
+                     (response/output
+                      #:mime-type #"application/csv"
+                      #:headers (list (header #"Content-Disposition" #"attachment; filename=data.csv"))
+                      (lambda (out)
+                        (define vars-by-participant
+                          (for/fold ([vars-by-participant (hasheqv)])
+                                    ([v (in-list vars)])
+                            (hash-update
+                             #;ht vars-by-participant
+                             #;key (study-var-participant-id v)
+                             #;updater
+                             (lambda (participant-vars)
+                               (define id (study-var-id v))
+                               (define stack (study-var-stack v))
+                               (define path (cons stack id))
+                               (hash-set participant-vars path v))
+                             #;failure-result hash)))
+                        (display-table
+                         (list*
+                          (cons
+                           'pid
+                           (for/list ([path (in-list paths)])
+                             (match-define (cons stack id) path)
+                             (format "~s:~s" stack id)))
+                          (for/list ([(pid participant-vars) (in-hash vars-by-participant)])
+                            (cons
+                             pid
+                             (for/list ([path (in-list paths)])
+                               (define maybe-var (hash-ref participant-vars path #f))
+                               (and maybe-var (~s (study-var-value/deserialized maybe-var)))))))
+                         out)))]
+                    [`(,_ ,_ ,rw)
+                     (tpl:page
+                      (tpl:container
+                       (haml
+                        (:form
+                         ([:action (embed/url loop)]
+                          [:method "POST"])
+                         (:h1 "Export CSV")
+                         (:ul
+                          ,@(for/list ([s (in-list sorted-stacks)])
+                              (haml
+                               (:li
+                                (:code (~stack s))
+                                (:ul
+                                 ,@(for/list ([id (in-list (hash-ref vars-by-stack s))])
+                                     (define name (symbol->string id))
+                                     (define value (cons s id))
+                                     (define ~value
+                                       (call-with-output-string
+                                        (lambda (out)
+                                          (write value out))))
+                                     (define widget
+                                       (widget-checkbox #:attributes `([value ,~value])))
+                                     (haml
+                                      (:li
+                                       (:label name (rw "paths" widget))))))))))
+                         (:button
+                          ([:type "submit"])
+                          "Export")))))]))))])
+           "Export CSV"))
          (:h2 "Bot Sets")
          (:h3
           (:a
@@ -1506,3 +1599,13 @@
   (form* ([study-id (ensure binding/symbol)]
           [study-source (ensure binding/file)])
     (list study-id (binding:file->dsl-source study-source study-id))))
+
+(define (~stack s)
+  (call-with-output-string
+   (lambda (out)
+     (write s out))))
+
+(define (stack< a b)
+  (for/and ([ax (in-vector a)]
+            [bx (in-vector b)])
+    (string<? ax bx)))
