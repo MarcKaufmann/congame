@@ -4,7 +4,8 @@ import { copy } from "esbuild-plugin-copy";
 import { sassPlugin } from "esbuild-sass-plugin";
 
 const production = process.env.NODE_ENV === "production";
-
+const vapidPublicKey =
+  process.env.CONGAME_WEB_VAPID_PUBLIC_KEY || process.env.VAPID_PUBLIC_KEY;
 const ctx = await esbuild.context({
   entryPoints: [
     "resources/js/app.ts",
@@ -15,15 +16,18 @@ const ctx = await esbuild.context({
   bundle: true,
   minify: production,
   sourcemap: production,
+  define: {
+    "window.VAPID_PUBLIC_KEY": JSON.stringify(vapidPublicKey),
+  },
   plugins: [
     sassPlugin(),
     copy({
       assets: {
         from: "./resources/img/*",
-        to: "./img"
-      }
-    })
-  ]
+        to: "./img",
+      },
+    }),
+  ],
 });
 
 if (production) {

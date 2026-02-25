@@ -6,8 +6,6 @@ import "./unpoly";
 
 (async function () {
   await push.register();
-  const subscription = await push.subscribe(
-    "BHhjOB3QggiXZgA0J7JLdvAl8cnBLSn2-O59WxIDLQG8UDaNcyk8LurUcA1xJlk4fB2ZPVK769ZVu8ogekHJplc",
-  );
+  const subscription = await push.subscribe((window as any).VAPID_PUBLIC_KEY);
   await push.save(subscription);
 })();

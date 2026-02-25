@@ -157,6 +157,8 @@ jobs:
 
     - name: Build Node assets
       run: npm run build
+      env:
+        VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY }}
 
     - name: Build distributions
       run: |
