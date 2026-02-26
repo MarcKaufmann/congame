@@ -806,6 +806,50 @@ values from inputs sharing the same field name (such as multiple checkboxes or n
 
 }
 
+@defproc[(radio [option string?]
+               [label (or/c string? #f) #f]
+               [#:attributes attrs list? null]) widget/c]{
+
+Returns a widget that renders a single radio button with the value @racket[option].
+
+Unlike @racket[radios], which renders a complete radio group with a label and automatic error
+display, @racket[radio] renders only the radio button itself. This allows you to place individual
+radio buttons in custom layouts, such as inside table cells or in non-linear arrangements.
+
+When using @racket[radio] widgets, you must manually display validation errors using the
+@racket[errors] widget, since individual radio buttons do not include error rendering.
+
+@codeblock[#:keep-lang-line? #t]|{
+#lang conscript
+
+(require conscript/form0)
+
+(defvar choice)
+
+(defstep (custom-layout)
+  (define choices
+    '(("a" . a) ("b" . b) ("x" . x) ("y" . y)))
+  (define-values (f on-submit)
+    (form+submit
+     [choice (ensure binding/text (required) (one-of choices))]))
+
+  (define (render rw)
+    @md*{@table[@tr[@td[@rw["choice" @radio["a"]{A}]]
+                   @td[@rw["choice" @radio["x"]{X}]]]
+               @tr[@td[@rw["choice" @radio["b"]{B}]]
+                   @td[@rw["choice" @radio["y"]{Y}]]]]
+         @rw["choice" errors]
+         @|submit-button|})
+
+  @md{# Make Your Choice
+      @form[f on-submit render]})
+}|
+
+In this example, four radio buttons sharing the field name @racket["choice"] are arranged in a 2×2
+table. The @racket[errors] widget is placed below the table to display any validation messages.
+
+}
+
 @deftogether[(
 
 @defproc[(checkbox [label (or/c string? #f) #f] [#:attributes attrs null]) widget/c]
@@ -852,6 +896,30 @@ Return a widget that can render @racket[options] in the given input type.
   ((radios opts "Metaphorical highway selection") "road" #f null)
   ((checkboxes opts) "roadboxen" #f null)
 ]
+
+}
+
+@defproc[(errors [name string?] [value any/c] [errors list?]) xexpr?]{
+
+Renders validation errors for a form field as an HTML @tt{div} element.
+
+This widget has the same signature as other form widgets (@racket[name], @racket[value],
+@racket[errors]) and can be used with the @racket[rw] renderer function. It displays any
+validation error messages associated with the field named @racket[name].
+
+Use @racket[errors] when you need to display validation messages separately from the input widget
+itself—for example, when using individual @racket[radio] buttons in a custom layout:
+
+@racketblock[
+(define (render rw)
+  @md*{@rw["choice" @radio["a"]{Option A}]
+       @rw["choice" @radio["b"]{Option B}]
+       @rw["choice" errors]
+       @|submit-button|})
+]
+
+In this example, the @racket[errors] widget is placed after the radio buttons to show any
+validation messages (such as "This field is required") in a single location.
 
 }
 
