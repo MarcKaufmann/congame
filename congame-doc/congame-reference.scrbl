@@ -211,6 +211,11 @@ define a @racketidfont{score} variable.
 @inline-note{Always use @racket[with-namespace] when using @racket[defvar*] or
 @racket[defvar*/instance] to prevent accidental variable overwrites by child studies.}
 
+The namespace string should be unique to your project. Good choices include reverse-domain names
+(e.g. @racket[xyz.mylab.experiment-study]) or a combination of your project name, study code, and
+filename (e.g. @racket[my-project.EXP01.survey]). The exact format doesn't matter as long as it
+uniquely identifies your study within the server.
+
 }
 
 @defform[(with-root root-id body ...+)]{
@@ -641,6 +646,12 @@ places.
       (:p "...")
       (button void "Next"))))
 ]
+
+The study produced by @racket[for/study] is a substudy (child study). This means that any variables
+defined with @racket[defvar] and @racket[set!] inside the generated steps are scoped to the
+substudy --- they will be @racket[undefined?] when accessed from the parent study. To share
+variables between the parent and the substudy, use @racket[defvar*] together with
+@racket[with-namespace]. See @secref["pctut-sharing-data"] for details.
 
 }
 

@@ -57,6 +57,36 @@ then embed that study wherever you need it. This approach has several benefits:
 
 @;===============================================
 
+@section[#:tag "pctut-recipe"]{Overview}
+
+Composing studies means embedding one study inside another as a "child" study (or "substudy"). 
+
+You create child studies using @racket[defstudy], as normal, or using @racket[for/study] to generate
+a study dynamically from a loop.
+
+Every child study ends with @racket[,(lambda () done)] as its final transition, which returns
+control to the parent.
+
+You can bring child studies in to parent studies using @racket[defstep/study], which defines a step
+(like @racket[defstep]) that runs the child study --- and then adding this new step/study to the parent
+study’s transition graph, just as with any other step. 
+
+@inline-note{@bold{Important concept:} When composing multiple studies, you need to take extra care
+or you may get confusing results. Variables defined with @racket[defvar] are scoped to the study
+that sets them. If you @racket[set!] a @racket[defvar] variable inside a child study, the parent
+will not see that value --- the variable will still be @racket[undefined?] at the parent level. This
+scoping is intentional: it prevents child studies from accidentally overwriting a parent's data.
+
+When you @emph{do} need to share a variable between parent and child, use @racket[defvar*] together
+with @racket[with-namespace]. The @racket[with-namespace] form prefixes the variable's internal
+storage key with a namespace you provide, ensuring it won't collide with other variables. Pick a
+namespace string that uniquely identifies your study, such as
+@racket[my-project.EXP01.task-responses] or @racket[xyz.mylab.experiment].}
+
+The following sections walk through each of these pieces with complete examples.
+
+@;===============================================
+
 @section[#:tag "pctut-simple-example"]{A Simple Example}
 
 Let's start with a concrete example. Suppose you want to ask participants the same question at
@@ -335,7 +365,12 @@ Let's break down what's happening:
 
 @itemlist[#:style 'ordered
 
-@item{@racket[n] is defined with @racket[defvar*] so the dynamically generated study can access it.}
+@item{@racket[n] and @racket[last-response] are defined with @racket[defvar*] (not
+@racket[defvar]) because @racket[for/study] produces a substudy. As explained in
+@secref["pctut-sharing-data"], variables defined with @racket[defvar] are scoped to the current
+study: if you @racket[set!] a @racket[defvar] variable inside a substudy, the value will be
+@racket[undefined?] when you try to access it from the parent. Using @racket[defvar*] with
+@racket[with-namespace] ensures the variable is shared across both parent and child.}
 
 @item{The @racket[start] step collects how many questions the participant wants using a form built
 with @racket[form+submit]. The @racket[range/inclusive] validator ensures the value is between 1 and
