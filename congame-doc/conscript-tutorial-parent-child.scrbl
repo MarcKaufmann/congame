@@ -72,10 +72,11 @@ You can bring child studies in to parent studies using @racket[defstep/study], w
 study’s transition graph, just as with any other step. 
 
 @inline-note{@bold{Important concept:} When composing multiple studies, you need to take extra care
-or you may get confusing results. Variables defined with @racket[defvar] are scoped to the study
-that sets them. If you @racket[set!] a @racket[defvar] variable inside a child study, the parent
-will not see that value --- the variable will still be @racket[undefined?] at the parent level. This
-scoping is intentional: it prevents child studies from accidentally overwriting a parent's data.
+with your variables or you may get confusing results. Variables defined with @racket[defvar] are
+scoped to the study that sets them. If you @racket[set!] a @racket[defvar] variable inside a child
+study, the parent will not see that value --- the variable will still be @racket[undefined?] at the
+parent level. This scoping is intentional: it prevents child studies from accidentally overwriting a
+parent's data.
 
 When you @emph{do} need to share a variable between parent and child, use @racket[defvar*] together
 with @racket[with-namespace]. The @racket[with-namespace] form prefixes the variable's internal
@@ -294,10 +295,9 @@ in the parent's transition graph using the @racket[[step-id child-study]] syntax
 because the child study's structure is fixed at the time your code is loaded.
 
 But sometimes you don't know in advance how many steps you need --- the structure depends on a
-value the participant provides at runtime. In these cases, you need to pass a @emph{procedure} that
-creates the study when the step is reached, rather than a pre-built study value. The
-@racket[make-step/study] function handles both cases: it accepts either a study directly or a
-procedure that returns one.
+value the participant provides at runtime. In these cases, you can use @racket[defstep/study] with
+a @emph{procedure} that creates the study when the step is reached, rather than a pre-built study
+value.
 
 This example lets a participant choose how many questions they want to answer. The number of
 question pages shown will match what they enter:
@@ -351,13 +351,16 @@ question pages shown will match what they enter:
   (for/study ([i (in-range n)])
     (question i)))
 
+(defstep/study questions
+  #:study make-questions)
+
 (defstep (end)
   @md{# Complete
 
       You answered @number->string[n] questions.})
 
 (defstudy dynamic-example
-  [start --> [questions (make-step/study 'questions make-questions)] --> end]
+  [start --> questions --> end]
   [end --> end])
 }|}
 
@@ -383,12 +386,15 @@ with @racket[form+submit]. The @racket[range/inclusive] validator ensures the va
 Each iteration creates one step by calling @racket[(question i)] where @racket[i] goes from
 @racket[0] to @racket[(sub1 n)].}
 
-@item{In the @racket[defstudy] transition graph, the syntax @racket[[questions (make-step/study
-'questions make-questions)]] embeds the dynamically generated study. The @racket[make-step/study]
-call takes a step identifier and a procedure that returns a study. Because @racket[make-questions]
-is a procedure (not a study value), it gets called when the step is reached --- after @racket[n] has
-been set. This timing is essential: if you passed the study directly, it would be created before the
-participant had a chance to set @racket[n].}
+@item{@racket[defstep/study] defines @racket[questions] as a step that runs the child study produced
+by @racket[make-questions]. Because @racket[make-questions] is a procedure (not a study value), it
+gets called when the step is reached --- after @racket[n] has been set. This timing is essential: if
+you passed the study directly, it would be created before the participant had a chance to set
+@racket[n].}
+
+@item{In the @racket[defstudy] transition graph, @racket[questions] is used like any other step.
+The @racket[defstep/study] form has already wrapped the child study, so the transition graph stays
+clean.}
 
 ]
 
@@ -408,7 +414,7 @@ returns control to the parent study.}
 variables visible to child studies.}
 
 @item{@bold{Dynamic generation:} Use @racket[for/study] to generate studies with a variable number
-of steps, and @racket[make-step/study] to embed them in your transition graph.}
+of steps, and @racket[defstep/study] to embed them in your transition graph.}
 
 ]
 
@@ -425,7 +431,7 @@ example of dynamic study generation}
 
 @item{Consult the @secref["Conscript_Cookbook"] for more recipes and patterns}
 
-@item{Review the @secref["Conscript_Reference"] for detailed documentation of @racket[make-step/study],
+@item{Review the @secref["Conscript_Reference"] for detailed documentation of @racket[defstep/study],
 @racket[defvar*], and related forms}
 
 ]
