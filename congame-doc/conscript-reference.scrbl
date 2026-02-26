@@ -227,6 +227,24 @@ you call it from the “top level” of a study or module you will get an error.
 
 }
 
+@defproc[(request-push-permissions-button [label string?]) xexpr?]{
+
+Returns a representation of an HTML @html-tag{button} element that, when clicked, prompts the
+participant to grant push notification permissions. This is needed because some browsers require
+the user to have interacted with the page before it can request push notification permissions.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (start)
+  @md{# Welcome
+
+      @request-push-permissions-button{Enable Push Notifications}
+
+      @button{Continue}})
+}|
+
+}
+
 @defform[(with-bot step-expr bot-expr)]{
   Wraps @racket[step-expr] so that its default bot is @racket[bot-expr].
 
