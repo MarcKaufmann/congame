@@ -116,13 +116,16 @@ DrRacket assumes the server you want is at @tt{http://localhost:5100} --- that i
 running on the Docker container on your computer. No need to change it, so click the @onscreen{Log
 in} button. Log in using the built-in user @tt{admin@"@"congame.local} with password @tt{admin}.
 
-@margin-note{@mark{If you later want DrRacket to send uploads to a different server, too bad.}}
+@margin-note{If you later need to change the study name associated with a file, use the
+@onscreen{Racket} → @onscreen{Conscript: Reset Study} menu item. To switch to a different server,
+run @exec{raco congame logout} in a terminal (see @secref["raco-congame"]); the next time you
+upload, DrRacket will prompt you for a new server address and login.}
 
 Once the login is complete, DrRacket will ask you the name of your study:
 
 @margin-note{DrRacket keeps a cache matching your @filepath{.rkt} filenames to study names. You
 won’t have to re-enter the study name more than once for each file you upload --- until you close
-and reopen DrRacket.}
+and reopen DrRacket, or use @onscreen{Racket} → @onscreen{Conscript: Reset Study} to clear it.}
 
 @screenshot{intro-drr-studyname.png}
 

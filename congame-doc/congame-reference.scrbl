@@ -17,6 +17,7 @@
                      koyo/haml
                      web-server/http
                      (only-in xml xexpr?))
+          scribble/bnf
           scribble/examples)
 
 @(require "doc-util.rkt")
@@ -209,6 +210,11 @@ define a @racketidfont{score} variable.
 
 @inline-note{Always use @racket[with-namespace] when using @racket[defvar*] or
 @racket[defvar*/instance] to prevent accidental variable overwrites by child studies.}
+
+The namespace string should be unique to your project. Good choices include reverse-domain names
+(e.g. @racket[xyz.mylab.experiment-study]) or a combination of your project name, study code, and
+filename (e.g. @racket[my-project.EXP01.survey]). The exact format doesn't matter as long as it
+uniquely identifies your study within the server.
 
 }
 
@@ -640,6 +646,12 @@ places.
       (:p "...")
       (button void "Next"))))
 ]
+
+The study produced by @racket[for/study] is a substudy (child study). This means that any variables
+defined with @racket[defvar] and @racket[set!] inside the generated steps are scoped to the
+substudy --- they will be @racket[undefined?] when accessed from the parent study. To share
+variables between the parent and the substudy, use @racket[defvar*] together with
+@racket[with-namespace]. See @secref["pctut-sharing-data"] for details.
 
 }
 
@@ -1423,3 +1435,62 @@ the @racket[#:bot] clause of @racket[formular]. Common bot actions include @rack
 
   Raises an exception if called outside of a step.
 }
+
+@;===============================================
+
+@section[#:tag "raco-congame"]{Using @exec{raco congame}}
+
+The @exec{raco congame} command provides tools for uploading and testing studies from the command
+line. DrRacket's @onscreen{Upload Study} button uses the same upload mechanism under the hood, and
+the login credentials are shared between the CLI and DrRacket.
+
+@commandline{raco congame @nonterm{command} @nonterm{option} ... @nonterm{arg} ...}
+
+@subsection{@exec{raco congame login}}
+
+@commandline{raco congame login}
+
+Logs in to a Congame server. The command prompts for a server URL, defaulting to
+@tt{http://127.0.0.1:5100} (i.e., the local Docker container). It then opens a browser window
+where you authenticate with the server. Once authentication is complete, your credentials are saved
+and used for future uploads --- both via @exec{raco congame upload} and via DrRacket's
+@onscreen{Upload Study} button.
+
+@subsection{@exec{raco congame logout}}
+
+@commandline{raco congame logout}
+
+Clears stored login credentials. This is useful when you need to switch to a different server ---
+for example, from a local development server to a production server. After logging out, the next
+upload (whether from the CLI or from DrRacket) will prompt you to log in again with a new server
+address.
+
+@subsection{@exec{raco congame upload}}
+
+@commandline{raco congame upload @nonterm{study-id} @nonterm{path}}
+
+Uploads the study at @nonterm{path} to the server you are currently logged in to. The
+@nonterm{study-id} should match the identifier used in your @racket[defstudy] expression.
+
+The command packages the study file and any of its dependencies into an archive and sends it to the
+server. On success, it opens a browser to the study's admin page. If you are not logged in, it will
+prompt you to log in first.
+
+@subsection{@exec{raco congame simulate}}
+
+@commandline{raco congame simulate @nonterm{slug}}
+
+Opens multiple browser sessions enrolled in the study @tech{instance} identified by @nonterm{slug},
+for testing studies that involve coordination between participants.
+
+The @exec{raco congame simulate} command accepts the following flags:
+
+@itemlist[
+
+@item{@DFlag{host} @nonterm{host} --- the Congame server URL. Defaults to
+@tt{http://127.0.0.1:5100}.}
+
+@item{@Flag{n} @nonterm{num} --- the number of simultaneous browser sessions to open. Must be a
+positive integer. Defaults to @racket[2].}
+
+]

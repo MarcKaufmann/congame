@@ -35,5 +35,8 @@
   (for/study ([i (in-range n)])
     (say-hi i)))
 
+(defstep/study s
+  #:study make-substudy)
+
 (defstudy conscript-for-study-example
-  [start --> [s (make-step/study 's make-substudy)] --> start])
+  [start --> s --> start])
