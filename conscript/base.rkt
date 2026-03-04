@@ -12,6 +12,7 @@
          (prefix-in congame: congame/components/study)
          (except-in congame/components/study button form)
          congame/components/transition-graph
+         (prefix-in marionette: marionette)
          racket/contract/base
          racket/format
          racket/function
@@ -108,7 +109,8 @@
  ;; Congame Runtime
  (all-from-out
   congame/components/bot-maker
-  (submod congame/components/bot actions))
+  (submod congame/components/bot actions)
+  marionette)
  (rename-out
   [bot:current-user-bot? current-user-bot?]
   [congame:current-participant-id current-participant-id]
