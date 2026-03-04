@@ -48,6 +48,7 @@
  unquote
  unquote-splicing
  provide
+ module+
 
  begin begin0 let letrec let*
  if case cond else unless when
@@ -61,7 +62,7 @@
  ;; Racket Runtime
  lambda λ case-lambda identity
  void sleep
- for for/fold for/hash for/list in-range in-inclusive-range in-list in-indexed
+ for for/fold for/hash for/hasheq for/list in-range in-inclusive-range in-list in-indexed
  for* for*/fold for*/hash for*/list
  for/and for/or for/sum for/product
  for*/and for*/or for*/sum for*/product
@@ -98,6 +99,7 @@
  box? box set-box! unbox
 
  exn:fail? exn-message
+ raise-argument-error
 
 
  ;; Congame Syntax
