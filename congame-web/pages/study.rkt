@@ -128,6 +128,11 @@
             (lambda ()
               (run-study s req)))])]
 
+    [(and (user-has-role? (current-user) 'bot)
+          (lookup-study-instance/by-slug db slug))
+     => (lambda (i)
+          ((enroll db i) req))]
+
     [else
      (next-dispatcher)]))
 
