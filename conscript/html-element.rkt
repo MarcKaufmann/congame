@@ -46,6 +46,7 @@
   [img (#:alt #:src)]
   [label]
   [li]
+  [meta]
   [ol]
   [output]
   [p]
