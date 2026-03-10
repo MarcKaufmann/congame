@@ -177,11 +177,11 @@
   (matchmaker wait-for-match))
 
 (defstep (record-score-for-group)
-  (store-my-result-in-group! ‘score score)
+  (store-my-result-in-group! 'score score)
   (skip))
 
 (defstep (get-opponent-score)
-  (define other-score (first (current-group-member-results ‘score)))
+  (define other-score (first (current-group-member-results 'score)))
   (cond
     [other-score
      (set! opponent-score other-score)
