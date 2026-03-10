@@ -7,4 +7,4 @@ Current priorities, in time/importance order:
 - [ ] Basic concepts chapter
 - [ ] Initial round of content for game theory/unit stuff
 - [ ] Initial round of content for bots
-- [ ] (awaiting feedback) deterministic "tiebreaker" function
+- [X] deterministic "tiebreaker" function

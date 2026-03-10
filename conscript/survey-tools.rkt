@@ -8,6 +8,7 @@
          (submod congame/components/study accessors)
          congame/components/resource
          (except-in forms form)
+         file/sha1
          koyo/haml
          racket/format
          racket/list
@@ -212,3 +213,14 @@ SCRIPT
                        ("9"  . "Unemployed")
                        ("10" . "Student")
                        ("11" . "Other")))))
+
+;;; Tiebreakers
+(provide
+ tiebreaker)
+
+(define (tiebreaker pid offset)
+  (define start (modulo offset 60))
+  (define hex
+    (bytes->hex-string
+     (sha256-bytes (string->bytes/utf-8 (~a pid)))))
+  (string->number (substring hex start (+ start 5)) 16))

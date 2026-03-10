@@ -441,11 +441,13 @@ with a bot.}
   (cond
     [other-score
      (set! opponent-score other-score)
-     ; Determine winner
+     ; Determine winner using deterministic tiebreaker
+     (define opponent-pid (first (current-group-members)))
      (set! did-win?
-           (or (and (= score opponent-score)
-                    (> (random 2) 0))
-               (> score opponent-score)))
+           (or (> score opponent-score)
+               (and (= score opponent-score)
+                    (> (tiebreaker (current-participant-id) score)
+                       (tiebreaker opponent-pid score)))))
      (skip)]
     [else
      @md{# Please wait
@@ -471,8 +473,12 @@ If the partner's score is available, we:
 
 @item{Store it in @racket[opponent-score]}
 
-@item{Determine the winner: @racket[did-win?] is @racket[#t] if either (a) scores are tied and
-@racket[(random 2)] returns @racket[1], or (b) our score is higher than the opponent's score}
+@item{Determine the winner: @racket[did-win?] is @racket[#t] if our score is higher, or if scores
+are tied and our @racket[tiebreaker] value is higher than the opponent's. We get the opponent's
+participant ID using @racket[current-group-members] and compute both @racket[tiebreaker] values
+locally. Because @racket[tiebreaker] is deterministic (based on each participant's ID), both
+participants will always agree on who won --- unlike @racket[(random 2)], which each participant
+would evaluate independently and could produce conflicting results.}
 
 @item{Skip to the next step}
 ]

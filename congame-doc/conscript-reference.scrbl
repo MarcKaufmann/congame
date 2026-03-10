@@ -1207,6 +1207,33 @@ clicked to reveal. When @racket[_hidden?] is @racket[#f], the content starts vis
 
 }
 
+@defproc[(tiebreaker [pid any/c] [offset exact-nonnegative-integer?]) exact-nonnegative-integer?]{
+
+Returns a deterministic non-negative integer derived from the SHA-256 hash of @racket[_pid]. The
+result is computed by converting @racket[_pid] to a string, hashing it, and extracting 5 hexadecimal
+digits (20 bits) starting at position @racket[(modulo _offset 60)] in the hex string.
+
+This is useful for breaking ties between matched participants without using @racket[random]. Because
+@racket[random] is evaluated independently by each participant, both participants in a tie could
+independently "win" the tiebreak. Using @racket[tiebreaker] with each participant's ID produces
+deterministic values that both sides can compare consistently:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(define opponent-pid (first (current-group-members)))
+
+(define did-win?
+  (or (> my-score opponent-score)
+      (and (= my-score opponent-score)
+           (> (tiebreaker (current-participant-id) my-score)
+              (tiebreaker opponent-pid my-score)))))
+}|
+
+Different values of @racket[_offset] produce different extractions from the same hash, allowing
+multiple independent tiebreakers from a single ID if needed.
+
+}
+
 
 @;===============================================
 
