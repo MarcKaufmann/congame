@@ -185,11 +185,13 @@
   (cond
     [other-score
      (set! opponent-score other-score)
-     ; Determine winner
+     ; Determine winner using deterministic tiebreaker
+     (define opponent-pid (first (current-group-members)))
      (set! did-win?
-           (or (and (= score opponent-score)
-                    (> (random 2) 0))
-               (> score opponent-score)))     
+           (or (> score opponent-score)
+               (and (= score opponent-score)
+                    (> (tiebreaker (current-participant-id) score)
+                       (tiebreaker opponent-pid score)))))
      (skip)]
     [else
      @md{# Please wait
