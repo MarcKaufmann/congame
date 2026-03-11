@@ -1012,11 +1012,11 @@ Returns a string representing @racket[_n] to two decimal places and prefixed wit
 @defproc[(round-to-places [num real?] [p real?]) real?]{
 
 Returns @racket[num] rounded to @racket[p] decimal places, resolving ties in favor of an even
-number. 
+number.
 
 If @racket[p] is not an exact integer, it will be rounded to an exact integer to determine the
 number of decimal places for rounding. If @racket[p] is zero, the result is the same as
-@racket[(round num)]. If it is less than zero, the result will be zero. 
+@racket[(round num)]. If it is less than zero, the result will be zero.
 
 @examples[#:eval e
 
@@ -1029,7 +1029,7 @@ number of decimal places for rounding. If @racket[p] is zero, the result is the 
 
 }
 
-@defthing[diceroll-js xexpr?]{
+@defproc[(make-diceroll-js) xexpr?]{
 
 An X-expression containing a @tt{<script>} element that enables dice roll functionality.
 
@@ -1043,7 +1043,7 @@ a random number from 1 to 6 is generated and displayed in the output element.
 (defstep (roll-dice)
   @md{# Roll the Dice
 
-      @diceroll-js
+      @(make-diceroll-js)
 
       @div[#:class "diceroll"]{
         @a[#:class "button" #:href ""]{Roll}
@@ -1354,7 +1354,7 @@ returned.
 
 }
 
-@defproc[(current-group-member-results [lookup-key any/c] 
+@defproc[(current-group-member-results [lookup-key any/c]
                                        [#:include-ids? ids? #f]
                                        [#:include-self? include-self? #f])
          (or/c (listof (cons/c id/c any/c))
@@ -1374,7 +1374,7 @@ values.
 By default, current participant’s own result is @bold{not} included in the returned list, but if
 @racket[include-self?] is not @racket[#f] then the returned list will include a response recorded
 by the current participant under @racket[lookup-key], if one exists, or @racket[#f] if it does not
-exist. 
+exist.
 
 As an example, assume the current participant has an ID of @racket[100] and is paired with
 participant @racket[199]. If the current participant has recorded a response of @racket["no"] under
@@ -1387,15 +1387,15 @@ key:
 
 (current-group-member-results 'has-eaten #:include-ids? #t) (code:comment @#,elem{→ '((199 . #f))})
 (current-group-member-results 'has-eaten #:include-self? #t) (code:comment @#,elem{→ '("no" #f)})
-(current-group-member-results 'has-eaten 
+(current-group-member-results 'has-eaten
                               #:include-self? #t
                               #:include-ids? #t) (code:comment @#,tt{→ '((100 . "no") (199 . #f))})
 
 ]
 
-}  
+}
 
-@defproc[(current-group-results-count [lookup-key any/c] 
+@defproc[(current-group-results-count [lookup-key any/c]
                                       [#:include-self? include-self #f])
          exact-nonnegative-integer?]{
 
@@ -1405,7 +1405,7 @@ If the current participant is not a member of a group, the result will be @racke
 
 By default, current participant’s own result is @bold{not} counted, but if @racket[include-self?] is
 not @racket[#f] then the count will reflect any responses recorded by the current participant under
-@racket[lookup-key], if any. 
+@racket[lookup-key], if any.
 
 }
 

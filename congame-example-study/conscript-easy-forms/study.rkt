@@ -322,7 +322,7 @@
 }})
 
 (defstep (diceroll)
-  @md{@diceroll-js
+  @md{@(make-diceroll-js)
       @style{
         .diceroll > .button {
           width: 5rem;

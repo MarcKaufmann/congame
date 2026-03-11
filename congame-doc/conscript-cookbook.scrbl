@@ -182,15 +182,15 @@ procedure, and returns an @X-expression .}
 (define instructions-treatment
   @md*{You are in the **treatment group**.
 
-    You will complete 2 simple arithmetic tasks. After finishing, you will be matched 
-    with another participant in the treatment group. Your payment will depend on both 
+    You will complete 2 simple arithmetic tasks. After finishing, you will be matched
+    with another participant in the treatment group. Your payment will depend on both
     your scores:
 
     - **Winner** (higher score): $1 + $2.40 = $3.40
     - **Loser** (lower score): $1
     - **Tie**: 50-50 chance of winning
 
-    **Important:** After you complete the tasks, you may need to wait briefly while 
+    **Important:** After you complete the tasks, you may need to wait briefly while
     we match you with another participant. Please be patient and wait for another
     participant to complete their tasks so the two of you can be matched.})
 
@@ -273,7 +273,7 @@ procedure, and returns an @X-expression .}
     Your payment is:
     - $1.00 base
     - @(~$ (* score 0.20)) for @(~a score) correct task(s)
-    
+
     **Total: @(~$ payment)**
 
     Thank you for participating!})
@@ -313,7 +313,7 @@ procedure, and returns an @X-expression .}
      (set! did-win?
            (or (and (= score opponent-score)
                     (> (random 2) 0))
-               (> score opponent-score)))     
+               (> score opponent-score)))
      (skip)]
     [else
      @md{# Please wait
@@ -324,18 +324,18 @@ procedure, and returns an @X-expression .}
 
 (defstep (treatment-results)
   (set! payment (+ 1.0 (if did-win? 2.4 0)))
-  
+
   @md{# Match Results
 
     **Your score:** @(~a score) out of 2
     **Opponent's score:** @(~a opponent-score) out of 2
-    
+
     **You @(if did-win? "🎉 WON!" "lost this round.")**
-    
+
     Your payment is:
     - $1.00 base
     - @(if did-win? "$2.40 for winning" "$0.00 (you lost)")
-    
+
     **Total: @(~$ payment)**
 
     Thank you for participating!})
@@ -353,9 +353,9 @@ procedure, and returns an @X-expression .}
    --> show-score
    --> ,(lambda ()
           (if is-treatment? 'pair-with-someone 'control-payment))]
-  
+
   [control-payment --> control-payment]
-  
+
   [pair-with-someone
    --> record-score-for-group
    --> get-opponent-score
@@ -1255,7 +1255,7 @@ Example with some custom CSS for the button:
 (require conscript/survey-tools)
 
 (defstep (diceroll)
-  @md{@diceroll-js
+  @md{@(make-diceroll-js)
       @style{
         .diceroll > .button {
           width: 5rem;
