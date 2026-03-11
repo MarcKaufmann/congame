@@ -2,9 +2,9 @@
 
 (require csv-writing
          db
-         (submod congame/components/bot actions)
          congame-web/components/auth
          congame-web/components/bot-set
+         congame-web/components/csv-export-template
          congame-web/components/replication
          congame-web/components/tag
          (prefix-in tpl: congame-web/components/template)
@@ -12,6 +12,7 @@
          congame-web/components/user
          congame-web/pages/render
          congame-web/studies/all ;; required for its effects
+         (submod congame/components/bot actions)
          congame/components/dsl
          congame/components/export
          congame/components/instance-link
@@ -20,9 +21,10 @@
          congame/components/transition-graph
          deta
          file/zip
+         (except-in forms form)
+         (prefix-in forms: forms)
          gregor
          koyo
-         (except-in forms form)
          net/url
          racket/contract
          racket/file
@@ -680,7 +682,40 @@
                   (form* ([paths (ensure binding/list (list-of binding/text))])
                     (for/list ([path (in-list paths)])
                       (call-with-input-string path read))))
-                (let loop ([req req])
+                (define (do-export tpl)
+                  (define-values (paths names)
+                    (for/lists (paths names) ;; noqa
+                               ([pair (in-list (csv-export-template-fields tpl))])
+                      (match-define (list path name) pair)
+                      (values (call-with-input-string path read) name)))
+                  (response/output
+                   #:mime-type #"application/csv"
+                   #:headers (list (header #"Content-Disposition" #"attachment; filename=data.csv"))
+                   (lambda (out)
+                     (define vars-by-participant
+                       (for/fold ([vars-by-participant (hasheqv)])
+                                 ([v (in-list vars)])
+                         (hash-update
+                          #;ht vars-by-participant
+                          #;key (study-var-participant-id v)
+                          #;updater
+                          (lambda (participant-vars)
+                            (define id (study-var-id v))
+                            (define stack (study-var-stack v))
+                            (define path (cons stack id))
+                            (hash-set participant-vars path v))
+                          #;failure-result hash)))
+                     (display-table
+                      (list*
+                       (cons 'pid names)
+                       (for/list ([(pid participant-vars) (in-hash vars-by-participant)])
+                         (cons
+                          pid
+                          (for/list ([path (in-list paths)])
+                            (define maybe-var (hash-ref participant-vars path #f))
+                            (and maybe-var (~s (study-var-value/deserialized maybe-var)))))))
+                      out))))
+                (let outer-loop ([req req])
                   (match (form-run
                           #:combine (λ (_k v1 v2)
                                       (if (pair? v1)
@@ -688,48 +723,99 @@
                                           (list v1 v2)))
                           csv-export-form req)
                     [`(passed ,paths ,_)
-                     (response/output
-                      #:mime-type #"application/csv"
-                      #:headers (list (header #"Content-Disposition" #"attachment; filename=data.csv"))
-                      (lambda (out)
-                        (define vars-by-participant
-                          (for/fold ([vars-by-participant (hasheqv)])
-                                    ([v (in-list vars)])
-                            (hash-update
-                             #;ht vars-by-participant
-                             #;key (study-var-participant-id v)
-                             #;updater
-                             (lambda (participant-vars)
-                               (define id (study-var-id v))
-                               (define stack (study-var-stack v))
-                               (define path (cons stack id))
-                               (hash-set participant-vars path v))
-                             #;failure-result hash)))
-                        (display-table
-                         (list*
+                     (let inner-loop ([req req])
+                       (define template-form
+                         (forms:form
+                          list
                           (cons
-                           'pid
-                           (for/list ([path (in-list paths)])
-                             (match-define (cons stack id) path)
-                             (format "~s:~s" stack id)))
-                          (for/list ([(pid participant-vars) (in-hash vars-by-participant)])
-                            (cons
-                             pid
-                             (for/list ([path (in-list paths)])
-                               (define maybe-var (hash-ref participant-vars path #f))
-                               (and maybe-var (~s (study-var-value/deserialized maybe-var)))))))
-                         out)))]
+                           (cons 'template-name (ensure binding/text (required)))
+                           (for/list ([(_ idx) (in-indexed (in-list paths))])
+                             (cons
+                              (string->symbol (format "path-~a" idx))
+                              (ensure binding/text (required)))))))
+                       (match (form-run template-form req)
+                         [`(passed ,(cons template-name names) ,_)
+                          (define tpl
+                            (with-database-connection [conn db]
+                              (~> (make-csv-export-template
+                                   #:study-instance-id study-instance-id
+                                   #:name template-name
+                                   #:fields (for/list ([p (in-list paths)]
+                                                       [n (in-list names)])
+                                              (list
+                                               (call-with-output-string
+                                                (lambda (out)
+                                                  (write p out)))
+                                               n)))
+                                  (insert-one! conn _))))
+                          (do-export tpl)]
+                         [`(,_ ,_ ,rw)
+                          (tpl:page
+                           (tpl:container
+                            (haml
+                             (:form
+                              ([:action (embed/url inner-loop)]
+                               [:method "POST"])
+                              (:h1 "Export CSV")
+                              (:h2 "Template")
+                              (:label
+                               "Template Name: "
+                               (rw "template-name" (widget-text)))
+                              ,@(rw "template-name" (widget-errors))
+                              (:h2 "Fields")
+                              (:ul
+                               ,@(for/list ([(p idx) (in-indexed (in-list paths))])
+                                   (define field-name
+                                     (format "path-~a" idx))
+                                   (haml
+                                    (:li
+                                     (:label
+                                      (:code (format "~a =>" p))
+                                      (rw field-name (widget-input))
+                                      ,@(rw field-name (widget-errors)))))))
+                              (:button
+                               ([:type "submit"])
+                               "Save & Export")))))]))]
                     [`(,_ ,_ ,rw)
                      (tpl:page
                       (tpl:container
                        (haml
                         (:form
-                         ([:action (embed/url loop)]
+                         ([:action (embed/url outer-loop)]
                           [:method "POST"])
                          (:h1 "Export CSV")
                          (:p
                           (:strong "Note: ")
                           "If you want to export instance variables, consider storing them on the participant.")
+                         (:h2 "Templates")
+                         (:ul
+                          ,@(for/list ([tpl (with-database-connection [conn db]
+                                              (~> (from csv-export-template #:as t)
+                                                  (where (= t.study-instance-id ,study-instance-id))
+                                                  (query-entities conn _)
+                                                  (in-list)))])
+                              (haml
+                               (:li
+                                (csv-export-template-name tpl)
+                                " ("
+                                (:a
+                                 ([:href (embed/url
+                                          (lambda (_req)
+                                            (do-export tpl)))])
+                                 "Export")
+                                " "
+                                'mdash
+                                " "
+                                (:a
+                                 ([:href (embed/url
+                                          (lambda (req) ;; noqa
+                                            (with-database-connection [conn db]
+                                              (delete-one! conn tpl))
+                                            (outer-loop req)))]
+                                  [:onclick "return confirm('Are you sure?')"])
+                                 "Delete")
+                                ")"))))
+                         (:h2 "Fields")
                          (:ul
                           ,@(for/list ([s (in-list sorted-stacks)])
                               (haml
@@ -747,10 +833,12 @@
                                        (widget-checkbox #:attributes `([value ,~value])))
                                      (haml
                                       (:li
-                                       (:label name (rw "paths" widget))))))))))
+                                       (:label
+                                        name
+                                        (rw "paths" widget))))))))))
                          (:button
                           ([:type "submit"])
-                          "Export")))))]))))])
+                          "Create Template")))))]))))])
            "Export CSV"))
          (:h2 "Bot Sets")
          (:h3
