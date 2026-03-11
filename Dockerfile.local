@@ -49,6 +49,8 @@ ADD resources /opt/congame/resources
 ADD tsconfig.json /opt/congame/tsconfig.json
 RUN mkdir -p uploads
 RUN npm install
+ARG CONGAME_WEB_VAPID_PUBLIC_KEY
+ENV CONGAME_WEB_VAPID_PUBLIC_KEY $CONGAME_WEB_VAPID_PUBLIC_KEY
 RUN npm run-script build
 
 ADD ci/setup-catalogs.sh /opt/congame/ci/setup-catalogs.sh

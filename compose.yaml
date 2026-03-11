@@ -3,8 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.local
+      args:
+        CONGAME_WEB_VAPID_PUBLIC_KEY:
     ports:
       - "5100:5100"
+    env_file: .env
     environment:
       CONGAME_DEBUG: "x"
       CONGAME_WEB_HTTP_HOST: "0.0.0.0"
