@@ -727,6 +727,9 @@
                          ([:action (embed/url loop)]
                           [:method "POST"])
                          (:h1 "Export CSV")
+                         (:p
+                          (:strong "Note: ")
+                          "If you want to export instance variables, consider storing them on the participant.")
                          (:ul
                           ,@(for/list ([s (in-list sorted-stacks)])
                               (haml
