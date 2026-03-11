@@ -205,12 +205,19 @@ HELP
 ;; so this only needs to list any resources declared after the module is
 ;; loaded.
 (define (get-module-dependencies path id)
+  (define ns (make-base-empty-namespace))
+  (namespace-attach-module
+   (current-namespace)
+   '(submod conscript/resource private)
+   ns)
   (define mp (make-resolved-module-path path))
+  (hash-clear! registry)
   (with-handlers ([(lambda (e)
                      (regexp-match? #rx"name is not provided" (exn-message e)))
                    (lambda (_)
                      (error 'get-module-dependencies "this study does not provide \"~s\"" id))])
-    (parameterize ([current-track-resources? #t])
+    (parameterize ([current-track-resources? #t]
+                   [current-namespace ns])
       (dynamic-require mp id)))
   (hash-keys registry))
 
