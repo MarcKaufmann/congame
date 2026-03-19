@@ -202,6 +202,7 @@
       racket/string
       racket/vector
       racket/unit
+      studies/real-effort/tasks-conscript
       threading))
   (define (check-module-whitelisted mod-stx)
     (unless (memq (syntax->datum mod-stx) whitelist)
