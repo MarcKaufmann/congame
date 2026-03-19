@@ -137,6 +137,8 @@ participants.
 
 First, make sure the Docker desktop app is installed @emph{and running}.
 
+Copy @filepath{.env.default} to @filepath{.env}.
+
 @margin-note{The @exec{docker compose} terminal commands won’t work unless the Docker app is
 running.}
 
