@@ -25,6 +25,7 @@
     "koyo-doc"
     "marionette-doc"
     "marionette-lib"
+    "math-doc"
     "racket-doc"
     "scribble-lib"
     "threading-lib"
