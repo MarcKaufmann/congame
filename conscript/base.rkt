@@ -465,9 +465,11 @@
 (define (add-css-resource res)
   (make-wrapper
    (lambda (original-handler)
+     (define uri (resource-uri res))
      `(div
        (link
         ([rel "stylesheet"]
          [type "text/css"]
-         [href ,(resource-uri res)]))
+         [href ,uri]
+         [data-move-to-head ,uri]))
        ,(original-handler)))))
