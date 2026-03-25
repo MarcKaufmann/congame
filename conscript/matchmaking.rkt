@@ -10,22 +10,29 @@
  (contract-out
   [make-matchmaker
    (->* [exact-positive-integer?]
-        [(-> buid/c boolean?)]
+        [(-> buid/c boolean?)
+         #:on-group-create (-> buid/c any)]
         procedure?)]
   [get-ready-groups (-> (hash/c buid/c (listof id/c)))]
   [get-current-group (-> (or/c #f buid/c))]
   [get-pending-groups (-> (hash/c buid/c (listof id/c)))]
   [reset-current-group (-> void?)]
-
-  [current-group-members (->* () (#:include-self? any/c) (or/c #f (listof id/c)))]
-
   [store-my-result-in-group! (-> any/c any/c void?)]
   [get-my-result-in-group (-> any/c any/c)]
-  [current-group-results-count (->* (any/c) (#:include-self? any/c) exact-nonnegative-integer?)]
-  [current-group-member-results (->* (any/c) (#:include-ids? any/c
-                                              #:include-self? any/c)
-                                     (or/c (listof (cons/c id/c any/c))
-                                           (listof any/c)))]))
+  [current-group-members
+   (->* []
+        [#:include-self? any/c]
+        (or/c #f (listof id/c)))]
+  [current-group-results-count
+   (->* [any/c]
+        [#:include-self? any/c]
+        exact-nonnegative-integer?)]
+  [current-group-member-results
+   (->* [any/c]
+        [#:include-ids? any/c
+         #:include-self? any/c]
+        (or/c (listof (cons/c id/c any/c))
+              (listof any/c)))]))
 
 ;; These are study-scoped in order for the parent and the child to
 ;; be able to do their own matchmaking. If a parent wants to share
@@ -60,7 +67,11 @@
              (filter (λ (v) (not (equal? v (current-participant-id)))) all-group-members))))
   (or others null))
 
-(define ((make-matchmaker group-size [group-ok? values]) page-proc)
+(define ((make-matchmaker
+          group-size
+          [group-ok? values]
+          #:on-group-create [on-group-create void])
+         page-proc)
   (if (hash-has-key? (get-ready-groups) current-group)
       (skip)
       (call-with-study-transaction
@@ -92,7 +103,8 @@
                                   #;key current-group
                                   #;updater (lambda (pending-group)
                                               (cons (current-participant-id) pending-group))
-                                  #;failure-result null))])
+                                  #;failure-result null))
+            (on-group-create current-group)])
          (page-proc)))))
 
 ;; group-id -> (listof participant-id)
