@@ -181,7 +181,7 @@
   (skip))
 
 (defstep (wait-for-opponent-score)
-  (define results (current-group-member-results ‘score))
+  (define results (current-group-member-results 'score))
   (if (and (not (null? results)) (first results))
       (skip)
       @md{# Please wait
@@ -191,7 +191,7 @@
         @refresh-every[2]}))
 
 (defstep (get-opponent-score)
-  (set! opponent-score (first (current-group-member-results ‘score)))
+  (set! opponent-score (first (current-group-member-results 'score)))
   ; Determine winner using deterministic tiebreaker
   (define opponent-pid (first (current-group-members)))
   (set! did-win?

@@ -305,7 +305,7 @@ procedure, and returns an @X-expression .}
   (skip))
 
 (defstep (wait-for-opponent-score)
-  (define results (current-group-member-results ‘score))
+  (define results (current-group-member-results 'score))
   (if (and (not (null? results)) (first results))
       (skip)
       @md{# Please wait
@@ -315,7 +315,7 @@ procedure, and returns an @X-expression .}
         @refresh-every[2]}))
 
 (defstep (get-opponent-score)
-  (set! opponent-score (first (current-group-member-results ‘score)))
+  (set! opponent-score (first (current-group-member-results 'score)))
   ; Determine winner
   (set! did-win?
         (or (and (= score opponent-score)
