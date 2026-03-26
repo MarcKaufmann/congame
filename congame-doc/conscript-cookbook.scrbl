@@ -304,23 +304,24 @@ procedure, and returns an @X-expression .}
   (store-my-result-in-group! 'score score)
   (skip))
 
+(defstep (wait-for-opponent-score)
+  (define results (current-group-member-results ‘score))
+  (if (and (not (null? results)) (first results))
+      (skip)
+      @md{# Please wait
+
+        Waiting to learn your opponent’s score…
+
+        @refresh-every[2]}))
+
 (defstep (get-opponent-score)
-  (define other-score (first (current-group-member-results 'score)))
-  (cond
-    [other-score
-     (set! opponent-score other-score)
-     ; Determine winner
-     (set! did-win?
-           (or (and (= score opponent-score)
-                    (> (random 2) 0))
-               (> score opponent-score)))
-     (skip)]
-    [else
-     @md{# Please wait
-
-       Waiting to learn your opponent’s score…
-
-       @refresh-every[2]}]))
+  (set! opponent-score (first (current-group-member-results ‘score)))
+  ; Determine winner
+  (set! did-win?
+        (or (and (= score opponent-score)
+                 (> (random 2) 0))
+            (> score opponent-score)))
+  (skip))
 
 (defstep (treatment-results)
   (set! payment (+ 1.0 (if did-win? 2.4 0)))
@@ -358,6 +359,7 @@ procedure, and returns an @X-expression .}
 
   [pair-with-someone
    --> record-score-for-group
+   --> wait-for-opponent-score
    --> get-opponent-score
    --> treatment-results]
   [treatment-results --> treatment-results])

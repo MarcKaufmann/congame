@@ -436,25 +436,26 @@ with a bot.}
   (store-my-result-in-group! 'score score)
   (skip))
 
+(defstep (wait-for-opponent-score)
+  (define results (current-group-member-results 'score))
+  (if (and (not (null? results)) (first results))
+      (skip)
+      @md{# Please wait
+
+        Waiting to learn your opponent's score…
+
+        @refresh-every[2]}))
+
 (defstep (get-opponent-score)
-  (define other-score (first (current-group-member-results 'score)))
-  (cond
-    [other-score
-     (set! opponent-score other-score)
-     ; Determine winner using deterministic tiebreaker
-     (define opponent-pid (first (current-group-members)))
-     (set! did-win?
-           (or (> score opponent-score)
-               (and (= score opponent-score)
-                    (> (tiebreaker (current-participant-id) score)
-                       (tiebreaker opponent-pid score)))))
-     (skip)]
-    [else
-     @md{# Please wait
-
-       Waiting to learn your opponent's score…
-
-       @refresh-every[2]}]))
+  (set! opponent-score (first (current-group-member-results 'score)))
+  ; Determine winner using deterministic tiebreaker
+  (define opponent-pid (first (current-group-members)))
+  (set! did-win?
+        (or (> score opponent-score)
+            (and (= score opponent-score)
+                 (> (tiebreaker (current-participant-id) score)
+                    (tiebreaker opponent-pid score)))))
+  (skip))
 }|
 
 These steps handle the coordination between matched participants:
@@ -464,27 +465,20 @@ participant's score in a way that other participants in the same group can acces
 stores results in a shared data structure (similar to how @racket[defvar/instance] creates shared
 variables). The step immediately skips to the next one.
 
-@bold{@tt{get-opponent-score}:} Retrieves scores from all other group members using
-@racket[current-group-member-results]. Since we're in a group of 2, this returns a list with one
-element: our partner's score.
+@bold{@tt{wait-for-opponent-score}:} Polls until the opponent's score is available. We check that
+@racket[current-group-member-results] returns a non-empty list with a non-@racket[#f] value before
+proceeding. If we called @racket[first] directly on the result list without checking, it would crash
+when the list is empty (which can happen due to a race condition during group formation). If the
+score isn't available yet, we display a waiting page that refreshes every 2 seconds.
 
-If the partner's score is available, we:
-@itemlist[#:style 'ordered
-
-@item{Store it in @racket[opponent-score]}
-
-@item{Determine the winner: @racket[did-win?] is @racket[#t] if our score is higher, or if scores
-are tied and our @racket[tiebreaker] value is higher than the opponent's. We get the opponent's
-participant ID using @racket[current-group-members] and compute both @racket[tiebreaker] values
-locally. Because @racket[tiebreaker] is deterministic (based on each participant's ID), both
-participants will always agree on who won --- unlike @racket[(random 2)], which each participant
-would evaluate independently and could produce conflicting results.}
-
-@item{Skip to the next step}
-]
-
-If the partner's score isn't available yet (because they haven't finished their tasks), we display a
-waiting page that refreshes every 2 seconds.
+@bold{@tt{get-opponent-score}:} Runs after @racket[wait-for-opponent-score] has confirmed the
+opponent's score is available. Retrieves the score, then determines the winner: @racket[did-win?]
+is @racket[#t] if our score is higher, or if scores are tied and our @racket[tiebreaker] value is
+higher than the opponent's. We get the opponent's participant ID using
+@racket[current-group-members] and compute both @racket[tiebreaker] values locally. Because
+@racket[tiebreaker] is deterministic (based on each participant's ID), both participants will always
+agree on who won --- unlike @racket[(random 2)], which each participant would evaluate independently
+and could produce conflicting results.
 
 @subsection{Displaying Treatment Results}
 
@@ -534,6 +528,7 @@ The @racket[defstudy] form ties all the steps together into the study's transiti
 
   [pair-with-someone
    --> record-score-for-group
+   --> wait-for-opponent-score
    --> get-opponent-score
    --> treatment-results]
   [treatment-results --> treatment-results])
@@ -553,9 +548,9 @@ initialization, both tasks, and score display. After @racket[show-score], an inl
 terminal step (participants stay on this page once they reach it).
 
 @bold{Treatment branch:} Proceeds through the matchmaking and result steps
-(@racket[pair-with-someone] → @racket[record-score-for-group] → @racket[get-opponent-score] →
-@racket[treatment-results]), with @racket[treatment-results] also transitioning to itself as a
-terminal step.
+(@racket[pair-with-someone] → @racket[record-score-for-group] → @racket[wait-for-opponent-score] →
+@racket[get-opponent-score] → @racket[treatment-results]), with @racket[treatment-results] also
+transitioning to itself as a terminal step.
 
 @;===============================================
 
