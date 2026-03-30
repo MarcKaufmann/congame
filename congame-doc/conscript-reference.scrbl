@@ -199,6 +199,9 @@ below. This prevents unsafe code from running on Congame servers.
              #:unless (equal? modname 'data/monocle))
     @item{@racketmodname[#,modname]}))
 
+If you need to import a module that is not on this list, see
+@secref["conscript-with-require"].
+
 }
 
 @defproc[(button [action-proc (-> any/c) void]
@@ -467,6 +470,42 @@ flux
 @; @tktk{Run @racket[_study] in your browser.}
 
 @; }
+
+@;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+@subsection[#:tag "conscript-with-require"]{conscript/with-require}
+
+@defmodulelang[conscript/with-require #:no-declare]
+
+This language variant provides all the same bindings as @code{#lang conscript} but replaces the
+restricted @racket[require] form (see @secref["Core"]) with the standard Racket @|racketrequire|. This
+means you can import @emph{any} installed Racket module, not just the ones on the whitelist. The
+@racket[only-in], @racket[except-in], and @racket[prefix-in] forms are also available for filtering
+imports.
+
+@inline-note[#:type 'warning]{Only accounts with the @bold{admin} or @bold{researcher} role can
+upload studies that use @code{#lang conscript/with-require}. Regular accounts will get an error at
+upload time. This restriction exists because Congame studies run in the same process as the server
+without sandboxing, so unrestricted @|racketrequire| could give a study access to the filesystem,
+database, or network.}
+
+@codeblock[#:keep-lang-line? #t]|{
+#lang conscript/with-require
+
+(require racket/match
+         racket/hash)
+
+(defstep (start)
+  @md{# Hello
+
+      @button{Continue}})
+
+(defstudy my-study
+  [start --> start])
+}|
+
+All other sections in this reference apply equally to both @code{#lang conscript} and
+@code{#lang conscript/with-require}, since they share the same base bindings.
 
 @;===============================================
 
