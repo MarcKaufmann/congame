@@ -9,9 +9,10 @@
  payoff-matrix/sym)
 
 (define (outcomes game-form action-profile)
-  (hash-ref game-form action-profile))
+  (define outcomes1 (hash-ref game-form 'outcomes1))
+  (hash-ref outcomes1 action-profile))
+
 ; Helper functions to display games
-; TODO: Refactor for general 2x2 games
 
 (define (outcome-matrix game-form)
   (define actions1

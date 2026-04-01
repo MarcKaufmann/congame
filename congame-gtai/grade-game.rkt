@@ -1,8 +1,5 @@
 #lang conscript
 
-;; TODO: Test that form0 works properly after fixing the study. The
-;; display-result procedure is busted.
-
 (require conscript/admin
          conscript/form0
          conscript/game-theory
@@ -15,22 +12,14 @@
 (provide
  grade-game-lecture)
 
-(with-namespace xyz.trichotomy.congame.congame-gtai.opera-football
-  (defvar*/instance choices)
-  (defvar*/instance choices/rounds))
-
-(defbox choices)
-(defbox choices/rounds)
-(define-values/invoke-unit game-theory@
-  (import game-theory-vars^)
-  (export game-theory^))
-
 ; Variables
 ; In addition, conscript/game-theory provides
 ; - `choices` as a global instance var.
 ; - `make-choice!` which stores the choice correctly there
 
-(with-namespace xyz.trichotomy.congame.grade-game
+(with-namespace xyz.trichotomy.congame.congame-gtai.grade-game
+  (defvar*/instance choices)
+  (defvar*/instance choices/rounds)
   (defvar*/instance completed-phases)
   (defvar*/instance choice-explanations)
   (defvar*/instance remaining-phases)
@@ -39,7 +28,12 @@
   (defvar*/instance n-answers)
   (defvar* phase)
   (defvar* score))
-(defvar why)
+
+(defbox choices)
+(defbox choices/rounds)
+(define-values/invoke-unit game-theory@
+  (import game-theory-vars^)
+  (export game-theory^))
 
 (define phases
   '(basic selfish angels))
@@ -108,9 +102,18 @@
       (matchmaker match-waiter))))
 
 (defstep (ask-why)
-  (define-values (the-form on-submit)
-    (form+submit
-     [why (ensure binding/text (required))]))
+  (define the-form
+    (form* ([why (ensure binding/text (required))])
+      why))
+  (define (on-submit why)
+    (with-study-transaction
+      (set! choice-explanations
+            ((&opt-hash-ref*
+              phase
+              (current-participant-id)
+              (car (chosen-action-profile)))
+             (if-undefined choice-explanations (hash))
+             why))))
   (define (render rw)
     @div{@make-autofill-meta[
            (hasheq
@@ -162,7 +165,7 @@
 
   (define (display-chosen-action-profiles gf h)
     (define actions
-      (hash-ref gf 'actions null))
+      (hash-ref gf 'actions1 null))
     @`(ul
        ,@(for*/list ([a1 actions]
                      [a2 actions])
@@ -453,7 +456,7 @@
     '(("α" . "α")
       ("β" . "β")))
   (define choice-field
-    (ensure binding/text (required) (one-of (map car choices))))
+    (ensure binding/text (required) (one-of choices)))
   (define-values (the-form on-submit)
     (form+submit
      [selfish-vs-angel choice-field]
