@@ -1,6 +1,6 @@
-# congame
+# Congame
 
-congame is *the best experimental economics software written in Racket*. [zTree](https://www.ztree.com/) and [oTree](https://www.otree.org/) are two common experimental economics platforms. The reason for building congame is the usual: I used oTree for some of my experiments, but found that it lacked some specific features I needed in my experiments:
+Congame is *the best experimental economics software written in Racket*. [zTree](https://www.ztree.com/) and [oTree](https://www.otree.org/) are two common experimental economics platforms. The reason for building congame is the usual: I used oTree for some of my experiments, but found that it lacked some specific features I needed in my experiments:
 
 1. It is tedious and errorprone to have multi-part studies across several days or weeks
 2. It is tedious and errorprone to reuse and compose substudies into larger studies
