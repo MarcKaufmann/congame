@@ -2,8 +2,7 @@
 
 ; Experiment 8 from Johannes
 
-(require conscript/admin
-         conscript/form0
+(require conscript/form0
          conscript/game-theory
          conscript/survey-tools
          data/monocle
@@ -12,7 +11,7 @@
          threading)
 
 (provide
- opera-or-football/no-admin)
+ opera-or-football)
 
 (with-namespace xyz.trichotomy.congame.congame-gtai.opera-football
   (defvar*/instance choices)
@@ -328,7 +327,7 @@
          #:up-layer "new"
          #:up-target ".container"]{Overlay}})
 
-(defstudy opera-or-football/no-admin
+(defstudy opera-or-football
   [intro --> matchmake
          --> register-as-group-participant
          --> wait-for-group-ids
