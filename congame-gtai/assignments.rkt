@@ -228,7 +228,11 @@
       @(if (undefined? ms2) "not yet answered"
            @md*{Your answer: @(~a ms2)})
 
-      @button{Continue}})
+      @(if (assignment-closed?)
+           ""
+           @button[#:to-step-id 'ms-question]{Change your Answers})
+
+      @button{Back to other Problems}})
 
 (defstep ((check-assignment-open? k))
   (if assignment-open? (skip) (skip k)))
@@ -246,7 +250,7 @@
   (skip))
 
 (defstudy ms-study
-  [ms-init --> ms-question --> ms-compute-score --> ms-overview --> [ms-compute-score2 ms-compute-score] --> ,(lambda () done)]
+  [ms-init --> ms-question --> ms-compute-score --> ms-overview --> ,(lambda () done)]
   [submission-closed --> ms-overview])
 
 (defvar p1t1/q1)
