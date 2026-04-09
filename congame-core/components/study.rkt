@@ -649,7 +649,9 @@ QUERY
                      #:id [id ""]
                      #:enctype [enctype "multipart/form-data"]
                      #:combine [combine-proc (λ (_k _v1 v2) v2)]
-                     #:defaults [defaults (hash)])
+                     #:defaults [defaults (hash)]
+                     #:up-target [up-target ".step"]
+                     #:up-transition [up-transition "none"])
   (when (nested-form-guard)
     (error 'form "cannot nest forms"))
   (match (form-run
@@ -672,7 +674,9 @@ QUERY
                     (response/render this-step)))]
         [:data-widget-id (when-bot id)]
         [:enctype enctype]
-        [:method "POST"])
+        [:method "POST"]
+        [:up-follow up-target]
+        [:up-transition up-transition])
        (parameterize ([nested-form-guard #t])
          (render rw))))]))
 
