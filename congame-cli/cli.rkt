@@ -2,6 +2,7 @@
 
 (require (submod conscript/resource private)
          file/zip
+         file/unzip
          koyo/http
          marionette
          (prefix-in http: net/http-easy)
@@ -116,59 +117,74 @@ HELP
       (upload-study study-id study-path))))
 
 (define (upload-study id path)
-  (match-define (cons server key)
-    (get-key))
-  (define study-directory (path-only (path->complete-path path)))
-  (define tmp-dir (make-temporary-directory))
-  (define tmp-path (make-temporary-file))
-  (delete-file tmp-path)
-  (dynamic-wind
-    (lambda ()
-      (let ([path (if (string? path)
-                      (path->complete-path (string->path path))
-                      path)])
-        (copy-file path (build-path tmp-dir "study.rkt"))
-        (for ([dep (in-list (get-module-dependencies path (string->symbol id)))])
-          (define dep-path (build-path study-directory dep))
-          (define dst-path (build-path tmp-dir dep))
-          ;; Ensure that any intermediate directories required by the
-          ;; dep also exist.
-          (define-values (dst-dir _filename _must-be-dir?)
-            (split-path dst-path))
-          (unless (directory-exists? dst-dir)
-            (make-directory* dst-dir))
-          (if (directory-exists? dep-path)
-              (copy-directory/files dep-path dst-path)
-              (copy-file dep-path dst-path))))
-      (parameterize ([current-directory (path-only tmp-dir)])
-        (zip tmp-path (file-name-from-path tmp-dir))))
-    (lambda ()
-      (call-with-input-file tmp-path
-        (lambda (in)
-          (with-handlers ([exn:fail:api?
-                           (lambda (e)
-                             (match (exn:fail:api-response e)
-                               [(http:response #:status-code 401)
-                                (raise (exn:fail:api:not-authorized
-                                        (exn-message e)
-                                        (current-continuation-marks)
-                                        (exn:fail:api-response e)))]
-                               [_
-                                (raise e)]))])
-            (~> (http:post
-                 #:auth (make-auth key)
-                 #:data (http:buffered-payload
-                         (http:multipart-payload
-                          (http:field-part "study-id" id)
-                          (http:file-part "study-source" in "study.zip" "application/zip")))
-                 (format "~a/api/v1/cli-studies" server))
-                (check-response _ 200)
-                (http:response-json)
-                (hash-ref 'link)
-                (send-url))))))
-    (lambda ()
-      (delete-file tmp-path)
-      (delete-directory/files tmp-dir))))
+  (let/ec esc
+    ;; XXX: When given a zipped study, unzip it to a temporary location
+    ;; then perform a breadth-first search for a study.rkt module and
+    ;; upload that.
+    (when (equal? (path-get-extension path) #".zip")
+      (call-with-unzip path
+        (lambda (unzipped-path)
+          (let loop ([dir-path unzipped-path])
+            (define study.rkt
+              (build-path dir-path "study.rkt"))
+            (if (file-exists? study.rkt)
+                (esc (upload-study id study.rkt))
+                (for ([subdir-path (in-list (directory-list dir-path #:build? #t))]
+                      #:when (directory-exists? subdir-path))
+                  (loop subdir-path)))))))
+    (match-define (cons server key)
+      (get-key))
+    (define study-directory (path-only (path->complete-path path)))
+    (define tmp-dir (make-temporary-directory))
+    (define tmp-path (make-temporary-file))
+    (delete-file tmp-path)
+    (dynamic-wind
+      (lambda ()
+        (let ([path (if (string? path)
+                        (path->complete-path (string->path path))
+                        path)])
+          (copy-file path (build-path tmp-dir "study.rkt"))
+          (for ([dep (in-list (get-module-dependencies path (string->symbol id)))])
+            (define dep-path (build-path study-directory dep))
+            (define dst-path (build-path tmp-dir dep))
+            ;; Ensure that any intermediate directories required by the
+            ;; dep also exist.
+            (define-values (dst-dir _filename _must-be-dir?)
+              (split-path dst-path))
+            (unless (directory-exists? dst-dir)
+              (make-directory* dst-dir))
+            (if (directory-exists? dep-path)
+                (copy-directory/files dep-path dst-path)
+                (copy-file dep-path dst-path))))
+        (parameterize ([current-directory (path-only tmp-dir)])
+          (zip tmp-path (file-name-from-path tmp-dir))))
+      (lambda ()
+        (call-with-input-file tmp-path
+          (lambda (in)
+            (with-handlers ([exn:fail:api?
+                             (lambda (e)
+                               (match (exn:fail:api-response e)
+                                 [(http:response #:status-code 401)
+                                  (raise (exn:fail:api:not-authorized
+                                          (exn-message e)
+                                          (current-continuation-marks)
+                                          (exn:fail:api-response e)))]
+                                 [_
+                                  (raise e)]))])
+              (~> (http:post
+                   #:auth (make-auth key)
+                   #:data (http:buffered-payload
+                           (http:multipart-payload
+                            (http:field-part "study-id" id)
+                            (http:file-part "study-source" in "study.zip" "application/zip")))
+                   (format "~a/api/v1/cli-studies" server))
+                  (check-response _ 200)
+                  (http:response-json)
+                  (hash-ref 'link)
+                  (send-url))))))
+      (lambda ()
+        (delete-file tmp-path)
+        (delete-directory/files tmp-dir)))))
 
 (define ((make-auth k) _ headers params)
   (values (hash-set headers 'authorization k) params))
