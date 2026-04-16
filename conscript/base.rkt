@@ -7,6 +7,7 @@
          (prefix-in bot: (submod congame/components/bot actions))
          (prefix-in bot: congame/components/bot-maker)
          congame/components/for-study
+         (prefix-in congame: congame/components/email)
          (prefix-in congame: congame/components/push-notification)
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
@@ -135,6 +136,7 @@
   [congame:map-study map-study]
   [congame:study? study?]
   [congame:step? step?]
+  [congame:send-email send-email]
   [congame:send-push-notification send-push-notification])
  make-step make-step/study
  put/identity
@@ -192,6 +194,7 @@
       gregor
       hash-view
       koyo/haml
+      koyo/job
       math/distributions
       racket/contract/base
       racket/format

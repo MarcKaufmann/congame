@@ -3,13 +3,15 @@
 (require congame-web/components/user
          koyo/mail
          koyo/url
-         racket/contract
+         racket/contract/base
+         racket/contract/region
          racket/string)
 
 (provide
  (all-from-out koyo/mail)
  mailer-send-password-reset-email
- mailer-send-welcome-email)
+ mailer-send-welcome-email
+ mailer-send-generic-participant-email)
 
 (define/contract (mailer-send-welcome-email m user)
   (-> mailer? user? void?)
@@ -46,6 +48,15 @@
                       'action_url action-url
                       'name (user-username user)
                       'username (user-username user))))
+
+(define/contract (mailer-send-generic-participant-email m user subject content)
+  (-> mailer? user? string? string? void?)
+  (mail-adapter-send-email
+   (mailer-adapter m)
+   #:to (user-username user)
+   #:from (mailer-sender m)
+   #:subject subject
+   #:text-content content))
 
 ;; Local Variables:
 ;; eval: (put 'mailer-merge-common-variables 'racket-indent-function #'begin)
