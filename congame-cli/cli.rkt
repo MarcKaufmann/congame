@@ -1,8 +1,8 @@
 #lang racket/base
 
 (require (submod conscript/resource private)
-         file/zip
          file/unzip
+         file/zip
          koyo/http
          marionette
          (prefix-in http: net/http-easy)
@@ -11,9 +11,11 @@
          racket/async-channel
          racket/cmdline
          racket/file
+         racket/list
          racket/match
          racket/path
          raco/command-name
+         syntax/modresolve
          threading
          web-server/http
          web-server/servlet-dispatch
@@ -217,9 +219,6 @@ HELP
     (lambda ()
       (stop))))
 
-;; XXX: Conscript studies can't import relative modules at the moment,
-;; so this only needs to list any resources declared after the module is
-;; loaded.
 (define (get-module-dependencies path id)
   (define ns (make-base-empty-namespace))
   (namespace-attach-module
@@ -228,14 +227,34 @@ HELP
    ns)
   (define mp (make-resolved-module-path path))
   (hash-clear! registry)
-  (with-handlers ([(lambda (e)
-                     (regexp-match? #rx"name is not provided" (exn-message e)))
-                   (lambda (_)
-                     (error 'get-module-dependencies "this study does not provide \"~s\"" id))])
-    (parameterize ([current-track-resources? #t]
-                   [current-namespace ns])
-      (dynamic-require mp id)))
-  (hash-keys registry))
+  (define relative-imports
+    (with-handlers ([(lambda (e)
+                       (regexp-match? #rx"name is not provided" (exn-message e)))
+                     (lambda (_)
+                       (error 'get-module-dependencies "this study does not provide \"~s\"" id))])
+      (parameterize ([current-track-resources? #t]
+                     [current-namespace ns])
+        (dynamic-require mp id)
+        (get-module-relative-imports mp))))
+  (append
+   (hash-keys registry)
+   (for/list ([import-path (in-list relative-imports)])
+     (find-relative-path (path-only path) import-path))))
+
+(define (get-module-relative-imports mp)
+  (remove-duplicates
+   (let loop ([mp mp])
+     (define root (resolved-module-path-name mp))
+     (define root-dir (path-only root))
+     (apply
+      append
+      (for*/list ([phase+imports (in-list (module->imports mp))]
+                  [phase-imports (in-value (cdr phase+imports))]
+                  [import-mpi (in-list phase-imports)]
+                  [resolved-mpi (in-value (resolve-module-path-index import-mpi root))]
+                  #:do [(define resolved-dir (path-only resolved-mpi))]
+                  #:when (equal? root-dir resolved-dir))
+        (cons resolved-mpi (loop (make-resolved-module-path resolved-mpi))))))))
 
 (define (handle-simulate)
   (define n 2)
