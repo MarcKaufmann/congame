@@ -12,6 +12,7 @@
  make-uploader
  current-uploader
  save-file!
+ call-with-uploader
  call-with-uploaded-file
  wrap-uploads)
 
@@ -35,6 +36,10 @@
     (call-with-output-file filepath
       (lambda (out)
         (copy-port (binding:file/port-in b) out)))))
+
+(define (call-with-uploader u proc)
+  (parameterize ([current-uploader u])
+    (proc)))
 
 (define/contract (call-with-uploaded-file filename proc)
   (-> path-string? (-> input-port? any) any)

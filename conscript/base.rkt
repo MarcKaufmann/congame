@@ -13,6 +13,7 @@
          (prefix-in congame: congame/components/study)
          (except-in congame/components/study button form)
          congame/components/transition-graph
+         (only-in koyo/job schedule-at)
          (prefix-in marionette: marionette)
          racket/contract/base
          racket/format
@@ -25,6 +26,7 @@
          (only-in xml xexpr?)
          "form.rkt"
          "html.rkt"
+         "job.rkt"
          "markdown.rkt"
          "matchmaking.rkt"
          "resource.rkt"
@@ -105,7 +107,7 @@
 
 
  ;; Congame Syntax
- --> goto for/study
+ --> goto for/study define-job schedule-at
 
  ;; Congame Runtime
  (all-from-out

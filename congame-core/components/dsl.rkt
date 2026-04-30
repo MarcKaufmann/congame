@@ -17,7 +17,7 @@
 
 (define-logger dsl)
 
-;; XXX: Introduce dependency on conscript package without requiring it
+;; XXX: Introduce a dependency on conscript package without requiring it
 ;; until it's needed.
 (define-runtime-module-path _conscript
   conscript)
