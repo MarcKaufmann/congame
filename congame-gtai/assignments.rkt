@@ -1152,7 +1152,9 @@
     (if x #t #f))
   (define weights '(0.20 0.80))
   (define (near-ne ne1 ne2)
-    (and (near (car ne1) (car ne2))
+    (and (not (undefined? ne1))
+         (not (undefined? ne2))
+         (near (car ne1) (car ne2))
          (near (cdr ne1) (cdr ne2))))
   (define nes
     (list ms4-ne1 ms4-ne2 ms4-ne3 ms4-ne4))
@@ -1165,7 +1167,7 @@
   (eprintf "true-nes: ~a; given-nes: ~a" true-nes nes)
   (define raw-scores
     (list
-     (if (string=? ms4-dominated-action "T") 100 0)
+     (if (string=? (if-undefined ms4-dominated-action "") "T") 100 0)
      (for/sum ([true-ne true-nes])
        (if (is-x-in-l? true-ne nes) 100/3 0))))
 

@@ -23,14 +23,19 @@
   (import game-theory-vars^)
   (export game-theory^))
 
+(define n 10) ; range for voting
+(define d (/ 100.0 n))
+(define ds
+  (~r d #:precision 2))
+
 (defstep (instructions)
   @md{# Vote, vote, vote!
 
-      Consider the following game: you are one of two candidates in an election. Both of you can choose where to position yourself on the political spectrum ranging from 1 ("Strongly Left") to 5 ("Strongly Right").
+      Consider the following game: you are one of two candidates in an election. Both of you can choose where to position yourself on the political spectrum ranging from 1 ("Strongly Left") to @~a[n] ("Strongly Right").
 
-      After you both made your decision where to position yourself, the voters vote for the candidate that is closest to their own position, with 20% of voters are at each position. If both candidates are equally close to the voters, then the voters split exactly 50-50.
+      After you both made your decision where to position yourself, the voters vote for the candidate that is closest to their own position, with @~a[ds]% of voters are at each position. If both candidates are equally close to the voters, then the voters split exactly 50-50.
 
-      For example, the 20% of voters at position 1 will vote for the candidate that is closest to 1. If both candidates are equidistant, then the voters split 50-50.
+      For example, the @~a[ds]% of voters at position 1 will vote for the candidate that is closest to 1. If both candidates are equidistant, then the voters split 50-50.
 
       Assume for now that the goal of the candidates is to maximize the share of the vote. That is, your score from this game is proportional to the vote share you get.
 
@@ -60,9 +65,10 @@
      [choice (ensure
               binding/number
               (required)
-              (number-in-range 1 5))]))
+              (number-in-range 1 n))]))
   (define (render rw)
-    @div{@rw["choice" @input-number{Where do you position yourself? (Range: 1 = "Strongly Left", 5 = "Strongly Right")}]
+    @div{@rw["choice" @input-number[(format "Where do you position yourself? (Range: 1 = 'Strongly Left', ~a = 'Strongly Right'" n)
+                                    #:attributes '([min "1"] [max "10"])]]
          @|submit-button|})
 
   @md{# Choose your Position
@@ -88,14 +94,14 @@
   (define p1 (car ap))
   (define p2 (cdr ap))
   (for/fold ([vs 0])
-            ([i (range 1 6)])
+            ([i (range 1 (add1 n))])
     (define diff1 (abs (- p1 i)))
     (define diff2 (abs (- p2 i)))
     (cond [(< diff1 diff2)
-           (+ vs 20)]
+           (+ vs d)]
 
           [(= diff1 diff2)
-           (+ vs 10)]
+           (+ vs (/ d 2))]
 
           [else
            vs])))
@@ -204,7 +210,7 @@
       ## Results
 
       @`(ul
-         ,@(for/list ([i (range 1 6)])
+         ,@(for/list ([i (range 1 (add1 n))])
              (li (format "~a occurs ~a times"
                          i (hash-ref action-count i 0)))))
       })
