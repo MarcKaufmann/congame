@@ -84,10 +84,10 @@
  append assq
 
  in-hash
- hash hasheq hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys hash-has-key?
+ hash hasheq hash-count hash-ref hash-remove hash-set hash-update hash-values hash-keys hash-has-key? hash->list
 
  + - * / modulo quotient remainder add1 sub1 abs max min round floor ceiling truncate
- = < > <= >= equal? eq?
+ = < > <= >= equal? eq? zero? number?
  sqrt expt exp log random random-ref
 
  procedure?
