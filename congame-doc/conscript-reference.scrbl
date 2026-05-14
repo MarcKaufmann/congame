@@ -628,9 +628,10 @@ forms.
 @defmodule[conscript/resource]
 
 This module provides a way to access @deftech{resources}: images and other static files that aren’t
-stored in the database. The files for linked resources get uploaded automatically as long as they're
-linked using @racket[define-static-resource]. Or you can upload a zipped folder as long as the study
-is contained/provided from specifically named @filepath{study.rkt} inside that zip file.
+stored in the database. Files linked with @racket[define-static-resource] are bundled automatically
+when you upload the study. Alternatively, you can pre-build a zip archive yourself --- in that case
+the archive must contain a file named exactly @filepath{study.rkt} that @racket[provide]s the study;
+see @secref["raco-congame"] for the full set of requirements.
 
 @defform[(define-static-resource name path-string)]{
 
@@ -1292,7 +1293,8 @@ that has one or more members but still needs more to meet its quota; a @deftech{
 its quota of assigned participants and is ready to proceed.
 
 @defproc[(make-matchmaker [group-size exact-positive-integer?]
-                          [group-ok? (-> buid/c boolean?) values]) (-> (-> xexpr?) any/c)]{
+                          [group-ok? (-> buid/c boolean?) values]
+                          [#:on-group-create on-group-create (-> buid/c any) void]) (-> (-> xexpr?) any/c)]{
 
 Returns a @tech{matchmaker function} that accepts one argument (that argument being a study step
 function) and which adds the current participant to the current pending group (creating a new group
@@ -1309,6 +1311,12 @@ candidate group, which can be used as a key to the hash returned by @racket[get-
 procedure must return @racket[#t] if the participant can be added to the candidate group or
 @racket[#f] if not. (During the body of the @racket[group-ok?] procedure, the hash table returned by
 @racket[get-pending-groups] will not yet include the @racket[current-participant-id].)
+
+An @racket[on-group-create] procedure can be supplied to run a side effect whenever a new
+@tech{pending group} is created (i.e., when the current participant does not join an existing
+pending group and instead starts a new one). The procedure is called with the @seclink["Spec" #:doc
+'(lib "buid/buid.scrbl")]{BUID} of the newly-created group and its return value is ignored. The
+procedure will be called within the context of a study transaction 
 
 }
 

@@ -1470,11 +1470,62 @@ address.
 @commandline{raco congame upload @nonterm{study-id} @nonterm{path}}
 
 Uploads the study at @nonterm{path} to the server you are currently logged in to. The
-@nonterm{study-id} should match the identifier used in your @racket[defstudy] expression.
+@nonterm{study-id} must match the identifier supplied to @racket[defstudy] @emph{and} must be
+exported with @racket[provide] from the study file. On success, the command opens a browser to the
+study's admin page. If you are not logged in, it will prompt you to log in first.
 
-The command packages the study file and any of its dependencies into an archive and sends it to the
-server. On success, it opens a browser to the study's admin page. If you are not logged in, it will
-prompt you to log in first.
+The @nonterm{path} argument may be either a Racket source file or a zip archive that contains one.
+In both cases the CLI ultimately works from a single study file:
+
+@itemlist[
+
+@item{When @nonterm{path} is a @filepath{.rkt} file, it is used directly. Any filename is accepted
+--- the file is renamed to @filepath{study.rkt} inside the uploaded bundle.}
+
+@item{When @nonterm{path} is a @filepath{.zip} file, the CLI extracts the archive to a temporary
+location and walks the resulting directory tree for a file literally named @filepath{study.rkt},
+stopping at the first directory that contains one. So @filepath{study.rkt} may live at the root of
+the archive or inside a single nested folder, but the name must match exactly (e.g.,
+@filepath{Study.rkt} won't be found). Once found, the rest of the archive is otherwise discarded:
+the bundle that is actually uploaded is rebuilt from scratch from @filepath{study.rkt} and its
+detected dependencies, by the same rules described below.}
+
+]
+
+From the resolved @filepath{study.rkt}, the CLI builds the bundle to upload by collecting:
+
+@itemlist[
+
+@item{@filepath{study.rkt} itself.}
+
+@item{Its transitive @bold{same-directory} relative imports --- that is, modules whose resolved
+location is the same directory as the module that imports them. A module imported from a
+subdirectory or a parent directory is @emph{not} included by this mechanism, even if the import
+statement resolves successfully on your machine. (In practice, plain @code{#lang conscript}'s
+@racket[require] form does not accept path-based imports at all, so this restriction mostly affects
+studies written in @code{#lang conscript/with-require}.)}
+
+@item{Every file or directory declared with @racket[define-static-resource], resolved relative to
+@filepath{study.rkt}. Subdirectory paths are supported, and the relative structure is preserved
+inside the bundle.}
+
+]
+
+The bundle that arrives at the server must:
+
+@itemlist[
+
+@item{Contain a file named exactly @filepath{study.rkt} that @racket[provide]s @nonterm{study-id}.}
+
+@item{Begin with @code{#lang conscript} (or @code{#lang conscript/with-require} for accounts with
+the @bold{admin} or @bold{researcher} role --- see @secref["conscript-with-require"]).}
+
+]
+
+@bold{Tip:} If your study uses images or other static files, the simplest workflow is to keep
+@filepath{study.rkt} together with its assets in a single folder, declare the assets with
+@racket[define-static-resource], and run @exec{raco congame upload @nonterm{study-id} study.rkt}.
+See @secref["image-howto"] for a worked example.
 
 @subsection{@exec{raco congame simulate}}
 
