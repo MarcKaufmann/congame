@@ -22,6 +22,7 @@
          racket/list
          racket/random
          racket/string
+         racket/unit
          (only-in web-server/http response/xexpr)
          (only-in xml xexpr?)
          "form.rkt"
@@ -113,7 +114,8 @@
  (all-from-out
   congame/components/bot-maker
   (submod congame/components/bot actions)
-  marionette)
+  marionette
+  racket/unit)
  (rename-out
   [bot:current-user-bot? current-user-bot?]
   [congame:current-participant-id current-participant-id]
