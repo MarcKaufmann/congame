@@ -2,6 +2,7 @@
 
 (define collection "congame")
 (define deps '("base"
+               "component-lib"
                "conscript"
                "db-lib"
                "deta-lib"

@@ -2,14 +2,18 @@
 
 (define collection "conscript")
 (define deps
-  '("base"
-    "at-exp-lib"
+  '("at-exp-lib"
+    "base"
     "buid-lib"
     "commonmark-lib"
+    "component-lib"
     "congame-core"
+    "db-lib"
+    "deta-lib"
     ["forms-lib" #:version "0.10"]
     "hash-view-lib"
     "koyo-lib"
+    "marionette-lib"
     "math-lib"
     "monocle-lib"
     "threading-lib"
