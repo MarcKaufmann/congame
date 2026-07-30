@@ -8,6 +8,7 @@ RUN apt-get update \
     dumb-init \
     graphviz \
     libargon2-1 \
+    libasound2 \
     lbzip2 \
     libcairo2 \
     libdbus-glib-1-2 \
@@ -24,8 +25,15 @@ RUN apt-get update \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-ADD https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US /tmp/firefox.tar
-RUN (cd /tmp && tar -xvf firefox.tar) \
+ARG TARGETARCH
+RUN case "$TARGETARCH" in \
+      amd64) firefox_arch=linux64 ;; \
+      arm64) firefox_arch=linux64-aarch64 ;; \
+      *) echo "unsupported Firefox architecture: $TARGETARCH" >&2; exit 1 ;; \
+    esac \
+    && curl -fsSL "https://download.mozilla.org/?product=firefox-latest-ssl&os=${firefox_arch}&lang=en-US" \
+      -o /tmp/firefox.tar \
+    && (cd /tmp && tar -xvf firefox.tar) \
     && mv /tmp/firefox /opt/firefox \
     && ln -s /opt/firefox/firefox /usr/bin/firefox \
     && rm /tmp/firefox.tar
