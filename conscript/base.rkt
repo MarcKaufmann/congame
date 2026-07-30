@@ -6,8 +6,8 @@
          (prefix-in bot: congame/components/bot)
          (prefix-in bot: (submod congame/components/bot actions))
          (prefix-in bot: congame/components/bot-maker)
-         congame/components/for-study
          (prefix-in congame: congame/components/email)
+         congame/components/for-study
          (prefix-in congame: congame/components/push-notification)
          (prefix-in congame: congame/components/struct)
          (prefix-in congame: congame/components/study)
@@ -25,7 +25,6 @@
          racket/unit
          (only-in web-server/http response/xexpr)
          (only-in xml xexpr?)
-         "form.rkt"
          "html.rkt"
          "job.rkt"
          "markdown.rkt"
@@ -121,6 +120,7 @@
   [congame:current-participant-id current-participant-id]
   [congame:current-participant-owner? current-participant-owner?]
   [congame:current-participant-identity-user? current-participant-identity-user?]
+  [congame:current-request current-request]
   [congame:call-with-study-transaction call-with-study-transaction]
   [congame:with-study-transaction with-study-transaction]
   [congame:get/linked/instance get/linked/instance]
@@ -198,6 +198,7 @@
       gregor
       hash-view
       koyo/haml
+      koyo/http
       koyo/job
       math/distributions
       racket/contract/base
@@ -210,7 +211,8 @@
       racket/vector
       racket/unit
       studies/real-effort/tasks-conscript
-      threading))
+      threading
+      web-server/http))
   (define (check-module-whitelisted mod-stx)
     (unless (memq (syntax->datum mod-stx) whitelist)
       (raise-syntax-error 'require "required module not whitelisted" mod-stx))))

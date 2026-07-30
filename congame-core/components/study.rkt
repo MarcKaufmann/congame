@@ -497,6 +497,7 @@ QUERY
 ;; widgets ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (provide
+ current-request
  when-bot
  make-stub
  button
@@ -519,7 +520,6 @@ QUERY
 (module+ private
   (provide
    current-embed/url
-   current-request
    current-return))
 
 (define ((make-stub title [final? #f]))
