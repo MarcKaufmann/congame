@@ -1,0 +1,38 @@
+{
+  "hidden": [
+    {
+      "command": [
+        "racket",
+        "/Users/bogdan/work/congame/llm-benchmarks/tasks/smoke-study/checks/implementation-changed.rkt",
+        "/Users/bogdan/work/congame/llm-benchmarks/tasks/smoke-study/fixture/study.rkt",
+        "study.rkt"
+      ],
+      "duration_seconds": 0.09726699999999255,
+      "exit_code": 1,
+      "log": "1.log",
+      "passed": false,
+      "timed_out": false
+    }
+  ],
+  "upload": {
+    "duration_seconds": 1.0850439999997616,
+    "exit_code": 0,
+    "log": "upload.log",
+    "passed": true,
+    "timed_out": false
+  },
+  "visible": [
+    {
+      "command": [
+        "raco",
+        "make",
+        "study.rkt"
+      ],
+      "duration_seconds": 0.964436999999918,
+      "exit_code": 0,
+      "log": "1.log",
+      "passed": true,
+      "timed_out": false
+    }
+  ]
+}
