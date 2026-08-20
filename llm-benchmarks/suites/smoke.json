@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "smoke",
+  "tasks": ["smoke-study"],
+  "harnesses": ["pi-qwen3.8-27b-mlx-medium"],
+  "repetitions": 1
+}
