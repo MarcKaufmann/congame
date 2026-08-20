@@ -35,6 +35,13 @@
 (define current-program-name
   (make-parameter (short-program+command-name)))
 
+;; Headless callers can suppress the browser launch while still receiving the
+;; uploaded study's URL on stdout.
+(define (deliver-upload-link link)
+  (if (getenv "CONGAME_CLI_NO_OPEN")
+      (displayln link)
+      (send-url link)))
+
 (define (get-key)
   (define (fail)
     (eprintf #<<MESSAGE
@@ -183,7 +190,7 @@ HELP
                   (check-response _ 200)
                   (http:response-json)
                   (hash-ref 'link)
-                  (send-url))))))
+                  (deliver-upload-link))))))
       (lambda ()
         (delete-file tmp-path)
         (delete-directory/files tmp-dir)))))

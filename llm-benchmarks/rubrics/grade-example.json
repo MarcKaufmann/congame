@@ -1,0 +1,16 @@
+{
+  "status": "complete",
+  "rubric": "study-v1",
+  "graded_at": "2026-08-20T00:00:00Z",
+  "grader": "anonymous-grader-1",
+  "axes": {
+    "behavioral_correctness": {"score": 0, "notes": ""},
+    "experimental_validity": {"score": 0, "notes": ""},
+    "exercise_and_verification": {"score": 0, "notes": ""},
+    "robustness": {"score": 0, "notes": ""},
+    "conscript_quality": {"score": 0, "notes": ""},
+    "scope_discipline": {"score": 0, "notes": ""},
+    "handoff": {"score": 0, "notes": ""}
+  },
+  "overall_notes": ""
+}

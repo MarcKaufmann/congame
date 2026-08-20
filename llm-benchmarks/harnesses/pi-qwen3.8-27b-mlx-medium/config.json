@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "id": "pi-qwen3.8-27b-mlx-medium",
+  "script": "run.sh",
+  "config_directory": "pi-agent",
+  "environment": {
+    "PI_CODING_AGENT_DIR": "${HARNESS_CONFIG_DIR}"
+  },
+  "docker": {
+    "image": "congame-llm-bench-pi:0.84.2",
+    "cpus": 4,
+    "memory": "4g",
+    "pids_limit": 256
+  },
+  "limits": {
+    "wall_seconds": 2700,
+    "termination_grace_seconds": 10,
+    "max_cost_usd": 0
+  },
+  "labels": {
+    "harness": "pi",
+    "harness_version": "0.84.2",
+    "provider": "lmstudio",
+    "model": "qwen3.8-27b-mlx",
+    "thinking": "medium"
+  }
+}
