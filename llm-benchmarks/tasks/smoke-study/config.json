@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "id": "smoke-study",
+  "version": 1,
+  "title": "Implement a small uploaded Conscript study",
+  "study_id": "benchmark-study",
+  "study_path": "study.rkt",
+  "prompt": "prompt.md",
+  "fixture": "fixture",
+  "starter_study": "starter/study.rkt",
+  "allowed_paths": [
+    "study.rkt",
+    "exercise.rkt",
+    "assets"
+  ],
+  "references": [
+    {
+      "source": "conscript",
+      "destination": "conscript"
+    },
+    {
+      "source": "congame-doc",
+      "destination": "congame-doc"
+    },
+    {
+      "source": "conscript/examples",
+      "destination": "examples"
+    }
+  ],
+  "check_timeout_seconds": 300,
+  "visible_checks": [
+    ["raco", "make", "study.rkt"]
+  ],
+  "hidden_checks": [
+    [
+      "racket",
+      "${TASK_DIR}/checks/implementation-changed.rkt",
+      "${TASK_DIR}/fixture/study.rkt",
+      "study.rkt"
+    ]
+  ],
+  "rubric": "study-v1"
+}
