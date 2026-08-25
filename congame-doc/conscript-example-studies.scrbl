@@ -64,6 +64,11 @@ creation with @racket[for/study] and @racket[make-step/study].}
 @item{@github-link{congame-example-study/conscript-choice-that-counts.rkt} --- Randomly selecting
 one task for payment, with slider inputs and scoring.}
 
+@item{@github-link{congame-example-study/many-designs-composition/many-designs.rkt} --- Composing
+studies written as units: each sub-study imports a fee and exports its study and a payment
+function, and the parent invokes them through shared signatures. See
+@secref["units-tutorial"] for the full walkthrough.}
+
 ]
 
 @section{Multi-Participant Studies}
