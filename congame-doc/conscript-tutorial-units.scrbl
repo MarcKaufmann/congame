@@ -32,6 +32,8 @@ a value back out. You'll learn how to:
 
 @item{Compose units so that each participant gets one of them, chosen at random}
 
+@item{Write the surrounding study once, as a function that composes any number of units}
+
 ]
 
 This tutorial assumes you're familiar with the basic concepts covered in @secref["overview"] and
@@ -52,7 +54,9 @@ its own, and each one pays the participant something.
 Now you want a single study that shows a consent page, runs a task, and then shows the participant
 what they'll be paid. There are two versions you'd like to be able to build. In the first, every
 participant does both tasks, one after the other. In the second, each participant is randomly given
-just one of the tasks.
+just one of the tasks. And once both work, you'd like the part that surrounds the tasks, the consent
+page, the fee, and the payment page, to be written once and used again with whatever tasks the lab
+writes next, without editing it each time.
 
 Two pieces of information have to cross the line between the outer study and the task inside it.
 The participation fee is decided by the outer study, but the task needs to know it, because the
@@ -583,7 +587,8 @@ Save this as @filepath{randomized-study.rkt}:
 }|}
 
 The list @racketidfont{tasks} pairs a name with each unit. Adding a third task to this study means
-adding one more pair to this list, and nothing else.
+adding one more pair to this list, and nothing else. In @secref["unitstut-compose-fn"], the list
+itself becomes an argument.
 
 The @racketidfont{pick-task} step picks a name at random, stores it in
 @racketidfont{selected-task}, and skips ahead. The choice is made here, in a step of its own, and
@@ -601,6 +606,12 @@ the participant runs.
 
 The @racket[lambda] is a private scope, just as the @racket[let] was. Nothing it defines leaks out
 into the rest of the file, so it doesn't matter that every task exports the same two names.
+
+There is one thing this version gives up. In Part 1 the units were invoked when the file was
+loaded, so a task that didn't fit its plugs was rejected the moment you uploaded the study. Here
+the unit is invoked inside the @racket[lambda], which runs only when a participant reaches
+@racketidfont{run-task}, so a task that doesn't fit is discovered only then.
+@secref["unitstut-compose-fn"] gets the early check back.
 
 Two more variables are @racket[defvar*] here, and neither has anything to do with the signatures.
 @racketidfont{task-payment} is set inside @racketidfont{run-task} and read on the payment page,
@@ -703,6 +714,154 @@ study is built from the unit, so there is only one copy of the task to maintain.
 
 @;===============================================
 
+@section[#:tag "unitstut-compose-fn"]{Part 3: A function that composes any tasks}
+
+@filepath{randomized-study.rkt} does its job, but it is still a study about the counting task and
+the lottery. If another experiment in your lab wanted the same consent page, the same fee, the same
+random choice, and the same payment page around three different tasks, you would copy the file and
+edit the list. Nothing in the file except that list depends on which tasks it runs, and that
+suggests the last step: turn the parent into a function whose arguments are the tasks.
+
+The function goes in a file of its own. Save it as @filepath{compose-tasks.rkt}:
+
+@filebox["compose-tasks.rkt"]{
+@codeblock|{
+#lang conscript/with-require
+
+(require conscript/survey-tools
+         "shared-pages.rkt"
+         "signatures.rkt")
+
+(provide compose-tasks)
+
+(with-namespace my-lab.compose-tasks
+  (defvar* selected-index)
+  (defvar* task-payment))
+
+(define (compose-tasks #:fee [fee 2.00] . task@s)
+  (when (null? task@s)
+    (raise-argument-error 'compose-tasks "at least one task" task@s))
+
+  (define (check-fit task@)
+    (define (get-fee) fee)
+    (define-values/invoke-unit task@
+      (import fee^)
+      (export study^ payment^))
+    (void))
+  (for-each check-fit task@s)
+
+  (defstep (set-fee)
+    (set! participation-fee fee)
+    (skip))
+
+  (defstep (pick-task)
+    (set! selected-index (random (length task@s)))
+    (skip))
+
+  (defstep/study run-task
+    #:study (lambda ()
+              (define task@ (list-ref task@s selected-index))
+              (define (get-fee) participation-fee)
+              (define-values/invoke-unit task@
+                (import fee^)
+                (export study^ payment^))
+              (define (record-payment)
+                (set! task-payment (compute-payment))
+                (skip))
+              (defstudy task-then-record
+                [study --> record-payment --> ,(lambda () done)])
+              task-then-record))
+
+  (defstep (payment)
+    @md{# Your payment
+
+        Participation fee: @(~$ participation-fee)
+
+        Task: @(~$ task-payment)
+
+        Total: @(~$ (+ participation-fee task-payment))
+
+        @button{Continue}})
+
+  (defstudy composed
+    [set-fee --> consent --> ,(lambda ()
+                                (if (equal? consent-given? "yes")
+                                    'pick-task
+                                    'no-consent))]
+    [pick-task --> run-task --> payment --> thank-you --> ,(lambda () done)]
+    [no-consent --> ,(lambda () done)])
+
+  composed)
+}|}
+
+The study you upload is now a separate, very short file. Save it as @filepath{composed-study.rkt}:
+
+@filebox["composed-study.rkt"]{
+@codeblock|{
+#lang conscript/with-require
+
+(require "compose-tasks.rkt"
+         "counting-task.rkt"
+         "lottery-task.rkt")
+
+(provide composed-study)
+
+(define composed-study
+  (compose-tasks counting-task@ lottery-task@))
+}|}
+
+Most of @filepath{compose-tasks.rkt} is @filepath{randomized-study.rkt} moved inside a function.
+@racket[defstep], @racket[defstep/study], and @racket[defstudy] are definitions, and definitions
+can live inside a function body just as they live at the top of a file. Each call to
+@racketidfont{compose-tasks} runs those definitions afresh and builds a new study around the units
+it was given; the steps refer to @racketidfont{task@"@"s}, the list of arguments, the way the steps
+in Part 2 referred to the list @racketidfont{tasks}. The last expression in the function is the
+study, which is what the function returns and what @filepath{composed-study.rkt} provides.
+
+Two declarations stayed outside the function: the @racket[defvar*] variables at the top of the
+file. They name places in the database, and those places are the same whichever tasks are passed
+in, so there is nothing to gain from redeclaring them on every call. Everything that depends on the
+arguments went inside.
+
+The body of the function runs when the file is loaded, before any participant exists, just like the
+top level of a unit. That is why it only defines steps and checks its arguments, and reads nothing
+from a study variable. All the reading happens inside the steps, while a participant is on the
+page.
+
+In Part 2 the parent knew its tasks by name, because it wrote the list itself. A function that
+accepts any tasks receives only the units, and a unit has no name. What the function does know is
+the order of its arguments, so @racketidfont{pick-task} now stores a position, drawn with
+@racket[random] from the length of the list, and the @racket[lambda] fetches the chosen unit with
+@racket[list-ref]. The rule from @secref["unitstut-pick-first"] is unchanged: the decision is made
+in a step, stored, and only looked up by the @racket[lambda]. What is stored has to be something the
+database can hold, and a number is; a unit is not. The payment page no longer names the task, but
+the data still does: as @secref["unitstut-own-name"] showed, everything a task stores sits under a
+path that ends in the task's own name, and that path is the same here as it was in Part 2.
+
+The fee became a keyword argument, @racket[#:fee], with a default of $2.00. In Part 2 the parent
+decided the fee on its own; now the caller decides it, or accepts the default. Anything else the
+parent used to decide for itself can move out the same way.
+
+The one genuinely new piece is @racketidfont{check-fit}. A unit's plugs are checked when the unit
+is invoked. In Part 1 that happened as the file was loaded, so a task that didn't fit was rejected
+at upload. In Part 2 the unit is invoked inside the @racket[lambda], so a task that doesn't fit is
+discovered only when a participant reaches @racketidfont{run-task}. @racketidfont{check-fit}
+invokes each task once, right away, and discards the result. Its only purpose is the check: a unit
+that doesn't export @racketidfont{study^} and @racketidfont{payment^} stops the file from loading,
+with a message naming the missing signature, and you see it the moment you upload. The guard above
+it does the same for the mistake of passing no tasks at all, which would otherwise surface as an
+error from @racket[random] on the first participant's screen.
+
+Upload @filepath{composed-study.rkt}. The uploader bundles @filepath{compose-tasks.rkt} and the
+task files along with it, and the study behaves exactly as @filepath{randomized-study.rkt} did.
+The difference is in what it costs to change. A third task is one more @racket[require] and one
+more argument in @filepath{composed-study.rkt}; a second experiment with different tasks is another
+file as short as this one; and anything you add inside @racketidfont{compose-tasks}, a waiting
+room before the task, a balanced assignment in place of @racket[random], an extra page afterwards,
+reaches every study built from it without a change to any of them.
+
+@;===============================================
+
 @section[#:tag "unitstut-guidelines"]{Guidelines}
 
 Almost everything that can go wrong with units follows from the same fact: invoking a unit defines
@@ -754,7 +913,18 @@ quietly mixes two tasks' data. Here the inner studies are @racketidfont{counting
 @bold{Decide which unit to run in its own step, store the decision, and have the @racket[lambda]
 only look it up.} A @racket[lambda] that makes its own random choice can choose differently when a
 participant resumes, and drop them into a different study partway through. Here the decision is
-made in @racketidfont{pick-task} and stored in @racketidfont{selected-task}.
+made in @racketidfont{pick-task} and stored in @racketidfont{selected-task}, or, in Part 3, as a
+position in @racketidfont{selected-index}. Store the decision as something the database can hold,
+a name or a number, never the unit itself.
+
+@bold{When the parent is a function, keep the @racket[defvar*] declarations outside it and
+everything else inside.} The steps and studies belong inside, so that each call builds a fresh
+study around the units it was given; the variables name places in the database, which are the same
+whichever units are passed. The body of the function runs when the file is loaded, before any
+participant exists, so it may define steps and check its arguments, and it must not read a study
+variable. Here @filepath{compose-tasks.rkt} declares @racketidfont{selected-index} and
+@racketidfont{task-payment} at the top of the file and defines everything else inside
+@racketidfont{compose-tasks}.
 
 @bold{Keep all the signatures in one file.} A signature defined twice is two different signatures,
 even with the same name, and a unit written against one cannot be plugged into a parent written
@@ -783,7 +953,9 @@ checks the fit before any participant does. Reach for them when a piece must not
 it, because it will be used by several parents or with several settings, and you don't want every
 parent to know the piece's variable names. And reach for them when the parent needs a calculation
 from the piece rather than a number, since a signature can export a function and a
-@racket[defvar*] can't.
+@racket[defvar*] can't. And reach for them when the study around the pieces is worth writing once,
+as a function, and reusing with a different set of pieces each time, as in
+@secref["unitstut-compose-fn"].
 
 If none of those apply, use a plain child study.
 
@@ -792,8 +964,9 @@ If none of those apply, use a plain child study.
 @section[#:tag "unitstut-exercise"]{Exercise}
 
 Write a third task, a short survey that asks one question and pays a flat $0.50, as a unit in its
-own file. Add it to the @racketidfont{tasks} list in @filepath{randomized-study.rkt}, upload, and
-run through the study until you've seen all three tasks come up.
+own file. Add it as a third argument to @racketidfont{compose-tasks} in
+@filepath{composed-study.rkt}, upload, and run through the study until you've seen all three tasks
+come up.
 
 Then try leaving out the @racket[(export payment^)] clause in your new task and uploading again.
 The error tells you, before any participant arrives, that the task doesn't fit the slot. That check
@@ -826,6 +999,11 @@ For a random one, store the choice in a step, then unpack the chosen unit inside
 
 @item{A unit's flow is a study named after the task, exported through a one-step study with the name
 the signature promises. The inner name gives everything the task stores a path of its own.}
+
+@item{The parent can be a function. @racket[defstep], @racket[defstep/study], and @racket[defstudy]
+work inside a function body, the @racket[defvar*] declarations stay outside it, the stored decision
+is a position in the argument list, and invoking each unit once as the study is built rejects a
+task that doesn't fit at upload time.}
 
 ]
 
