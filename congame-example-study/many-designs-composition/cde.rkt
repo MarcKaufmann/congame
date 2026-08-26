@@ -18,5 +18,8 @@
 
           @button{Continue}})
 
+    (defstudy cde
+      [start --> ,(λ () done)])
+
     (defstudy study
-      [start --> ,(λ () done)])))
+      [cde --> ,(λ () done)])))

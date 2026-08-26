@@ -182,13 +182,17 @@ Here is the counting task, written as a unit. Save it as @filepath{counting-task
 
           @form[report-form on-submit render]})
 
+    (defstudy counting
+      [instructions --> problems --> ,(lambda () done)])
+
     (defstudy study
-      [instructions --> problems --> ,(lambda () done)])))
+      [counting --> ,(lambda () done)])))
 }|}
 
 If you have written a Conscript study before, most of this will look familiar. The steps and the
-@racket[defstudy] are exactly what you would write in a standalone study. What's new is the
-wrapper around them and a few details inside.
+@racket[defstudy] that strings them together are exactly what you would write in a standalone
+study. What's new is the wrapper around them, the second @racket[defstudy] at the end, and a few
+details inside.
 
 The file uses @code{#lang conscript/with-require} rather than plain @code{#lang conscript}, because
 it needs to @racket[require] the sibling file @filepath{signatures.rkt}. (See
@@ -199,17 +203,23 @@ and the file @racket[provide]s the unit, @racketidfont{counting-task@"@"}, rathe
 Everything you would normally write at the top level of the file goes inside the unit instead, and
 @racket[defvar], @racket[defstep], and @racket[defstudy] all work there just as they do outside.
 
-The study is named @racketidfont{study}, because that is the name the @racketidfont{study^}
-signature promises to export. The parent will refer to it by that name.
+The task's flow, @racketidfont{instructions} then @racketidfont{problems}, is a study named
+@racketidfont{counting}, after the task. The unit then exports a second, one-step study named
+@racketidfont{study}, which does nothing but run @racketidfont{counting}. The name
+@racketidfont{study} is fixed: it is the name the @racketidfont{study^} signature promises, and the
+parent will refer to the task by it. The name @racketidfont{counting} is yours to choose, and every
+task needs a different one; @secref["unitstut-own-name"] explains what it is for. Until then, treat
+the pair as part of the shape of a unit.
 
 The fee is never written into this file. Wherever the text needs it, the code calls
 @racket[(get-fee)], and it does so inside a step, at the moment the page is shown. The function
 @racketidfont{get-fee} is the import: this file doesn't define it, and it doesn't exist until the
 parent supplies it.
 
-The task's last transition is @racket[,(lambda () done)], which hands control back to the parent,
-just as with any child study. The task does not have a thank-you page of its own, because the
-parent will provide one.
+Each study's last transition is @racket[,(lambda () done)]. When @racketidfont{counting} finishes,
+control returns to @racketidfont{study}, which is then finished as well and hands control back to
+the parent, just as with any child study. The task does not have a thank-you page of its own,
+because the parent will provide one.
 
 Finally, look at @racketidfont{problems-solved}. It is defined with @racket[defvar*] inside a
 @racket[with-namespace] block, not with plain @racket[defvar], and the reason deserves a careful
@@ -289,8 +299,11 @@ The lottery task shows both kinds side by side. Save it as @filepath{lottery-tas
 
           @button{Continue}})
 
+    (defstudy lottery
+      [choose --> flip --> result --> ,(lambda () done)])
+
     (defstudy study
-      [choose --> flip --> result --> ,(lambda () done)])))
+      [lottery --> ,(lambda () done)])))
 }|}
 
 Here @racketidfont{choice} is a plain @racket[defvar], because only the task's own pages read it.
@@ -325,10 +338,16 @@ the moment the page is shown, never at the top level of the unit. In the countin
 that used to be typed into the text became a call to @racket[(get-fee)].}
 
 @item{For each name in an exported signature, make sure the unit defines something with exactly
-that name. If one of the exports is the study itself, name the study accordingly, give its last
-page a button, and make its last transition @racket[,(lambda () done)]. Remove any thank-you page
-that the parent will provide instead. Here the study is named @racketidfont{study}, because that
-is the name @racketidfont{study^} promises.}
+that name. If one of the exports is the study itself, give its last page a button, make its last
+transition @racket[,(lambda () done)], and remove any thank-you page that the parent will provide
+instead.}
+
+@item{Keep the study you already have under its own name, and export it through a one-step study
+with the name the signature promises: @racket[(defstudy study [my-task --> ,(lambda () done)])].
+A @racket[#:wrapper] such as @racket[add-css-resource] goes on the outer study and applies to the
+inner one as well. Here the flow is named @racketidfont{counting} and the export is
+@racketidfont{study}, because that is the name @racketidfont{study^} promises. See
+@secref["unitstut-own-name"] for why the inner name matters.}
 
 @item{Any study variable that an exported function reads must become a @racket[defvar*] inside a
 @racket[with-namespace] block named after the study. Here @racketidfont{compute-payment} reads
@@ -590,11 +609,6 @@ payment page too. Both cross a study boundary, so both need to be shared. This i
 of the rule from earlier: whenever a value is written inside one study and read from another, it
 must be a @racket[defvar*].
 
-One thing to know about the data this study records. Because every task's study is called
-@racketidfont{study}, every task saves its variables under the same step name. The record of which
-task a participant actually did is @racketidfont{selected-task}, so keep that variable around when
-you analyze the results.
-
 Upload @filepath{randomized-study.rkt} and run through it a few times in different private browser
 windows. Some participants will get the counting task and others the lottery, and the payment page
 names whichever task ran.
@@ -617,6 +631,52 @@ So the @racket[lambda] must make the same decision every time it runs. The way t
 is to make the decision once, in a step, store it in a @racket[defvar*], and have the
 @racket[lambda] only look it up. The @racket[lambda] should not roll dice, count anything, or
 change any variable. It reads stored values and builds a study, nothing more.
+
+@subsection[#:tag "unitstut-own-name"]{Why a task's study has a name of its own}
+
+Back in @secref["unitstut-writing-a-task"], each task wrote its flow as a study named after itself
+and then exported a one-step @racketidfont{study} that runs it. The reason has to do with how
+Congame files away what a task stores.
+
+Recall from @secref["pctut-sharing-data"] that a @racket[defvar] is stored under the study that
+sets it. More precisely, every stored value is filed under a path: the names of the steps the
+participant passed through to reach the page that stored it, from the outermost study inward, where
+each name is the one used in the enclosing study's transition graph. The name a study gives itself
+in @racket[defstudy] plays no part.
+
+Now look at @filepath{randomized-study.rkt}. Whichever task a participant is given, it runs inside
+the @racketidfont{run-task} step, and inside the @racket[lambda]'s little study it is always the
+step called @racketidfont{study}, because that is the only name the parent has for it. So the path
+to every task's pages begins the same way, @tt{run-task / study}, and if the tasks exported their
+flows directly under that name, both would store their variables at the same path. For a value that
+only one participant ever touches, that is merely untidy: you would need
+@racketidfont{selected-task} to tell which task a row of data came from. For a value shared by all
+participants in the instance, it is an error. Suppose each task kept a @racket[defvar/instance]
+named @racketidfont{treatments}, the list of conditions still to be handed out. One list would serve
+both tasks, and each would hand out the other's conditions. The state that @racket[make-matchmaker]
+keeps for a study is stored at the path too, so two tasks that each match participants into pairs
+would draw from one shared pool, and a participant in the counting task could be paired with one in
+the lottery.
+
+The inner study is what prevents this. Because @racketidfont{study} runs @racketidfont{counting} as
+a nested study, the counting task's pages store their values under
+@tt{run-task / study / counting}, and the lottery's under @tt{run-task / study / lottery}. Each task
+has a path of its own, everything it stores by position stays apart from the other task's, and the
+data itself records which task the participant did. The one thing you must supply is a name that no
+other task uses, which is why the inner study is named after the task.
+
+@inline-note{This is a different job from the one @racket[with-namespace] does. A
+@racket[defvar*] is stored under its namespace alone, with no path at all, which is exactly what
+makes it reachable from outside the task. That is right for @racketidfont{problems-solved}, which
+the parent must read, and wrong for something like @racketidfont{treatments}, which should belong
+to one task and no other. Nor can a namespace of yours reach the state that a library such as
+@racket[make-matchmaker] keeps on your behalf. Use the inner study to keep a task's own state to
+itself, and @racket[defvar*] for values that must cross the boundary.}
+
+One helper works differently: @racket[assigning-treatments] from
+@racketmodname[conscript/survey-tools] stores its list of remaining treatments at the top level of
+the study, outside any path, so two tasks that both call it must be told apart with its
+@racket[#:treatments-key] argument.
 
 @subsection[#:tag "unitstut-standalone"]{Keeping a task runnable on its own}
 
@@ -682,6 +742,14 @@ doesn't produce an error message; it produces a page that shows @racket[undefine
 should be. In this tutorial the shared variables are @racketidfont{participation-fee},
 @racketidfont{problems-solved}, @racketidfont{payoff}, @racketidfont{selected-task}, and
 @racketidfont{task-payment}.
+
+@bold{Give a unit's flow a name of its own, and export it through a one-step @racketidfont{study}.}
+A parent that picks units at runtime runs every one of them under the same step name, so flows
+exported directly under that name would keep their instance variables, and the state behind
+@racket[make-matchmaker], in one shared place. Nesting the flow under its own name gives each task
+a storage path of its own. There is no error message for getting this wrong, only a study that
+quietly mixes two tasks' data. Here the inner studies are @racketidfont{counting} and
+@racketidfont{lottery}, and both units export @racketidfont{study}.
 
 @bold{Decide which unit to run in its own step, store the decision, and have the @racket[lambda]
 only look it up.} A @racket[lambda] that makes its own random choice can choose differently when a
@@ -755,6 +823,9 @@ For a random one, store the choice in a step, then unpack the chosen unit inside
 @racket[lambda] given to @racket[defstep/study].}
 
 @item{Any value that crosses between studies, in either direction, must be a @racket[defvar*].}
+
+@item{A unit's flow is a study named after the task, exported through a one-step study with the name
+the signature promises. The inner name gives everything the task stores a path of its own.}
 
 ]
 
