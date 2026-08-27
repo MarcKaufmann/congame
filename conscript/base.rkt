@@ -55,7 +55,7 @@
  module+
 
  begin begin0 let letrec let*
- if case cond else unless when
+ if case cond else => unless when
  or and not
  set!
  values
