@@ -216,10 +216,11 @@ LM Studio. Congame binds to all host interfaces only for its random per-run
 port while retaining a loopback public URL.
 
 The container root filesystem and harness directory are read-only. The task
-workspace, isolated home, and copied harness configuration are writable;
-documentation and source references are mounted read-only. The container gets
-no repository, task-definition, results, host-home, or Docker-socket mount. It
-runs as the invoking host UID/GID with all capabilities dropped,
+workspace, isolated home, copied harness configuration, and ephemeral `/tmp`
+and `/var/tmp` filesystems are writable; documentation and source references
+are mounted read-only. The container gets no repository, task-definition,
+results, host-home, or Docker-socket mount. It runs as the invoking host UID/GID
+with all capabilities dropped,
 `no-new-privileges`, and configured CPU, memory, PID, and wall-clock limits.
 
 The initial Pi profile copies a repository-owned `PI_CODING_AGENT_DIR` for
