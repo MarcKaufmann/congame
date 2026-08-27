@@ -5,6 +5,8 @@
   ;; its tests while keeping this aggregator free of side-effect-only requires.
   (for ([test-module (in-list '("config.rkt"
                                 "git.rkt"
+                                "pi-stream-view.rkt"
+                                "pi-stream-watchdog.rkt"
                                 "process.rkt"
                                 "workspace.rkt"))])
     (dynamic-require test-module #f)))
