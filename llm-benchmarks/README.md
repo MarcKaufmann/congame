@@ -148,7 +148,8 @@ For each run, the coordinator:
    references beside it;
 7. executes the harness script in its configured Docker image under a hard
    wall-clock deadline;
-8. captures a binary-safe Git patch and any new files;
+8. captures a binary-safe Git patch, a human-friendly review index with final
+   versions of changed files, and any new files;
 9. tears down the agent server and database;
 10. starts a second fresh server and database, replays the patch, uploads the
     submitted study, and runs visible and hidden checks; and
@@ -270,7 +271,10 @@ firewall rules for Congame and LM Studio.
 
 Results are stored under `results/<run-id>/`. A result includes the resolved
 configuration, task prompt, agent logs, patch, untracked files, server logs,
-check logs, outcome, and a pending human grade.
+check logs, outcome, and a pending human grade. Start review at
+`review/README.md`: it links to ordinary final file versions under
+`review/files/` and identifies additions, modifications, and deletions. The
+binary-safe `changes.patch` remains available for exact replay.
 
 Machine results and human grades are separate Git commits:
 
