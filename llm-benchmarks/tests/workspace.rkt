@@ -53,19 +53,36 @@
       (make-directory* fixture)
       (make-directory* result)
       (write-text (build-path fixture "study.rkt") "before\n")
+      (write-text (build-path fixture "obsolete.txt") "remove me\n")
       (copy-directory/files fixture workspace)
       (initialize-workspace-git! workspace)
       (write-text (build-path workspace "study.rkt") "after\n")
       (write-text (build-path workspace "assets" "note.txt") "new\n")
+      (delete-file (build-path workspace "obsolete.txt"))
       (write-text (build-path workspace "compiled" "study_rkt.zo") "generated\n")
       (define snapshot
-        (snapshot-workspace! workspace result '("study.rkt" "assets")))
+        (snapshot-workspace! workspace result
+                             '("study.rkt" "assets" "obsolete.txt")))
       (check-equal? (workspace-snapshot-violations snapshot) null)
       (check-equal? (sort (workspace-snapshot-changed-paths snapshot) string<?)
-                    '("assets/note.txt" "study.rkt"))
+                    '("assets/note.txt" "obsolete.txt" "study.rkt"))
+      (check-equal?
+       (file->string (build-path result "review" "files" "study.rkt"))
+       "after\n")
+      (check-equal?
+       (file->string (build-path result "review" "files" "assets" "note.txt"))
+       "new\n")
+      (check-false
+       (file-exists? (build-path result "review" "files" "obsolete.txt")))
+      (define review-index
+        (file->string (build-path result "review" "README.md")))
+      (check-regexp-match #rx"Modified.*study[.]rkt" review-index)
+      (check-regexp-match #rx"Added.*assets/note[.]txt" review-index)
+      (check-regexp-match #rx"Deleted.*obsolete[.]txt" review-index)
       (apply-snapshot! fixture replay (workspace-snapshot-patch-path snapshot))
       (check-equal? (file->string (build-path replay "study.rkt")) "after\n")
-      (check-equal? (file->string (build-path replay "assets" "note.txt")) "new\n"))
+      (check-equal? (file->string (build-path replay "assets" "note.txt")) "new\n")
+      (check-false (file-exists? (build-path replay "obsolete.txt"))))
     (lambda () (delete-directory/files root))))
 
 (test-case "workspace snapshots report scope violations"
