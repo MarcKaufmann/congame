@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/file
+(require net/uri-codec
+         racket/file
          racket/path
          racket/string
          "git.rkt"
@@ -79,6 +80,69 @@
     (or (string=? path prefix)
         (string-prefix? path (string-append prefix "/")))))
 
+(define (review-file-link path)
+  (string-join
+   (for/list ([segment (in-list (string-split path "/" #:trim? #f))])
+     (uri-encode segment))
+   "/"))
+
+(define (write-review-artifacts! workspace result-directory changed-paths
+                                 untracked-paths)
+  (define review-root (build-path result-directory "review"))
+  (define review-files-root (build-path review-root "files"))
+  (ensure-directory! review-root)
+  (define untracked (for/hash ([path (in-list untracked-paths)])
+                      (values path #t)))
+  (define entries
+    (for/list ([relative (in-list (sort changed-paths string<?))])
+      (define source (build-path workspace relative))
+      (define type (file-or-directory-type source #f))
+      (define status
+        (cond
+          [(not type) 'deleted]
+          [(hash-ref untracked relative #f) 'added]
+          [else 'modified]))
+      (define reviewable? (eq? type 'file))
+      (when reviewable?
+        (define destination (build-path review-files-root relative))
+        (ensure-directory! (or (path-only destination) review-files-root))
+        ;; Copy regular files only. Following a workspace symlink here could
+        ;; expose files outside the submission; symlinks remain represented in
+        ;; the binary-safe patch and are called out in the review index.
+        (copy-file source destination #t))
+      (list relative status reviewable? type)))
+  (call-with-output-file (build-path review-root "README.md")
+    #:exists 'truncate/replace
+    (lambda (out)
+      (display "# Submission review\n\n" out)
+      (display
+       "Final versions of added and modified files are available under `files/`. "
+       out)
+      (display
+       "The [binary-safe patch](../changes.patch) remains the replayable source of truth.\n\n"
+       out)
+      (cond
+        [(null? entries) (display "No workspace files changed.\n" out)]
+        [else
+         (for ([entry (in-list entries)])
+           (define relative (car entry))
+           (define status (cadr entry))
+           (define reviewable? (caddr entry))
+           (define type (cadddr entry))
+           (fprintf out "- **~a:** "
+                    (case status
+                      [(added) "Added"]
+                      [(modified) "Modified"]
+                      [else "Deleted"]))
+           (cond
+             [reviewable?
+              (fprintf out "[`~a`](<files/~a>)\n"
+                       relative
+                       (review-file-link relative))]
+             [(eq? type 'link)
+              (fprintf out "`~a` (symlink; inspect the patch)\n" relative)]
+             [else (fprintf out "`~a`\n" relative)]))]))))
+
 (define (snapshot-workspace! workspace result-directory allowed-paths)
   (define-values (_u-result untracked-output _u-stderr)
     (git-capture workspace '("ls-files" "--others" "--exclude-standard" "-z")))
@@ -100,6 +164,8 @@
   (call-with-output-file patch-path
     #:exists 'truncate/replace
     (lambda (out) (display patch out)))
+  (write-review-artifacts! workspace result-directory changed-paths
+                           untracked-paths)
   (workspace-snapshot
    patch-path
    changed-paths
