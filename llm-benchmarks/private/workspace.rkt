@@ -38,6 +38,8 @@
    (format "- Study ID: `~a`\n" study-id)
    (format "- Active instance slug: `~a`\n" instance-slug)
    (format "- Participant URL: `~a/_anon-login/~a`\n" server-url instance-slug)
+   "- Congame CLI authentication is already configured for this server.\n"
+   "- Run `raco congame upload` directly. Do not run `raco congame login`, visit `_cli-login`, or attempt an interactive/browser login.\n"
    "\nUseful commands:\n\n"
    "```bash\n"
    "raco make study.rkt\n"

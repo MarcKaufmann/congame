@@ -3,6 +3,7 @@ FROM ${BASE_IMAGE}
 
 ARG TARGETARCH
 ARG NODE_VERSION=22.19.0
+ARG PI_VERSION=0.84.2
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends git \
@@ -30,7 +31,7 @@ RUN PLTUSERHOME=/tmp/racket-build-home \
       /opt/congame/congame-cli \
   && rm -rf /tmp/racket-build-home
 
-RUN npm install --global @earendil-works/pi-coding-agent@0.84.2
+RUN npm install --global @earendil-works/pi-coding-agent@${PI_VERSION}
 
 RUN ln -sf /opt/node/bin/node /usr/local/bin/node \
   && ln -sf /opt/node/bin/npm /usr/local/bin/npm \
