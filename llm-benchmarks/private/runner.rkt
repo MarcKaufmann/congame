@@ -172,6 +172,7 @@
            "--memory" (~a (hash-ref docker-config 'memory "4g"))
            "--user" (format "~a:~a" (host-id "-u") (host-id "-g"))
            "--tmpfs" "/tmp:rw,nosuid,nodev,size=1g"
+           "--tmpfs" "/var/tmp:rw,nosuid,nodev,size=1g"
            "--mount" (docker-mount workspace "/workspace")
            "--mount" (docker-mount (build-path run-root "reference")
                                     "/reference"
