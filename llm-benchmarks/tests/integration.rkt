@@ -42,13 +42,17 @@
         'schema_version 1
         'id "noop"
         'script "run.sh"
-        'docker (hasheq 'image "debian:bullseye-slim"
+        'docker (hasheq 'image "congame-llm-bench-pi:0.84.3"
                         'cpus 1
                         'memory "256m"
                         'pids_limit 32)
         'limits (hasheq 'wall_seconds 10 'termination_grace_seconds 1)))
       (write-text (build-path harness-root "run.sh")
-                  "#!/usr/bin/env bash\nset -euo pipefail\necho noop\n")
+                  (string-append
+                   "#!/usr/bin/env bash\n"
+                   "set -euo pipefail\n"
+                   "touch /var/tmp/congame-llm-bench-write-test\n"
+                   "echo noop\n"))
       (make-directory* (build-path benchmark-root "results"))
       (parameterize ([benchmark-config-root benchmark-root])
         (define run-id
