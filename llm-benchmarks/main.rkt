@@ -20,10 +20,10 @@ commands:
   list
       list configured harnesses, tasks, and suites
 
-  run [--no-commit] <suite>
+  run [--no-commit] [--stream-view] <suite>
       run every task/harness/repetition in a suite
 
-  run-task --harness <harness> [--repetitions N] [--no-commit] <task>
+  run-task --harness <harness> [--repetitions N] [--no-commit] [--stream-view] <task>
       run one task with one harness
 
   grade --from <grade.json> [--no-commit] <run-id>
@@ -39,20 +39,25 @@ HELP
 
 (define (handle-run args)
   (define commit? #t)
+  (define stream-view? #f)
   (define suite-id
     (parameterize ([current-command-line-arguments (list->vector args)])
       (command-line
        #:program "raco congame-llm-bench run"
        #:once-each
        [("--no-commit") "do not commit result directories" (set! commit? #f)]
+       [("--stream-view") "render Pi JSON events as a compact live stream"
+        (set! stream-view? #t)]
        #:args (suite)
        suite)))
   (for ([run-id (in-list (run-suite! benchmark-root repository-root suite-id
-                                     #:commit? commit?))])
+                                     #:commit? commit?
+                                     #:stream-view? stream-view?))])
     (displayln run-id)))
 
 (define (handle-run-task args)
   (define commit? #t)
+  (define stream-view? #f)
   (define harness-id #f)
   (define repetitions 1)
   (define task-id
@@ -64,6 +69,8 @@ HELP
        [("--repetitions") count "number of independent repetitions"
         (set! repetitions (string->number count))]
        [("--no-commit") "do not commit result directories" (set! commit? #f)]
+       [("--stream-view") "render Pi JSON events as a compact live stream"
+        (set! stream-view? #t)]
        #:args (task)
        task)))
   (unless harness-id
@@ -73,7 +80,8 @@ HELP
   (for ([repetition (in-range 1 (add1 repetitions))])
     (displayln
      (run-one! benchmark-root repository-root task-id harness-id repetition
-               #:commit? commit?))))
+               #:commit? commit?
+               #:stream-view? stream-view?))))
 
 (define (handle-grade args)
   (define commit? #t)

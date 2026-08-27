@@ -35,6 +35,9 @@
          #:server-url "http://127.0.0.1:5100"
          #:instance-slug "test-instance"))
       (check-true (file-exists? (build-path workspace "study.rkt")))
+      (check-regexp-match
+       #rx"CLI authentication is already configured"
+       (file->string (build-path workspace "TASK.md")))
       (check-false (directory-exists? (build-path workspace "compiled"))))
     (lambda () (delete-directory/files root))))
 

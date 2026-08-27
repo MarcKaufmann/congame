@@ -46,14 +46,20 @@ Each phase gets a database whose name starts with
 It also allocates two consecutive host ports because Congame runs its debugger
 listener on the port immediately after its HTTP port.
 
-Build the initial Pi harness image from the repository root. It extends the
-regular local Congame image with `congame-cli`, Git, and the pinned Pi version:
+Build the Pi harness images from the repository root. They extend the regular
+local Congame image with `congame-cli`, Git, and a pinned Pi version. The local
+profile retains 0.84.2, while the OpenRouter profiles use 0.84.3:
 
 ```sh
 docker compose build congame
 docker build \
   --file llm-benchmarks/harnesses/pi-qwen3.8-27b-mlx-medium/Dockerfile \
   --tag congame-llm-bench-pi:0.84.2 \
+  .
+docker build \
+  --build-arg PI_VERSION=0.84.3 \
+  --file llm-benchmarks/harnesses/pi-qwen3.8-27b-mlx-medium/Dockerfile \
+  --tag congame-llm-bench-pi:0.84.3 \
   .
 ```
 
@@ -79,6 +85,51 @@ raco congame-llm-bench run-task \
   --repetitions 3 \
   smoke-study
 ```
+
+Run Kimi K3 through OpenRouter by supplying the credential from the host
+environment:
+
+```sh
+OPENROUTER_API_KEY=... raco congame-llm-bench run-task \
+  --harness pi-kimi-k3-openrouter-max \
+  smoke-study
+
+OPENROUTER_API_KEY=... raco congame-llm-bench run-task \
+  --harness pi-glm-5.3-flash-openrouter-max \
+  --stream-view \
+  smoke-study
+```
+
+The key is forwarded directly to the container and is not copied into the
+harness configuration or result manifest.
+
+`--stream-view` replaces Pi's raw terminal JSONL with a compact live view of
+thinking blocks, tool calls, execution status, and per-turn token and cost
+usage. The complete JSONL is still written to the result's `stdout.log`.
+
+Render any saved Pi log with the same view:
+
+```sh
+llm-benchmarks/scripts/view-pi-stream.rkt \
+  llm-benchmarks/results/<run-id>/stdout.log
+```
+
+The viewer selects ANSI colors when writing to a terminal. Use `--color` or
+`--no-color` to override detection. Add `--tail` (or `-f`) to keep following a
+log while its benchmark is still running:
+
+```sh
+llm-benchmarks/scripts/view-pi-stream.rkt --tail \
+  llm-benchmarks/results/<run-id>/stdout.log
+```
+
+The GLM profile caps a single model response at 16,384 tokens. It also stops a
+response after 128 consecutive whitespace-only thinking deltas, which prevents
+a malformed provider stream from consuming the entire run timeout. The stream
+viewer reports the same condition at sparse intervals while following a log.
+After a semantic stall, the harness resumes the same Pi session up to two times;
+ordinary transient provider failures use Pi's built-in retry policy. A third
+semantic stall fails the run with exit code 86.
 
 Runs commit their result directory to Git by default. During harness
 development, use `--no-commit`.
@@ -153,6 +204,11 @@ custom tools, or other harness capabilities. The coordinator enforces
 accounting. The local LM Studio profile has no usage charge and therefore uses
 a zero cost limit.
 
+`environment_from_host` may list credential variable names required by a
+harness. The runner rejects missing or empty values and passes each variable to
+Docker by name, keeping its value out of Docker's command-line arguments and
+checked-in configuration.
+
 Containers use Docker bridge networking. `host.docker.internal` is explicitly
 mapped to the host gateway; the generated `CONGAME_URL` and Pi model
 configuration use that hostname to reach the host-managed Congame server and
@@ -174,6 +230,14 @@ can be checked into its `pi-agent/` directory; task-specific `AGENTS.md` or
 `CLAUDE.md` files can be included in a task fixture. Pi runs in streaming JSON
 mode, so JSONL events—including thinking and tool-call deltas—are shown in the
 invoking terminal and saved to `stdout.log` as they happen.
+
+The `pi-kimi-k3-openrouter-max` profile uses Pi's pinned built-in OpenRouter
+catalog entry for `moonshotai/kimi-k3` with Kimi K3's native `max` reasoning
+effort. The `pi-glm-5.3-flash-openrouter-max` profile supplies an explicit model
+entry for the newer `z-ai/glm-5.3-flash`, also at `max`, using the context,
+capability, and pricing metadata available on 2026-08-27. Both require
+`OPENROUTER_API_KEY`; unlike the local profile, their provider usage is billed
+and the checked-in configurations do not impose a dollar cap.
 
 ## Tasks
 

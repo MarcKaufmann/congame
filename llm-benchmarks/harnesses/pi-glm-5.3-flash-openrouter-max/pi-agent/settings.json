@@ -1,0 +1,14 @@
+{
+  "defaultProjectTrust": "never",
+  "quietStartup": true,
+  "retry": {
+    "enabled": true,
+    "maxRetries": 2,
+    "baseDelayMs": 2000,
+    "provider": {
+      "timeoutMs": 180000,
+      "maxRetries": 0,
+      "maxRetryDelayMs": 15000
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "id": "pi-glm-5.3-flash-openrouter-max",
+  "script": "run.sh",
+  "config_directory": "pi-agent",
+  "environment": {
+    "PI_CODING_AGENT_DIR": "${HARNESS_CONFIG_DIR}"
+  },
+  "environment_from_host": [
+    "OPENROUTER_API_KEY"
+  ],
+  "docker": {
+    "image": "congame-llm-bench-pi:0.84.3",
+    "cpus": 4,
+    "memory": "4g",
+    "pids_limit": 256
+  },
+  "limits": {
+    "wall_seconds": 2700,
+    "termination_grace_seconds": 10,
+    "max_cost_usd": 0
+  },
+  "labels": {
+    "harness": "pi",
+    "harness_version": "0.84.3",
+    "provider": "openrouter",
+    "model": "z-ai/glm-5.3-flash",
+    "thinking": "max",
+    "pricing_as_of": "2026-08-27"
+  }
+}
