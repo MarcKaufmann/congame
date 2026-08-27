@@ -1,0 +1,89 @@
+{
+  "harness": {
+    "config_directory": "pi-agent",
+    "docker": {
+      "cpus": 4,
+      "image": "congame-llm-bench-pi:0.84.3",
+      "memory": "4g",
+      "pids_limit": 256
+    },
+    "environment": {
+      "PI_CODING_AGENT_DIR": "${HARNESS_CONFIG_DIR}"
+    },
+    "environment_from_host": [
+      "OPENROUTER_API_KEY"
+    ],
+    "id": "pi-kimi-k3-openrouter-max",
+    "labels": {
+      "harness": "pi",
+      "harness_version": "0.84.3",
+      "model": "moonshotai/kimi-k3",
+      "provider": "openrouter",
+      "thinking": "max"
+    },
+    "limits": {
+      "max_cost_usd": 0,
+      "termination_grace_seconds": 10,
+      "wall_seconds": 2700
+    },
+    "schema_version": 1,
+    "script": "run.sh"
+  },
+  "harness_id": "pi-kimi-k3-openrouter-max",
+  "prompt_sha1": "29054f5940bbb5c3031ec5d543d8de8acef4bb7c",
+  "repetition": 1,
+  "repository_commit": "f2cc8280a577b5eb714e9333647775ff1a960a98",
+  "repository_dirty": false,
+  "run_id": "20260827T105820Z__smoke-study__pi-kimi-k3-openrouter-max__r1__1aa51d42",
+  "schema_version": 1,
+  "started_at": "2026-08-27T10:58:20Z",
+  "task": {
+    "allowed_paths": [
+      "study.rkt",
+      "exercise.rkt",
+      "assets"
+    ],
+    "check_timeout_seconds": 300,
+    "fixture": "fixture",
+    "hidden_checks": [
+      [
+        "racket",
+        "${TASK_DIR}/checks/implementation-changed.rkt",
+        "${TASK_DIR}/fixture/study.rkt",
+        "study.rkt"
+      ]
+    ],
+    "id": "smoke-study",
+    "prompt": "prompt.md",
+    "references": [
+      {
+        "destination": "conscript",
+        "source": "conscript"
+      },
+      {
+        "destination": "congame-doc",
+        "source": "congame-doc"
+      },
+      {
+        "destination": "examples",
+        "source": "conscript/examples"
+      }
+    ],
+    "rubric": "study-v1",
+    "schema_version": 1,
+    "starter_study": "starter/study.rkt",
+    "study_id": "benchmark-study",
+    "study_path": "study.rkt",
+    "title": "Implement a small uploaded Conscript study",
+    "version": 1,
+    "visible_checks": [
+      [
+        "raco",
+        "make",
+        "study.rkt"
+      ]
+    ]
+  },
+  "task_id": "smoke-study",
+  "task_version": 1
+}
