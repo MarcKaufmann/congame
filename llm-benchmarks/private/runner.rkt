@@ -8,6 +8,7 @@
          "config.rkt"
          "git.rkt"
          "grading.rkt"
+         "pi-stream-view.rkt"
          "process.rkt"
          "results.rkt"
          "server.rkt"
@@ -90,7 +91,58 @@
    'LLM_BENCH_SERVER_URL server-url
    'LLM_BENCH_MAX_COST_USD (~a (hash-ref limits 'max_cost_usd 0))))
 
-(define (run-harness! harness harness-directory workspace run-root context result-path run-id)
+(define (required-host-environment harness)
+  (define declared-environment (hash-ref harness 'environment #hasheq()))
+  (for/list ([name (in-list (hash-ref harness 'environment_from_host null))])
+    (unless (and (string? name)
+                 (regexp-match? #px"^[A-Za-z_][A-Za-z0-9_]*$" name))
+      (error 'run-harness!
+             "invalid environment_from_host entry: ~s"
+             name))
+    (when (hash-has-key? declared-environment (string->symbol name))
+      (error 'run-harness!
+             "environment variable is both declared and forwarded from the host: ~a"
+             name))
+    (unless (let ([value (getenv name)])
+              (and value (not (string=? value ""))))
+      (error 'run-harness!
+             "required host environment variable is not set: ~a"
+             name))
+    name))
+
+(define (configure-container-cli! context docker-config server-url)
+  (define credential-environment
+    (make-environment
+     (hasheq 'CONGAME_BENCH_CLI_KEY (server-context-api-key context)
+             'CONGAME_BENCH_CLI_URL server-url)))
+  (define expression
+    (string-append
+     "(begin (require racket/file) "
+     "(put-preferences '(congame-cli:key) "
+     "(list (cons (getenv \"CONGAME_BENCH_CLI_URL\") "
+     "(getenv \"CONGAME_BENCH_CLI_KEY\")))))"))
+  (run-command/capture
+   "docker"
+   (list "run" "--rm"
+         "--network" "none"
+         "--read-only"
+         "--cap-drop" "ALL"
+         "--security-opt" "no-new-privileges"
+         "--user" (format "~a:~a" (host-id "-u") (host-id "-g"))
+         "--tmpfs" "/tmp:rw,nosuid,nodev,size=16m"
+         "--mount" (docker-mount (server-context-home context) "/home/bench")
+         "--env" "HOME=/home/bench"
+         "--env" "PLTUSERHOME=/home/bench"
+         ;; Name-only forwarding keeps the generated credential out of the
+         ;; Docker command line and any command-failure diagnostics.
+         "--env" "CONGAME_BENCH_CLI_KEY"
+         "--env" "CONGAME_BENCH_CLI_URL"
+         (jref docker-config 'image)
+         "racket" "-e" expression)
+   #:environment credential-environment))
+
+(define (run-harness! harness harness-directory workspace run-root context result-path run-id
+                      #:stream-view? [stream-view? #f])
   (define script (build-path harness-directory (jref harness 'script)))
   (unless (file-exists? script)
     (error 'run-harness! "harness script does not exist: ~a" script))
@@ -100,9 +152,11 @@
   (define server-url (container-server-url context))
   (define config-destination
     (prepare-harness-config! harness harness-directory run-root))
-  (configure-cli-for-url! context server-url)
+  (configure-container-cli! context docker-config server-url)
   (define environment
     (docker-environment harness config-destination server-url))
+  (define host-environment
+    (required-host-environment harness))
   (define docker-args
     (append
      (list "run" "--rm"
@@ -131,6 +185,11 @@
      (append*
       (for/list ([(key value) (in-hash environment)])
         (list "--env" (format "~a=~a" key value))))
+     (append*
+      (for/list ([name (in-list host-environment)])
+        ;; Passing only the name keeps the secret out of Docker's command-line
+        ;; arguments; Docker copies the value from its own environment.
+        (list "--env" name)))
      (list (jref docker-config 'image)
            "/bin/bash"
            (string-append "/harness/" (jref harness 'script)))))
@@ -143,18 +202,43 @@
           (call-with-output-file (build-path result-path "stderr.log")
             #:exists 'truncate/replace
             (lambda (stderr)
-              (define live-stdout
-                (combine-output stdout (current-output-port)))
               (define live-stderr
                 (combine-output stderr (current-error-port)))
-              (run-command
-               "docker"
-               docker-args
-               #:cwd workspace
-               #:stdout live-stdout
-               #:stderr live-stderr
-               #:timeout-seconds (jref limits 'wall_seconds)
-               #:grace-seconds (hash-ref limits 'termination_grace_seconds 10)))))))
+              (define (run-with-output live-stdout)
+                (run-command
+                 "docker"
+                 docker-args
+                 #:cwd workspace
+                 #:stdout live-stdout
+                 #:stderr live-stderr
+                 #:timeout-seconds (jref limits 'wall_seconds)
+                 #:grace-seconds (hash-ref limits 'termination_grace_seconds 10)))
+              (if stream-view?
+                  (let-values ([(view-input view-output) (make-pipe)])
+                    (let ([view-thread
+                           (thread
+                            (lambda ()
+                              (with-handlers
+                                  ([exn:fail?
+                                    (lambda (e)
+                                      (eprintf "stream view disabled: ~a\n"
+                                               (exn-message e))
+                                      ;; Keep draining the pipe so a terminal-rendering
+                                      ;; failure cannot block the harness, and preserve
+                                      ;; the remainder of the raw log.
+                                      (copy-port view-input stdout))])
+                                (render-pi-stream view-input
+                                                  (current-output-port)
+                                                  #:copy-to stdout))))])
+                      (dynamic-wind
+                        void
+                        (lambda () (run-with-output view-output))
+                        (lambda ()
+                          (close-output-port view-output)
+                          (thread-wait view-thread)
+                          (close-input-port view-input)))))
+                  (run-with-output
+                   (combine-output stdout (current-output-port)))))))))
     (lambda ()
       (run-command/capture "docker" (list "rm" "--force" container-name)
                            #:check? #f))))
@@ -232,9 +316,13 @@
   summary)
 
 (define (run-one! benchmark-root repository-root task-id harness-id repetition
-                  #:commit? [commit? #t])
+                  #:commit? [commit? #t]
+                  #:stream-view? [stream-view? #f])
   (define task (load-task task-id))
   (define harness (load-harness harness-id))
+  ;; Fail before creating result records or starting host services when a
+  ;; required host environment value is unavailable.
+  (required-host-environment harness)
   (define task-directory (resolve-benchmark-path "tasks" task-id))
   (define harness-directory (resolve-benchmark-path "harnesses" harness-id))
   (define run-id (make-run-id task-id harness-id repetition))
@@ -322,7 +410,8 @@
                       (build-path result-path "TASK.md") #t)
            (set! harness-result
                  (run-harness! harness harness-directory workspace run-root context result-path
-                               run-id))
+                               run-id
+                               #:stream-view? stream-view?))
            (set! snapshot
                  (snapshot-workspace!
                   workspace result-path (jref task 'allowed_paths))))
@@ -338,11 +427,14 @@
     (delete-directory/files run-root)
     run-id))
 
-(define (run-suite! benchmark-root repository-root suite-id #:commit? [commit? #t])
+(define (run-suite! benchmark-root repository-root suite-id
+                    #:commit? [commit? #t]
+                    #:stream-view? [stream-view? #f])
   (define suite (load-suite suite-id))
   (define repetitions (hash-ref suite 'repetitions 1))
   (for*/list ([task-id (in-list (jref suite 'tasks))]
               [harness-id (in-list (jref suite 'harnesses))]
               [repetition (in-range 1 (add1 repetitions))])
     (run-one! benchmark-root repository-root task-id harness-id repetition
-              #:commit? commit?)))
+              #:commit? commit?
+              #:stream-view? stream-view?)))
