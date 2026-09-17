@@ -239,7 +239,7 @@ QUERY
 
                           [else
                            (raise e)]))])
-      (with-database-transaction [conn (current-database)]
+      (with-database-transaction [_ (current-database)]
         #:isolation 'serializable
         (f)))))
 
@@ -584,6 +584,11 @@ QUERY
        (with-widget-parameterization
          body ...))])
 
+;; XXX(forget): Every widget must forget the current continuation as
+;; soon as possible before running its action. This helps prevent
+;; double-clicks, double-submissions, etc., from activating the same
+;; action twice.
+
 ; FIXME: we should not call the bot id #:id, but #:bot-id, and use #:id for html ids.
 (define/widget (button action label
                        #:class [class ""]
@@ -603,6 +608,7 @@ QUERY
      [:href
       (embed
        (lambda (req)
+         (redirect/get/forget/protect)
          (call-with-timings
           req
           (lambda ()
@@ -629,6 +635,7 @@ QUERY
      [:href
       (embed
        (lambda (_req)
+         (redirect/get/forget/protect)
          (response/render
           this-step
           (lambda ()
@@ -661,10 +668,10 @@ QUERY
           #:defaults defaults
           f this-request)
     [(list 'passed res _)
+     (redirect/get/forget/protect)
      (call-with-timings
       this-request
       (lambda ()
-        (redirect/get/forget/protect)
         (action res)
         (continue)))]
 
@@ -683,10 +690,8 @@ QUERY
        (parameterize ([nested-form-guard #t])
          (render rw))))]))
 
-;; FIXME: Skipping from a nested step fails because skip ends up
-;; returning from an already-expired step somehow. See
-;; skip-after-refresh.
 (define/widget (skip [to-step-id #f])
+  ;; Intentionally ignores XXX(forget) since there is no action to skip.
   (if to-step-id
       (continue to-step-id)
       (continue)))
@@ -696,18 +701,22 @@ QUERY
                            #:content-type [content-type "text/plain"])
   (haml
    (:a.button.attachment-button
-    ([:href (embed
-             (lambda (req)
-               (call-with-timings
-                req
-                (lambda ()
-                  (response/output
-                   #:mime-type (string->bytes/utf-8 content-type)
-                   #:headers (list
-                              (make-header
-                               #"content-disposition"
-                               (string->bytes/utf-8 (format "attachment; filename=\"~a\"" filename))))
-                   proc)))))])
+    ([:href
+      (embed
+       (lambda (req)
+         ;; Intentionally ignores XXX(forget), because this does not
+         ;; run an action or progress the study. It simply returns an
+         ;; attachment for download.
+         (call-with-timings
+          req
+          (lambda ()
+            (response/output
+             #:mime-type (string->bytes/utf-8 content-type)
+             #:headers (list
+                        (make-header
+                         #"content-disposition"
+                         (string->bytes/utf-8 (format "attachment; filename=\"~a\"" filename))))
+             proc)))))])
     label)))
 
 
@@ -1018,7 +1027,10 @@ QUERY
              (redirect/get/forget/protect)))]))))
 
 (define (run-step req s the-step)
-  (log-study-debug "run step ~e for participant ~s" (step-id the-step) (current-participant-id))
+  (log-study-debug
+   "run step ~e for participant ~s"
+   (step-id the-step)
+   (current-participant-id))
   (update-participant-progress! (step-id the-step))
   ;; This continuation is currently necessary because we need to be
   ;; able to return from a substudy once it is finished, without
@@ -1084,11 +1096,12 @@ QUERY
 (define (goto-next-step the-study the-step)
   ;; Forget here to prevent users from going back and re-running the transition.
   (redirect/get/forget/protect)
-  (log-study-debug "running transition for step~n  id: ~e~n  study: ~e~n  resume stack: ~e~n  participant-id: ~s"
-                   (step-id the-step)
-                   (study-name the-study)
-                   (current-resume-stack)
-                   (current-participant-id))
+  (log-study-debug
+   "running transition for step~n  id: ~e~n  study: ~e~n  resume stack: ~e~n  participant-id: ~s"
+   (step-id the-step)
+   (study-name the-study)
+   (current-resume-stack)
+   (current-participant-id))
   (define next-step
     (match ((step-transition the-step))
       [(? done?) #f]
@@ -1097,12 +1110,13 @@ QUERY
                      the-study next-step-id
                      (lambda ()
                        (error 'run-step "transitioned to a nonexistent step: ~.s~n  current step: ~.s~n  current study: ~.s" next-step-id (step-id the-step) the-study)))]))
-
   ;; Forget here to prevent refreshing from re-running the transition.
-  (define req (redirect/get/forget/protect))
+  (define req
+    (redirect/get/forget/protect))
   (cond
-    [next-step => (lambda (the-next-step)
-                    (run-step req the-study the-next-step))]
+    [next-step
+     => (lambda (the-next-step)
+          (run-step req the-study the-next-step))]
     [else
      (for/hasheq ([id (in-list (study-provides the-study))])
        (values id (get id (λ () (error 'run-study "study did not 'put' provided variable: ~s" id)))))]))
