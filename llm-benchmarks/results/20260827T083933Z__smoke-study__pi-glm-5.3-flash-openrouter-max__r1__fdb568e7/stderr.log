@@ -1,0 +1,4 @@
+GLM stream watchdog: stopped after 128 consecutive whitespace-only thinking deltas; retry this task (prefer a lower reasoning effort if it repeats).
+GLM stream supervisor: resuming stalled Pi session (1/2).
+GLM stream watchdog: stopped after 128 consecutive whitespace-only thinking deltas; retry this task (prefer a lower reasoning effort if it repeats).
+GLM stream supervisor: resuming stalled Pi session (2/2).

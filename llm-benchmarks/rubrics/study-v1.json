@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "id": "study-v1",
+  "scale": {
+    "minimum": 0,
+    "maximum": 4
+  },
+  "axes": [
+    {"id": "behavioral_correctness", "weight": 35},
+    {"id": "experimental_validity", "weight": 20},
+    {"id": "exercise_and_verification", "weight": 15},
+    {"id": "robustness", "weight": 10},
+    {"id": "conscript_quality", "weight": 10},
+    {"id": "scope_discipline", "weight": 5},
+    {"id": "handoff", "weight": 5}
+  ]
+}
