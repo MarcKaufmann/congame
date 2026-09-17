@@ -1085,12 +1085,17 @@ QUERY
         (goto-next-step s the-step)))]))
 
 (define (goto-step the-study the-step to-step-id)
-  (define req (redirect/get/forget/protect))
   (define next-step
     (study-find-step
      the-study to-step-id
      (lambda ()
        (error 'run-step "skipped to a nonexistent step: ~s~n  current step: ~.s~n  current study: ~.s" to-step-id the-step the-study))))
+  ;; Defensively and optimistically save the participant's progress so
+  ;; that a concurrent request is more likely to resume on the right
+  ;; step. Related to XXX(forget).
+  (when next-step
+    (update-participant-progress! (step-id next-step)))
+  (define req (redirect/get/forget/protect))
   (run-step req the-study next-step))
 
 (define (goto-next-step the-study the-step)
@@ -1110,6 +1115,9 @@ QUERY
                      the-study next-step-id
                      (lambda ()
                        (error 'run-step "transitioned to a nonexistent step: ~.s~n  current step: ~.s~n  current study: ~.s" next-step-id (step-id the-step) the-study)))]))
+  ;; Same defensive action as in goto-step above.
+  (when next-step
+    (update-participant-progress! (step-id next-step)))
   ;; Forget here to prevent refreshing from re-running the transition.
   (define req
     (redirect/get/forget/protect))
