@@ -8,14 +8,14 @@ if (!window.timerTargetCompilerDeclared) {
     let n = targetEl.dataset.timerN * 1;
     targetEl.innerText = format(n);
     const handle = setInterval(schedule, 1000);
-    return () => {
-      clearInterval(handle);
-    };
+    return unschedule;
 
     function schedule() {
       if (n >= 0) {
         targetEl.innerText = format(n--);
-      } else if (formEl) {
+        return;
+      }
+      if (formEl) {
         formEl.submit();
       } else if (nextBtn) {
         nextBtn.click();
@@ -24,6 +24,11 @@ if (!window.timerTargetCompilerDeclared) {
           "Timer ended, but no submit button or next button found. Doing nothing.",
         );
       }
+      unschedule();
+    }
+
+    function unschedule() {
+      clearInterval(handle);
     }
 
     function format(seconds) {
