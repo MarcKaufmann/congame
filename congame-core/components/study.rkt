@@ -598,6 +598,7 @@ QUERY
        (list "button" "next-button" class))]
      [:up-follow up-target]
      [:up-transition up-transition]
+     [:data-study-action ""]
      [:data-widget-id (when-bot id)]
      [:href
       (embed
@@ -623,7 +624,8 @@ QUERY
                                . action-widgets)
   (haml
    (:a.button.next-button
-    ([:data-widget-id (when-bot id)]
+    ([:data-study-action ""]
+     [:data-widget-id (when-bot id)]
      [:href
       (embed
        (lambda (_req)
@@ -672,6 +674,7 @@ QUERY
        ([:action (embed
                   (lambda (_req)
                     (response/render this-step)))]
+        [:data-study-action ""]
         [:data-widget-id (when-bot id)]
         [:enctype enctype]
         [:method "POST"]

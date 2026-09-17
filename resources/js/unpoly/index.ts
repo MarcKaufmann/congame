@@ -2,6 +2,7 @@ import up from "./unpoly";
 
 import "./calibration";
 import "./counter";
+import "./disable-study-action";
 import "./filesize";
 import "./mask";
 import "./mathjax";
