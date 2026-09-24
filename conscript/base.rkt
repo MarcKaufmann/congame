@@ -280,26 +280,37 @@
     #:literals (--> unquote)
     {pattern (unquote e)
              #:with (tg-e ...) #'((unquote e))
-             #:with ((step-id step-e) ...) #'()}
-    {pattern step:id
-             #:with (tg-e ...) #'(step)
-             #:with ((step-id step-e) ...) #'((step step))}
-    {pattern [step:id step-expr:expr]
-             #:with (tg-e ...) #'(step)
-             #:with ((step-id step-e) ...) #'((step step-expr))})
+             #:with ((step-id step-e) ...) #'()
+             #:with ((bind-id bind-e) ...) #'()}
+    {pattern -step-id:id
+             #:with (tg-e ...) #'(-step-id)
+             #:with ((step-id step-e) ...) #'(('-step-id -step-id))
+             #:with ((bind-id bind-e) ...) #'()}
+    {pattern [-step-id:id step-expr:expr]
+             #:with (tg-e ...) #'(-step-id)
+             #:with ((step-id step-e) ...) #'(('-step-id step-expr))
+             #:with ((bind-id bind-e) ...) #'()}
+    {pattern [(unquote step-id-expr) step-expr:expr]
+             #:with tmp (generate-temporary 'step-id)
+             #:with (tg-e ...) #'((unquote tmp))
+             #:with ((step-id step-e) ...) #'((tmp step-expr))
+             #:with ((bind-id bind-e) ...) #'((tmp step-id-expr))})
 
   (define-splicing-syntax-class transition-arrow
     {pattern e:transition-arrow-expr
              #:with (tg-e ...) #'{e.tg-e ...}
-             #:with ((step-id step-e) ...) #'((e.step-id e.step-e) ...)}
+             #:with ((step-id step-e) ...) #'((e.step-id e.step-e) ...)
+             #:with ((bind-id bind-e) ...) #'((e.bind-id e.bind-e) ...)}
     {pattern {~seq lhs:transition-arrow-expr --> rhs:transition-arrow}
              #:with (tg-e ...) #'{lhs.tg-e ... --> rhs.tg-e ...}
-             #:with ((step-id step-e) ...) #'((lhs.step-id lhs.step-e) ... (rhs.step-id rhs.step-e) ...)})
+             #:with ((step-id step-e) ...) #'((lhs.step-id lhs.step-e) ... (rhs.step-id rhs.step-e) ...)
+             #:with ((bind-id bind-e) ...) #'((lhs.bind-id lhs.bind-e) ... (rhs.bind-id rhs.bind-e) ...)})
 
   (define-syntax-class transition
     {pattern [arrow:transition-arrow]
              #:with tg-e #'(arrow.tg-e ...)
-             #:with ((step-id step-e) ...) #'((arrow.step-id arrow.step-e) ...)}))
+             #:with ((step-id step-e) ...) #'((arrow.step-id arrow.step-e) ...)
+             #:with ((bind-id bind-e) ...) #'((arrow.bind-id arrow.bind-e) ...)}))
 
 ;; TODO: Potentially remove requires and provides, both from here
 ;; and from core. Sharing between parents and children should be
@@ -322,9 +333,12 @@
                ([step-id-stx (in-list (syntax-e #'(transition-e.step-id ... ...)))]
                 [step-expr-stx (in-list (syntax-e #'(transition-e.step-e ... ...)))])
        (define step-id
-         (syntax->datum step-id-stx))
+         (syntax-parse step-id-stx
+           #:literals (quote)
+           [(quote id) (syntax->datum #'id)]
+           [_ (gensym)]))
        (define binder?
-         (not (eq? step-id-stx step-expr-stx)))
+         (not (eq? step-id (syntax->datum step-expr-stx))))
        (define seen?
          (hash-ref seen step-id #f))
        (define seen-binder?
@@ -337,7 +351,9 @@
                [step-id step-expr]))
            (raise-syntax-error #f "step already has a binding expression" stx binder-stx)))
        (values
+        #;stxs
         (if seen? stxs (cons (list step-id-stx step-expr-stx) stxs))
+        #;seen
         (hash-set
          seen step-id
          (cond
@@ -345,15 +361,16 @@
            [binder? 'binder]
            [else 'id]))))
      #'(define id
-         ({~? wrapper values}
-          (make-study
-           (symbol->string 'id)
-           #:requires {~? requires null}
-           #:provides {~? provides null}
-           #:transitions
-           (transition-graph
-            transition-e.tg-e ...)
-           (list (make-step* 'step-id step-expr) ...))))]))
+         (let ([transition-e.bind-id transition-e.bind-e] ... ...)
+           ({~? wrapper values}
+            (make-study
+             (symbol->string 'id)
+             #:requires {~? requires null}
+             #:provides {~? provides null}
+             #:transitions
+             (transition-graph
+              transition-e.tg-e ...)
+             (list (make-step* step-id step-expr) ...)))))]))
 
 (define-syntax (with-bot stx)
   (syntax-parse stx

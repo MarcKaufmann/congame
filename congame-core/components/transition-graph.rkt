@@ -52,26 +52,27 @@
     (pattern id:id
              #:with e #''id
              #:with (child ...) #'()
-
              #:with transition-e #''id
              #:with (transition ...) #'())
     (pattern (unquote tl:transition-lambda)
              #:with e #'tl.e
              #:with (child ...) #'()
-
              #:with transition-e #'(list '(<goto> tl.name) tl.transition ...)
              #:with (transition ...) #'())
     (pattern (unquote e:expr)
              #:with (child ...) #'()
-
              #:with transition-e #'e
              #:with (transition ...) #'())
     (pattern (~seq id:id --> a2:arrow)
              #:with e #''id
              #:with (child ...) #'([cons 'id a2.e] a2.child ...)
-
              #:with transition-e #''id
-             #:with (transition ...) #'([cons 'id a2.transition-e] a2.transition ...)))
+             #:with (transition ...) #'([cons 'id a2.transition-e] a2.transition ...))
+    (pattern (~seq (unquote id-expr) --> a2:arrow)
+             #:with e #'id-expr
+             #:with (child ...) #'([cons id-expr a2.e] a2.child ...)
+             #:with transition-e #'id-expr
+             #:with (transition ...) #'([cons id-expr a2.transition-e] a2.transition ...)))
 
   (syntax-parse stx
     #:literals (-->)
@@ -93,7 +94,10 @@
             (define sym (syntax-e #'a))
             (when (hash-has-key? nodes sym)
               (raise-syntax-error 'transition-graph "a step cannot transition to more than one follow-up step" stx edge-stx))
-            (hash-set nodes sym #t)])))
+            (hash-set nodes sym #t)]
+           [(cons _a _)
+            ;; XXX: Checking is disabled for runtime-generated ids.
+            nodes])))
 
      #'(hasheq
         'comptime (list arrows.transition ... ...)
