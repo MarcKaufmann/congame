@@ -111,9 +111,11 @@ variables between parent and child studies.
                           (code:line #:requires (value-id-sym ...)))
           (maybe-provides (code:line)
                           (code:line #:provides (value-id-sym ...)))
-          (transition-clause [step --> transition ... maybe-lambda])
-          (transition (code:line --> step)
-                      (code:line --> {step-id step}))
+          (transition-clause [step-spec transition ... maybe-lambda])
+          (transition (code:line --> step-spec))
+          (step-spec (code:line step)
+                     (code:line {step-id step})
+                     (code:line {,step-id-expr step}))
           (maybe-lambda (code:line)
                         (code:line --> ,(lambda () transition-expr)))
           (transition-expr (code:line done)
@@ -122,7 +124,8 @@ variables between parent and child studies.
                            (code:line 'step-id)
 @;{Returning 'step-id from unquoted lambda also seems to work, but this appears redunant to goto}
                            (code:line expr))
-          ]]{
+          ]
+         #:contracts ([step-id-expr symbol?])]{
 
 Defines a study in terms of steps joined by transitions. Each @racket[step] should be a step defined
 with @racket[defstep] or @racket[defstep/study].
@@ -156,8 +159,8 @@ ends, or a @racket[maybe-lambda] expression that returns @racket[done]:
   [intro --> question --> final --> ,(lambda () done)])
 ]
 
-You can reuse the same step function as separate steps with the @racket[--> {_step-id _step}] form of
-@racket[_transition]:
+You can reuse the same step function as separate steps with the @racket[{_step-id _step}] form of
+@racket[_step-spec]:
 
 @racketblock[
 (defstudy repeating-step-study
@@ -166,6 +169,56 @@ You can reuse the same step function as separate steps with the @racket[--> {_st
          --> final]
   [final --> final])
 ]
+
+When the step's ID is not known until the study is built, use the @racket[{,_step-id-expr
+_step}] form. The @racket[_step-id-expr] is evaluated once, when the @racket[defstudy] form itself
+is evaluated, and its result (a symbol) becomes the step's ID. This is useful inside the procedure
+given to @racket[defstep/study], where each participant's child study can give the same step a
+different ID, and so a separate place in the database:
+
+@racketblock[
+(defstep/study run-task
+  #:study (lambda ()
+            (define task-id
+              (string->symbol (format "task-~a" selected-index)))
+            (defstudy task-then-payment
+              [{,task-id task} --> pay --> ,(lambda () done)])
+            task-then-payment))
+]
+
+@inline-note[#:type 'warning]{@bold{Important:} @racket[_step-id-expr] must produce the same
+symbol every time the study is built for a participant, including after the server restarts.
+Congame finds a returning participant's place by step ID, and stores the step's data under it. If
+the ID changes, the participant cannot resume (@dr-message{failed to resume step in study}), and
+data stored under the old ID is no longer found. Compute the ID from constants or from stored study
+variables, as @racketidfont{selected-index} is above. Never compute it with @racket[gensym],
+@racket[random], or the current time.
+
+A @racket[defstudy] at the top level of a module evaluates @racket[_step-id-expr] once, when the
+module loads. A @racket[defstudy] inside a @racket[defstep/study] procedure evaluates it each time
+that procedure runs: when the participant first reaches the step, and again each time they
+resume.}
+
+@inline-note[#:type 'warning]{Other clauses cannot refer to a step with a runtime ID by name. A bare
+@racket[task] in another clause means a different step, whose ID is @racket['task]. To go to the
+step from elsewhere, return its ID from a transition lambda:
+
+@racketblock[
+(defstudy retry-study
+  [{,task-id task} --> check --> ,(lambda ()
+                                    (if passed?
+                                        done
+                                        task-id))])
+]
+
+Write the @racket[{,_step-id-expr _step}] form only once per step. Each occurrence
+evaluates @racket[_step-id-expr] again and adds another step.}
+
+@inline-note[#:type 'warning]{@racket[defstudy] cannot check runtime IDs when your module compiles.
+It does not report a runtime ID that is the same as another step's ID, or a step with a runtime ID
+that has more than one follow-up step; in both cases the first matching step or transition wins.
+An unknown step ID written directly in a clause is reported when the study is built. An unknown ID
+returned from a transition lambda is reported only when a participant reaches that transition.}
 
 The use of @racket[#:requires] and @racket[#:provides] arguments is deprecated and included for
 compatibility. Use @racket[defvar*] and @racket[defvar*/instance] to share study variables between
