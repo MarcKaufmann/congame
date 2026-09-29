@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="330" viewBox="0 0 640 330" font-family="Fira, 'Fira Sans', system-ui, sans-serif" font-size="14">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+    </marker>
+  </defs>
+
+  <!-- version 1: both tasks, in a fixed order -->
+  <text x="20" y="30" font-size="13" fill="#889">Version 1: every participant does both tasks</text>
+  <g font-family="'Fira Mono', Menlo, monospace" font-size="13" fill="#333">
+    <rect x="20"  y="45" width="90"  height="40" rx="6" fill="#fff" stroke="#333" stroke-width="1.5"/>
+    <text x="65"  y="70" text-anchor="middle">consent</text>
+
+    <rect x="140" y="45" width="100" height="40" rx="6" fill="#fff" stroke="#07A" stroke-width="1.5"/>
+    <text x="190" y="70" text-anchor="middle">counting</text>
+
+    <rect x="270" y="45" width="100" height="40" rx="6" fill="#fff" stroke="#07A" stroke-width="1.5"/>
+    <text x="320" y="70" text-anchor="middle">lottery</text>
+
+    <rect x="400" y="45" width="90"  height="40" rx="6" fill="#fff" stroke="#333" stroke-width="1.5"/>
+    <text x="445" y="70" text-anchor="middle">payment</text>
+
+    <rect x="520" y="45" width="100" height="40" rx="6" fill="#fff" stroke="#333" stroke-width="1.5"/>
+    <text x="570" y="70" text-anchor="middle">thank-you</text>
+  </g>
+  <g stroke="#333" stroke-width="1.5" marker-end="url(#arrow)">
+    <line x1="110" y1="65" x2="138" y2="65"/>
+    <line x1="240" y1="65" x2="268" y2="65"/>
+    <line x1="370" y1="65" x2="398" y2="65"/>
+    <line x1="490" y1="65" x2="518" y2="65"/>
+  </g>
+
+  <!-- version 2: one task, chosen at random -->
+  <text x="20" y="135" font-size="13" fill="#889">Version 2: each participant does one task, chosen at random</text>
+  <g font-family="'Fira Mono', Menlo, monospace" font-size="13" fill="#333">
+    <rect x="20"  y="185" width="90"  height="40" rx="6" fill="#fff" stroke="#333" stroke-width="1.5"/>
+    <text x="65"  y="210" text-anchor="middle">consent</text>
+  </g>
+  <rect x="140" y="150" width="230" height="110" rx="10" fill="#f5f7fa" stroke="#333" stroke-width="1.5"/>
+  <text x="255" y="170" text-anchor="middle" font-size="12" fill="#889">one of these, at random</text>
+  <g font-family="'Fira Mono', Menlo, monospace" font-size="13" fill="#333">
+    <rect x="160" y="180" width="190" height="30" rx="6" fill="#fff" stroke="#07A" stroke-width="1.5"/>
+    <text x="255" y="200" text-anchor="middle">counting</text>
+    <rect x="160" y="220" width="190" height="30" rx="6" fill="#fff" stroke="#07A" stroke-width="1.5"/>
+    <text x="255" y="240" text-anchor="middle">lottery</text>
+
+    <rect x="400" y="185" width="90"  height="40" rx="6" fill="#fff" stroke="#333" stroke-width="1.5"/>
+    <text x="445" y="210" text-anchor="middle">payment</text>
+
+    <rect x="520" y="185" width="100" height="40" rx="6" fill="#fff" stroke="#333" stroke-width="1.5"/>
+    <text x="570" y="210" text-anchor="middle">thank-you</text>
+  </g>
+  <g stroke="#333" stroke-width="1.5" marker-end="url(#arrow)">
+    <line x1="110" y1="205" x2="138" y2="205"/>
+    <line x1="370" y1="205" x2="398" y2="205"/>
+    <line x1="490" y1="205" x2="518" y2="205"/>
+  </g>
+
+  <!-- legend -->
+  <rect x="20" y="284" width="22" height="14" rx="3" fill="#fff" stroke="#07A" stroke-width="1.5"/>
+  <text x="50" y="296" font-size="12" fill="#889">a substudy: the study for one task, written once and plugged into either version</text>
+  <rect x="20" y="306" width="22" height="14" rx="3" fill="#fff" stroke="#333" stroke-width="1.5"/>
+  <text x="50" y="318" font-size="12" fill="#889">the parent study's own pages: the same in both versions, and written once</text>
+</svg>

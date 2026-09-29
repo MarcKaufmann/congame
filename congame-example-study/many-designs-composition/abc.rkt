@@ -37,8 +37,5 @@
 
           @form[payment-form on-submit render]})
 
-    (defstudy abc
-      [start --> ask-payment --> ,(λ () done)])
-
     (defstudy study
-      [abc --> ,(λ () done)])))
+      [start --> ask-payment --> ,(λ () done)])))
