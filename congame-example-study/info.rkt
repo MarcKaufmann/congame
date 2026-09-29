@@ -35,6 +35,7 @@
     (congame-example-study/looping looping-study)
     (congame-example-study/looping nested-looping-study)
     (congame-example-study/many-designs-composition/many-designs many-designs)
+    (congame-example-study/many-designs-composition/random-designs random-designs)
     (congame-example-study/memory-leak memory-leak)
     (congame-example-study/matchmaking matchmaking-study)
     (congame-example-study/multi-review submit+review-pdf)

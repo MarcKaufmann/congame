@@ -65,9 +65,14 @@ creation with @racket[for/study] and @racket[make-step/study].}
 one task for payment, with slider inputs and scoring.}
 
 @item{@github-link{congame-example-study/many-designs-composition/many-designs.rkt} --- Composing
-studies written as units: each sub-study imports a fee and exports its study and a payment
-function, and the parent invokes them through shared signatures. See
+three substudies in a fixed order. Two of them are written as units that import a fee: one exports
+its study and a payment function, the other only its study. The third is a plain study. See
 @secref["units-tutorial"] for the full walkthrough.}
+
+@item{@github-link{congame-example-study/many-designs-composition/random-designs.rkt} --- Giving
+each participant one of the same two units, chosen at random. The chosen unit's study runs under a
+step named after it, with the @racket[{,_step-id-expr _step}] form of @racket[defstudy], so each
+substudy stores its data under a path of its own.}
 
 ]
 
