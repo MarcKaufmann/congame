@@ -1,0 +1,86 @@
+{
+  "harness": {
+    "config_directory": "pi-agent",
+    "docker": {
+      "cpus": 4,
+      "image": "congame-llm-bench-pi:0.84.2",
+      "memory": "4g",
+      "pids_limit": 256
+    },
+    "environment": {
+      "PI_CODING_AGENT_DIR": "${HARNESS_CONFIG_DIR}"
+    },
+    "id": "pi-qwen3.8-27b-mlx-medium",
+    "labels": {
+      "harness": "pi",
+      "harness_version": "0.84.2",
+      "model": "qwen3.8-27b-mlx",
+      "provider": "lmstudio",
+      "thinking": "medium"
+    },
+    "limits": {
+      "max_cost_usd": 0,
+      "termination_grace_seconds": 10,
+      "wall_seconds": 2700
+    },
+    "schema_version": 1,
+    "script": "run.sh"
+  },
+  "harness_id": "pi-qwen3.8-27b-mlx-medium",
+  "prompt_sha1": "e01b68f13552da29337012e2651ed3ed6d6318b1",
+  "repetition": 1,
+  "repository_commit": "c7d04224b68bbe41358c62e68b1f3c9ce917b270",
+  "repository_dirty": true,
+  "run_id": "20260820T110532Z__smoke-study__pi-qwen3.8-27b-mlx-medium__r1__448d88bf",
+  "schema_version": 1,
+  "started_at": "2026-08-20T11:05:32Z",
+  "task": {
+    "allowed_paths": [
+      "study.rkt",
+      "exercise.rkt",
+      "assets"
+    ],
+    "check_timeout_seconds": 300,
+    "fixture": "fixture",
+    "hidden_checks": [
+      [
+        "racket",
+        "${TASK_DIR}/checks/implementation-changed.rkt",
+        "${TASK_DIR}/fixture/study.rkt",
+        "study.rkt"
+      ]
+    ],
+    "id": "smoke-study",
+    "prompt": "prompt.md",
+    "references": [
+      {
+        "destination": "conscript",
+        "source": "conscript"
+      },
+      {
+        "destination": "congame-doc",
+        "source": "congame-doc"
+      },
+      {
+        "destination": "examples",
+        "source": "conscript/examples"
+      }
+    ],
+    "rubric": "study-v1",
+    "schema_version": 1,
+    "starter_study": "starter/study.rkt",
+    "study_id": "benchmark-study",
+    "study_path": "study.rkt",
+    "title": "Implement a small uploaded Conscript study",
+    "version": 1,
+    "visible_checks": [
+      [
+        "raco",
+        "make",
+        "study.rkt"
+      ]
+    ]
+  },
+  "task_id": "smoke-study",
+  "task_version": 1
+}
