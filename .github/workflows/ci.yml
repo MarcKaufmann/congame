@@ -217,7 +217,7 @@ jobs:
         architecture: 'x64'
         distribution: 'full'
         variant: 'CS'
-        version: '9.0'
+        version: '9.3'
 
     - name: Install koyo
       run: raco pkg install -D --auto koyo-lib
