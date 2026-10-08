@@ -31,6 +31,7 @@
 
       (define (render rw)
         @md*{@rw["payment" @input-number{How much money do you want?}]
+             @make-autofill-meta[(hasheq 'cheap (hasheq 'payment 42))]
              @|submit-button|})
 
       @md{# Payment

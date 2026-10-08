@@ -21,6 +21,7 @@
 
  bot-stepper?
  make-bot-stepper
+ make-bot-stepper/delay
  make-bot-stepper/study)
 
 (struct bot (steppers)
@@ -29,26 +30,48 @@
 (struct bot-stepper (id action)
   #:transparent)
 
+(struct bot-stepper/delay (id proc)
+  #:transparent)
+
 (define/contract (make-bot . steps)
-  (-> (or/c bot? bot-stepper?) ... bot?)
-  (bot (for/fold ([steppers (hash)])
-                 ([s (in-list steps)])
-         (cond
-           [(bot? s)
-            (for/fold ([steppers steppers])
-                      ([(k sub-s) (in-hash (bot-steppers s))])
-              (hash-set steppers (append k (list '*root*)) sub-s))]
-           [else
-            (hash-set steppers (list (bot-stepper-id s) '*root*) s)]))))
+  (-> (or/c bot? bot-stepper/delay? bot-stepper?) ... bot?)
+  (define steppers
+    (for/fold ([steppers (hash)])
+              ([s (in-list steps)])
+      (cond
+        [(bot? s)
+         (for/fold ([steppers steppers])
+                   ([(k sub-s) (in-hash (bot-steppers s))])
+           (hash-set steppers (append k (list '*root*)) sub-s))]
+        [(bot-stepper/delay? s)
+         (hash-set
+          #;ht steppers
+          #;key (list (bot-stepper/delay-id s) '*root*)
+          #;value s)]
+        [else
+         (hash-set
+          #;ht steppers
+          #;key (list (bot-stepper-id s) '*root*)
+          #;value s)])))
+  (bot steppers))
 
 (define/contract (make-bot-stepper id action)
   (-> symbol? (-> any) bot-stepper?)
   (bot-stepper id action))
 
+(define/contract (make-bot-stepper/delay id proc)
+  (-> symbol? (-> bot?) bot-stepper/delay?)
+  (bot-stepper/delay id proc))
+
 (define/contract (make-bot-stepper/study study-id b)
   (-> symbol? bot? bot?)
-  (bot (for/hash ([(k s) (in-hash (bot-steppers b))])
-         (values (append (drop-right k 1) (list study-id)) s))))
+  (define (rebase s)
+    (append
+     (drop-right s 1)
+     (list study-id)))
+  (bot
+   (for/hash ([(k s) (in-hash (bot-steppers b))])
+     (values (rebase k) s))))
 
 
 ;; errors ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -174,7 +197,30 @@
          #;key path
          #;fail-proc
          (lambda ()
-           (raise-bot-error "no stepper for path ~s" path))))
+           (define original-path path)
+           (let loop ([path path])
+             (cond
+               [(null? path)
+                (raise-bot-error "no stepper for path ~s" original-path)]
+               [else
+                (define parent-path (cdr path))
+                (define parent-stepper (hash-ref (bot-steppers b) parent-path #f))
+                (cond
+                  [(bot-stepper/delay? parent-stepper)
+                   (define runtime-bot
+                     ((bot-stepper/delay-proc parent-stepper)))
+                   (define runtime-steppers
+                     (for/fold ([steppers (bot-steppers b)])
+                               ([(k sub-s) (in-hash (bot-steppers runtime-bot))])
+                       (hash-set steppers (append (drop-right k 1) parent-path) sub-s)))
+                   (hash-ref
+                    #;ht runtime-steppers
+                    #;key original-path
+                    #;fail-proc
+                    (lambda ()
+                      (loop (cdr path))))]
+                  [else
+                   (loop (cdr path))])])))))
       (call-with-page-change-evt
        (current-page)
        (lambda (change-evt)

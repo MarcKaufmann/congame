@@ -1,12 +1,16 @@
 #lang conscript/with-require
 
-(require "abc.rkt"
+(require conscript/admin
+         conscript/form0
+         racket/match
+         "abc.rkt"
          "cde.rkt"
          "fee-sig.rkt"
          "study-sig.rkt")
 
 (provide
- random-designs)
+ random-designs
+ random-designs-with-admin)
 
 (with-namespace xyz.trichotomy.many-designs.random
   (defvar* fee)
@@ -23,7 +27,7 @@
       @button{Continue}})
 
 (defstep (pick-design)
-  (set! selected-design (car (list-ref designs (random (length designs)))))
+  (set! selected-design (car (random-ref designs)))
   (skip))
 
 (defstep/study run-design
@@ -45,3 +49,12 @@
 (defstudy random-designs
   [the-beginning --> pick-design --> run-design --> the-end]
   [the-end --> the-end])
+
+(define random-designs-with-admin
+  (make-admin-study
+   #:models `((simple . ,(λ (id _bot)
+                           (match id
+                             ['(*root* abc ask-payment) (bot:autofill 'cheap)]
+                             ['(*root* the-end) (bot:completer)]
+                             [_ (bot:continuer)]))))
+   random-designs))
