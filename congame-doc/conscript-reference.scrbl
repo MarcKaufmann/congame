@@ -250,7 +250,9 @@ below. This prevents unsafe code from running on Congame servers.
 @(keyword-apply itemlist '(#:style) '(compact)
   (for/list ([modname (in-list (%whitelist))]
              #:unless (equal? modname 'data/monocle))
-    @item{@racketmodname[#,modname]}))
+    @item{@(if (memq modname '(studies/real-effort/tasks-conscript)) ; no docs to link to
+               (racketmodfont (symbol->string modname))
+               @racketmodname[#,modname])}))
 
 If you need to import a module that is not on this list, see
 @secref["conscript-with-require"].
