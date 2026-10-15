@@ -6,6 +6,7 @@
          racket/port
          racket/string
          "config.rkt"
+         "cost.rkt"
          "git.rkt"
          "grading.rkt"
          "pi-stream-view.rkt"
@@ -353,6 +354,7 @@
         'scope_violations (if snapshot (workspace-snapshot-violations snapshot) null)
         'checks checks
         'finished_at (timestamp)))
+      (write-run-cost! result-path harness)
       (write-pending-grade! result-path)
       (when commit?
         (commit-result! repository-root result-path

@@ -1,0 +1,9 @@
+{
+  "currency": "USD",
+  "missing_usage_messages": 0,
+  "reported_messages": 19,
+  "schema_version": 1,
+  "source": "pi-message-usage",
+  "status": "partial",
+  "total_cost_usd": 0
+}

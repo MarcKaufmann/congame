@@ -6,6 +6,7 @@
          racket/match
          racket/runtime-path
          "private/config.rkt"
+         "private/cost.rkt"
          "private/results.rkt"
          "private/run-cli.rkt"
          "private/runner.rkt"
@@ -15,6 +16,7 @@
 
 (define-runtime-path benchmark-root ".")
 (define-runtime-module-path grade-gui-module "private/grade-gui.rkt")
+(define-runtime-module-path task-gui-module "private/task-gui.rkt")
 (define repository-root (simplify-path (build-path benchmark-root 'up)))
 
 (define (display-help)
@@ -33,6 +35,12 @@ commands:
 
   runs [--task ID] [--harness ID] [--ungraded] [--json]
       list recorded runs, newest first
+
+  new-task [--resume <draft.json>] [task-id]
+      open the task creation wizard
+
+  cost <run-id | prefix | latest | all>
+      calculate and store costs from saved harness logs
 
   grade [--cli | --from <grade.json>] [--no-commit] <run-id | prefix | latest>
       open the review UI, use terminal prompts, or import a grade from JSON
@@ -116,6 +124,36 @@ HELP
        (printf "~a\t~a\t~a\n" (hash-ref run 'run_id)
                (hash-ref run 'status) (hash-ref run 'grade)))]))
 
+(define (handle-new-task args)
+  (define resume-path #f)
+  (define id
+    (parameterize ([current-command-line-arguments (list->vector args)])
+      (command-line
+       #:program "raco congame-llm-bench new-task"
+       #:once-each
+       [("--resume") path "resume a saved task draft" (set! resume-path path)]
+       #:args ([task-id ""]) task-id)))
+  (when (and resume-path (not (equal? id "")))
+    (error 'new-task "use either a task ID or --resume, not both"))
+  ((dynamic-require task-gui-module 'open-task-wizard) benchmark-root id #:resume resume-path)
+  (void))
+
+(define (handle-cost args)
+  (define selector
+    (parameterize ([current-command-line-arguments (list->vector args)])
+      (command-line
+       #:program "raco congame-llm-bench cost"
+       #:args (run) run)))
+  (define ids
+    (if (equal? selector "all")
+        (map (lambda (run) (hash-ref run 'run_id)) (list-runs benchmark-root))
+        (list (resolve-run-id benchmark-root selector))))
+  (for ([id (in-list ids)])
+    (define path (result-directory benchmark-root id))
+    (define manifest (read-json-file (build-path path "manifest.json")))
+    (write-run-cost! path (hash-ref manifest 'harness #hasheq()))
+    (printf "~a: ~a\n" id (cost-summary path))))
+
 (define (handle-grade args)
   (define commit? #t)
   (define grade-source #f)
@@ -161,6 +199,8 @@ HELP
       [(cons "runs" args) (handle-runs args)]
       [(cons "run" args) (handle-run args)]
       [(cons "run-task" args) (handle-run-task args)]
+      [(cons "new-task" args) (handle-new-task args)]
+      [(cons "cost" args) (handle-cost args)]
       [(cons "grade" args) (handle-grade args)]
       [(cons command _)
        (eprintf "unknown command: ~a\n\n" command)

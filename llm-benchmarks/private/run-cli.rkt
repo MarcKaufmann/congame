@@ -3,6 +3,7 @@
 (require racket/list
          racket/path
          racket/string
+         "cost.rkt"
          "git.rkt"
          "results.rkt"
          "util.rkt")
@@ -37,6 +38,7 @@
           (if (hash-ref outcome 'timed_out #f) " (timed out)" ""))
   (when (hash-ref outcome 'error #f)
     (printf "Error: ~a\n" (hash-ref outcome 'error)))
+  (printf "Total cost: ~a\n" (cost-summary path))
   (define violations (hash-ref outcome 'scope_violations #f))
   (printf "Scope violations: ~a\n"
           (cond

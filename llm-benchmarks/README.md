@@ -1,18 +1,8 @@
 # Congame LLM Benchmarks
 
-This package runs blinded Conscript implementation tasks against ordinary
-command-line agent harnesses.  The benchmark coordinator is implemented in
-Racket and is exposed as:
-
-```sh
-raco congame-llm-bench
-```
-
-The coordinator deliberately has no agent protocol. A harness is a shell
-script that runs in a prepared working directory and exits when it is
-finished. `TASK.md` is the portable entry point, but harnesses may use every
-native facility they support, including skills, context files, extensions,
-prompt templates, and custom tools.
+Run Conscript implementation tasks against command-line agents, then grade the
+results. The coordinator runs in Racket; each agent harness is a shell script
+that works in a prepared directory and reads `TASK.md`.
 
 ## Installation
 
@@ -136,28 +126,14 @@ development, use `--no-commit`.
 
 ## Run lifecycle
 
-For each run, the coordinator:
+Each run starts a fresh Congame server and PostgreSQL database, uploads the
+starter study, and launches the harness in Docker with a prepared workspace.
+After the agent finishes, the runner captures its changes and replays them
+against a second fresh server to check compilation, upload, and task-specific
+requirements. Results are committed to Git unless `--no-commit` is set.
 
-1. creates a unique PostgreSQL database;
-2. starts `congame-web/dynamic.rkt --mode local` on an available port;
-3. waits for the server health check;
-4. grants the disposable local admin its CLI role and writes an isolated
-   `raco congame` preference file;
-5. uploads the task's valid starter study and creates an active instance;
-6. builds a squashed task workspace and copies documentation and source
-   references beside it;
-7. executes the harness script in its configured Docker image under a hard
-   wall-clock deadline;
-8. captures a binary-safe Git patch, a human-friendly review index with final
-   versions of changed files, and any new files;
-9. tears down the agent server and database;
-10. starts a second fresh server and database, replays the patch, uploads the
-    submitted study, and runs visible and hidden checks; and
-11. writes and commits the result record.
-
-Cleanup is protected by `dynamic-wind`. Interrupting the coordinator removes
-the harness container, stops the server process group, and drops the generated
-database.
+The runner removes its containers, servers, and databases on completion or
+interruption. Saved server URLs are no longer live after a run.
 
 ## Harnesses
 
@@ -194,16 +170,12 @@ directory. It inherits the run-specific `HOME`, `PLTUSERHOME`, `CONGAME_URL`,
 and CLI login. No output format is required; standard output and standard error
 are saved verbatim.
 
-Harness resources are pluggable. `config_directory`, when present, names a
-directory copied into the run before the script starts; the harness can point
-its native configuration home there. A harness may instead load checked-in
-resources directly from its own directory. The coordinator does not interpret
-or artificially restrict skills, context files, extensions, prompt templates,
-custom tools, or other harness capabilities. The coordinator enforces
-`wall_seconds`; a nonzero `max_cost_usd` is exposed to the script as
-`LLM_BENCH_MAX_COST_USD` for the harness to enforce using its provider's
-accounting. The local LM Studio profile has no usage charge and therefore uses
-a zero cost limit.
+Use `config_directory` to copy harness configuration into each run, or load
+resources directly from the harness directory. Harnesses can use their native
+skills, extensions, context files, and tools.
+
+The coordinator enforces `wall_seconds`. A nonzero `max_cost_usd` is passed as
+`LLM_BENCH_MAX_COST_USD`; the harness is responsible for enforcing it.
 
 `environment_from_host` may list credential variable names required by a
 harness. The runner rejects missing or empty values and passes each variable to
@@ -224,14 +196,10 @@ results, host-home, or Docker-socket mount. It runs as the invoking host UID/GID
 with all capabilities dropped,
 `no-new-privileges`, and configured CPU, memory, PID, and wall-clock limits.
 
-The initial Pi profile copies a repository-owned `PI_CODING_AGENT_DIR` for
-each run and connects to `qwen3.8-27b-mlx` at LM Studio's local OpenAI endpoint.
-It trusts the isolated task workspace and leaves Pi's resource discovery and
-tool set enabled. Skills, extensions, prompt templates, and other Pi resources
-can be checked into its `pi-agent/` directory; task-specific `AGENTS.md` or
-`CLAUDE.md` files can be included in a task fixture. Pi runs in streaming JSON
-mode, so JSONL events—including thinking and tool-call deltas—are shown in the
-invoking terminal and saved to `stdout.log` as they happen.
+The local Pi profile connects to `qwen3.8-27b-mlx` through LM Studio. It copies
+`pi-agent/` into each run as `PI_CODING_AGENT_DIR`, with Pi's resource discovery
+and tools enabled. Pi events are streamed to the terminal and saved in
+`stdout.log`.
 
 The `pi-kimi-k3-openrouter-max` profile uses Pi's pinned built-in OpenRouter
 catalog entry for `moonshotai/kimi-k3` with Kimi K3's native `max` reasoning
@@ -242,6 +210,24 @@ capability, and pricing metadata available on 2026-08-27. Both require
 and the checked-in configurations do not impose a dollar cap.
 
 ## Tasks
+
+Create a task with the GUI wizard:
+
+```sh
+raco congame-llm-bench new-task
+raco congame-llm-bench new-task my-study
+```
+
+Drafts are JSON files. To reopen one from the command line:
+
+```sh
+raco congame-llm-bench new-task --resume /path/to/draft.json
+```
+
+New tasks are saved under `tasks/`; add them to a suite and commit them when
+ready. Blank source paths generate a minimal Conscript study. Custom sources
+are copied without compilation, excluding `.git` and `compiled` directories;
+symlinks are rejected.
 
 Each task lives under `tasks/<id>/` and contains a `config.json`, prompt,
 editable fixture, and valid starter study. The starter is uploaded before the
@@ -269,119 +255,68 @@ firewall rules for Congame and LM Studio.
 
 ## Results and grading
 
-Results are stored under `results/<run-id>/`. A result includes the resolved
-configuration, task prompt, agent logs, patch, untracked files, server logs,
-check logs, outcome, and a pending human grade. Start review at
-`review/README.md`: it links to ordinary final file versions under
-`review/files/` and identifies additions, modifications, and deletions. The
-binary-safe `changes.patch` remains available for exact replay.
-
-### How to review a run
-
-Start with `TASK.md`, then `review/README.md` and the final files it links to.
-Turn the task requirements into a checklist and trace each requirement through
-the submitted code. `review/files/` contains added and modified files, not a
-complete runnable workspace; use `changes.patch` for exact changes and deletions.
-
-For the smoke task, check the introduction and Continue button, rejection of an
-empty name, the final page displaying the submitted name, the exported
-`benchmark-study`, and successful compilation and upload.
-
-Next read `outcome.json` and `checks/summary.json`. Inspect each check's command,
-result, and corresponding log under `checks/`. A `completed` outcome means the
-runner finished; it is not a correctness grade. The current smoke checks verify
-compilation and that the submission differs from the fixture, plus the runner's
-upload check. They do **not** verify the full participant flow.
-
-Render the agent transcript from the checkout root:
-
-```sh
-llm-benchmarks/scripts/view-pi-stream.rkt llm-benchmarks/results/<run-id>/stdout.log
-```
-
-Look for actual execution of the exercise script and its results, then read the
-agent's final response. An `exercise.rkt` file shows intended verification;
-the transcript shows whether it ran and what happened. Compare the final
-response's claims against those results.
-
-| Criterion                 | Main evidence                                                                                                             |
-|---------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| Behavioral correctness    | Task checklist, final study code, participant-flow exercise results                                                       |
-| Experimental validity     | Requested design and how assignment, incentives, and data are implemented; assess only requirements relevant to this task |
-| Exercise and verification | Exercise script assertions and actual execution/results in the transcript                                                 |
-| Robustness                | Input validation and state handling in code, plus relevant edge-case exercises                                            |
-| Conscript quality         | Final code structure and use of Conscript APIs                                                                            |
-| Scope discipline          | Task constraints, changed files/patch, and `outcome.json` scope violations                                                |
-| Handoff                   | Final agent response compared with implementation and verification evidence                                               |
-
-Use `stderr.log`, `server/`, and `setup-upload.log` when diagnosing failures.
-`manifest.json` records the configuration and repository revision for provenance;
-`grade.json` is your assessment, not evidence of correctness. `untracked-files/`
-is a raw capture of new files, usually already represented in the review index.
-Missing artifacts can indicate an early failure; do not infer a failed study
-implementation solely from an infrastructure error.
-
-The runner removes its temporary servers and databases, so URLs in saved logs
-are no longer live. Interactive review requires reconstructing the submission
-from the recorded fixture/revision and patch, then uploading it into a fresh
-local instance. If the saved evidence cannot establish a criterion, defer the
-grade and investigate; record specific evidence and uncertainty in your notes.
-
-Machine results and human grades are separate Git commits:
-
-```text
-llm-bench: record <run-id>
-llm-bench: grade <run-id>
-```
-
-List runs newest first, with their outcome and human grade status:
+List runs or open the grader:
 
 ```sh
 raco congame-llm-bench runs
 raco congame-llm-bench runs --ungraded --task smoke-study
 raco congame-llm-bench runs --harness pi-kimi-k3-openrouter-max --json
-```
-
-Open the native `racket/gui/easy` grader:
-
-```sh
 raco congame-llm-bench grade latest
 raco congame-llm-bench grade 20261015T075152Z
 ```
 
-The window starts with the task and a readable check summary. Each scoring step
-shows the criterion, score examples, and suggested evidence side by side.
-Use the score slider to rate it from 0 to 4 in tenths; jump between criteria
-with the step selector.
-Racket and Conscript source previews include syntax highlighting.
-The evidence selector includes final source files, the patch, check logs, and
-server logs. You can switch evidence at any step. The agent transcript is not
-loaded or previewed in the grader; use the standalone log viewer if needed.
-Large previews are limited to 2 MiB and marked when truncated.
-
-Back and Next preserve your scores and notes. Existing grades are loaded for
-revision. Reviewer identity defaults to your Git name or login; you can edit it
-on the final review screen. Save requires every score to be in the rubric's
-range (0–4 for `study-v1`, with fractional scores allowed). Closing without
-saving leaves the previous grade intact and warns about unsaved edits.
-
-Use a full run ID, a unique prefix, or `latest` (the newest recorded run).
-Add `--no-commit` to save without committing. A commit failure keeps the window
-open and reports where the grade was saved. For terminal-only sessions:
+Run arguments accept a full ID, a unique prefix, or `latest`. Grading commits
+by default; use `--no-commit` to save locally. For terminal sessions or a
+prepared grade file:
 
 ```sh
 raco congame-llm-bench grade --cli latest
-```
-
-Alternatively, prepare a grade JSON file (see `rubrics/grade-example.json`)
-and attach it with:
-
-```sh
 raco congame-llm-bench grade --from /path/to/grade.json <run-id>
 ```
 
-Large exceptional media artifacts should use Git LFS; normal JSON, logs, and
-patches remain ordinary Git objects.
+See `rubrics/grade-example.json` for the grade format. Machine results and
+human grades are recorded in separate commits.
+
+### Evidence
+
+Results live under `results/<run-id>/`. The grader presents the task, check
+summary, and submitted code. For review outside the grader, start with
+`review/README.md`; it links to final versions of added and modified files.
+`changes.patch` records the full diff, including deletions.
+
+A `completed` outcome means the runner finished, not that the submission is
+correct. Compare the implementation with the task requirements. The smoke
+checks cover compilation, upload, and whether the fixture changed; they do not
+test the full participant flow.
+
+To inspect the agent's actions and verification results, use the transcript
+viewer:
+
+```sh
+llm-benchmarks/scripts/view-pi-stream.rkt llm-benchmarks/results/<run-id>/stdout.log
+```
+
+Check logs are under `checks/`; `stderr.log`, `server/`, and `setup-upload.log`
+help diagnose failures. `manifest.json` records the configuration and repository
+revision. Infrastructure failures alone do not establish that a submission is
+incorrect. If the recorded evidence is insufficient, reconstruct the workspace
+from the fixture and patch and test it in a fresh local instance.
+
+### Cost
+
+`cost.json` stores the run's reported USD estimate, which the grader displays.
+For Pi, it sums assistant message costs once, excluding duplicates in session
+summaries. Interrupted or incomplete usage is marked partial; missing usage is
+unavailable. These estimates may differ from provider bills.
+
+Backfill or refresh costs from saved logs with:
+
+```sh
+raco congame-llm-bench cost latest
+raco congame-llm-bench cost all
+```
+
+These commands write `cost.json` without committing.
 
 ## Tests
 
