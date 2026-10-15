@@ -9,6 +9,7 @@
          racket/runtime-path
          rackunit
          "../private/config.rkt"
+         "../private/replay.rkt"
          "../private/runner.rkt"
          "../private/util.rkt")
 
@@ -30,6 +31,8 @@
   (dynamic-wind
     void
     (lambda ()
+      (copy-directory/files (build-path source-benchmark-root "rubrics")
+                            (build-path benchmark-root "rubrics"))
       (make-directory* (build-path benchmark-root "tasks"))
       (copy-directory/files
        (build-path source-benchmark-root "tasks" "smoke-study")
@@ -58,6 +61,12 @@
         (define run-id
           (run-one! benchmark-root repository-root "smoke-study" "noop" 1
                     #:commit? #f))
+        (define result-path (build-path benchmark-root "results" run-id))
+        (check-true (file-exists? (build-path result-path "baseline.bundle")))
+        (check-true (file-exists? (build-path result-path "rubric.json")))
+        (define restored (build-path benchmark-root "restored"))
+        (extract-run! repository-root result-path restored)
+        (check-true (file-exists? (build-path restored "study.rkt")))
         (define outcome
           (read-json-file (build-path benchmark-root "results" run-id "outcome.json")))
         (check-equal? (hash-ref outcome 'status) "completed")

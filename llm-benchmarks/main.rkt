@@ -1,12 +1,15 @@
 #lang racket/base
 
 (require json
+         net/sendurl
          racket/cmdline
          racket/file
          racket/match
          racket/runtime-path
+         "private/comparison.rkt"
          "private/config.rkt"
          "private/cost.rkt"
+         "private/replay.rkt"
          "private/results.rkt"
          "private/run-cli.rkt"
          "private/runner.rkt"
@@ -45,6 +48,12 @@ commands:
 
   cost <run-id | prefix | latest | all>
       calculate and store costs from saved harness logs
+
+  replay [--extract DIR] [--no-open] [--allow-dirty] <run-id | prefix | latest>
+      restore a submission or serve it locally for interactive review
+
+  compare [--task ID] [--harness ID] [--json]
+      compare scores, check results, duration, and costs
 
   grade [--cli | --from <grade.json>] [--no-commit] <run-id | prefix | latest>
       open the review UI, use terminal prompts, or import a grade from JSON
@@ -172,6 +181,59 @@ HELP
     (write-run-cost! path (hash-ref manifest 'harness #hasheq()))
     (printf "~a: ~a\n" id (cost-summary path))))
 
+(define (handle-replay args)
+  (define destination #f)
+  (define open? #t)
+  (define allow-dirty? #f)
+  (define selector
+    (parameterize ([current-command-line-arguments (list->vector args)])
+      (command-line
+       #:program "raco congame-llm-bench replay"
+       #:once-each
+       [("--extract") path "restore files only, into a new directory" (set! destination path)]
+       [("--no-open") "print the participant URL without opening a browser" (set! open? #f)]
+       [("--allow-dirty") "use the committed fixture for an older run with an unsaved dirty baseline"
+        (set! allow-dirty? #t)]
+       #:args (run) run)))
+  (define run-id (resolve-run-id benchmark-root selector))
+  (define path (result-directory benchmark-root run-id))
+  (cond
+    [destination
+     (extract-run! repository-root path destination #:allow-dirty? allow-dirty?)
+     (printf "Restored ~a to ~a\n" run-id destination)]
+    [else
+     (printf "Replaying ~a with the current local Congame installation…\n" run-id)
+     (with-handlers ([exn:break? (lambda (_e) (displayln "\nReplay stopped."))])
+       (call-with-replayed-run
+        repository-root path
+        (lambda (_context workspace url)
+          (printf "Workspace: ~a\nParticipant URL: ~a\n" workspace url)
+          (when open?
+            (with-handlers ([exn:fail? (lambda (e) (eprintf "Could not open browser: ~a\n" (exn-message e)))])
+              (send-url url)))
+          (displayln "Press Enter or Ctrl-C to stop and remove the replay server and database.")
+          (flush-output)
+          (read-line)
+          (void))
+        #:allow-dirty? allow-dirty?))]))
+
+(define (handle-compare args)
+  (define task #f)
+  (define harness #f)
+  (define json? #f)
+  (parameterize ([current-command-line-arguments (list->vector args)])
+    (command-line
+     #:program "raco congame-llm-bench compare"
+     #:once-each
+     [("--task") id "filter by task ID" (set! task id)]
+     [("--harness") id "filter by harness ID" (set! harness id)]
+     [("--json") "include per-axis scores, outcome counts, and run IDs as JSON" (set! json? #t)]
+     #:args () (void)))
+  (define rows (compare-runs benchmark-root #:task task #:harness harness))
+  (cond
+    [json? (write-json rows) (newline)]
+    [else (display-comparison rows)]))
+
 (define (handle-grade args)
   (define commit? #t)
   (define grade-source #f)
@@ -212,7 +274,7 @@ HELP
   (parameterize ([benchmark-config-root benchmark-root])
     (match (vector->list (current-command-line-arguments))
       [(list) (display-help)]
-      [(cons "help" _) (display-help)]
+      [(or (cons "help" _) (list "--help") (list "-h")) (display-help)]
       [(list "list") (handle-list)]
       [(cons "runs" args) (handle-runs args)]
       [(cons "run" args) (handle-run args)]
@@ -220,6 +282,8 @@ HELP
       [(cons "new-task" args) (handle-new-task args)]
       [(cons "new-harness" args) (handle-new-harness args)]
       [(cons "cost" args) (handle-cost args)]
+      [(cons "replay" args) (handle-replay args)]
+      [(cons "compare" args) (handle-compare args)]
       [(cons "grade" args) (handle-grade args)]
       [(cons command _)
        (eprintf "unknown command: ~a\n\n" command)

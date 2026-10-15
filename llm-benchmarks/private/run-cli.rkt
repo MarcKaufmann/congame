@@ -136,7 +136,11 @@
   (define path (result-directory root run-id))
   (define manifest (read-json-file (build-path path "manifest.json")))
   (define rubric-id (hash-ref (hash-ref manifest 'task) 'rubric))
-  (define rubric (read-json-file (build-path root "rubrics" (string-append rubric-id ".json"))))
+  (define saved-rubric (build-path path "rubric.json"))
+  (define rubric
+    (read-json-file (if (file-exists? saved-rubric)
+                       saved-rubric
+                       (build-path root "rubrics" (string-append rubric-id ".json")))))
   (define scale (hash-ref rubric 'scale))
   (define minimum (hash-ref scale 'minimum))
   (define maximum (hash-ref scale 'maximum))

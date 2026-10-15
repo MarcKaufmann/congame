@@ -311,8 +311,44 @@ llm-benchmarks/scripts/view-pi-stream.rkt llm-benchmarks/results/<run-id>/stdout
 Check logs are under `checks/`; `stderr.log`, `server/`, and `setup-upload.log`
 help diagnose failures. `manifest.json` records the configuration and repository
 revision. Infrastructure failures alone do not establish that a submission is
-incorrect. If the recorded evidence is insufficient, reconstruct the workspace
-from the fixture and patch and test it in a fresh local instance.
+incorrect. Use replay to test the submission interactively.
+
+### Replay
+
+```sh
+raco congame-llm-bench replay latest
+raco congame-llm-bench replay --no-open 20261015T075152Z
+raco congame-llm-bench replay --extract /tmp/submission latest
+```
+
+Replay restores the submission, uploads it to a fresh local Congame instance,
+and opens the participant URL. Press Enter or Ctrl-C to stop; the server,
+database, and temporary files are removed. `--extract` only restores files
+and requires a destination that does not already exist. Neither mode changes
+the recorded run or invokes an agent.
+
+New runs save their baseline in `baseline.bundle`. Older runs use the fixture
+from their recorded Git revision; a dirty checkout requires `--allow-dirty`
+because its uncommitted baseline was not saved. Replay uses your current local
+Congame installation, not the historical runtime. Local PostgreSQL is required
+for serving, but not for extraction.
+
+### Comparison
+
+```sh
+raco congame-llm-bench compare
+raco congame-llm-bench compare --task smoke-study
+raco congame-llm-bench compare --harness pi-kimi-k3-openrouter-max --json
+```
+
+Rows group runs by task version, prompt, task configuration, rubric, and harness
+configuration. Scores are rubric-weighted averages normalized to 0–100; pending
+or invalid grades are excluded. Cost averages include only fully reported USD
+estimates, with partial and missing costs counted separately. JSON output also
+includes per-axis scores, score ranges, duration, outcomes, and run IDs.
+
+New runs save `rubric.json` for grading and comparison. Older runs use the current
+rubric and are identified in the output.
 
 ### Cost
 
@@ -346,4 +382,10 @@ LLM (using the small `debian:bullseye-slim` image):
 
 ```sh
 raco test llm-benchmarks/tests/integration.rkt
+```
+
+To check live replay and cleanup without Docker or an LLM:
+
+```sh
+raco test llm-benchmarks/tests/replay-integration.rkt
 ```

@@ -382,6 +382,8 @@
       'prompt_sha1 (file-sha1 prompt-path)
       'task task
       'harness harness))
+    (copy-file (resolve-benchmark-path "rubrics" (string-append (jref task 'rubric) ".json"))
+               (build-path result-path "rubric.json"))
     (define instance-slug (short-slug run-id))
     (define workspace #f)
     (call-with-benchmark-server
@@ -411,6 +413,8 @@
                   #:instance-slug instance-slug))
            (copy-file (build-path workspace "TASK.md")
                       (build-path result-path "TASK.md") #t)
+           (git-capture workspace
+                        (list "bundle" "create" (path-string (build-path result-path "baseline.bundle")) "HEAD"))
            (set! harness-result
                  (run-harness! harness harness-directory workspace run-root context result-path
                                run-id

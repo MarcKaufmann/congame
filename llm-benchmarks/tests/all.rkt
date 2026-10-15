@@ -4,6 +4,7 @@
   ;; These modules contain top-level RackUnit test cases. Loading each one runs
   ;; its tests while keeping this aggregator free of side-effect-only requires.
   (for ([test-module (in-list '("code-style.rkt"
+                                "comparison.rkt"
                                 "config.rkt"
                                 "cost.rkt"
                                 "git.rkt"
@@ -11,6 +12,7 @@
                                 "pi-stream-view.rkt"
                                 "pi-stream-watchdog.rkt"
                                 "process.rkt"
+                                "replay.rkt"
                                 "review-model.rkt"
                                 "run-cli.rkt"
                                 "task-definition.rkt"
