@@ -42,6 +42,11 @@
   ;; Parse and re-emit to reject invalid JSON and keep formatting stable.
   (write-json-file grade-destination (read-json-file grade-source))
   (when commit?
-    (commit-result! repository-root result-path
-                    (format "llm-bench: grade ~a" run-id)))
+    (with-handlers ([exn:fail?
+                     (lambda (e)
+                       (error 'record-grade!
+                              "grade saved to ~a, but Git commit failed. Retry with grade --from <that-file> ~a; no need to re-enter scores.\n~a"
+                              grade-destination run-id (exn-message e)))])
+      (commit-result! repository-root result-path
+                      (format "llm-bench: grade ~a" run-id))))
   result-path)

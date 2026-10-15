@@ -40,7 +40,9 @@
   (void))
 
 (define (commit-result! repository-root result-path message)
-  (define relative-path (find-relative-path repository-root result-path))
+  (define relative-path
+    (find-relative-path (simple-form-path repository-root)
+                        (simple-form-path result-path)))
   (git-capture repository-root
                (list "add" "--" (path->string relative-path)))
   ;; --only ensures unrelated staged changes are not included.

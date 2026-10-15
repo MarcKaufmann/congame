@@ -276,6 +276,57 @@ check logs, outcome, and a pending human grade. Start review at
 `review/files/` and identifies additions, modifications, and deletions. The
 binary-safe `changes.patch` remains available for exact replay.
 
+### How to review a run
+
+Start with `TASK.md`, then `review/README.md` and the final files it links to.
+Turn the task requirements into a checklist and trace each requirement through
+the submitted code. `review/files/` contains added and modified files, not a
+complete runnable workspace; use `changes.patch` for exact changes and deletions.
+
+For the smoke task, check the introduction and Continue button, rejection of an
+empty name, the final page displaying the submitted name, the exported
+`benchmark-study`, and successful compilation and upload.
+
+Next read `outcome.json` and `checks/summary.json`. Inspect each check's command,
+result, and corresponding log under `checks/`. A `completed` outcome means the
+runner finished; it is not a correctness grade. The current smoke checks verify
+compilation and that the submission differs from the fixture, plus the runner's
+upload check. They do **not** verify the full participant flow.
+
+Render the agent transcript from the checkout root:
+
+```sh
+llm-benchmarks/scripts/view-pi-stream.rkt llm-benchmarks/results/<run-id>/stdout.log
+```
+
+Look for actual execution of the exercise script and its results, then read the
+agent's final response. An `exercise.rkt` file shows intended verification;
+the transcript shows whether it ran and what happened. Compare the final
+response's claims against those results.
+
+| Criterion                 | Main evidence                                                                                                             |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| Behavioral correctness    | Task checklist, final study code, participant-flow exercise results                                                       |
+| Experimental validity     | Requested design and how assignment, incentives, and data are implemented; assess only requirements relevant to this task |
+| Exercise and verification | Exercise script assertions and actual execution/results in the transcript                                                 |
+| Robustness                | Input validation and state handling in code, plus relevant edge-case exercises                                            |
+| Conscript quality         | Final code structure and use of Conscript APIs                                                                            |
+| Scope discipline          | Task constraints, changed files/patch, and `outcome.json` scope violations                                                |
+| Handoff                   | Final agent response compared with implementation and verification evidence                                               |
+
+Use `stderr.log`, `server/`, and `setup-upload.log` when diagnosing failures.
+`manifest.json` records the configuration and repository revision for provenance;
+`grade.json` is your assessment, not evidence of correctness. `untracked-files/`
+is a raw capture of new files, usually already represented in the review index.
+Missing artifacts can indicate an early failure; do not infer a failed study
+implementation solely from an infrastructure error.
+
+The runner removes its temporary servers and databases, so URLs in saved logs
+are no longer live. Interactive review requires reconstructing the submission
+from the recorded fixture/revision and patch, then uploading it into a fresh
+local instance. If the saved evidence cannot establish a criterion, defer the
+grade and investigate; record specific evidence and uncertainty in your notes.
+
 Machine results and human grades are separate Git commits:
 
 ```text
@@ -283,7 +334,47 @@ llm-bench: record <run-id>
 llm-bench: grade <run-id>
 ```
 
-Prepare a grade JSON file and attach it with:
+List runs newest first, with their outcome and human grade status:
+
+```sh
+raco congame-llm-bench runs
+raco congame-llm-bench runs --ungraded --task smoke-study
+raco congame-llm-bench runs --harness pi-kimi-k3-openrouter-max --json
+```
+
+Open the native `racket/gui/easy` grader:
+
+```sh
+raco congame-llm-bench grade latest
+raco congame-llm-bench grade 20261015T075152Z
+```
+
+The window starts with the task and a readable check summary. Each scoring step
+shows the criterion, score examples, and suggested evidence side by side.
+Use the score slider to rate it from 0 to 4 in tenths; jump between criteria
+with the step selector.
+Racket and Conscript source previews include syntax highlighting.
+The evidence selector includes final source files, the patch, check logs, and
+server logs. You can switch evidence at any step. The agent transcript is not
+loaded or previewed in the grader; use the standalone log viewer if needed.
+Large previews are limited to 2 MiB and marked when truncated.
+
+Back and Next preserve your scores and notes. Existing grades are loaded for
+revision. Reviewer identity defaults to your Git name or login; you can edit it
+on the final review screen. Save requires every score to be in the rubric's
+range (0–4 for `study-v1`, with fractional scores allowed). Closing without
+saving leaves the previous grade intact and warns about unsaved edits.
+
+Use a full run ID, a unique prefix, or `latest` (the newest recorded run).
+Add `--no-commit` to save without committing. A commit failure keeps the window
+open and reports where the grade was saved. For terminal-only sessions:
+
+```sh
+raco congame-llm-bench grade --cli latest
+```
+
+Alternatively, prepare a grade JSON file (see `rubrics/grade-example.json`)
+and attach it with:
 
 ```sh
 raco congame-llm-bench grade --from /path/to/grade.json <run-id>

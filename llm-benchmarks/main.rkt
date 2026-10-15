@@ -1,15 +1,20 @@
 #lang racket/base
 
-(require racket/cmdline
+(require json
+         racket/cmdline
+         racket/file
          racket/match
          racket/runtime-path
          "private/config.rkt"
          "private/results.rkt"
-         "private/runner.rkt")
+         "private/run-cli.rkt"
+         "private/runner.rkt"
+         "private/util.rkt")
 
 (provide main)
 
 (define-runtime-path benchmark-root ".")
+(define-runtime-module-path grade-gui-module "private/grade-gui.rkt")
 (define repository-root (simplify-path (build-path benchmark-root 'up)))
 
 (define (display-help)
@@ -26,8 +31,11 @@ commands:
   run-task --harness <harness> [--repetitions N] [--no-commit] [--stream-view] <task>
       run one task with one harness
 
-  grade --from <grade.json> [--no-commit] <run-id>
-      attach a human grade to an existing result
+  runs [--task ID] [--harness ID] [--ungraded] [--json]
+      list recorded runs, newest first
+
+  grade [--cli | --from <grade.json>] [--no-commit] <run-id | prefix | latest>
+      open the review UI, use terminal prompts, or import a grade from JSON
 HELP
   ))
 
@@ -83,22 +91,66 @@ HELP
                #:commit? commit?
                #:stream-view? stream-view?))))
 
+(define (handle-runs args)
+  (define task #f)
+  (define harness #f)
+  (define ungraded? #f)
+  (define json? #f)
+  (parameterize ([current-command-line-arguments (list->vector args)])
+    (command-line
+     #:program "raco congame-llm-bench runs"
+     #:once-each
+     [("--task") id "filter by task ID" (set! task id)]
+     [("--harness") id "filter by harness ID" (set! harness id)]
+     [("--ungraded") "only runs without a completed grade" (set! ungraded? #t)]
+     [("--json") "emit a JSON array" (set! json? #t)]
+     #:args () (void)))
+  (define runs (list-runs benchmark-root #:task task #:harness harness
+                          #:ungraded? ungraded?))
+  (cond
+    [json? (write-json runs) (newline)]
+    [(null? runs) (displayln "No matching runs.")]
+    [else
+     (displayln "RUN ID\tOUTCOME\tGRADE")
+     (for ([run (in-list runs)])
+       (printf "~a\t~a\t~a\n" (hash-ref run 'run_id)
+               (hash-ref run 'status) (hash-ref run 'grade)))]))
+
 (define (handle-grade args)
   (define commit? #t)
   (define grade-source #f)
+  (define cli? #f)
   (define run-id
     (parameterize ([current-command-line-arguments (list->vector args)])
       (command-line
        #:program "raco congame-llm-bench grade"
        #:once-each
        [("--from") path "JSON grade file" (set! grade-source path)]
+       [("--cli") "use terminal prompts instead of the review window" (set! cli? #t)]
        [("--no-commit") "do not commit the grade" (set! commit? #f)]
        #:args (run)
        run)))
-  (unless grade-source
-    (error 'grade "--from is required"))
-  (record-grade! benchmark-root repository-root run-id grade-source #:commit? commit?)
-  (printf "graded ~a\n" run-id))
+  (define resolved-id (resolve-run-id benchmark-root run-id))
+  (when (and cli? grade-source)
+    (error 'grade "--cli and --from cannot be combined"))
+  (cond
+    [grade-source
+     (record-grade! benchmark-root repository-root resolved-id grade-source #:commit? commit?)
+     (printf "graded ~a\n" resolved-id)]
+    [cli?
+     (define grade (prompt-grade benchmark-root resolved-id))
+     (define temporary (make-temporary-file "llm-grade-~a.json"))
+     (dynamic-wind
+       void
+       (lambda ()
+         (write-json-file temporary grade)
+         (record-grade! benchmark-root repository-root resolved-id temporary #:commit? commit?))
+       (lambda () (delete-file temporary)))
+     (printf "graded ~a\n" resolved-id)]
+    [else
+     ((dynamic-require grade-gui-module 'open-grader)
+      benchmark-root repository-root resolved-id #:commit? commit?)
+     (void)]))
 
 (define (main)
   (parameterize ([benchmark-config-root benchmark-root])
@@ -106,6 +158,7 @@ HELP
       [(list) (display-help)]
       [(cons "help" _) (display-help)]
       [(list "list") (handle-list)]
+      [(cons "runs" args) (handle-runs args)]
       [(cons "run" args) (handle-run args)]
       [(cons "run-task" args) (handle-run-task args)]
       [(cons "grade" args) (handle-grade args)]
