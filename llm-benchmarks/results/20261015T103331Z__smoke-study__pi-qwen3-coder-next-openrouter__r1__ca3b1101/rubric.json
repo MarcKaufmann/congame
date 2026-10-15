@@ -1,0 +1,95 @@
+{
+  "schema_version": 1,
+  "id": "study-v1",
+  "scale": {
+    "minimum": 0,
+    "maximum": 4,
+    "guidelines": [
+      "0 — Missing or fundamentally wrong: no usable evidence that this criterion is met.",
+      "1 — Major deficiencies: substantial changes are needed to meet this criterion.",
+      "2 — Partially meets expectations: meaningful work, but important gaps remain.",
+      "3 — Mostly meets expectations: sound work with minor gaps or defects.",
+      "4 — Fully meets expectations: complete, convincing evidence with no material gaps."
+    ]
+  },
+  "axes": [
+    {
+      "id": "behavioral_correctness",
+      "weight": 35,
+      "title": "Behavioral correctness",
+      "description": "Does the submitted study implement the requested participant flow and behavior? Compare the task prompt with final code and check results.",
+      "anchors": [
+        "0: Required flow is absent or unusable.",
+        "2: Some required paths work, but important behavior is missing or incorrect.",
+        "4: All requested paths and behaviors are implemented and supported by evidence."
+      ]
+    },
+    {
+      "id": "experimental_validity",
+      "weight": 20,
+      "title": "Experimental validity",
+      "description": "Does the implementation preserve the experiment design, including treatments, assignment, incentives, measurements, and stored data where requested?",
+      "anchors": [
+        "0: The implementation invalidates the intended experiment or measurements.",
+        "2: The design is partly preserved, but consequential assignment, incentive, or data issues remain.",
+        "4: The requested design and data semantics are faithfully implemented."
+      ]
+    },
+    {
+      "id": "exercise_and_verification",
+      "weight": 15,
+      "title": "Exercise and verification",
+      "description": "Did the agent exercise the study and verify its work? Inspect agent logs, exercise scripts, and check results for actual execution and meaningful coverage.",
+      "anchors": [
+        "0: No meaningful verification was performed.",
+        "2: Some checks were run, but key paths or assertions were omitted.",
+        "4: Relevant paths and data were exercised, results checked, and failures addressed."
+      ]
+    },
+    {
+      "id": "robustness",
+      "weight": 10,
+      "title": "Robustness",
+      "description": "Does the study handle relevant invalid input, repeated actions, and state transitions reliably? Consider edge cases within the requested scope.",
+      "anchors": [
+        "0: Ordinary input or interaction breaks the study or corrupts state.",
+        "2: The happy path works, but relevant edge cases remain fragile.",
+        "4: Relevant input and state edge cases are handled consistently."
+      ]
+    },
+    {
+      "id": "conscript_quality",
+      "weight": 10,
+      "title": "Conscript quality",
+      "description": "Is the code clear, maintainable, and idiomatic Conscript? Inspect study structure, state handling, and use of existing APIs.",
+      "anchors": [
+        "0: Code is incoherent or fundamentally misuses Conscript.",
+        "2: Code is understandable but has significant structural or API-use problems.",
+        "4: Code uses appropriate Conscript patterns and is clear and maintainable."
+      ]
+    },
+    {
+      "id": "scope_discipline",
+      "weight": 5,
+      "title": "Scope discipline",
+      "description": "Did the agent stay within the requested task and allowed files? Compare changed files with the prompt and outcome scope violations.",
+      "anchors": [
+        "0: Changes substantially violate the allowed scope or damage unrelated behavior.",
+        "2: Work is mostly relevant but includes unnecessary or out-of-scope changes.",
+        "4: Changes are focused on the task and respect all scope constraints."
+      ]
+    },
+    {
+      "id": "handoff",
+      "weight": 5,
+      "title": "Handoff",
+      "description": "Does the final response accurately explain what was delivered, what was verified, and any limitations? Compare the agent summary with the saved evidence.",
+      "anchors": [
+        "0: The handoff is absent or materially misleading.",
+        "2: The summary is useful but omits important verification details or limitations.",
+        "4: The handoff is concise, accurate, and clearly reports verification and remaining limitations."
+      ]
+    }
+  ],
+  "guidance": "Read the task prompt and review the submitted files, outcome, and agent logs before scoring. Judge each axis independently against the task requirements. Passing automated checks alone does not establish a top score. Use notes to cite evidence and explain uncertainty; if you cannot assess an axis yet, abort and resume grading after review."
+}

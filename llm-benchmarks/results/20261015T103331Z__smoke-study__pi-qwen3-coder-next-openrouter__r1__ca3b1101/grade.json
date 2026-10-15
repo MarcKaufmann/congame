@@ -1,0 +1,37 @@
+{
+  "axes": {
+    "behavioral_correctness": {
+      "notes": "Behaves correctly, but uses formular instead of form0.",
+      "score": 2.0
+    },
+    "conscript_quality": {
+      "notes": "formular instead of form0",
+      "score": 2.0
+    },
+    "exercise_and_verification": {
+      "notes": "",
+      "score": 4.0
+    },
+    "experimental_validity": {
+      "notes": "",
+      "score": 4.0
+    },
+    "handoff": {
+      "notes": "",
+      "score": 4.0
+    },
+    "robustness": {
+      "notes": "",
+      "score": 4.0
+    },
+    "scope_discipline": {
+      "notes": "",
+      "score": 4.0
+    }
+  },
+  "graded_at": "2026-10-15T10:41:46Z",
+  "grader": "Bogdan Popa",
+  "overall_notes": "",
+  "rubric": "study-v1",
+  "status": "complete"
+}
