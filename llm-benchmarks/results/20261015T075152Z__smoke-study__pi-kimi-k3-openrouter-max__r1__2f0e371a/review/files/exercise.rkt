@@ -1,0 +1,74 @@
+#lang racket/base
+
+;; Exercises the benchmark-study against the supplied Congame server:
+;;   1. anon-login as a fresh participant
+;;   2. verify the intro page renders and click Continue
+;;   3. submit an empty display name and verify it is rejected
+;;   4. submit a non-empty display name
+;;   5. verify the final page includes the submitted name
+
+(require racket/list
+         racket/port
+         racket/string
+         racket/system)
+
+(define server "http://host.docker.internal:33492")
+(define slug "bench-20261015t075152z-smoke--2f0e371a")
+(define base-url (format "~a/study/~a" server slug))
+(define cookie-jar "/tmp/exercise-cookies.txt")
+
+(when (file-exists? cookie-jar)
+  (delete-file cookie-jar))
+
+(define (curl args [data #f])
+  (define out (open-output-string))
+  (parameterize ([current-output-port out]
+                 [current-error-port (open-output-nowhere)])
+    (apply system* (find-executable-path "curl")
+           "-s" "-b" cookie-jar "-c" cookie-jar
+           "-L"
+           (append (if data (list "-X" "POST" "--form" data) '())
+                   args)))
+  (get-output-string out))
+
+(define (check label ok?)
+  (printf "~a: ~a\n" (if ok? "PASS" "FAIL") label)
+  (unless ok? (exit 1)))
+
+(define (extract-href html)
+  (define m (regexp-match #rx"data-study-action=\"[^\"]*\"[^>]*href=\"([^\"]+)\"" html))
+  (and m (second m)))
+
+(define (extract-form-action html)
+  (define m (regexp-match #rx"<form action=\"([^\"]+)\"" html))
+  (and m (second m)))
+
+;; 1. Log in as a fresh anonymous participant.
+(void (curl (list (format "~a/_anon-login/~a" server slug))))
+
+;; 2. Intro page.
+(define intro-page (curl (list base-url)))
+(check "intro page shows Welcome" (string-contains? intro-page "<h1>Welcome</h1>"))
+(define continue-href (extract-href intro-page))
+(check "intro page has Continue button" (and continue-href #t))
+
+;; 3. Click Continue -> name form.
+(define name-page (curl (list (string-append server continue-href))))
+(check "name page shows form heading" (string-contains? name-page "What is your name?"))
+(define form-action (extract-form-action name-page))
+(check "name page has a form" (and form-action #t))
+
+;; 4. Empty submission is rejected and the form re-renders with an error.
+(define rejected-page (curl (list (string-append server form-action)) "display-name="))
+(check "empty name is rejected"
+       (and (string-contains? rejected-page "What is your name?")
+            (string-contains? rejected-page "class=\"errors\"")))
+(define retry-action (extract-form-action rejected-page))
+(check "form re-rendered after validation error" (and retry-action #t))
+
+;; 5. Non-empty submission reaches the final page with the name.
+(define final-page (curl (list (string-append server retry-action)) "display-name=BenchTester"))
+(check "final page reached" (string-contains? final-page "<h1>Thank You</h1>"))
+(check "final page includes submitted name" (string-contains? final-page "Thank you, BenchTester,"))
+
+(displayln "All checks passed.")

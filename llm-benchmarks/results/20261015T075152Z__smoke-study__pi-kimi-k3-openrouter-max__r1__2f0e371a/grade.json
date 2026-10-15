@@ -1,0 +1,37 @@
+{
+  "axes": {
+    "behavioral_correctness": {
+      "notes": "",
+      "score": 4
+    },
+    "conscript_quality": {
+      "notes": "",
+      "score": 4
+    },
+    "exercise_and_verification": {
+      "notes": "",
+      "score": 4
+    },
+    "experimental_validity": {
+      "notes": "",
+      "score": 4
+    },
+    "handoff": {
+      "notes": "",
+      "score": 4
+    },
+    "robustness": {
+      "notes": "",
+      "score": 4
+    },
+    "scope_discipline": {
+      "notes": "",
+      "score": 4
+    }
+  },
+  "graded_at": "2026-10-15T08:55:43Z",
+  "grader": "bogdan",
+  "overall_notes": "",
+  "rubric": "study-v1",
+  "status": "complete"
+}
