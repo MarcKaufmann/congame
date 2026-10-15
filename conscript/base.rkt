@@ -9,7 +9,7 @@
          (prefix-in congame: congame/components/email)
          congame/components/for-study
          (prefix-in congame: congame/components/push-notification)
-         (prefix-in congame: congame/components/struct)
+         (prefix-in congame: (only-in congame/components/struct step step/study))
          (prefix-in congame: congame/components/study)
          (except-in congame/components/study button form)
          congame/components/transition-graph

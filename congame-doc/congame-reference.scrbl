@@ -68,6 +68,16 @@
   Runs the study @racket[s] under @racket[req] with @racket[bindings].
 }
 
+@defparam[current-request req (or/c request? 'no-request)]{
+
+The HTTP request currently being handled for the participant. Congame sets this parameter before it
+runs a step's handler, and again when it runs the action procedure of a widget such as
+@racket[button] or @racket[form]. Outside of a running study, its value is @racket['no-request].
+
+This parameter is also provided by @racketmodname[conscript/base].
+
+}
+
 @defproc[(current-participant-id) integer?]{
 
 Returns the database ID of the current participant in the current study @tech{instance}.

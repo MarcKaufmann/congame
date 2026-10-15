@@ -7,6 +7,7 @@
                               add-css
                               add-css-resource
                               defbox
+                              define-job
                               define-var-box
                               defstep
                               defstep/study
@@ -15,7 +16,10 @@
                               button
                               get-step-timings
                               put/identity
+                              request-push-permissions-button
                               require
+                              send-email
+                              send-push-notification
                               with-bot
                               ~current-view-uri
                               log-conscript-debug
@@ -33,6 +37,8 @@
                      conscript/game-theory-unit
                      conscript/html
                      (except-in forms form)
+                     (only-in gregor +hours now/moment)
+                     (only-in koyo/job schedule-at)
                      conscript/markdown
                      conscript/matchmaking
                      conscript/resource
@@ -41,6 +47,10 @@
                      (except-in racket/base require)
                      (rename-in racket/base (require rkt:require))
                      racket/contract
+                     (only-in racket/function identity)
+                     (only-in racket/serialize serializable?)
+                     (only-in racket/list first)
+                     (only-in racket/unit define-values/invoke-unit export import unit?)
                      web-server/servlet
                      xml]
           scribble/examples
@@ -250,7 +260,9 @@ below. This prevents unsafe code from running on Congame servers.
 @(keyword-apply itemlist '(#:style) '(compact)
   (for/list ([modname (in-list (%whitelist))]
              #:unless (equal? modname 'data/monocle))
-    @item{@racketmodname[#,modname]}))
+    @item{@(if (memq modname '(studies/real-effort/tasks-conscript)) ; no docs to link to
+               (racketmodfont (symbol->string modname))
+               @racketmodname[#,modname])}))
 
 If you need to import a module that is not on this list, see
 @secref["conscript-with-require"].
@@ -458,6 +470,136 @@ Note that since the result of a @racketkeywordfont{log-conscript-}@racket[_level
 
 @screenshot{ref-log-example-output.png}
 
+@;------------------------------------------------
+
+@subsection{Email and Push Notifications}
+
+@defproc[(send-email [subject string?] [content string?]) id/c]{
+
+Sends a plain-text email to the current participant, with the subject line @racket[_subject] and the
+body @racket[_content]. The email goes to the email address of the participant’s Congame account.
+
+The email is not sent right away. @racket[send-email] adds it to the server’s queue of
+@seclink["conscript-jobs"]{background jobs} and returns the ID of the new job. The server sends the
+email soon after. To send it at a later time, wrap the call in @racket[schedule-at]:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(require gregor)
+
+(define (schedule-reminder)
+  (schedule-at
+   (+hours (now/moment) 24)
+   (send-email "Reminder"
+               "Please come back to complete part 2 of the study.")))
+
+(defstep (part-1-done)
+  @md{# Part 1 complete
+
+      We will send you a reminder by email tomorrow.
+
+      @button[schedule-reminder]{Continue}})
+}|
+
+In this example, @racket[send-email] is called from the action procedure of a @racket[button], so
+each participant gets one email. If you call it directly in the body of a @racket[defstep], each
+reload of the page sends another email.
+
+}
+
+@defproc[(send-push-notification [pid id/c]
+                                 [message string?]
+                                 [#:title title (or/c #f string?) #f])
+         void?]{
+
+Sends a push notification with the text @racket[_message] to the participant whose ID is
+@racket[_pid]. If @racket[_title] is a string, the notification shows it as a heading. When the
+participant clicks the notification, their browser opens the study.
+
+A participant gets push notifications only after they give permission in their browser. Use
+@racket[request-push-permissions-button] to ask for this permission. If the participant
+@racket[_pid] has not given permission, @racket[send-push-notification] does nothing.
+
+Unlike @racket[send-email], this procedure sends the notification right away. It raises an exception
+if the push service does not accept the notification.
+
+A notification is useful when a participant must wait for someone else. For example, in a study
+with groups of two, a participant can tell their partner that it is their turn:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(define (notify-partner)
+  (send-push-notification
+   #:title "Your turn"
+   (first (current-group-members))
+   "Your partner has made a choice. Return to the study to continue."))
+}|
+
+See @github-link{congame-example-study/conscript-push-notification.rkt} for a complete study.
+
+}
+
+@;------------------------------------------------
+
+@subsection[#:tag "conscript-jobs"]{Background Jobs}
+
+A @deftech{background job} is code that the Congame server runs separately from the pages that
+participants see. You can use jobs to do work at a later time: to send a reminder, or to close a
+study after a deadline.
+
+@defform[(define-job (id arg ...) body ...+)]{
+
+Defines @racket[_id] as a procedure that runs @racket[_body] as a @tech{background job}.
+
+Calling @racket[_id] does not run @racket[_body] right away. It adds a job to the server’s queue
+and returns the ID of the job. The server runs the job soon after. To run the job at a later time,
+wrap the call in @racket[schedule-at].
+
+Each @racket[_arg] has the same form as an argument in a function definition with @racket[define],
+so @racket[_id] can take optional and keyword arguments. Each value you give to @racket[_id] must be
+@racket[serializable?], because the server stores the arguments in its database until the job runs.
+
+The job runs for the participant who was current when @racket[_id] was called. The
+@racket[_body] runs outside of any page request, so it cannot return a page or use widgets such as
+@racket[button].
+
+@inline-note[#:type 'warning]{@bold{Important:} Inside @racket[_body], only study variables
+defined with @racket[defvar*] or @racket[defvar*/instance] have the participant’s values. A variable
+defined with @racket[defvar] or @racket[defvar/instance] does not refer to the same data inside a
+job as it does inside a step.}
+
+This example gives each participant 48 hours to complete a study:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(require gregor)
+
+(with-namespace my-lab.deadline-study
+  (defvar* time-is-up?))
+
+(define-job (end-time-window)
+  (set! time-is-up? #t))
+
+(define (start-time-window)
+  (set! time-is-up? #f)
+  (schedule-at
+   (+hours (now/moment) 48)
+   (end-time-window)))
+
+(defstep (welcome)
+  @md{# Welcome
+
+      You have 48 hours to complete this study.
+
+      @button[start-time-window]{Start}})
+}|
+
+Later steps can check @racketidfont{time-is-up?} and show a different page when the time is up.
+
+Use @racket[define-job] only at the top level of a module. You cannot use it inside the body of a
+@racket[defstep] or of another function.
+
+}
 
 @;------------------------------------------------
 
@@ -641,6 +783,7 @@ HTML suitable for use within another page (@racket[html*]).
 @defform[(img #:alt alt #:src src content ...)]
 @defform[(label content ...)]
 @defform[(li content ...)]
+@defform[(meta content ...)]
 @defform[(ol content ...)]
 @defform[(output content ...)]
 @defform[(p content ...)]
@@ -1523,17 +1666,271 @@ tracking both single-round and multi-round games.
 @margin-note{These functions require participants to be matched into groups first (see
 @secref["Matchmaking"]).}
 
+This module also provides all the bindings from @racketmodname[conscript/game-theory-sig],
+@racketmodname[conscript/game-theory-vars-sig] and @racketmodname[conscript/game-theory-unit].
+
+@(e '(require conscript/game-theory))
+
+A @deftech{game form} is a hash table that describes a two-player game. It has these keys:
+
+@itemlist[
+
+@item{@racket['actions1]: a list of the actions of player 1, who chooses a row.}
+
+@item{@racket['actions2]: a list of the actions of player 2, who chooses a column.}
+
+@item{@racket['outcomes1]: a hash table that maps each @deftech{action profile} to the outcome for
+player 1. An action profile is a pair @racket[(cons _action1 _action2)].}
+
+@item{@racket['outcomes2]: a hash table that maps each action profile to the outcome for player 2.}
+
+]
+
+@examples[#:eval e #:label #f
+(define prisoners-dilemma
+  (hash 'actions1 '(cooperate defect)
+        'actions2 '(cooperate defect)
+        'outcomes1 (hash '(cooperate . cooperate) 3
+                         '(cooperate . defect)    0
+                         '(defect . cooperate)    5
+                         '(defect . defect)       1)
+        'outcomes2 (hash '(cooperate . cooperate) 3
+                         '(cooperate . defect)    5
+                         '(defect . cooperate)    0
+                         '(defect . defect)       1)))
+]
+
+An outcome can be any value, such as a number of points, a grade, or a string.
+
+@defproc[(outcomes [game-form hash?] [action-profile pair?]) any/c]{
+
+Returns the outcome for player 1 in the @tech{game form} @racket[_game-form] when the players choose
+@racket[_action-profile].
+
+@examples[#:eval e #:label #f
+(outcomes prisoners-dilemma '(defect . cooperate))
+]
+
+}
+
+@defproc[(outcome-matrix [game-form hash?]) xexpr?]{
+
+Returns an @tech{HTML} table that shows @racket[_game-form] as a matrix. Each row is an action of
+player 1 and each column is an action of player 2. Each cell shows the outcomes for both players,
+with the outcome for player 1 first.
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(defstep (show-game)
+  @md{# The game
+
+      @(outcome-matrix prisoners-dilemma)
+
+      @button{Continue}})
+}|
+
+}
+
+@defproc[(payoff-matrix [game-form hash?]
+                        [utility1 (-> pair? any/c) identity]
+                        [utility2 (-> pair? any/c) identity])
+         xexpr?]{
+
+Like @racket[outcome-matrix], but each cell shows payoffs instead of outcomes. The payoff for player
+1 is @racket[(_utility1 _action-profile)], and the payoff for player 2 is
+@racket[(_utility2 _action-profile)].
+
+This function uses only the @racket['actions1] and @racket['actions2] keys of @racket[_game-form].
+
+}
+
+@defproc[(payoff-matrix/sym [game-form hash?]
+                            [utility (-> pair? any/c) identity])
+         xexpr?]{
+
+Like @racket[payoff-matrix], for a symmetric game in which both players have the same utility
+function. The @racket[_utility] function receives an @tech{action profile} @racket[(cons _own-action
+_other-action)] and returns the payoff for the player who chooses @racket[_own-action].
+
+This example shows the payoffs for players who value the total points of both players:
+
+@codeblock[#:keep-lang-line? #f]|{
+#lang conscript
+(define (total-points-utility action-profile)
+  (define own-action (car action-profile))
+  (define other-action (cdr action-profile))
+  (+ (outcomes prisoners-dilemma (cons own-action other-action))
+     (outcomes prisoners-dilemma (cons other-action own-action))))
+
+(defstep (show-payoffs)
+  @md{# Payoffs for players who value the total
+
+      @(payoff-matrix/sym prisoners-dilemma total-points-utility)
+
+      @button{Continue}})
+}|
+
+}
+
+@;------------------------------------------------
+
+@subsection[#:tag "game-theory-sig"]{Game Operations}
+
+@declare-exporting[conscript/game-theory-sig conscript/game-theory]
 @defmodule[conscript/game-theory-sig #:no-declare]
 
 Defines the @racketidfont{game-theory^} signature containing the core game operations.
 
+The bindings in this module are also provided by @racketmodname[conscript/game-theory].
+
+@defsignature[game-theory^ ()]{
+
+@signature-desc{The functions that @racket[game-theory@] defines when you invoke it (see
+@secref["game-theory-unit"]). These functions assume that each group has two members.}
+
+@deftogether[(
+@defproc[(make-choice! [choice any/c]) void?]
+@defproc[(make-choice/rounds! [choice any/c] [round any/c]) void?])]{
+
+Stores @racket[_choice] as the choice of the current participant in their current group. The
+@sigelem[game-theory^ make-choice/rounds!] function stores it for the round @racket[_round], which is usually a round
+number.
+
+}
+
+@deftogether[(
+@defproc[(get-own-choice) any/c]
+@defproc[(get-own-choice/rounds [round any/c]) any/c])]{
+
+Returns the stored choice of the current participant in their current group, or @racket[#f] if
+they have not made a choice.
+
+}
+
+@deftogether[(
+@defproc[(get-other-choice) any/c]
+@defproc[(get-other-choice/rounds [round any/c]) any/c])]{
+
+Returns the stored choice of the other member of the current participant’s group, or @racket[#f]
+if the other member has not made a choice.
+
+Call these functions only after the current participant has made their own choice. If no member of
+the group has made a choice, they raise an exception.
+
+}
+
+@defproc[(chosen-action-profile) pair?]{
+
+Returns the @tech{action profile} of the current group in a game with one round, as a pair
+@racket[(cons _own-choice _other-choice)]. Either part is @racket[#f] if that participant has not
+made a choice.
+
+As with @sigelem[game-theory^ get-other-choice], call this function only after the current
+participant has made their own choice.
+
+}
+
+@deftogether[(
+@defproc[(&group-choices) procedure?]
+@defproc[(&group-choices/rounds [round any/c]) procedure?])]{
+
+Returns a lens that focuses on the choices of the current group. Apply the lens to the value of the
+choice variable to get a hash table that maps each participant ID in the group to their choice, or
+@racket[#f] if no member has made a choice.
+
+For example, this expression counts how many members of the group have chosen in round 2:
+
+@racketblock[
+(let ([group-choices ((&group-choices/rounds 2) (get-choices/rounds))])
+  (if group-choices (hash-count group-choices) 0))
+]
+
+}
+
+}
+
+@;------------------------------------------------
+
+@subsection[#:tag "game-theory-vars-sig"]{Choice Variables}
+
+@declare-exporting[conscript/game-theory-vars-sig conscript/game-theory]
 @defmodule[conscript/game-theory-vars-sig #:no-declare]
 
 Defines the @racketidfont{game-theory-vars^} signature for mutable game state variables.
 
+The bindings in this module are also provided by @racketmodname[conscript/game-theory].
+
+@defsignature[game-theory-vars^ ()]{
+
+@signature-desc{The functions that @racket[game-theory@] uses to read and update the stored
+choices. Usually you define them with @racket[defbox].}
+
+@deftogether[(
+@defproc[(get-choices) hash?]
+@defproc[(set!-choices [v hash?]) void?])]{
+
+Gets and sets the choices for games with one round. The value maps each group ID to a hash table,
+which maps the ID of each participant in that group to their choice.
+
+}
+
+@deftogether[(
+@defproc[(get-choices/rounds) hash?]
+@defproc[(set!-choices/rounds [v hash?]) void?])]{
+
+Gets and sets the choices for games with more than one round. The value maps each group ID to a
+hash table, which maps each round to a hash table of participant IDs and choices.
+
+}
+
+}
+
+@;------------------------------------------------
+
+@subsection[#:tag "game-theory-unit"]{Game Theory Unit}
+
+@declare-exporting[conscript/game-theory-unit conscript/game-theory]
 @defmodule[conscript/game-theory-unit #:no-declare]
 
 Provides the implementation unit for the game theory signature.
+
+The bindings in this module are also provided by @racketmodname[conscript/game-theory].
+
+@defthing[game-theory@ unit?]{
+
+A unit that imports @racket[game-theory-vars^] and exports @racket[game-theory^].
+
+The unit stores the choice of each participant in a group, and gets the choice of the other group
+member. To use it, you supply two study variables that hold the choices of all groups, and invoke
+@racket[game-theory@] with @racket[define-values/invoke-unit]:
+
+@codeblock[#:keep-lang-line? #t]|{
+#lang conscript
+
+(require conscript/game-theory)
+
+(defvar/instance choices)
+(defvar/instance choices/rounds)
+
+(defbox choices)
+(defbox choices/rounds)
+
+(define-values/invoke-unit game-theory@
+  (import game-theory-vars^)
+  (export game-theory^))
+}|
+
+The @racket[defbox] forms define the functions that @racket[game-theory-vars^] names, and
+@racket[define-values/invoke-unit] defines the functions that @racket[game-theory^] names, such as
+@sigelem[game-theory^ make-choice!] and @sigelem[game-theory^ get-other-choice]. See
+@secref["units-tutorial"] for an introduction to units and signatures.
+
+Each choice variable must hold a hash table before the first choice is stored. Set it to
+@racket[(hash)] if it is @racket[undefined?], for example in the action procedure of the first
+@racket[button] of the study.
+
+}
+
 
 @;===============================================
 @section[#:style 'quiet]{Admin}
