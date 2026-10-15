@@ -90,6 +90,17 @@ OPENROUTER_API_KEY=... raco congame-llm-bench run-task \
   smoke-study
 ```
 
+Run Qwen3-Coder-Next through OpenRouter:
+
+```sh
+OPENROUTER_API_KEY=... raco congame-llm-bench run-task \
+  --harness pi-qwen3-coder-next-openrouter \
+  --stream-view \
+  smoke-study
+```
+
+This profile uses the same Pi 0.84.3 image, with thinking disabled.
+
 The key is forwarded directly to the container and is not copied into the
 harness configuration or result manifest.
 
