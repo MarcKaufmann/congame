@@ -17,6 +17,7 @@
 (define-runtime-path benchmark-root ".")
 (define-runtime-module-path grade-gui-module "private/grade-gui.rkt")
 (define-runtime-module-path task-gui-module "private/task-gui.rkt")
+(define-runtime-module-path harness-gui-module "private/harness-gui.rkt")
 (define repository-root (simplify-path (build-path benchmark-root 'up)))
 
 (define (display-help)
@@ -38,6 +39,9 @@ commands:
 
   new-task [--resume <draft.json>] [task-id]
       open the task creation wizard
+
+  new-harness [--resume <draft.json>] [harness-id]
+      open the harness creation wizard
 
   cost <run-id | prefix | latest | all>
       calculate and store costs from saved harness logs
@@ -138,6 +142,20 @@ HELP
   ((dynamic-require task-gui-module 'open-task-wizard) benchmark-root id #:resume resume-path)
   (void))
 
+(define (handle-new-harness args)
+  (define resume-path #f)
+  (define id
+    (parameterize ([current-command-line-arguments (list->vector args)])
+      (command-line
+       #:program "raco congame-llm-bench new-harness"
+       #:once-each
+       [("--resume") path "resume a saved task draft" (set! resume-path path)]
+       #:args ([harness-id ""]) harness-id)))
+  (when (and resume-path (not (equal? id "")))
+    (error 'new-harness "use either a harness ID or --resume, not both"))
+  ((dynamic-require harness-gui-module 'open-harness-wizard) benchmark-root id #:resume resume-path)
+  (void))
+
 (define (handle-cost args)
   (define selector
     (parameterize ([current-command-line-arguments (list->vector args)])
@@ -200,6 +218,7 @@ HELP
       [(cons "run" args) (handle-run args)]
       [(cons "run-task" args) (handle-run-task args)]
       [(cons "new-task" args) (handle-new-task args)]
+      [(cons "new-harness" args) (handle-new-harness args)]
       [(cons "cost" args) (handle-cost args)]
       [(cons "grade" args) (handle-grade args)]
       [(cons command _)

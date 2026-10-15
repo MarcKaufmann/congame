@@ -137,6 +137,18 @@ interruption. Saved server URLs are no longer live after a run.
 
 ## Harnesses
 
+Create a harness from scratch or use an existing one as a template:
+
+```sh
+raco congame-llm-bench new-harness
+raco congame-llm-bench new-harness my-agent
+raco congame-llm-bench new-harness --resume /path/to/draft.json
+```
+
+The wizard writes `config.json`, executable `run.sh`, and any copied resources.
+Build the Docker image separately. Forward credentials by their host environment
+variable names; do not put their values in the harness configuration.
+
 Each harness lives under `harnesses/<id>/`:
 
 ```text

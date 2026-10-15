@@ -7,6 +7,7 @@
                                 "config.rkt"
                                 "cost.rkt"
                                 "git.rkt"
+                                "harness-definition.rkt"
                                 "pi-stream-view.rkt"
                                 "pi-stream-watchdog.rkt"
                                 "process.rkt"
