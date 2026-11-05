@@ -58,6 +58,8 @@
     (current-bot-manager))
   (run impl b current-instance-id instance-url))
 
+(define-logger study-bot)
+
 (struct state (stopped? thds idx))
 (define-struct-lenses state)
 
@@ -82,18 +84,25 @@
     (define thd
       (thread
        (lambda ()
-         (call-with-study-manager
-          (make-study-manager
-           #:database db
-           #:participant bot-participant)
-          (lambda ()
-            (run-bot
-             #:study-url instance-url
-             #:username (user-username u)
-             #:password password
-             #:headless? #f
-             #:port next-port
-             b))))))
+         (with-handlers ([exn:fail?
+                          (lambda (e)
+                            (log-study-bot-error
+                             "bot for participant ~a in instance ~a failed~n error: ~a"
+                             (study-participant-id bot-participant)
+                             instance-id
+                             (exn-message e)))])
+           (call-with-study-manager
+            (make-study-manager
+             #:database db
+             #:participant bot-participant)
+            (lambda ()
+              (run-bot
+               #:study-url instance-url
+               #:username (user-username u)
+               #:password password
+               #:headless? (not (display-available?))
+               #:port next-port
+               b)))))))
     (values
      (lens-update
       &state-thds

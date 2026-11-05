@@ -6,7 +6,8 @@
          racket/list)
 
 (provide
- current-user-bot?)
+ current-user-bot?
+ display-available?)
 
 (define/contract current-user-bot?
   (parameter/c boolean?)
@@ -72,6 +73,16 @@
   (bot
    (for/hash ([(k s) (in-hash (bot-steppers b))])
      (values (rebase k) s))))
+
+
+;; display ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define (display-available?)
+  (case (system-type 'os*)
+    [(macosx windows) #t]
+    [else (for/or ([var (in-list '("DISPLAY" "WAYLAND_DISPLAY"))])
+            (define val (getenv var))
+            (and val (not (string=? val "")) #t))]))
 
 
 ;; errors ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

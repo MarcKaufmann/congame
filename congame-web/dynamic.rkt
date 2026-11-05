@@ -137,6 +137,7 @@
                 (server               . ,config:log-level)
                 (session              . ,config:log-level)
                 (study                . ,config:log-level)
+                (study-bot            . ,config:log-level)
                 (system               . ,config:log-level)
                 (worker               . info))))
 
