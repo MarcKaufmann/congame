@@ -5,7 +5,7 @@
                "component-lib"
                "conscript"
                "db-lib"
-               "deta-lib"
+               ["deta-lib" #:version "0.21"]
                ["forms-lib" #:version "0.8"]
                "gregor-lib"
                "koyo-lib"

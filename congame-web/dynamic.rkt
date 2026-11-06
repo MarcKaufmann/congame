@@ -14,6 +14,7 @@
          congame/components/study
          db
          (prefix-in dbg: debugging/server)
+         (prefix-in deta: deta)
          deta/reflect
          koyo/continuation
          koyo/database
@@ -37,6 +38,8 @@
          web-server/safety-limits)
 
 ;; System ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(deta:resolve-fields-strictly? #t)
 
 (define-runtime-path migrations-path
   (build-path 'up "congame-web-migrations"))
