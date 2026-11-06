@@ -10,7 +10,7 @@
                "csv-writing"
                "db-lib"
                "dbg"
-               "deta-lib"
+               ["deta-lib" #:version "0.21"]
                ["forms-lib" #:version "0.8"]
                "gregor-lib"
                "hash-view-lib"

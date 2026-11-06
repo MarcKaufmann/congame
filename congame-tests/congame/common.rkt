@@ -2,6 +2,7 @@
 
 (require (for-syntax racket/base)
          db
+         (prefix-in deta: deta)
          koyo/database
          koyo/database/migrator
          koyo/session
@@ -19,6 +20,8 @@
  make-test-database
  make-test-migrator
  run-db-tests)
+
+(deta:resolve-fields-strictly? #t)
 
 (define-runtime-path migrations-path
   (build-path 'up 'up "congame-web-migrations"))

@@ -9,7 +9,7 @@
     "component-lib"
     "congame-core"
     "db-lib"
-    "deta-lib"
+    ["deta-lib" #:version "0.21"]
     ["forms-lib" #:version "0.10"]
     "hash-view-lib"
     "koyo-lib"
