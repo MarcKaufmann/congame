@@ -42,6 +42,7 @@ jobs:
         distribution: 'full'
         variant: 'CS'
         version: 'current'
+        snapshot_site: 'northwestern'
 
     - name: Install Racket deps
       run: |
@@ -115,6 +116,7 @@ jobs:
         distribution: 'full'
         variant: 'CS'
         version: 'current'
+        snapshot_site: 'northwestern'
 
     - name: Install Racket deps
       run: |
