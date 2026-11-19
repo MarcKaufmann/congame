@@ -103,9 +103,11 @@
   (-> user? hasher? string? user?)
   (set-user-password-hash u (hasher-make-hash h p)))
 
-(define/contract (user-password-valid? u h p)
+(define/contract (user-password-valid? u h pass)
   (-> user? hasher? string? boolean?)
-  (hasher-hash-matches? h (user-password-hash u) p))
+  (define pass-hash (user-password-hash u))
+  (and (not (string=? pass-hash ""))
+       (hasher-hash-matches? h pass-hash pass)))
 
 (define/contract (user-anon? u)
   (-> user? boolean?)
@@ -176,16 +178,14 @@
     (~> (make-user #:username username)
         (set-user-verified? #t)
         (set-user-parent-id (user-id u))
-        (set-user-password (user-manager-hasher um)
-                           (generate-random-string))
         (set-user-identity-service-url url)
         (set-user-identity-service-key key)))
-
   (with-database-connection [conn (user-manager-db um)]
     (with-handlers ([exn:fail:sql:constraint-violation?
                      (lambda (_e)
-                       (lookup conn (~> (from user #:as u)
-                                        (where (= u.username ,username)))))])
+                       (~> (from user #:as u)
+                           (where (= u.username ,username))
+                           (lookup conn _)))])
       (insert-one! conn the-user))))
 
 (define/contract (user-manager-create-anon! um)
@@ -194,9 +194,7 @@
     (format "~a@anon.congame" (generate-random-string)))
   (define the-user
     (~> (make-user #:username username)
-        (set-user-verified? #t)
-        (set-user-password (user-manager-hasher um)
-                           (generate-random-string))))
+        (set-user-verified? #t)))
   (with-database-connection [conn (user-manager-db um)]
     (with-handlers ([exn:fail:sql:constraint-violation?
                      (lambda (_e)
