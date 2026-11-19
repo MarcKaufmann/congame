@@ -12,6 +12,7 @@
 (define (production-error-page req _e)
   (page
    #:show-nav? #f
+   #:status-code 500
    (haml
     (.container
      (:h1 "An error occurred")
